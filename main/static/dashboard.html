@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 Control - Dashboard</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- Mobile Top Bar -->
+<header class="mobile-topbar">
+    <span class="brand">ESP32 Control</span>
+    <div class="topbar-icons">
+        <span>&#128246;</span>
+        <span>&#9881;</span>
+    </div>
+</header>
+
+<!-- Sidebar (Desktop) -->
+<aside class="app-sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-name">ESP32 Controller</div>
+        <div class="sidebar-node-info">
+            <div class="node-icon">&#9881;</div>
+            <div>
+                <div class="node-name">ESP32 Control</div>
+                <div class="node-status">
+                    <span class="status-dot" id="sidebar-status-dot"></span>
+                    <span id="sidebar-status-text">Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item active" id="nav-dashboard">
+            <span class="nav-icon">&#9632;</span> Dashboard
+        </a>
+        <a href="/wifi" class="nav-item" id="nav-wifi">
+            <span class="nav-icon">&#128246;</span> Wi-Fi Settings
+        </a>
+        <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
+            <span class="nav-icon">&#128682;</span> ออกจากระบบ
+        </a>
+    </nav>
+    <div class="sidebar-bottom"></div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Node Dashboard</h1>
+            <p>สถานะระบบและการเชื่อมต่อ</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()">&#8635; Refresh</button>
+            <a href="/wifi" class="btn btn-primary btn-sm">&#128246; Wi-Fi Setup</a>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="status-grid">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">สถานะ Wi-Fi</span>
+                <span style="color:var(--primary);font-size:20px;">&#128246;</span>
+            </div>
+            <div class="card-value" id="card-sta-status">--</div>
+            <div class="card-sub neutral" id="card-sta-ssid">Station: --</div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">AP Mode</span>
+                <span style="color:var(--secondary);font-size:20px;">&#9673;</span>
+            </div>
+            <div class="card-value" id="card-ap-status">Active</div>
+            <div class="card-sub good" id="card-ap-ip">IP: --</div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">หน่วยความจำ</span>
+                <span style="color:var(--primary);font-size:20px;">&#9881;</span>
+            </div>
+            <div class="card-value" id="card-heap">--</div>
+            <div class="progress-bar">
+                <div class="fill" id="card-heap-bar" style="width:40%;"></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">เวลาทำงาน</span>
+                <span style="color:var(--primary);font-size:20px;">&#9202;</span>
+            </div>
+            <div class="card-value" id="card-uptime">--</div>
+            <div class="card-sub neutral" id="card-version">v1.0.0</div>
+        </div>
+    </div>
+
+    <!-- Placeholder sections -->
+    <div class="section-card">
+        <h3>เกี่ยวกับระบบ</h3>
+        <p style="font-size:14px;color:var(--on-surface-variant);line-height:1.6;">
+            ESP32 Control System Phase 1 - Foundation<br>
+            &#8226; Web Server, Login Session<br>
+            &#8226; Wi-Fi Scan / Connect / Config<br>
+            &#8226; SoftAP Fallback Mode<br><br>
+            <em>Sensor telemetry, relay control, OTA update &#3648;&#3611;&#3655;&#3609;&#3615;&#3637;&#3592;&#3648;&#3619;&#3656;&#3591;&#3607;&#3637;&#3656;&#3592;&#3632;&#3614;&#3633;&#3602;&#3609;&#3634;&#3651;&#3609; Phase &#3605;&#3656;&#3629;&#3652;&#3611;</em>
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <span>ESP32 Control System v1.0.0 &#8212; Phase 1 Foundation</span>
+    </footer>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

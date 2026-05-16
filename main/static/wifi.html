@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 Control - Wi-Fi Setup</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- Mobile Top Bar -->
+<header class="mobile-topbar">
+    <span class="brand">Wi-Fi Setup</span>
+    <div class="topbar-icons">
+        <a href="/dashboard" style="color:var(--primary);text-decoration:none;">&#8592;</a>
+    </div>
+</header>
+
+<!-- Sidebar (Desktop) -->
+<aside class="app-sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-name">ESP32 Controller</div>
+        <div class="sidebar-node-info">
+            <div class="node-icon">&#9881;</div>
+            <div>
+                <div class="node-name">ESP32 Control</div>
+                <div class="node-status">
+                    <span class="status-dot" id="sidebar-status-dot"></span>
+                    <span id="sidebar-status-text">Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item" id="nav-dashboard">
+            <span class="nav-icon">&#9632;</span> Dashboard
+        </a>
+        <a href="/wifi" class="nav-item active" id="nav-wifi">
+            <span class="nav-icon">&#128246;</span> Wi-Fi Settings
+        </a>
+        <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
+            <span class="nav-icon">&#128682;</span> ออกจากระบบ
+        </a>
+    </nav>
+    <div class="sidebar-bottom"></div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+    <!-- Context Bar (Desktop) -->
+    <div class="context-bar">
+        <div>
+            <h2>การตั้งค่าเครือข่าย</h2>
+            <p style="font-size:14px;color:var(--on-surface-variant);">จัดการการเชื่อมต่อ Wi-Fi สำหรับอุปกรณ์</p>
+        </div>
+        <div class="ap-pill" id="ap-pill">
+            <span class="pulse-dot"></span>
+            <span class="ap-label">AP Mode: Active</span>
+            <span class="ap-ip" id="ap-pill-ip">192.168.4.1</span>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Wi-Fi Setup <span style="font-size:16px;font-weight:400;color:var(--on-surface-variant);">(การตั้งค่า Wi-Fi)</span></h1>
+        </div>
+    </div>
+
+    <!-- Stepper -->
+    <div class="stepper">
+        <div class="step active" id="step-1">
+            <div class="step-circle">1</div>
+            <span class="step-label">Scan</span>
+        </div>
+        <div class="step" id="step-2">
+            <div class="step-circle">2</div>
+            <span class="step-label">Password</span>
+        </div>
+        <div class="step" id="step-3">
+            <div class="step-circle">3</div>
+            <span class="step-label">Connect</span>
+        </div>
+    </div>
+
+    <!-- Wi-Fi Grid -->
+    <div class="wifi-grid">
+        <!-- Network List -->
+        <div class="network-panel">
+            <div class="network-panel-header">
+                <h3>&#128269; เครือข่ายที่พบ</h3>
+                <button class="scan-btn" id="scan-btn" onclick="doScan()">&#8635; สแกนใหม่</button>
+            </div>
+            <ul class="network-list" id="network-list">
+                <li style="padding:32px;text-align:center;color:var(--outline);" id="scan-placeholder">
+                    กด "สแกนใหม่" เพื่อค้นหาเครือข่าย
+                </li>
+            </ul>
+        </div>
+
+        <!-- Input Panel -->
+        <div class="input-panel disabled" id="input-panel">
+            <div class="overlay-hint" id="overlay-hint">
+                <div class="overlay-hint-box">
+                    &#9757; โปรดเลือกเครือข่าย
+                </div>
+            </div>
+            <h3 style="font-size:16px;display:flex;align-items:center;gap:8px;">
+                &#128273; ระบุรหัสผ่าน
+            </h3>
+            <div class="form-group">
+                <label>SSID ที่เลือก</label>
+                <div class="selected-ssid-display" id="selected-ssid-display">---</div>
+            </div>
+            <div class="form-group">
+                <label>รหัสผ่าน (Password)</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">&#128274;</span>
+                    <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" disabled>
+                </div>
+            </div>
+            <div id="connect-status" style="font-size:14px;min-height:20px;"></div>
+            <div class="btn-row">
+                <button class="btn btn-outline btn-sm" id="cancel-btn" disabled onclick="clearSelection()">ยกเลิก</button>
+                <button class="btn btn-primary btn-sm" id="connect-btn" disabled onclick="doConnect()">เชื่อมต่อ</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

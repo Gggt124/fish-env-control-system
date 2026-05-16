@@ -1,0 +1,16 @@
+build/
+sdkconfig
+sdkconfig.old
+*.bin
+*.elf
+*.map
+*.hex
+*.o
+*.d
+*.su
+flasher_args.json
+cmake-build-*/
+.vscode/
+.dependencies
+managed_components/
+dependencies.lock

@@ -1,0 +1,16 @@
+idf_component_register(
+    SRCS
+        "app_main.c"
+        "wifi_manager.c"
+        "web_server.c"
+        "session.c"
+        "nvs_store.c"
+    INCLUDE_DIRS
+        "."
+    EMBED_FILES
+        "static/login.html"
+        "static/dashboard.html"
+        "static/wifi.html"
+        "static/style.css"
+        "static/app.js"
+)
