@@ -1,10 +1,7 @@
 idf_component_register(
     SRCS
         "app_main.c"
-        "wifi_manager.c"
         "web_server.c"
-        "session.c"
-        "nvs_store.c"
     INCLUDE_DIRS
         "."
     EMBED_FILES
@@ -13,4 +10,10 @@ idf_component_register(
         "static/wifi.html"
         "static/style.css"
         "static/app.js"
+    REQUIRES
+        nvs_store
+        session
+        wifi_manager
+        esp_http_server
+        esp_wifi
 )
