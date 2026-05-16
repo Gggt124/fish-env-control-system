@@ -1,5 +1,6 @@
 #include "session.h"
 #include "esp_random.h"
+#include "esp_timer.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 typedef struct {
     char token[SESSION_TOKEN_LEN];
     char username[32];
+    int64_t created_at;
     bool active;
 } session_entry_t;
 
@@ -22,21 +24,18 @@ bool session_init(void)
 
 bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN])
 {
-    /* Generate 8 random bytes -> 16 hex chars */
     uint8_t rand_bytes[8];
     for (int i = 0; i < 4; i++) {
         uint32_t r = esp_random();
-        rand_bytes[i * 2]     = (r >> 16) & 0xFF;
-        rand_bytes[i * 2 + 1] = (r >> 24) & 0xFF;
+        rand_bytes[i * 2]     = (r >> 0)  & 0xFF;
+        rand_bytes[i * 2 + 1] = (r >> 8)  & 0xFF;
     }
 
-    /* Convert to lowercase hex */
     for (int i = 0; i < 8; i++) {
         snprintf(&token_out[i * 2], 3, "%02x", rand_bytes[i]);
     }
     token_out[16] = '\0';
 
-    /* Store in first free slot or overwrite oldest */
     int slot = -1;
     for (int i = 0; i < MAX_SESSIONS; i++) {
         if (!s_sessions[i].active) {
@@ -44,10 +43,20 @@ bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN])
             break;
         }
     }
-    if (slot < 0) slot = 0;
+    if (slot < 0) {
+        slot = 0;
+        int64_t oldest = s_sessions[0].created_at;
+        for (int i = 1; i < MAX_SESSIONS; i++) {
+            if (s_sessions[i].created_at < oldest) {
+                oldest = s_sessions[i].created_at;
+                slot = i;
+            }
+        }
+    }
 
     strncpy(s_sessions[slot].token, token_out, SESSION_TOKEN_LEN - 1);
     strncpy(s_sessions[slot].username, username, sizeof(s_sessions[slot].username) - 1);
+    s_sessions[slot].created_at = esp_timer_get_time() / 1000000;
     s_sessions[slot].active = true;
 
     return true;
@@ -56,8 +65,13 @@ bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN])
 bool session_validate(const char *token)
 {
     if (!token || !token[0]) return false;
+    int64_t now = esp_timer_get_time() / 1000000;
     for (int i = 0; i < MAX_SESSIONS; i++) {
         if (s_sessions[i].active && strcmp(s_sessions[i].token, token) == 0) {
+            if ((now - s_sessions[i].created_at) > SESSION_MAX_AGE_SEC) {
+                memset(&s_sessions[i], 0, sizeof(session_entry_t));
+                return false;
+            }
             return true;
         }
     }
@@ -69,8 +83,7 @@ void session_destroy(const char *token)
     if (!token) return;
     for (int i = 0; i < MAX_SESSIONS; i++) {
         if (s_sessions[i].active && strcmp(s_sessions[i].token, token) == 0) {
-            s_sessions[i].active = false;
-            memset(s_sessions[i].token, 0, SESSION_TOKEN_LEN);
+            memset(&s_sessions[i], 0, sizeof(session_entry_t));
             return;
         }
     }

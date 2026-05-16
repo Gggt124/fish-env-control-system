@@ -164,6 +164,10 @@ Namespace `wifi_cfg`: `sta_ssid` (string), `sta_pass` (string)
 - No hardware GPIO assignments without explicit pin map
 - Keep `sdkconfig.defaults` minimal — only `CONFIG_IDF_TARGET` and `CONFIG_PARTITION_TABLE_SINGLE_APP`
 
+## Reference Tracking
+
+**Rule**: If an agent learns patterns, APIs, or architecture from an external repository, **record that repo URL in `REFERENCE.md`** under the relevant section. Include a one-line note on what was adopted. This keeps the project's provenance traceable.
+
 ## Validation
 
 ```powershell

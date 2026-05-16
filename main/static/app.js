@@ -75,12 +75,6 @@ function showToast(msg, type) {
 function initLogin() {
     if (window.location.pathname !== '/login') return;
 
-    /* Redirect if already authenticated */
-    if (isAuthenticated()) {
-        window.location.href = '/dashboard';
-        return;
-    }
-
     var form = document.getElementById('login-form');
     var btn = document.getElementById('login-btn');
     var errEl = document.getElementById('login-error');

@@ -16,6 +16,7 @@ extern "C" {
  */
 
 #define SESSION_TOKEN_LEN 17  /* 16 hex chars + null */
+#define SESSION_MAX_AGE_SEC 1800  /* 30-minute idle timeout */
 
 bool session_init(void);
 bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN]);

@@ -5,12 +5,16 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include <string.h>
 
 static const char *TAG = "wifi_mgr";
 
 static bool s_ap_enabled = false;
 static bool s_sta_connected = false;
+static bool s_sta_configured = false;
+static bool s_scan_in_progress = false;
 static char s_sta_ssid[33] = {0};
 static char s_ap_ip[16] = "192.168.4.1";
 static char s_sta_ip[16] = {0};
@@ -20,8 +24,25 @@ static esp_netif_t *s_ap_netif = NULL;
 static esp_netif_t *s_sta_netif = NULL;
 
 static wifi_scan_cb_t s_scan_callback = NULL;
+static void *s_scan_user_ctx = NULL;
 static wifi_scan_entry_t s_scan_results[WIFI_SCAN_MAX];
 static int s_scan_count = 0;
+
+/* --------------- Helpers --------------- */
+
+const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode)
+{
+    switch (mode) {
+    case WIFI_AUTH_OPEN:          return "Open";
+    case WIFI_AUTH_WEP:           return "WEP";
+    case WIFI_AUTH_WPA_PSK:       return "WPA";
+    case WIFI_AUTH_WPA2_PSK:      return "WPA2";
+    case WIFI_AUTH_WPA_WPA2_PSK:  return "WPA/WPA2";
+    case WIFI_AUTH_WPA3_PSK:      return "WPA3";
+    case WIFI_AUTH_WPA2_WPA3_PSK: return "WPA2/WPA3";
+    default:                       return "Unknown";
+    }
+}
 
 /* --------------- Event Handler --------------- */
 
@@ -31,7 +52,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
         case WIFI_EVENT_STA_START:
-            esp_wifi_connect();
+            if (s_sta_configured) {
+                esp_wifi_connect();
+            }
             break;
         case WIFI_EVENT_STA_DISCONNECTED: {
             wifi_event_sta_disconnected_t *ev = (wifi_event_sta_disconnected_t *)event_data;
@@ -39,8 +62,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             s_sta_connected = false;
             s_sta_ip[0] = '\0';
             s_sta_ssid[0] = '\0';
-            /* Reconnect attempt */
-            esp_wifi_connect();
+            /* Reconnect attempt - skip if scan is in progress */
+            if (s_sta_configured && !s_scan_in_progress) {
+                esp_wifi_connect();
+            }
             break;
         }
         case WIFI_EVENT_AP_STACONNECTED:
@@ -61,25 +86,18 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                     strncpy(s_scan_results[i].ssid, (char *)ap_info[i].ssid, 32);
                     s_scan_results[i].ssid[32] = '\0';
                     s_scan_results[i].rssi = ap_info[i].rssi;
-
-                    switch (ap_info[i].authmode) {
-                    case WIFI_AUTH_OPEN:             strcpy(s_scan_results[i].auth, "Open"); break;
-                    case WIFI_AUTH_WEP:              strcpy(s_scan_results[i].auth, "WEP"); break;
-                    case WIFI_AUTH_WPA_PSK:          strcpy(s_scan_results[i].auth, "WPA"); break;
-                    case WIFI_AUTH_WPA2_PSK:         strcpy(s_scan_results[i].auth, "WPA2"); break;
-                    case WIFI_AUTH_WPA_WPA2_PSK:     strcpy(s_scan_results[i].auth, "WPA/WPA2"); break;
-                    case WIFI_AUTH_WPA3_PSK:         strcpy(s_scan_results[i].auth, "WPA3"); break;
-                    case WIFI_AUTH_WPA2_WPA3_PSK:    strcpy(s_scan_results[i].auth, "WPA2/WPA3"); break;
-                    default:                          strcpy(s_scan_results[i].auth, "Unknown"); break;
-                    }
+                    strncpy(s_scan_results[i].auth,
+                            wifi_auth_mode_to_string(ap_info[i].authmode),
+                            sizeof(s_scan_results[i].auth) - 1);
                     s_scan_results[i].channel = ap_info[i].primary;
                 }
                 s_scan_count = num;
                 free(ap_info);
             }
             if (s_scan_callback) {
-                s_scan_callback(s_scan_results, s_scan_count);
+                s_scan_callback(s_scan_user_ctx, s_scan_results, s_scan_count);
                 s_scan_callback = NULL;
+                s_scan_user_ctx = NULL;
             }
             break;
         }
@@ -146,6 +164,7 @@ bool wifi_manager_init(void)
         }
         sta_cfg.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
         ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
+        s_sta_configured = true;
     }
 
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -183,10 +202,8 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password)
 {
     if (!ssid || !ssid[0]) return false;
 
-    /* Save to NVS */
     nvs_store_save_wifi(ssid, password);
 
-    /* Disconnect current STA first */
     esp_wifi_disconnect();
 
     wifi_config_t sta_cfg = {0};
@@ -196,8 +213,14 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password)
     }
     sta_cfg.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
-    ESP_ERROR_CHECK(esp_wifi_connect());
+    if (esp_wifi_set_config(WIFI_IF_STA, &sta_cfg) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set STA config");
+        return false;
+    }
+    if (esp_wifi_connect() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start STA connect");
+        return false;
+    }
 
     ESP_LOGI(TAG, "Connecting to STA SSID: %s", ssid);
     return true;
@@ -207,19 +230,31 @@ bool wifi_manager_disconnect_sta(void)
 {
     esp_err_t ret = esp_wifi_disconnect();
     s_sta_connected = false;
+    s_sta_configured = false;
+    s_sta_ip[0] = '\0';
+    s_sta_ssid[0] = '\0';
+    return ret == ESP_OK;
+}
+
+bool wifi_manager_forget_sta(void)
+{
+    esp_wifi_disconnect();
+    s_sta_connected = false;
+    s_sta_configured = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     nvs_store_clear_wifi();
-    return ret == ESP_OK;
+    return true;
 }
 
 /* --------------- Scan --------------- */
 
-bool wifi_manager_scan(wifi_scan_cb_t callback)
+bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
 {
     if (!callback) return false;
 
     s_scan_callback = callback;
+    s_scan_user_ctx = user_ctx;
     s_scan_count = 0;
 
     wifi_scan_config_t scan_cfg = {
@@ -235,9 +270,25 @@ bool wifi_manager_scan(wifi_scan_cb_t callback)
     esp_err_t ret = esp_wifi_scan_start(&scan_cfg, false);
     if (ret != ESP_OK) {
         s_scan_callback = NULL;
+        s_scan_user_ctx = NULL;
         return false;
     }
     return true;
+}
+
+void wifi_manager_sta_disconnect_for_scan(void)
+{
+    s_scan_in_progress = true;
+    esp_wifi_disconnect();
+    vTaskDelay(pdMS_TO_TICKS(200));
+}
+
+void wifi_manager_sta_reconnect_after_scan(void)
+{
+    s_scan_in_progress = false;
+    if (s_sta_configured) {
+        esp_wifi_connect();
+    }
 }
 
 /* --------------- State Getters --------------- */

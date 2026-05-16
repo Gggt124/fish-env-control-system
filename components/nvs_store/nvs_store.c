@@ -38,16 +38,24 @@ bool nvs_store_save_wifi(const char *ssid, const char *password)
 bool nvs_store_load_wifi(char *ssid_out, size_t ssid_len, char *pass_out, size_t pass_len)
 {
     nvs_handle_t handle;
-    if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) return false;
+    if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) {
+        if (ssid_out) ssid_out[0] = '\0';
+        if (pass_out) pass_out[0] = '\0';
+        return false;
+    }
 
     bool has_ssid = false;
     size_t len = ssid_len;
     if (nvs_get_str(handle, NVS_KEY_SSID, ssid_out, &len) == ESP_OK && ssid_out[0]) {
         has_ssid = true;
+    } else {
+        ssid_out[0] = '\0';
     }
 
     len = pass_len;
-    nvs_get_str(handle, NVS_KEY_PASS, pass_out, &len);
+    if (nvs_get_str(handle, NVS_KEY_PASS, pass_out, &len) != ESP_OK) {
+        pass_out[0] = '\0';
+    }
 
     nvs_close(handle);
     return has_ssid;

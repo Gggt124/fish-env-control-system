@@ -4,9 +4,13 @@
 #include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
+#include "cJSON.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 static const char *TAG = "web_server";
 
@@ -74,12 +78,29 @@ static bool require_auth(httpd_req_t *req)
 }
 
 /* Send JSON response */
-static esp_err_t send_json(httpd_req_t *req, const char *json, int status_code)
+static esp_err_t send_json(httpd_req_t *req, const char *json, const char *status)
 {
     httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_status(req, status_code == 200 ? "200 OK" : "401 Unauthorized");
+    httpd_resp_set_status(req, status);
     httpd_resp_send(req, json, strlen(json));
     return ESP_OK;
+}
+
+/* Scan context for non-blocking callback */
+typedef struct {
+    SemaphoreHandle_t sem;
+    wifi_scan_entry_t entries[WIFI_SCAN_MAX];
+    int count;
+} wifi_scan_ctx_t;
+
+static void scan_complete_cb(void *user_ctx, wifi_scan_entry_t *entries, int count)
+{
+    wifi_scan_ctx_t *ctx = (wifi_scan_ctx_t *)user_ctx;
+    ctx->count = (count > WIFI_SCAN_MAX) ? WIFI_SCAN_MAX : count;
+    if (ctx->count > 0) {
+        memcpy(ctx->entries, entries, ctx->count * sizeof(wifi_scan_entry_t));
+    }
+    xSemaphoreGive(ctx->sem);
 }
 
 /* Send a static embedded file */
@@ -165,24 +186,18 @@ static esp_err_t handle_app_js(httpd_req_t *req)
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
-    /* Read body */
     char body[256] = {0};
     int ret = httpd_req_recv(req, body, sizeof(body) - 1);
     if (ret <= 0) {
-        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", 401);
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "401 Unauthorized");
     }
     body[ret] = '\0';
 
-    /* Simple form-data or JSON parsing */
     char username[64] = {0};
     char password[64] = {0};
 
-    /* Try JSON format: {"ssid":"...", "password":"..."} but for login it's form-urlencoded from HTML form */
-    /* Login page submits as: username=XXX&password=YYY (form-urlencoded) */
-    /* Also handle JSON for API clients */
     const char *user_start = strstr(body, "username=");
     if (user_start) {
-        /* Form-urlencoded */
         user_start += 9;
         const char *user_end = strchr(user_start, '&');
         size_t len = user_end ? (size_t)(user_end - user_start) : strlen(user_start);
@@ -198,65 +213,49 @@ static esp_err_t handle_api_login(httpd_req_t *req)
             memcpy(password, pass_start, len);
         }
     } else {
-        /* Try JSON */
-        const char *u = strstr(body, "\"username\"");
-        const char *p = strstr(body, "\"password\"");
-        if (u) {
-            u = strchr(u, ':');
-            if (u) {
-                u = strchr(u, '"');
-                if (u) { u++; const char *ue = strchr(u, '"');
-                    if (ue) { size_t len = ue - u; if (len > 63) len = 63;
-                        memcpy(username, u, len); }
-                }
+        cJSON *root = cJSON_Parse(body);
+        if (root) {
+            cJSON *u = cJSON_GetObjectItem(root, "username");
+            cJSON *p = cJSON_GetObjectItem(root, "password");
+            if (u && cJSON_IsString(u)) {
+                strncpy(username, u->valuestring, sizeof(username) - 1);
             }
-        }
-        if (p) {
-            p = strchr(p, ':');
-            if (p) {
-                p = strchr(p, '"');
-                if (p) { p++; const char *pe = strchr(p, '"');
-                    if (pe) { size_t len = pe - p; if (len > 63) len = 63;
-                        memcpy(password, p, len); }
-                }
+            if (p && cJSON_IsString(p)) {
+                strncpy(password, p->valuestring, sizeof(password) - 1);
             }
+            cJSON_Delete(root);
         }
     }
-
-    /* URL-decode basic: replace + with space, decode %XX */
-    /* (simplified - not handling full URL decode for prototype) */
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", 401);
+        return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
-    /* Validate credentials */
     if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
-        ESP_LOGW(TAG, "Login failed for user: %s", username);
-        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", 401);
+        ESP_LOGW(TAG, "Login failed");
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
-    /* Create session */
     char token[SESSION_TOKEN_LEN] = {0};
     if (!session_create(username, token)) {
-        return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", 401);
+        return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    /* Build JSON response */
-    char json[256];
-    snprintf(json, sizeof(json),
-        "{\"ok\":true,\"token\":\"%s\",\"username\":\"%s\"}", token, username);
+    cJSON *resp = cJSON_CreateObject();
+    cJSON_AddBoolToObject(resp, "ok", true);
+    cJSON_AddStringToObject(resp, "token", token);
+    cJSON_AddStringToObject(resp, "username", username);
+    char *json_str = cJSON_PrintUnformatted(resp);
+    cJSON_Delete(resp);
 
-    /* Set session cookie.
-       WARNING: Non-HttpOnly for local prototype JS access.
-       NOT suitable for internet-facing production. */
     char cookie[128];
-    snprintf(cookie, sizeof(cookie),
-        "session=%s; Path=/", token);
+    snprintf(cookie, sizeof(cookie), "session=%s; Path=/", token);
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
 
-    ESP_LOGI(TAG, "Login success for: %s", username);
-    return send_json(req, json, 200);
+    ESP_LOGI(TAG, "Login success");
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
 }
 
 /* POST /api/logout */
@@ -271,75 +270,58 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Set-Cookie",
         "session=; Path=/; Max-Age=0");
 
-    return send_json(req, "{\"ok\":true}", 200);
+    return send_json(req, "{\"ok\":true}", "200 OK");
 }
 
 /* GET /api/wifi/scan - protected, returns JSON scan results */
 static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", 401);
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    /* Run scan in blocking mode */
-    uint16_t num_aps = 0;
-    wifi_scan_config_t scan_cfg = {
-        .ssid = NULL,
-        .bssid = NULL,
-        .channel = 0,
-        .show_hidden = false,
-        .scan_type = WIFI_SCAN_TYPE_ACTIVE,
-        .scan_time.active.min = 100,
-        .scan_time.active.max = 300,
-    };
+    wifi_manager_sta_disconnect_for_scan();
 
-    esp_err_t scan_ret = esp_wifi_scan_start(&scan_cfg, true); /* blocking */
-    if (scan_ret != ESP_OK) {
-        return send_json(req, "{\"ok\":false,\"error\":\"scan_failed\"}", 200);
+    wifi_scan_ctx_t ctx;
+    ctx.sem = xSemaphoreCreateBinary();
+    ctx.count = 0;
+    if (!ctx.sem) {
+        wifi_manager_sta_reconnect_after_scan();
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
 
-    esp_wifi_scan_get_ap_num(&num_aps);
-    if (num_aps > WIFI_SCAN_MAX) num_aps = WIFI_SCAN_MAX;
-
-    wifi_ap_record_t *ap_info = calloc(num_aps, sizeof(wifi_ap_record_t));
-    if (ap_info) {
-        esp_wifi_scan_get_ap_records(&num_aps, ap_info);
-
-        /* Build JSON array */
-        char *json = malloc(4096);
-        if (!json) {
-            free(ap_info);
-            return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", 200);
-        }
-
-        int offset = snprintf(json, 4096, "{\"ok\":true,\"networks\":[");
-        for (int i = 0; i < num_aps; i++) {
-            const char *auth_str = "Unknown";
-            switch (ap_info[i].authmode) {
-            case WIFI_AUTH_OPEN:          auth_str = "Open"; break;
-            case WIFI_AUTH_WEP:           auth_str = "WEP"; break;
-            case WIFI_AUTH_WPA_PSK:       auth_str = "WPA"; break;
-            case WIFI_AUTH_WPA2_PSK:      auth_str = "WPA2"; break;
-            case WIFI_AUTH_WPA_WPA2_PSK:  auth_str = "WPA/WPA2"; break;
-            case WIFI_AUTH_WPA3_PSK:      auth_str = "WPA3"; break;
-            case WIFI_AUTH_WPA2_WPA3_PSK: auth_str = "WPA2/WPA3"; break;
-            default: break;
-            }
-            offset += snprintf(json + offset, 4096 - offset,
-                "%s{\"ssid\":\"%s\",\"rssi\":%d,\"auth\":\"%s\",\"channel\":%d}",
-                (i > 0 ? "," : ""),
-                ap_info[i].ssid, ap_info[i].rssi, auth_str, ap_info[i].primary);
-        }
-        snprintf(json + offset, 4096 - offset, "]}");
-
-        free(ap_info);
-        httpd_resp_set_type(req, "application/json");
-        httpd_resp_send(req, json, strlen(json));
-        free(json);
-    } else {
-        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", 200);
+    if (!wifi_manager_scan(&ctx, scan_complete_cb)) {
+        vSemaphoreDelete(ctx.sem);
+        wifi_manager_sta_reconnect_after_scan();
+        return send_json(req, "{\"ok\":false,\"error\":\"scan_failed\"}", "200 OK");
     }
 
+    if (xSemaphoreTake(ctx.sem, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        vSemaphoreDelete(ctx.sem);
+        wifi_manager_sta_reconnect_after_scan();
+        return send_json(req, "{\"ok\":false,\"error\":\"scan_timeout\"}", "200 OK");
+    }
+    vSemaphoreDelete(ctx.sem);
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON *arr = cJSON_AddArrayToObject(root, "networks");
+    for (int i = 0; i < ctx.count; i++) {
+        cJSON *item = cJSON_CreateObject();
+        cJSON_AddStringToObject(item, "ssid", ctx.entries[i].ssid);
+        cJSON_AddNumberToObject(item, "rssi", ctx.entries[i].rssi);
+        cJSON_AddStringToObject(item, "auth", ctx.entries[i].auth);
+        cJSON_AddNumberToObject(item, "channel", ctx.entries[i].channel);
+        cJSON_AddItemToArray(arr, item);
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json_str, strlen(json_str));
+    free(json_str);
+
+    wifi_manager_sta_reconnect_after_scan();
     return ESP_OK;
 }
 
@@ -347,103 +329,83 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
 static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", 401);
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
     char body[512] = {0};
     int ret = httpd_req_recv(req, body, sizeof(body) - 1);
     if (ret <= 0) {
-        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", 200);
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "200 OK");
     }
     body[ret] = '\0';
 
-    /* Parse JSON: {"ssid":"...","password":"..."} */
     char ssid[64] = {0};
     char password[64] = {0};
 
-    const char *s = strstr(body, "\"ssid\"");
-    if (s) {
-        s = strchr(s, ':');
-        if (s) {
-            s = strchr(s, '"');
-            if (s) { s++;
-                const char *se = strchr(s, '"');
-                if (se) {
-                    size_t len = (size_t)(se - s);
-                    if (len > 63) len = 63;
-                    memcpy(ssid, s, len);
-                }
-            }
+    cJSON *root = cJSON_Parse(body);
+    if (root) {
+        cJSON *s = cJSON_GetObjectItem(root, "ssid");
+        cJSON *p = cJSON_GetObjectItem(root, "password");
+        if (s && cJSON_IsString(s)) {
+            strncpy(ssid, s->valuestring, sizeof(ssid) - 1);
         }
-    }
-
-    const char *p = strstr(body, "\"password\"");
-    if (p) {
-        p = strchr(p, ':');
-        if (p) {
-            p = strchr(p, '"');
-            if (p) { p++;
-                const char *pe = strchr(p, '"');
-                if (pe) {
-                    size_t len = (size_t)(pe - p);
-                    if (len > 63) len = 63;
-                    memcpy(password, p, len);
-                }
-            }
+        if (p && cJSON_IsString(p)) {
+            strncpy(password, p->valuestring, sizeof(password) - 1);
         }
+        cJSON_Delete(root);
     }
 
     if (strlen(ssid) == 0) {
-        return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", 200);
+        return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", "200 OK");
     }
 
-    /* Attempt connection */
-    wifi_manager_connect_sta(ssid, password);
+    if (!wifi_manager_connect_sta(ssid, password)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"connect_error\"}", "200 OK");
+    }
 
-    /* Wait briefly for connection result */
     vTaskDelay(pdMS_TO_TICKS(5000));
 
-    char json[256];
+    cJSON *resp = cJSON_CreateObject();
     if (wifi_manager_is_sta_connected()) {
-        snprintf(json, sizeof(json),
-            "{\"ok\":true,\"ssid\":\"%s\",\"ip\":\"%s\"}",
-            wifi_manager_get_sta_ssid(), wifi_manager_get_sta_ip());
+        cJSON_AddBoolToObject(resp, "ok", true);
+        cJSON_AddStringToObject(resp, "ssid", wifi_manager_get_sta_ssid());
+        cJSON_AddStringToObject(resp, "ip", wifi_manager_get_sta_ip());
     } else {
-        snprintf(json, sizeof(json),
-            "{\"ok\":false,\"error\":\"connection_failed\",\"ssid\":\"%s\"}", ssid);
+        cJSON_AddBoolToObject(resp, "ok", false);
+        cJSON_AddStringToObject(resp, "error", "connection_failed");
+        cJSON_AddStringToObject(resp, "ssid", ssid);
     }
-
-    return send_json(req, json, 200);
+    char *json_str = cJSON_PrintUnformatted(resp);
+    cJSON_Delete(resp);
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
 }
 
 /* GET /api/status - protected, return device status JSON */
 static esp_err_t handle_api_status(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", 401);
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    char json[512];
-    snprintf(json, sizeof(json),
-        "{"
-        "\"ok\":true,"
-        "\"ap_enabled\":%s,"
-        "\"ap_ip\":\"%s\","
-        "\"sta_connected\":%s,"
-        "\"sta_ip\":\"%s\","
-        "\"sta_ssid\":\"%s\","
-        "\"uptime_ms\":%lld,"
-        "\"free_heap\":%lu"
-        "}",
-        wifi_manager_is_ap_enabled() ? "true" : "false",
-        wifi_manager_is_ap_enabled() ? wifi_manager_get_ap_ip() : "",
-        wifi_manager_is_sta_connected() ? "true" : "false",
-        wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "",
-        wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ssid() : "",
-        wifi_manager_get_uptime_ms(),
-        (unsigned long)wifi_manager_get_free_heap());
+    bool ap_up = wifi_manager_is_ap_enabled();
 
-    return send_json(req, json, 200);
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddBoolToObject(root, "ap_enabled", ap_up);
+    cJSON_AddStringToObject(root, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
+    cJSON_AddBoolToObject(root, "sta_connected", wifi_manager_is_sta_connected());
+    cJSON_AddStringToObject(root, "sta_ip", wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "");
+    cJSON_AddStringToObject(root, "sta_ssid", wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ssid() : "");
+    cJSON_AddNumberToObject(root, "uptime_ms", (double)wifi_manager_get_uptime_ms());
+    cJSON_AddNumberToObject(root, "free_heap", (double)wifi_manager_get_free_heap());
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
 }
 
 /* --------------- Server Start --------------- */
