@@ -280,25 +280,20 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    wifi_manager_sta_disconnect_for_scan();
-
     wifi_scan_ctx_t ctx;
     ctx.sem = xSemaphoreCreateBinary();
     ctx.count = 0;
     if (!ctx.sem) {
-        wifi_manager_sta_reconnect_after_scan();
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
 
     if (!wifi_manager_scan(&ctx, scan_complete_cb)) {
         vSemaphoreDelete(ctx.sem);
-        wifi_manager_sta_reconnect_after_scan();
         return send_json(req, "{\"ok\":false,\"error\":\"scan_failed\"}", "200 OK");
     }
 
     if (xSemaphoreTake(ctx.sem, pdMS_TO_TICKS(5000)) != pdTRUE) {
         vSemaphoreDelete(ctx.sem);
-        wifi_manager_sta_reconnect_after_scan();
         return send_json(req, "{\"ok\":false,\"error\":\"scan_timeout\"}", "200 OK");
     }
     vSemaphoreDelete(ctx.sem);
@@ -321,7 +316,6 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
     httpd_resp_send(req, json_str, strlen(json_str));
     free(json_str);
 
-    wifi_manager_sta_reconnect_after_scan();
     return ESP_OK;
 }
 

@@ -207,7 +207,6 @@ var selectedSsid = null;
 function initWifi() {
     if (window.location.pathname !== '/wifi') return;
     updateApPill();
-    doScan();
 }
 
 function updateApPill() {
