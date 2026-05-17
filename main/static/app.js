@@ -147,11 +147,23 @@ function refreshStatus() {
         if (staStatus) staStatus.textContent = data.sta_connected ? 'เชื่อมต่อแล้ว' : 'ไม่ได้เชื่อมต่อ';
         if (staSsid) {
             if (data.sta_connected) {
-                staSsid.textContent = data.sta_ssid ? data.sta_ssid : 'Station: ' + data.sta_ip;
+                staSsid.textContent = 'Station: ' + (data.sta_ssid || '--');
                 staSsid.className = 'card-sub good';
             } else {
                 staSsid.textContent = 'Station: ไม่ได้เชื่อมต่อ';
                 staSsid.className = 'card-sub neutral';
+            }
+        }
+
+        /* STA IP */
+        var staIp = document.getElementById('card-sta-ip');
+        if (staIp) {
+            if (data.sta_connected && data.sta_ip) {
+                staIp.textContent = 'IP: ' + data.sta_ip;
+                staIp.className = 'card-sub good';
+            } else {
+                staIp.textContent = 'Station IP: --';
+                staIp.className = 'card-sub neutral';
             }
         }
 
