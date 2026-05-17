@@ -182,50 +182,66 @@ If build succeeds and `main_dashboard_mcu.bin` is generated, the project is vali
 
 ## Knowledge Base (MCU / ESP32)
 
-ก่อนเริ่มทำงานทุกครั้ง  Agent **ต้อง** ใช้ LLM Wiki เพื่อค้นหาข้อมูล MCU และ ESP32 ที่จำเป็น
+Agent **MUST** use the LLM Wiki to find required MCU and ESP32 information before every task.
 
 ### LLM Wiki
 
-- Wiki อยู่ที่ `~/llm-wiki/` — ใช้ `index.md` เพื่อนำทางและค้นหาหน้าที่เกี่ยวข้อง
-- หน้าสำคัญที่เกี่ยวข้องกับโปรเจกต์นี้:
+- Wiki is at `~/llm-wiki/` — use `index.md` to navigate and find relevant pages
+- Relevant pages for this project:
   - `wiki/esp-idf.md` — ESP-IDF framework
   - `wiki/esp32-wifi-patterns.md` — Wi-Fi AP+STA, scan/connect
   - `wiki/esp32-http-server.md` — HTTP server, auth middleware, embedded files
   - `wiki/esp32-nvs-storage.md` — NVS key-value persistence
   - `wiki/esp32-session-auth.md` — In-memory login session
   - `wiki/esp32-component-layout.md` — Project structure, CMakeLists patterns
-  - `wiki/main-dashboard-mcu.md` — ภาพรวมโปรเจกต์นี้
+  - `wiki/main-dashboard-mcu.md` — Project overview
 
-### ข้อบังคับการใช้
+### Usage Rules
 
-Agent ต้องเรียก `/wiki query <topic>` ในกรณีต่อไปนี้:
+Agent MUST call `/wiki query <topic>` in the following cases:
 
-- **ก่อน implement หรือแก้ไข component ใดๆ** — ค้นหา best practices, architecture patterns, gotchas ที่เกี่ยวข้อง
-- **เมื่อพบ API หรือ pattern ของ ESP-IDF ที่ไม่คุ้นเคย** — ค้นหาจาก wiki ก่อนเขียนโค้ด
-- **เมื่อเรียนรู้ pattern ใหม่จาก external repo** — ใช้ `/wiki ingest <source>` เพื่อบันทึกความรู้
-- **เมื่อมีข้อสงสัยเกี่ยวกับพฤติกรรมของ ESP32 หรือ MCU** — ใช้ `/wiki query <question>` เพื่อถาม
+- **Before implementing or modifying any component** — search for best practices, architecture patterns, and gotchas
+- **When encountering an unfamiliar ESP-IDF API or pattern** — search the wiki before writing code
+- **When learning a new pattern from an external repo** — use `/wiki ingest <source>` to record the knowledge
+- **When unsure about ESP32 or MCU behavior** — use `/wiki query <question>` to ask
 
-### คำสั่งที่รองรับ
+### Supported Commands
 
-| คำสั่ง | การทำงาน |
-|--------|----------|
-| `/wiki query <question>` | ค้นหาคำตอบจาก wiki |
-| `/wiki ingest <source>` | บันทึกความรู้ใหม่ |
-| `/wiki lint` | ตรวจสอบ health ของ wiki |
+| Command | Description |
+|---------|-------------|
+| `/wiki query <question>` | Search the wiki for an answer |
+| `/wiki ingest <source>` | Record new knowledge into the wiki |
+| `/wiki lint` | Check wiki health and consistency |
 
 ## Agent Skills
 
-Skills เหล่านี้ถูกติดตั้งไว้ในระบบแล้ว Agent **ควร** ใช้ `skill` tool เมื่อภารกิจตรงกับขอบเขตของ skill นั้น
+These skills are installed on the system. Agent **should** use the `skill` tool when a task matches the skill's scope.
 
-| Skill | เมื่อใดควรใช้ |
-|-------|--------------|
-| `esp32-firmware-engineer` | Implement/แก้ไข firmware, review embedded code, แก้ boot/runtime failures, optimize RAM/flash, low-power design, บูรณาการ LVGL, หรือทำงาน ESP-IDF โดยตรง |
-| `esp32-debugging` | เจอ compilation error, runtime panic / Guru Meditation, memory crash, stack overflow, I2C/SPI/UART ล้มเหลว, หรือ debug serial output |
-| `embedded-systems` | งาน microcontroller ทั่วไป, FreeRTOS, bare-metal, peripheral config, interrupt handlers, DMA, real-time systems |
-| `esp32-serial-commands` | ต้องส่งคำสั่งผ่าน serial port เพื่อ emulate button press / user action สำหรับ testing |
-| `llm-wiki` | ค้นหาความรู้ MCU/ESP32 จาก wiki ในเครื่อง (ดูส่วน Knowledge Base ด้านบน) |
-| `agent-lessons` | เมื่อ user สั่ง "save lessons", "update lessons", "what we learned" |
-| `find-skills` | เมื่อ user ถามหาความสามารถที่อาจมี skill รองรับ |
-| `general-plan-implement-workflow` | งานซับซ้อนที่ต้องการ systematic planning ก่อน implement |
+| Skill | When to use |
+|-------|-------------|
+| `esp32-firmware-engineer` | Implement/edit firmware, review embedded code, fix boot/runtime failures, optimize RAM/flash, low-power design, integrate LVGL, or work directly with ESP-IDF |
+| `esp32-debugging` | Compilation error, runtime panic / Guru Meditation, memory crash, stack overflow, I2C/SPI/UART failure, or debug serial output |
+| `embedded-systems` | General microcontroller work, FreeRTOS, bare-metal, peripheral config, interrupt handlers, DMA, real-time systems |
+| `esp32-serial-commands` | Need to send serial port commands to emulate button press / user action for testing |
+| `llm-wiki` | Search MCU/ESP32 knowledge from the local wiki (see Knowledge Base section above) |
+| `agent-lessons` | When user says "save lessons", "update lessons", "what we learned" |
+| `find-skills` | When user asks about capabilities that may have a matching skill |
+| `general-plan-implement-workflow` | Complex tasks that require systematic planning before implementation |
 
-**ข้อบังคับ**: ก่อน implement หรือ debug งานที่เกี่ยวกับ ESP32/MCU/firmware ให้ตรวจสอบว่างานตรงกับ skill ในตารางหรือไม่ ถ้าตรงให้เรียกใช้ skill นั้น (`skill` tool) ก่อนเริ่มทำงาน
+**Rule**: Before implementing or debugging ESP32/MCU/firmware work, check if the task matches a skill in the table. If it does, load the skill with the `skill` tool before starting.
+
+### Mandatory `esp32-firmware-engineer` Rule
+
+Agent **MUST** load the `esp32-firmware-engineer` skill using the `skill` tool before starting work in the following cases:
+
+- **Firmware implementation**: writing or editing C/C++ code in `main/` or `components/`
+- **Build/config**: modifying `CMakeLists.txt`, `sdkconfig`, or `sdkconfig.defaults`
+- **Debugging**: investigating boot failure, runtime panic, Guru Meditation, or serial logs
+- **Peripherals / RTOS**: FreeRTOS tasks/queues, GPIO, I2C, SPI, UART, ADC, PWM, Wi-Fi, BLE
+- **Optimization**: RAM/flash usage, power consumption, boot time
+- **Hardware bring-up**: new board, pin mapping, peripheral integration
+- **Code review**: reviewing embedded firmware code written by others
+
+**Exceptions**: Not required for frontend-only work (HTML/CSS/JS in `main/static/`) or documentation-only changes unrelated to firmware logic.
+
+**Violating this rule may lead to lower code quality or introduce subtle bugs.**
