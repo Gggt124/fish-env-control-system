@@ -2,6 +2,8 @@ idf_component_register(
     SRCS
         "app_main.c"
         "web_server.c"
+        "dns_server.c"
+        "netif_helper.c"
     INCLUDE_DIRS
         "."
     EMBED_FILES
@@ -17,4 +19,5 @@ idf_component_register(
         esp_http_server
         esp_wifi
         cjson
+        mdns
 )
