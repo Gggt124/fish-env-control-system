@@ -48,39 +48,39 @@
 ## P1 — High (Production hardening)
 
 ### P1-1: Boot resilience
-- [ ] `app_main.c` — Wi-Fi init failure: log but DON'T return (AP-only mode)
-- [ ] `app_main.c` — HTTP server failure: log but continue, retry in main loop
-- [ ] `app_main.c` — add `esp_task_wdt_init(true, 30000)` (30s watchdog)
-- [ ] `app_main.c` — main loop: `esp_task_wdt_reset()` every cycle
-- [ ] `web_server.c` — wrap `httpd_register_uri_handler()` with per-route error logging
+- [x] `app_main.c` — Wi-Fi init failure: log but DON'T return (AP-only mode)
+- [x] `app_main.c` — HTTP server failure: log but continue, retry in main loop
+- [x] `app_main.c` — add `esp_task_wdt_init()` (30s watchdog, struct API)
+- [x] `app_main.c` — main loop: `esp_task_wdt_reset()` every cycle
+- [x] `web_server.c` — wrap `httpd_register_uri_handler()` with per-route error logging
 - [ ] Build + test: pull Wi-Fi antenna, boot → AP still available at 192.168.4.1
 
 ### P1-2: Input sanitization
-- [ ] `web_server.c` — add `is_valid_utf8_printable()` helper
-- [ ] `web_server.c` — validate username/password in login (reject control chars)
-- [ ] `web_server.c` — validate SSID (max 32), password (max 64), reject control chars
-- [ ] `web_server.c` — validate all cJSON string inputs for length before `strncpy`
+- [x] `web_server.c` — add `is_valid_utf8_printable()` helper
+- [x] `web_server.c` — validate username/password in login (reject control chars)
+- [x] `web_server.c` — validate SSID (max 32), password (max 64), reject control chars
+- [x] `web_server.c` — validate all cJSON string inputs for length before `strncpy`
 - [ ] Build + test: SSID with control chars rejected. Normal login/connect works.
 
 ### P1-3: Replace ESP_ERROR_CHECK with graceful handling
-- [ ] `wifi_manager.c` — replace `ESP_ERROR_CHECK` in scan, AP stop, disconnect with `if(...){log;return false;}`
-- [ ] `wifi_manager.c` — keep `ESP_ERROR_CHECK` only in `wifi_manager_init()` fatal paths
+- [x] `wifi_manager.c` — replace `ESP_ERROR_CHECK` in scan, AP stop, disconnect with `if(...){log;return false;}`
+- [x] `wifi_manager.c` — keep `ESP_ERROR_CHECK` only in `wifi_manager_init()` fatal paths
 - [ ] Build + test: Wi-Fi errors during scan/stop don't crash device
 
 ### P1-4: Cookie SameSite=Lax
-- [ ] `web_server.c` — login cookie: add `; SameSite=Lax`
-- [ ] `web_server.c` — logout cookie: add `; SameSite=Lax`
+- [x] `web_server.c` — login cookie: add `; SameSite=Lax`
+- [x] `web_server.c` — logout cookie: add `; SameSite=Lax`
 - [ ] Build + test: login works, session persists, cross-site POST blocked
 
 ### P1-5: Origin/Referer check on POST APIs
-- [ ] `web_server.c` — add `is_same_origin()` helper
-- [ ] `web_server.c` — call in `handle_api_login()`, `handle_api_wifi_connect()`, `handle_api_logout()`
-- [ ] `web_server.c` — allow requests with no Origin/Referer (log warning)
+- [x] `web_server.c` — add `is_same_origin()` helper
+- [x] `web_server.c` — call in `handle_api_login()`, `handle_api_wifi_connect()`, `handle_api_logout()`
+- [x] `web_server.c` — allow requests with no Origin/Referer (log warning)
 - [ ] Build + test: POST from browser works. POST from curl works (warns).
 
 ### P1-6: Fix session token generation entropy
-- [ ] `session.c` — review and fix `esp_random()` byte extraction if needed
-- [ ] (Currently correct: 4 calls × 2 bytes = 8 bytes. Documentation only.)
+- [x] `session.c` — review and fix `esp_random()` byte extraction if needed
+- [x] (Currently correct: 4 calls × 2 bytes = 8 bytes. Documentation only.)
 
 ---
 
