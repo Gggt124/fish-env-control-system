@@ -8,6 +8,7 @@ idf_component_register(
     EMBED_FILES
         "static/login.html"
         "static/dashboard.html"
+        "static/status.html"
         "static/wifi.html"
         "static/style.css"
         "static/app.js"

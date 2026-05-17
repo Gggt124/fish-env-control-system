@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 Control - System Status</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<!-- Mobile Top Bar -->
+<header class="mobile-topbar">
+    <span class="brand">System Status</span>
+    <div class="topbar-icons">
+        <a href="/dashboard" style="color:var(--primary);text-decoration:none;">&#8592;</a>
+    </div>
+</header>
+
+<!-- Sidebar (Desktop) -->
+<aside class="app-sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-name">ESP32 Controller</div>
+        <div class="sidebar-node-info">
+            <div class="node-icon">&#9881;</div>
+            <div>
+                <div class="node-name">ESP32 Control</div>
+                <div class="node-status">
+                    <span class="status-dot" id="sidebar-status-dot"></span>
+                    <span id="sidebar-status-text">Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="/dashboard" class="nav-item" id="nav-dashboard">
+            <span class="nav-icon">&#9632;</span> Dashboard
+        </a>
+        <a href="/status" class="nav-item active" id="nav-status">
+            <span class="nav-icon">&#9881;</span> System Status
+        </a>
+        <a href="/wifi" class="nav-item" id="nav-wifi">
+            <span class="nav-icon">&#128246;</span> Wi-Fi Settings
+        </a>
+        <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
+            <span class="nav-icon">&#128682;</span> Logout
+        </a>
+    </nav>
+    <div class="sidebar-bottom"></div>
+</aside>
+
+<!-- Main Content -->
+<main class="main-content">
+    <div class="page-header">
+        <div class="header-left">
+            <h1>System Status</h1>
+            <p>MCU status and health information</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()">&#8635; Refresh</button>
+        </div>
+    </div>
+
+    <!-- Status Grid -->
+    <div class="status-grid">
+
+        <!-- System Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">System</span>
+                <span style="color:var(--primary);font-size:20px;">&#9881;</span>
+            </div>
+            <table class="info-table">
+                <tr><td class="info-label">Chip</td><td class="info-value" id="st-chip-model">--</td></tr>
+                <tr><td class="info-label">Revision</td><td class="info-value" id="st-chip-revision">--</td></tr>
+                <tr><td class="info-label">Cores</td><td class="info-value" id="st-chip-cores">--</td></tr>
+                <tr><td class="info-label">CPU Speed</td><td class="info-value" id="st-cpu-freq">--</td></tr>
+                <tr><td class="info-label">IDF Version</td><td class="info-value" id="st-idf-version">--</td></tr>
+                <tr><td class="info-label">Firmware</td><td class="info-value" id="st-project-version">--</td></tr>
+            </table>
+        </div>
+
+        <!-- Memory Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">Memory</span>
+                <span style="color:var(--primary);font-size:20px;">&#128190;</span>
+            </div>
+            <table class="info-table">
+                <tr><td class="info-label">Free</td><td class="info-value" id="st-free-heap">--</td></tr>
+                <tr><td class="info-label">Min Free</td><td class="info-value" id="st-min-free-heap">--</td></tr>
+                <tr><td class="info-label">Total DRAM</td><td class="info-value" id="st-total-heap">--</td></tr>
+            </table>
+            <div class="progress-bar" style="margin-top:12px;">
+                <div class="fill" id="st-heap-bar" style="width:40%;"></div>
+            </div>
+            <div class="card-sub neutral" id="st-heap-pct" style="margin-top:4px;">Usage: --</div>
+        </div>
+
+        <!-- Uptime Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">Uptime</span>
+                <span style="color:var(--primary);font-size:20px;">&#9202;</span>
+            </div>
+            <div class="card-value" id="st-uptime">--</div>
+            <div class="card-sub neutral">System running time</div>
+        </div>
+
+        <!-- Wi-Fi STA Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">Wi-Fi Station</span>
+                <span style="color:var(--primary);font-size:20px;">&#128246;</span>
+            </div>
+            <table class="info-table">
+                <tr><td class="info-label">Status</td><td class="info-value" id="st-sta-status">--</td></tr>
+                <tr><td class="info-label">SSID</td><td class="info-value" id="st-sta-ssid">--</td></tr>
+                <tr><td class="info-label">IP</td><td class="info-value" id="st-sta-ip">--</td></tr>
+                <tr><td class="info-label">RSSI</td><td class="info-value" id="st-sta-rssi">--</td></tr>
+                <tr><td class="info-label">Channel</td><td class="info-value" id="st-sta-channel">--</td></tr>
+                <tr><td class="info-label">Auth</td><td class="info-value" id="st-sta-auth">--</td></tr>
+                <tr><td class="info-label">MAC</td><td class="info-value mono" id="st-mac-sta">--</td></tr>
+            </table>
+        </div>
+
+        <!-- Wi-Fi AP Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">Access Point</span>
+                <span style="color:var(--secondary);font-size:20px;">&#9673;</span>
+            </div>
+            <table class="info-table">
+                <tr><td class="info-label">SSID</td><td class="info-value" id="st-ap-ssid">--</td></tr>
+                <tr><td class="info-label">IP</td><td class="info-value" id="st-ap-ip">--</td></tr>
+                <tr><td class="info-label">Clients</td><td class="info-value" id="st-ap-clients">--</td></tr>
+                <tr><td class="info-label">MAC</td><td class="info-value mono" id="st-mac-ap">--</td></tr>
+            </table>
+        </div>
+
+        <!-- Services Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-label">Services</span>
+                <span style="color:var(--primary);font-size:20px;">&#128295;</span>
+            </div>
+            <table class="info-table">
+                <tr><td class="info-label">Wi-Fi Mode</td><td class="info-value" id="st-wifi-mode">--</td></tr>
+                <tr><td class="info-label">DNS Server</td><td class="info-value" id="st-dns-status">--</td></tr>
+            </table>
+        </div>
+
+    </div>
+
+    <footer class="app-footer">
+        <span>ESP32 Control System v1.0.0</span>
+    </footer>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

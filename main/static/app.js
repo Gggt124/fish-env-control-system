@@ -128,6 +128,87 @@ function initDashboard() {
     setInterval(refreshStatus, 10000);
 }
 
+/* ======== Status Page ======== */
+
+function initStatus() {
+    if (window.location.pathname !== '/status') return;
+    refreshStatus();
+    refreshFullStatus();
+    setInterval(refreshFullStatus, 30000);
+}
+
+function refreshFullStatus() {
+    apiGet('/api/status', function(err, data) {
+        if (err || !data || !data.ok) {
+            if (err && err.message === 'HTTP 401') { window.location.href = '/login'; }
+            return;
+        }
+
+        /* System */
+        setText('st-chip-model', data.chip_model);
+        setText('st-chip-revision', '' + data.chip_revision);
+        setText('st-chip-cores', '' + data.chip_cores);
+        setText('st-cpu-freq', data.cpu_freq_mhz + ' MHz');
+        setText('st-idf-version', data.idf_version);
+        setText('st-project-version', data.project_version);
+
+        /* Memory */
+        var freeKb = (data.free_heap / 1024).toFixed(0);
+        var minKb = (data.min_free_heap / 1024).toFixed(0);
+        var totalKb = (data.total_heap / 1024).toFixed(0);
+        setText('st-free-heap', freeKb + ' KB');
+        setText('st-min-free-heap', minKb + ' KB');
+        setText('st-total-heap', totalKb + ' KB');
+
+        var pct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100) : 0;
+        var bar = document.getElementById('st-heap-bar');
+        if (bar) bar.style.width = Math.min(100, Math.max(5, pct)).toFixed(0) + '%';
+        var pctEl = document.getElementById('st-heap-pct');
+        if (pctEl) pctEl.textContent = 'Usage: ' + pct.toFixed(1) + '%';
+
+        /* Uptime */
+        var secs = Math.floor(data.uptime_ms / 1000);
+        var mins = Math.floor(secs / 60);
+        var hrs = Math.floor(mins / 60);
+        mins = mins % 60;
+        var uptimeStr;
+        if (hrs > 24) {
+            var days = Math.floor(hrs / 24);
+            hrs = hrs % 24;
+            uptimeStr = days + 'd ' + hrs + 'h ' + mins + 'm';
+        } else if (hrs > 0) {
+            uptimeStr = hrs + 'h ' + mins + 'm';
+        } else {
+            uptimeStr = mins + 'm ' + (secs % 60) + 's';
+        }
+        setText('st-uptime', uptimeStr);
+
+        /* STA */
+        setText('st-sta-status', data.sta_connected ? 'Connected' : 'Disconnected');
+        setText('st-sta-ssid', data.sta_connected ? data.sta_ssid : '--');
+        setText('st-sta-ip', data.sta_connected ? data.sta_ip : '--');
+        setText('st-sta-rssi', data.sta_connected && data.sta_rssi !== undefined ? data.sta_rssi + ' dBm' : '--');
+        setText('st-sta-channel', data.sta_connected && data.sta_channel !== undefined ? '' + data.sta_channel : '--');
+        setText('st-sta-auth', data.sta_connected && data.sta_auth ? data.sta_auth : '--');
+        setText('st-mac-sta', data.mac_sta || '--');
+
+        /* AP */
+        setText('st-ap-ssid', data.ap_enabled ? data.ap_ssid : '--');
+        setText('st-ap-ip', data.ap_enabled ? data.ap_ip : '--');
+        setText('st-ap-clients', data.ap_enabled ? '' + data.ap_clients : '--');
+        setText('st-mac-ap', data.mac_ap || '--');
+
+        /* Services */
+        setText('st-wifi-mode', data.wifi_mode || '--');
+        setText('st-dns-status', data.dns_server ? 'Running' : 'Stopped');
+    });
+}
+
+function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
 function refreshStatus() {
     apiGet('/api/status', function(err, data) {
         if (err || !data || !data.ok) {
@@ -209,6 +290,19 @@ function refreshStatus() {
                 txt.textContent = 'Offline';
             }
         }
+
+        /* Dashboard summary */
+        setText('dash-chip', data.chip_model || '--');
+        setText('dash-project-version', data.project_version || '--');
+        setText('dash-wifi-mode', data.wifi_mode || '--');
+        setText('dash-ap-clients', data.ap_enabled ? '' + data.ap_clients : '--');
+        if (data.sta_connected && data.sta_rssi !== undefined) {
+            setText('dash-rssi', data.sta_rssi + ' dBm');
+        } else {
+            setText('dash-rssi', '--');
+        }
+        var dashPct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100).toFixed(1) : '--';
+        setText('dash-heap-pct', dashPct !== '--' ? dashPct + '%' : '--');
     });
 }
 
@@ -446,6 +540,8 @@ function escJs(str) {
         initLogin();
     } else if (path === '/dashboard') {
         initDashboard();
+    } else if (path === '/status') {
+        initStatus();
     } else if (path === '/wifi') {
         initWifi();
     }

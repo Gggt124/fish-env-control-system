@@ -185,6 +185,11 @@ bool dns_server_start(void)
     return true;
 }
 
+bool dns_server_is_running(void)
+{
+    return s_dns_task != NULL;
+}
+
 void dns_server_stop(void)
 {
     if (s_dns_sock >= 0) {

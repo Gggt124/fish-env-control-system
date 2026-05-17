@@ -1,8 +1,14 @@
 #include "web_server.h"
 #include "session.h"
 #include "wifi_manager.h"
+#include "dns_server.h"
 #include "esp_http_server.h"
 #include "esp_wifi.h"
+#include "esp_system.h"
+#include "esp_chip_info.h"
+#include "esp_mac.h"
+#include "esp_heap_caps.h"
+#include "esp_idf_version.h"
 #include "esp_log.h"
 #include "cJSON.h"
 #include <string.h>
@@ -25,6 +31,8 @@ extern const uint8_t _binary_style_css_start[] asm("_binary_style_css_start");
 extern const uint8_t _binary_style_css_end[]   asm("_binary_style_css_end");
 extern const uint8_t _binary_app_js_start[] asm("_binary_app_js_start");
 extern const uint8_t _binary_app_js_end[]   asm("_binary_app_js_end");
+extern const uint8_t _binary_status_html_start[] asm("_binary_status_html_start");
+extern const uint8_t _binary_status_html_end[]   asm("_binary_status_html_end");
 
 /*
  * WARNING: Default credentials are admin/admin123.
@@ -75,6 +83,30 @@ static bool require_auth(httpd_req_t *req)
     char token[SESSION_TOKEN_LEN] = {0};
     if (!get_session_from_request(req, token, sizeof(token))) return false;
     return session_validate(token);
+}
+
+/* Convert chip model enum to string */
+static const char* chip_model_to_string(esp_chip_model_t model)
+{
+    switch (model) {
+    case CHIP_ESP32:    return "ESP32";
+    case CHIP_ESP32S2:  return "ESP32-S2";
+    case CHIP_ESP32S3:  return "ESP32-S3";
+    case CHIP_ESP32C2:  return "ESP32-C2";
+    case CHIP_ESP32C3:  return "ESP32-C3";
+    case CHIP_ESP32C5:  return "ESP32-C5";
+    case CHIP_ESP32C6:  return "ESP32-C6";
+    case CHIP_ESP32H2:  return "ESP32-H2";
+    case CHIP_ESP32P4:  return "ESP32-P4";
+    default:            return "Unknown";
+    }
+}
+
+/* Format MAC address bytes to XX:XX:XX:XX:XX:XX string */
+static void format_mac(const uint8_t *mac, char *out)
+{
+    snprintf(out, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
 /* Send JSON response */
@@ -395,6 +427,20 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
     return result;
 }
 
+/* GET /status - protected, serves full status page */
+static esp_err_t handle_get_status(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/login");
+        httpd_resp_send(req, NULL, 0);
+        return ESP_OK;
+    }
+    return serve_static(req,
+        _binary_status_html_start, _binary_status_html_end,
+        "text/html; charset=utf-8");
+}
+
 /* GET /api/status - protected, return device status JSON */
 static esp_err_t handle_api_status(httpd_req_t *req)
 {
@@ -402,17 +448,80 @@ static esp_err_t handle_api_status(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    bool sta_conn = wifi_manager_is_sta_connected();
     bool ap_up = wifi_manager_is_ap_enabled();
 
     cJSON *root = cJSON_CreateObject();
     cJSON_AddBoolToObject(root, "ok", true);
-    cJSON_AddBoolToObject(root, "ap_enabled", ap_up);
-    cJSON_AddStringToObject(root, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
-    cJSON_AddBoolToObject(root, "sta_connected", wifi_manager_is_sta_connected());
-    cJSON_AddStringToObject(root, "sta_ip", wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "");
-    cJSON_AddStringToObject(root, "sta_ssid", wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ssid() : "");
+
+    /* ---------- System ---------- */
+    esp_chip_info_t chip;
+    esp_chip_info(&chip);
+    cJSON_AddStringToObject(root, "chip_model", chip_model_to_string(chip.model));
+    cJSON_AddNumberToObject(root, "chip_revision", chip.revision);
+    cJSON_AddNumberToObject(root, "chip_cores", chip.cores);
+    cJSON_AddNumberToObject(root, "cpu_freq_mhz", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
+    cJSON_AddStringToObject(root, "idf_version", esp_get_idf_version());
+    cJSON_AddStringToObject(root, "project_version", "v1.0.0");
+
+    /* ---------- MAC addresses ---------- */
+    uint8_t mac[6];
+    char mac_str[18];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    format_mac(mac, mac_str);
+    cJSON_AddStringToObject(root, "mac_sta", mac_str);
+    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
+    format_mac(mac, mac_str);
+    cJSON_AddStringToObject(root, "mac_ap", mac_str);
+
+    /* ---------- Memory ---------- */
+    uint32_t free_heap = wifi_manager_get_free_heap();
+    uint32_t min_free_heap = esp_get_minimum_free_heap_size();
+    uint32_t total_heap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+    cJSON_AddNumberToObject(root, "free_heap", (double)free_heap);
+    cJSON_AddNumberToObject(root, "min_free_heap", (double)min_free_heap);
+    cJSON_AddNumberToObject(root, "total_heap", (double)total_heap);
+
+    /* ---------- Uptime ---------- */
     cJSON_AddNumberToObject(root, "uptime_ms", (double)wifi_manager_get_uptime_ms());
-    cJSON_AddNumberToObject(root, "free_heap", (double)wifi_manager_get_free_heap());
+
+    /* ---------- Wi-Fi ---------- */
+    wifi_mode_t wmode;
+    esp_wifi_get_mode(&wmode);
+    const char *wmode_str = "NULL";
+    if (wmode == WIFI_MODE_STA)      wmode_str = "STA";
+    else if (wmode == WIFI_MODE_AP)  wmode_str = "AP";
+    else if (wmode == WIFI_MODE_APSTA) wmode_str = "APSTA";
+    cJSON_AddStringToObject(root, "wifi_mode", wmode_str);
+
+    /* AP info */
+    cJSON_AddBoolToObject(root, "ap_enabled", ap_up);
+    cJSON_AddStringToObject(root, "ap_ssid", ap_up ? AP_SSID : "");
+    cJSON_AddStringToObject(root, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
+
+    wifi_sta_list_t sta_list;
+    if (ap_up && esp_wifi_ap_get_sta_list(&sta_list) == ESP_OK) {
+        cJSON_AddNumberToObject(root, "ap_clients", sta_list.num);
+    } else {
+        cJSON_AddNumberToObject(root, "ap_clients", 0);
+    }
+
+    /* STA info */
+    cJSON_AddBoolToObject(root, "sta_connected", sta_conn);
+    cJSON_AddStringToObject(root, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
+    cJSON_AddStringToObject(root, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
+
+    if (sta_conn) {
+        wifi_ap_record_t ap_rec;
+        if (esp_wifi_sta_get_ap_info(&ap_rec) == ESP_OK) {
+            cJSON_AddNumberToObject(root, "sta_rssi", ap_rec.rssi);
+            cJSON_AddNumberToObject(root, "sta_channel", ap_rec.primary);
+            cJSON_AddStringToObject(root, "sta_auth", wifi_auth_mode_to_string(ap_rec.authmode));
+        }
+    }
+
+    /* ---------- Services ---------- */
+    cJSON_AddBoolToObject(root, "dns_server", dns_server_is_running());
 
     char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
@@ -427,7 +536,7 @@ bool web_server_start(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 16;
+    config.max_uri_handlers = 18;
     config.lru_purge_enable = true;
 
     if (httpd_start(&server, &config) != ESP_OK) {
@@ -439,6 +548,7 @@ bool web_server_start(void)
         { .uri = "/",              .method = HTTP_GET,  .handler = handle_root,           .user_ctx = NULL },
         { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login,      .user_ctx = NULL },
         { .uri = "/dashboard",     .method = HTTP_GET,  .handler = handle_get_dashboard,  .user_ctx = NULL },
+        { .uri = "/status",        .method = HTTP_GET,  .handler = handle_get_status,     .user_ctx = NULL },
         { .uri = "/wifi",          .method = HTTP_GET,  .handler = handle_get_wifi,       .user_ctx = NULL },
         { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css,      .user_ctx = NULL },
         { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js,         .user_ctx = NULL },

@@ -35,6 +35,9 @@
         <a href="/dashboard" class="nav-item active" id="nav-dashboard">
             <span class="nav-icon">&#9632;</span> Dashboard
         </a>
+        <a href="/status" class="nav-item" id="nav-status">
+            <span class="nav-icon">&#9881;</span> System Status
+        </a>
         <a href="/wifi" class="nav-item" id="nav-wifi">
             <span class="nav-icon">&#128246;</span> Wi-Fi Settings
         </a>
@@ -97,7 +100,41 @@
         </div>
     </div>
 
-    <!-- Placeholder sections -->
+    <!-- Summary Row -->
+    <div class="section-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-md);">
+            <h3>Quick Status</h3>
+            <a href="/status" class="btn btn-outline btn-sm">&#9881; ดูสถานะทั้งหมด</a>
+        </div>
+        <div class="summary-grid" style="margin-top:var(--sp-md);">
+            <div class="summary-item">
+                <span class="summary-label">Chip</span>
+                <span class="summary-value" id="dash-chip">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Heap Usage</span>
+                <span class="summary-value" id="dash-heap-pct">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">STA RSSI</span>
+                <span class="summary-value" id="dash-rssi">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">AP Clients</span>
+                <span class="summary-value" id="dash-ap-clients">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Wi-Fi Mode</span>
+                <span class="summary-value" id="dash-wifi-mode">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Firmware</span>
+                <span class="summary-value" id="dash-project-version">v1.0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- About section -->
     <div class="section-card">
         <h3>เกี่ยวกับระบบ</h3>
         <p style="font-size:14px;color:var(--on-surface-variant);line-height:1.6;">
