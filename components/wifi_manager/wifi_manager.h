@@ -23,6 +23,7 @@ typedef void (*wifi_scan_cb_t)(void *user_ctx, wifi_scan_entry_t *entries, int c
 
 bool wifi_manager_init(void);
 bool wifi_manager_start_ap(void);
+bool wifi_manager_stop_ap(void);
 bool wifi_manager_connect_sta(const char *ssid, const char *password);
 bool wifi_manager_disconnect_sta(void);
 bool wifi_manager_forget_sta(void);

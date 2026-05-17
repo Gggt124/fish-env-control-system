@@ -11,6 +11,8 @@
 
 static const char *TAG = "wifi_mgr";
 
+#define STA_MAX_RETRY 1
+
 static bool s_ap_enabled = false;
 static bool s_sta_connected = false;
 static bool s_sta_configured = false;
@@ -19,6 +21,10 @@ static char s_sta_ssid[33] = {0};
 static char s_ap_ip[16] = "192.168.4.1";
 static char s_sta_ip[16] = {0};
 static int64_t s_boot_time_ms = 0;
+static int s_sta_retry_count = 0;
+
+static uint32_t s_ap_stop_timeout_ms = AP_STOP_TMO_DEFAULT_MS;
+static bool s_ap_auto_stop = AP_AUTO_STOP_DEFAULT;
 
 static esp_netif_t *s_ap_netif = NULL;
 static esp_netif_t *s_sta_netif = NULL;
@@ -27,6 +33,8 @@ static wifi_scan_cb_t s_scan_callback = NULL;
 static void *s_scan_user_ctx = NULL;
 static wifi_scan_entry_t s_scan_results[WIFI_SCAN_MAX];
 static int s_scan_count = 0;
+
+static esp_timer_handle_t s_ap_stop_timer = NULL;
 
 /* --------------- Helpers --------------- */
 
@@ -42,6 +50,15 @@ const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode)
     case WIFI_AUTH_WPA2_WPA3_PSK: return "WPA2/WPA3";
     default:                       return "Unknown";
     }
+}
+
+/* --------------- AP Auto-Stop Timer --------------- */
+
+static void ap_stop_timer_cb(void *arg)
+{
+    ESP_LOGI(TAG, "AP auto-stop timer expired, stopping AP");
+    esp_wifi_set_mode(WIFI_MODE_STA);
+    s_ap_enabled = false;
 }
 
 /* --------------- Event Handler --------------- */
@@ -62,8 +79,21 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             s_sta_connected = false;
             s_sta_ip[0] = '\0';
             s_sta_ssid[0] = '\0';
-            /* Reconnect attempt - skip if scan is in progress */
-            if (s_sta_configured && !s_scan_in_progress) {
+
+            if (s_ap_stop_timer) {
+                esp_timer_stop(s_ap_stop_timer);
+            }
+
+            /* Don't count scan-initiated disconnects as real retries */
+            if (!s_scan_in_progress) {
+                s_sta_retry_count++;
+            }
+            if (s_sta_retry_count > STA_MAX_RETRY) {
+                ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
+                if (!s_ap_enabled) {
+                    wifi_manager_start_ap();
+                }
+            } else if (s_sta_configured && !s_scan_in_progress) {
                 esp_wifi_connect();
             }
             break;
@@ -110,13 +140,18 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             ip_event_got_ip_t *ev = (ip_event_got_ip_t *)event_data;
             snprintf(s_sta_ip, sizeof(s_sta_ip), IPSTR, IP2STR(&ev->ip_info.ip));
             s_sta_connected = true;
+            s_sta_retry_count = 0;
             ESP_LOGI(TAG, "STA got IP: %s", s_sta_ip);
 
-            /* Save current SSID to NVS on successful connect */
             wifi_ap_record_t ap_info;
             if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
                 strncpy(s_sta_ssid, (char *)ap_info.ssid, 32);
                 s_sta_ssid[32] = '\0';
+            }
+
+            if (s_ap_enabled && s_ap_auto_stop && s_ap_stop_timer) {
+                ESP_LOGI(TAG, "Starting AP auto-stop timer (%lu ms)", (unsigned long)s_ap_stop_timeout_ms);
+                esp_timer_start_once(s_ap_stop_timer, s_ap_stop_timeout_ms * 1000);
             }
             break;
         }
@@ -151,6 +186,11 @@ bool wifi_manager_init(void)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
+    /* Load AP config from NVS */
+    nvs_store_load_ap_config(&s_ap_stop_timeout_ms, &s_ap_auto_stop);
+    ESP_LOGI(TAG, "AP config: auto_stop=%s, timeout=%lu ms",
+             s_ap_auto_stop ? "ON" : "OFF", (unsigned long)s_ap_stop_timeout_ms);
+
     /* Load saved STA credentials and attempt connect */
     char saved_ssid[33] = {0};
     char saved_pass[65] = {0};
@@ -169,6 +209,14 @@ bool wifi_manager_init(void)
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
+    /* Create AP auto-stop timer */
+    esp_timer_create_args_t timer_args = {
+        .callback = &ap_stop_timer_cb,
+        .arg = NULL,
+        .name = "ap_stop_timer"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &s_ap_stop_timer));
+
     /* Start AP immediately */
     wifi_manager_start_ap();
 
@@ -179,6 +227,8 @@ bool wifi_manager_init(void)
 
 bool wifi_manager_start_ap(void)
 {
+    esp_wifi_set_mode(WIFI_MODE_APSTA);
+
     wifi_config_t ap_cfg = {
         .ap = {
             .ssid = AP_SSID,
@@ -196,12 +246,24 @@ bool wifi_manager_start_ap(void)
     return true;
 }
 
+bool wifi_manager_stop_ap(void)
+{
+    if (s_ap_stop_timer) {
+        esp_timer_stop(s_ap_stop_timer);
+    }
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    s_ap_enabled = false;
+    ESP_LOGI(TAG, "SoftAP stopped");
+    return true;
+}
+
 /* --------------- STA --------------- */
 
 bool wifi_manager_connect_sta(const char *ssid, const char *password)
 {
     if (!ssid || !ssid[0]) return false;
 
+    s_sta_retry_count = 0;
     nvs_store_save_wifi(ssid, password);
 
     esp_wifi_disconnect();
@@ -228,22 +290,33 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password)
 
 bool wifi_manager_disconnect_sta(void)
 {
+    if (s_ap_stop_timer) {
+        esp_timer_stop(s_ap_stop_timer);
+    }
     esp_err_t ret = esp_wifi_disconnect();
     s_sta_connected = false;
     s_sta_configured = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
+    s_sta_retry_count = 0;
     return ret == ESP_OK;
 }
 
 bool wifi_manager_forget_sta(void)
 {
+    if (s_ap_stop_timer) {
+        esp_timer_stop(s_ap_stop_timer);
+    }
     esp_wifi_disconnect();
     s_sta_connected = false;
     s_sta_configured = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
+    s_sta_retry_count = 0;
     nvs_store_clear_wifi();
+    if (!s_ap_enabled) {
+        wifi_manager_start_ap();
+    }
     return true;
 }
 
@@ -286,6 +359,10 @@ void wifi_manager_sta_disconnect_for_scan(void)
 void wifi_manager_sta_reconnect_after_scan(void)
 {
     s_scan_in_progress = false;
+    s_sta_retry_count = 0;
+    if (s_ap_enabled && s_ap_auto_stop && s_ap_stop_timer) {
+        esp_timer_stop(s_ap_stop_timer);
+    }
     if (s_sta_configured) {
         esp_wifi_connect();
     }
