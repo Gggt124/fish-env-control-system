@@ -68,6 +68,18 @@
         </div>
     </div>
 
+    <!-- Current Connection Status -->
+    <div class="connection-status" id="connection-status">
+        <div class="status-header">
+            <span class="status-icon" id="conn-icon">&#128268;</span>
+            <div>
+                <div class="status-title" id="conn-title">ไม่ได้เชื่อมต่อ</div>
+                <div class="status-sub" id="conn-sub">STA ไม่ได้เชื่อมต่อกับเครือข่ายใด ๆ</div>
+            </div>
+        </div>
+        <button class="btn btn-danger btn-sm" id="disconnect-btn" style="display:none;" onclick="doDisconnect()">&#128267; Disconnect</button>
+    </div>
+
     <!-- Stepper -->
     <div class="stepper">
         <div class="step active" id="step-1">

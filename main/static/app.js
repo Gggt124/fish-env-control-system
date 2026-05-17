@@ -321,6 +321,49 @@ var selectedSsid = null;
 function initWifi() {
     if (window.location.pathname !== '/wifi') return;
     updateApPill();
+    updateConnectionStatus();
+}
+
+function updateConnectionStatus() {
+    apiGet('/api/status', function(err, data) {
+        var el = document.getElementById('connection-status');
+        var icon = document.getElementById('conn-icon');
+        var title = document.getElementById('conn-title');
+        var sub = document.getElementById('conn-sub');
+        var btn = document.getElementById('disconnect-btn');
+        if (!el || !title) return;
+
+        if (!err && data && data.ok && data.sta_connected) {
+            el.className = 'connection-status connected';
+            if (icon) icon.innerHTML = '&#10003;';
+            title.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27: ' + (data.sta_ssid || 'Wi-Fi');
+            if (sub) sub.textContent = 'IP: ' + (data.sta_ip || '--');
+            if (btn) btn.style.display = '';
+        } else {
+            el.className = 'connection-status';
+            if (icon) icon.innerHTML = '&#128268;';
+            title.textContent = '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
+            if (sub) sub.textContent = 'STA \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e01\u0e31\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e14\u0e46';
+            if (btn) btn.style.display = 'none';
+        }
+    });
+}
+
+function doDisconnect() {
+    var btn = document.getElementById('disconnect-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21...'; }
+
+    apiPost('/api/wifi/disconnect', {}, function(err, data) {
+        if (btn) { btn.disabled = false; btn.textContent = '\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21'; }
+
+        if (!err && data && data.ok) {
+            showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21 Wi-Fi \u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22', 'success');
+            clearSelection();
+            updateConnectionStatus();
+        } else {
+            showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
+        }
+    });
 }
 
 function updateApPill() {

@@ -272,7 +272,9 @@ bool wifi_manager_init(void)
             strncpy((char *)sta_cfg.sta.password, saved_pass, 64);
         }
         sta_cfg.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
+        if (esp_wifi_set_config(WIFI_IF_STA, &sta_cfg) != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to set saved STA config, will retry on connect");
+        }
         s_sta_configured = true;
     }
 
@@ -284,7 +286,10 @@ bool wifi_manager_init(void)
         .arg = NULL,
         .name = "ap_stop_timer"
     };
-    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &s_ap_stop_timer));
+    if (esp_timer_create(&timer_args, &s_ap_stop_timer) != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to create AP auto-stop timer");
+        s_ap_stop_timer = NULL;
+    }
 
     /* Start AP immediately */
     wifi_manager_start_ap();
@@ -310,7 +315,11 @@ bool wifi_manager_start_ap(void)
         },
     };
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
+    if (esp_wifi_set_config(WIFI_IF_AP, &ap_cfg) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set AP config");
+        xSemaphoreGive(s_wifi_mutex);
+        return false;
+    }
     s_ap_enabled = true;
     ESP_LOGI(TAG, "SoftAP started: SSID=%s, IP=%s", AP_SSID, s_ap_ip);
     xSemaphoreGive(s_wifi_mutex);
@@ -323,7 +332,10 @@ bool wifi_manager_stop_ap(void)
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set STA mode: %d", err);
+    }
     s_ap_enabled = false;
     ESP_LOGI(TAG, "SoftAP stopped");
     xSemaphoreGive(s_wifi_mutex);
@@ -394,7 +406,14 @@ bool wifi_manager_disconnect_sta(void)
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     s_sta_retry_count = 0;
+    bool ap_enabled = s_ap_enabled;
     xSemaphoreGive(s_wifi_mutex);
+
+    if (!ap_enabled) {
+        ESP_LOGI(TAG, "Restoring AP after STA disconnect");
+        wifi_manager_start_ap();
+    }
+
     return ret == ESP_OK;
 }
 

@@ -65,6 +65,19 @@ static void url_decode(char *dst, const char *src)
     *dst = '\0';
 }
 
+/* Check that a string contains only printable UTF-8 characters (no control chars 0x00-0x1F except tab/newline) */
+static bool is_valid_utf8_printable(const char *s, size_t max_len)
+{
+    if (!s || !s[0]) return false;
+    size_t len = strnlen(s, max_len);
+    if (len >= max_len) return false;
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c < 0x20 && c != '\t') return false;
+    }
+    return true;
+}
+
 /* Extract session token from Cookie header.
    WARNING: This is a local-prototype auth scheme.
    Session tokens are random but transmitted as plain cookies.
@@ -128,6 +141,38 @@ static void format_mac(const uint8_t *mac, char *out)
 {
     snprintf(out, 18, "%02x:%02x:%02x:%02x:%02x:%02x",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+}
+
+/* Check Origin/Referer to prevent cross-site POST (CSRF mitigation) */
+static bool is_same_origin(httpd_req_t *req)
+{
+    size_t buf_len = httpd_req_get_hdr_value_len(req, "Origin");
+    char buf[128] = {0};
+
+    if (buf_len > 0 && buf_len < sizeof(buf) - 1) {
+        httpd_req_get_hdr_value_str(req, "Origin", buf, sizeof(buf));
+    } else {
+        buf_len = httpd_req_get_hdr_value_len(req, "Referer");
+        if (buf_len > 0 && buf_len < sizeof(buf) - 1) {
+            httpd_req_get_hdr_value_str(req, "Referer", buf, sizeof(buf));
+        }
+    }
+
+    if (buf[0] == '\0') {
+        ESP_LOGW(TAG, "POST request without Origin/Referer header");
+        return true;
+    }
+
+    const char *ap_ip = wifi_manager_get_ap_ip();
+    if (ap_ip && strstr(buf, ap_ip)) return true;
+
+    const char *sta_ip = wifi_manager_get_sta_ip();
+    if (sta_ip && sta_ip[0] && strstr(buf, sta_ip)) return true;
+
+    if (strstr(buf, "home1.local")) return true;
+
+    ESP_LOGW(TAG, "Cross-origin POST blocked: %s", buf);
+    return false;
 }
 
 /* Send JSON response */
@@ -242,6 +287,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     static int s_login_attempts = 0;
     static int64_t s_login_block_until = 0;
 
+    if (!is_same_origin(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
     int64_t now = esp_timer_get_time() / 1000000;
     if (s_login_block_until > now) {
         char resp[128];
@@ -303,6 +352,11 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
+    if (!is_valid_utf8_printable(username, sizeof(username)) ||
+        !is_valid_utf8_printable(password, sizeof(password))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
+    }
+
     if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
         ESP_LOGW(TAG, "Login failed");
         s_login_attempts++;
@@ -327,7 +381,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     cJSON_Delete(resp);
 
     char cookie[128];
-    snprintf(cookie, sizeof(cookie), "session=%s; Path=/", token);
+    snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
 
     ESP_LOGI(TAG, "Login success");
@@ -339,6 +393,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 /* POST /api/logout */
 static esp_err_t handle_api_logout(httpd_req_t *req)
 {
+    if (!is_same_origin(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
     char token[SESSION_TOKEN_LEN] = {0};
     if (get_session_from_request(req, token, sizeof(token))) {
         session_destroy(token);
@@ -346,7 +404,7 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
 
     /* Clear cookie */
     httpd_resp_set_hdr(req, "Set-Cookie",
-        "session=; Path=/; Max-Age=0");
+        "session=; Path=/; Max-Age=0; SameSite=Lax");
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
@@ -404,6 +462,10 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (!is_same_origin(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
     char body[512] = {0};
     int ret = httpd_req_recv(req, body, sizeof(body) - 1);
     if (ret <= 0) {
@@ -450,6 +512,22 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", "200 OK");
     }
 
+    if (strlen(ssid) > 32) {
+        return send_json(req, "{\"ok\":false,\"error\":\"ssid_too_long\"}", "400 Bad Request");
+    }
+
+    if (!is_valid_utf8_printable(ssid, sizeof(ssid))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_ssid\"}", "400 Bad Request");
+    }
+
+    if (strlen(password) > 64) {
+        return send_json(req, "{\"ok\":false,\"error\":\"password_too_long\"}", "400 Bad Request");
+    }
+
+    if (password[0] && !is_valid_utf8_printable(password, sizeof(password))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_password\"}", "400 Bad Request");
+    }
+
     if (!wifi_manager_connect_sta(ssid, password, has_static_ip ? &ip_cfg : NULL)) {
         return send_json(req, "{\"ok\":false,\"error\":\"connect_error\"}", "200 OK");
     }
@@ -471,6 +549,24 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
     esp_err_t result = send_json(req, json_str, "200 OK");
     free(json_str);
     return result;
+}
+
+/* POST /api/wifi/disconnect - protected, disconnect STA */
+static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    if (!wifi_manager_disconnect_sta()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"disconnect_failed\"}", "200 OK");
+    }
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
 }
 
 /* GET /status - protected, serves full status page */
@@ -602,11 +698,15 @@ bool web_server_start(void)
         { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout,     .user_ctx = NULL },
         { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan,  .user_ctx = NULL },
         { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect, .user_ctx = NULL },
+        { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect, .user_ctx = NULL },
         { .uri = "/api/status",    .method = HTTP_GET,  .handler = handle_api_status,     .user_ctx = NULL },
     };
 
     for (int i = 0; i < sizeof(routes) / sizeof(routes[0]); i++) {
-        httpd_register_uri_handler(server, &routes[i]);
+        esp_err_t err = httpd_register_uri_handler(server, &routes[i]);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to register route %s: %d", routes[i].uri, err);
+        }
     }
 
     ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);

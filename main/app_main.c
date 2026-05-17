@@ -8,8 +8,10 @@
 #include "mdns.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_task_wdt.h"
 
 static const char *TAG = "app_main";
+static bool s_http_server_retry = false;
 
 void app_main(void)
 {
@@ -31,18 +33,19 @@ void app_main(void)
 
     /* 3. Initialize Wi-Fi (AP + STA with event handlers) */
     if (!wifi_manager_init()) {
-        ESP_LOGE(TAG, "Wi-Fi init failed");
-        return;
+        ESP_LOGE(TAG, "Wi-Fi init failed — continuing in AP-only mode");
+    } else {
+        ESP_LOGI(TAG, "Wi-Fi initialized");
     }
-    ESP_LOGI(TAG, "Wi-Fi initialized");
     ESP_LOGI(TAG, "AP SSID: %s, IP: %s", "ESP32-Control-Setup", wifi_manager_get_ap_ip());
 
     /* 4. Start HTTP server */
     if (!web_server_start()) {
-        ESP_LOGE(TAG, "HTTP server start failed");
-        return;
+        ESP_LOGE(TAG, "HTTP server start failed — will retry");
+        s_http_server_retry = true;
+    } else {
+        ESP_LOGI(TAG, "HTTP server started");
     }
-    ESP_LOGI(TAG, "HTTP server started");
 
     /* 5. Disable Wi-Fi power save (prevents mMC multicast loss) */
     esp_wifi_set_ps(WIFI_PS_NONE);
@@ -65,6 +68,16 @@ void app_main(void)
         ESP_LOGI(TAG, "DNS fallback server started (port 53)");
     }
 
+    /* 8. Initialize watchdog (30s timeout) */
+    esp_task_wdt_config_t wdt_config = {
+        .timeout_ms = 30000,
+        .idle_core_mask = 0,
+        .trigger_panic = true,
+    };
+    esp_task_wdt_init(&wdt_config);
+    esp_task_wdt_add(NULL);
+    ESP_LOGI(TAG, "Watchdog initialized (30s timeout)");
+
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  System Ready");
     ESP_LOGI(TAG, "  AP SSID: %s", "ESP32-Control-Setup");
@@ -79,8 +92,17 @@ void app_main(void)
     ESP_LOGI(TAG, "  WARNING: Change default credentials!");
     ESP_LOGI(TAG, "========================================");
 
-    /* Main loop - log status periodically */
+    /* Main loop - reset watchdog, retry HTTP server, log status */
     while (1) {
+        esp_task_wdt_reset();
+
+        if (s_http_server_retry) {
+            if (web_server_start()) {
+                ESP_LOGI(TAG, "HTTP server started on retry");
+                s_http_server_retry = false;
+            }
+        }
+
         vTaskDelay(pdMS_TO_TICKS(30000));
         ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu",
             wifi_manager_is_ap_enabled() ? "ON" : "OFF",

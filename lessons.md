@@ -23,64 +23,47 @@
 
 ### ❌ DON'T
 - Don't rely on transitive includes from `.c` files — a header must include its own type dependencies
+- Don't rely on transitive includes from other components for new API calls — when adding `esp_timer_get_time()` to `web_server.c`, include `esp_timer.h` explicitly instead of assuming it comes through `wifi_manager.h`; `-Werror=implicit-function-declaration` will catch this at build time
 
-## ESP-IDF Component Manager
+---
+
+## Frontend (JavaScript / Embedded Static Files)
 
 ### ✅ DO
-- Add external components via `main/idf_component.yml` with `dependencies:` block
-- Use `REQUIRES cjson` in CMake (lowercase, as the component manager names it)
+- Use `[System.IO.File]::ReadAllText` with explicit UTF8 encoding when PowerShell `.Replace()` must modify JS files containing Unicode/Thai text — avoids encoding corruption
+- When rewriting a corrupted embedded file, rebuild the entire file from scratch rather than surgical edits — embedded files are compact enough for full rewrites
+- Make `apiPost`/XHR handlers parse JSON body on ALL HTTP status codes (not just 200) — non-200 responses like 429 carry actionable error data (`retry_after`, `error` type) that the callback needs
 
 ### ❌ DON'T
-- Don't use `REQUIRES json` — ESP-IDF 6.1 has no `json` component; it's `cjson` from the registry
-
-## Callback Signatures
-
-### ✅ DO
-- When changing a typedef'd callback signature, update **all call sites and function implementations** that match that type
-- Keep callback typedef in the header, not duplicated across files
-
-## mDNS (Managed Component)
-
-### ✅ DO
-- Use `espressif/mdns` via `idf_component.yml` with `espressif/mdns: "^1.7.0"` — IDF 6.1 has no built-in mDNS
-- Call `esp_wifi_set_ps(WIFI_PS_NONE)` before `mdns_init()` — prevents mDNS multicast loss after ~15-45 minutes
-- Initialize mDNS after Wi-Fi interfaces are up (AP + STA netifs must exist for auto-detection)
-
-### ❌ DON'T
-- Don't add `CONFIG_MDNS_STRICT_MODE` to `sdkconfig.defaults` — managed `espressif/mdns` component lacks this Kconfig (it was in the old built-in component)
+- Don't use PowerShell `-replace` with multi-line regexes on JS files containing Unicode — the string matching becomes unreliable and can silently replace the wrong code block
+- Don't assume a JS function's error handler is the only place that needs updating when adding a new error type — also fix the transport layer (`apiPost`) to deliver the parsed response
 
 ### 💡 TIP
-- Managed component exposes `mdns.h`; REQUIRES name is `mdns`
-- `mdns_init()` auto-registers default netifs created via `esp_netif_create_default_wifi_*()` — no manual `mdns_register_netif()` needed
+- Browser DevTools Network tab shows the raw response body even when JavaScript crashes — use it to verify server responses independently of frontend logic
 
-## DNS Fallback Server
+---
 
-### ✅ DO
-- Implement DNS responder on UDP port 53 that answers all A-record queries with AP IP — makes `.local` work on AP-connected Android despite Android Chrome `.local` bug
-- Build DNS response with compressed name pointer `0xc0 0x0c` to echo the QNAME without re-encoding
-
-### ❌ DON'T
-- Don't use `IPSTR`/`IP2STR` inside `ESP_LOGx` — string concatenation breaks in the `LOG_FORMAT` macro expansion chain. Use plain `"%" PRIu32` or log length instead
-
-### 💡 TIP
-- DNS header struct needs `__attribute__((packed))` — works with xtensa-esp-elf GCC
-- Include `lwip/sockets.h` for UDP socket API
-
-## lwIP Secondary IPv4 (Netif Alias)
+## ESP-IDF Build Workflow (Windows)
 
 ### ✅ DO
-- Create a second lwIP netif + hook STA netif's `input` to intercept packets for the alias IP — lwIP supports only one IPv4 per netif natively
-- Forward IP packets destined for the alias IP **and** ARP requests targeting it to the alias netif's `ethernet_input`, everything else to original STA input
+- Include `#include` for every ESP-IDF API directly in the `.c` file that calls it — transitive includes from other components are not guaranteed and may break without warning
+- Before adding features that need a new HTTP route, check both backend (is there a handler function?) AND frontend (is there a UI control to trigger it?) — missing disconnect button showed incomplete implementation
 
 ### ❌ DON'T
-- Don't look for `esp_netif_get_netif_impl()` in `esp_netif.h` — it's in `esp_netif_net_stack.h` (`#include "esp_netif_net_stack.h"`)
-- Don't use `esp_netif_set_ip_info` to add a secondary IP — it **replaces** the primary (DHCP) IP
+- Don't use the old 2-arg `esp_task_wdt_init(true, timeout_ms)` API in ESP-IDF 6.1 — it now takes a `esp_task_wdt_config_t` struct with `.timeout_ms`, `.idle_core_mask`, `.trigger_panic` fields
 
 ### 💡 TIP
-- lwIP Ethernet header: `netif/ethernet.h` (not `lwip/ethernet.h`) — declares `ethernet_input()`
-- ARP struct `etharp_hdr` in `lwip/prot/etharp.h`; ETHTYPE constants in `lwip/prot/ieee.h`
-- Use `IPADDR_WORDALIGNED_COPY_TO_IP4_ADDR_T` to read packed ARP IP addresses
-- ARP opcode compare: `arp->opcode == PP_HTONS(ARP_REQUEST)` — both in network byte order
-- Call `netif_set_up()` and set `NETIF_FLAG_LINK_UP` on alias netif to make lwIP treat it as active
+- Every `idf.py` command needs `export.ps1` sourced in the same PowerShell invocation — export state does NOT persist between separate bash tool calls
+
+---
+
+## Wi-Fi Manager Logic
+
+### ✅ DO
+- When implementing `disconnect_sta()`, always check if the AP was auto-stopped and restore it — otherwise the ESP32 can end up in STA-only mode with no fallback AP
+- `wifi_manager_forget_sta()` already had the AP restore pattern; use it as a reference when fixing `disconnect_sta()`
+
+### ❌ DON'T
+- Don't assume `wifi_manager_disconnect_sta()` is enough by itself — if AP auto-stop timer already fired (`WIFI_MODE_STA` + `s_ap_enabled=false`), the disconnect leaves the device unreachable via AP
 
 ---
