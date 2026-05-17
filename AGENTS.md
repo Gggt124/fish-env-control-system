@@ -36,8 +36,11 @@ idf.py set-target esp32
 # Build
 idf.py build
 
-# Flash + monitor (replace COMx)
+# Flash + monitor (replace COMx, dev mode)
 idf.py -p COMx flash monitor
+
+# Encrypted flash (required after Enabling NVS flash encryption)
+idf.py -p COMx encrypted-flash monitor
 
 # Clean build
 idf.py fullclean
@@ -51,7 +54,7 @@ Run sequentially: `export → chcp → idf.py`. Build output is in `build/` (git
 ```
 main_dashboard_mcu/
 ├── CMakeLists.txt              # Root ESP-IDF build, EXTRA_COMPONENT_DIRS → components/
-├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", CONFIG_PARTITION_TABLE_SINGLE_APP=y
+├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", flash encryption dev mode, encrypted NVS
 ├── components/
 │   ├── nvs_store/              # Reusable: NVS Wi-Fi credential I/O
 │   │   ├── CMakeLists.txt       # REQUIRES nvs_flash
