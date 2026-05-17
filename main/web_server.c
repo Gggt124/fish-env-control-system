@@ -335,6 +335,8 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
 
     char ssid[64] = {0};
     char password[64] = {0};
+    wifi_sta_ip_config_t ip_cfg = {0};
+    bool has_static_ip = false;
 
     cJSON *root = cJSON_Parse(body);
     if (root) {
@@ -346,6 +348,23 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         if (p && cJSON_IsString(p)) {
             strncpy(password, p->valuestring, sizeof(password) - 1);
         }
+        cJSON *ip_item = cJSON_GetObjectItem(root, "ip");
+        if (ip_item && cJSON_IsString(ip_item) && ip_item->valuestring[0]) {
+            strncpy(ip_cfg.ip, ip_item->valuestring, sizeof(ip_cfg.ip) - 1);
+            has_static_ip = true;
+            cJSON *gw = cJSON_GetObjectItem(root, "gateway");
+            if (gw && cJSON_IsString(gw)) {
+                strncpy(ip_cfg.gateway, gw->valuestring, sizeof(ip_cfg.gateway) - 1);
+            }
+            cJSON *nm = cJSON_GetObjectItem(root, "netmask");
+            if (nm && cJSON_IsString(nm)) {
+                strncpy(ip_cfg.netmask, nm->valuestring, sizeof(ip_cfg.netmask) - 1);
+            }
+            cJSON *dns = cJSON_GetObjectItem(root, "dns");
+            if (dns && cJSON_IsString(dns)) {
+                strncpy(ip_cfg.dns, dns->valuestring, sizeof(ip_cfg.dns) - 1);
+            }
+        }
         cJSON_Delete(root);
     }
 
@@ -353,7 +372,7 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", "200 OK");
     }
 
-    if (!wifi_manager_connect_sta(ssid, password)) {
+    if (!wifi_manager_connect_sta(ssid, password, has_static_ip ? &ip_cfg : NULL)) {
         return send_json(req, "{\"ok\":false,\"error\":\"connect_error\"}", "200 OK");
     }
 

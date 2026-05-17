@@ -3,7 +3,6 @@
 #include "session.h"
 #include "web_server.h"
 #include "dns_server.h"
-#include "netif_helper.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "mdns.h"
@@ -64,12 +63,6 @@ void app_main(void)
         ESP_LOGE(TAG, "DNS server start failed");
     } else {
         ESP_LOGI(TAG, "DNS fallback server started (port 53)");
-    }
-
-    /* 8. Add fixed secondary IP on STA interface for easy access from LAN */
-    esp_netif_t *sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-    if (sta_if && netif_add_alias_ip(sta_if, "10.87.1.1") == ESP_OK) {
-        ESP_LOGI(TAG, "  URL: http://10.87.1.1 (fixed IP - all devices on LAN)");
     }
 
     ESP_LOGI(TAG, "========================================");

@@ -117,6 +117,38 @@
                     <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" disabled>
                 </div>
             </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="static-ip-toggle" onchange="toggleStaticIp()" disabled>
+                    ใช้ IP คงที่ (Static IP)
+                </label>
+            </div>
+            <div class="static-ip-fields" id="static-ip-fields" style="display:none;">
+                <div class="form-group">
+                    <label>IP Address</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">&#127758;</span>
+                        <input type="text" id="static-ip" placeholder="เช่น 192.168.1.100" disabled>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Gateway</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">&#128279;</span>
+                        <input type="text" id="static-gateway" placeholder="เช่น 192.168.1.1" disabled>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Netmask</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">&#128225;</span>
+                        <input type="text" id="static-netmask" placeholder="เช่น 255.255.255.0" value="255.255.255.0" disabled>
+                    </div>
+                </div>
+                <div style="font-size:12px;color:var(--outline);margin-top:-8px;">
+                    &#8505; DNS จะใช้ Gateway โดยอัตโนมัติ
+                </div>
+            </div>
             <div id="connect-status" style="font-size:14px;min-height:20px;"></div>
             <div class="btn-row">
                 <button class="btn btn-outline btn-sm" id="cancel-btn" disabled onclick="clearSelection()">ยกเลิก</button>

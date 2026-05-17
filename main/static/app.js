@@ -279,6 +279,18 @@ function doScan() {
     });
 }
 
+function toggleStaticIp() {
+    var checked = document.getElementById('static-ip-toggle').checked;
+    var fields = document.getElementById('static-ip-fields');
+    var ipInput = document.getElementById('static-ip');
+    var gwInput = document.getElementById('static-gateway');
+    var nmInput = document.getElementById('static-netmask');
+    if (fields) fields.style.display = checked ? 'block' : 'none';
+    if (ipInput) ipInput.disabled = !checked;
+    if (gwInput) gwInput.disabled = !checked;
+    if (nmInput) nmInput.disabled = !checked;
+}
+
 function selectNetwork(ssid) {
     selectedSsid = ssid;
 
@@ -293,6 +305,8 @@ function selectNetwork(ssid) {
     var connectBtn = document.getElementById('connect-btn');
     var cancelBtn = document.getElementById('cancel-btn');
 
+    var ipToggle = document.getElementById('static-ip-toggle');
+    if (ipToggle) ipToggle.disabled = false;
     if (panel) panel.classList.remove('disabled');
     if (overlay) overlay.style.display = 'none';
     if (pwInput) pwInput.disabled = false;
@@ -323,6 +337,9 @@ function clearSelection() {
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
+    var ipToggle = document.getElementById('static-ip-toggle');
+    if (ipToggle) { ipToggle.disabled = true; ipToggle.checked = false; }
+    toggleStaticIp();
     if (display) display.textContent = '---';
     if (panel) panel.classList.add('disabled');
     if (overlay) overlay.style.display = '';
@@ -353,10 +370,14 @@ function doConnect() {
 
     updateStepper(3);
 
-    apiPost('/api/wifi/connect', {
-        ssid: selectedSsid,
-        password: password
-    }, function(err, data) {
+    var body = { ssid: selectedSsid, password: password };
+    if (document.getElementById('static-ip-toggle').checked) {
+        body.ip = document.getElementById('static-ip').value.trim();
+        body.gateway = document.getElementById('static-gateway').value.trim();
+        body.netmask = document.getElementById('static-netmask').value.trim();
+    }
+
+    apiPost('/api/wifi/connect', body, function(err, data) {
         if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = 'เชื่อมต่อ'; }
 
         if (err) {

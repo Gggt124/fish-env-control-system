@@ -3,7 +3,6 @@ idf_component_register(
         "app_main.c"
         "web_server.c"
         "dns_server.c"
-        "netif_helper.c"
     INCLUDE_DIRS
         "."
     EMBED_FILES

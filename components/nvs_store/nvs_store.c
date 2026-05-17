@@ -8,6 +8,10 @@
 #define NVS_KEY_PASS     "sta_pass"
 #define NVS_KEY_AP_TMO   "ap_stop_tmo"
 #define NVS_KEY_AP_AUTO  "ap_auto_stop"
+#define NVS_KEY_IP       "sta_ip"
+#define NVS_KEY_GW       "sta_gw"
+#define NVS_KEY_MASK     "sta_netmask"
+#define NVS_KEY_DNS      "sta_dns"
 
 bool nvs_store_init(void)
 {
@@ -110,6 +114,90 @@ bool nvs_store_load_ap_config(uint32_t *stop_timeout_ms, bool *auto_stop)
     }
     if (auto_stop) *auto_stop = (val != 0);
 
+    nvs_close(handle);
+    return true;
+}
+
+bool nvs_store_save_sta_ip(const char *ip, const char *gateway, const char *netmask, const char *dns)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (ip && ip[0]) {
+        if (nvs_set_str(handle, NVS_KEY_IP, ip) != ESP_OK) ok = false;
+    } else {
+        nvs_erase_key(handle, NVS_KEY_IP);
+    }
+    if (gateway && gateway[0]) {
+        if (nvs_set_str(handle, NVS_KEY_GW, gateway) != ESP_OK) ok = false;
+    } else {
+        nvs_erase_key(handle, NVS_KEY_GW);
+    }
+    if (netmask && netmask[0]) {
+        if (nvs_set_str(handle, NVS_KEY_MASK, netmask) != ESP_OK) ok = false;
+    } else {
+        nvs_erase_key(handle, NVS_KEY_MASK);
+    }
+    if (dns && dns[0]) {
+        if (nvs_set_str(handle, NVS_KEY_DNS, dns) != ESP_OK) ok = false;
+    } else {
+        nvs_erase_key(handle, NVS_KEY_DNS);
+    }
+
+    if (ok) nvs_commit(handle);
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_load_sta_ip(char *ip_out, size_t ip_len, char *gw_out, size_t gw_len,
+                           char *mask_out, size_t mask_len, char *dns_out, size_t dns_len)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) {
+        if (ip_out) ip_out[0] = '\0';
+        if (gw_out) gw_out[0] = '\0';
+        if (mask_out) mask_out[0] = '\0';
+        if (dns_out) dns_out[0] = '\0';
+        return false;
+    }
+
+    bool has_ip = false;
+    size_t len = ip_len;
+    if (nvs_get_str(handle, NVS_KEY_IP, ip_out, &len) == ESP_OK && ip_out[0]) {
+        has_ip = true;
+    } else if (ip_out) {
+        ip_out[0] = '\0';
+    }
+
+    len = gw_len;
+    if (nvs_get_str(handle, NVS_KEY_GW, gw_out, &len) != ESP_OK && gw_out) {
+        gw_out[0] = '\0';
+    }
+
+    len = mask_len;
+    if (nvs_get_str(handle, NVS_KEY_MASK, mask_out, &len) != ESP_OK && mask_out) {
+        mask_out[0] = '\0';
+    }
+
+    len = dns_len;
+    if (nvs_get_str(handle, NVS_KEY_DNS, dns_out, &len) != ESP_OK && dns_out) {
+        dns_out[0] = '\0';
+    }
+
+    nvs_close(handle);
+    return has_ip;
+}
+
+bool nvs_store_clear_sta_ip(void)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+    nvs_erase_key(handle, NVS_KEY_IP);
+    nvs_erase_key(handle, NVS_KEY_GW);
+    nvs_erase_key(handle, NVS_KEY_MASK);
+    nvs_erase_key(handle, NVS_KEY_DNS);
+    nvs_commit(handle);
     nvs_close(handle);
     return true;
 }

@@ -21,10 +21,17 @@ typedef struct {
 
 typedef void (*wifi_scan_cb_t)(void *user_ctx, wifi_scan_entry_t *entries, int count);
 
+typedef struct {
+    char ip[16];
+    char gateway[16];
+    char netmask[16];
+    char dns[16];
+} wifi_sta_ip_config_t;
+
 bool wifi_manager_init(void);
 bool wifi_manager_start_ap(void);
 bool wifi_manager_stop_ap(void);
-bool wifi_manager_connect_sta(const char *ssid, const char *password);
+bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi_sta_ip_config_t *ip_config);
 bool wifi_manager_disconnect_sta(void);
 bool wifi_manager_forget_sta(void);
 bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback);

@@ -228,11 +228,20 @@ These skills are installed on the system. Agent **should** use the `skill` tool 
 | `find-skills` | When user asks about capabilities that may have a matching skill |
 | `general-plan-implement-workflow` | Complex tasks that require systematic planning before implementation |
 
-**Rule**: Before implementing or debugging ESP32/MCU/firmware work, check if the task matches a skill in the table. If it does, load the skill with the `skill` tool before starting.
+**Rule**: Before implementing ESP32/MCU/firmware work, check if the task matches a skill in the table. If it does, load the skill with the `skill` tool **during the planning/research phase** (not at implementation time). Read its relevant references before creating the plan.
 
 ### Mandatory `esp32-firmware-engineer` Rule
 
-Agent **MUST** load the `esp32-firmware-engineer` skill using the `skill` tool before starting work in the following cases:
+Agent **MUST** load the `esp32-firmware-engineer` skill using the `skill` tool **during the planning phase** (before creating the implementation plan, at Phase 5-6 when following `general-plan-implement-workflow`), and read its relevant references before implementation.
+
+#### When to load & read
+
+| Phase | Action |
+|-------|--------|
+| **Knowledge / Research** (planning) | Load skill + read references matching the task layer (e.g. `communication-protocols.md` for networking, `rtos-patterns.md` for FreeRTOS, `esp-idf-checklists.md` always) |
+| **After plan approval** (implementation) | Skill already loaded — proceed with coding using knowledge from references |
+
+#### Trigger cases
 
 - **Firmware implementation**: writing or editing C/C++ code in `main/` or `components/`
 - **Build/config**: modifying `CMakeLists.txt`, `sdkconfig`, or `sdkconfig.defaults`

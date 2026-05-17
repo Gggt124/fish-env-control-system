@@ -5,6 +5,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_timer.h"
+#include "lwip/ip4_addr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <string.h>
@@ -50,6 +51,37 @@ const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode)
     case WIFI_AUTH_WPA2_WPA3_PSK: return "WPA2/WPA3";
     default:                       return "Unknown";
     }
+}
+
+static void apply_static_ip(const wifi_sta_ip_config_t *cfg)
+{
+    if (!cfg || !cfg->ip[0]) return;
+
+    if (!s_sta_netif) {
+        ESP_LOGE(TAG, "STA netif not available for static IP");
+        return;
+    }
+
+    esp_netif_dhcpc_stop(s_sta_netif);
+
+    ip4_addr_t tmp;
+    esp_netif_ip_info_t ip_info;
+    memset(&ip_info, 0, sizeof(ip_info));
+    ip4addr_aton(cfg->ip, &tmp); ip_info.ip.addr = tmp.addr;
+    ip4addr_aton(cfg->gateway[0] ? cfg->gateway : cfg->ip, &tmp); ip_info.gw.addr = tmp.addr;
+    ip4addr_aton(cfg->netmask[0] ? cfg->netmask : "255.255.255.0", &tmp); ip_info.netmask.addr = tmp.addr;
+    esp_netif_set_ip_info(s_sta_netif, &ip_info);
+
+    if (cfg->dns[0] || cfg->gateway[0]) {
+        esp_netif_dns_info_t dns;
+        memset(&dns, 0, sizeof(dns));
+        ip4addr_aton(cfg->dns[0] ? cfg->dns : cfg->gateway, &tmp);
+        dns.ip.u_addr.ip4.addr = tmp.addr;
+        dns.ip.type = ESP_IPADDR_TYPE_V4;
+        esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_MAIN, &dns);
+    }
+
+    ESP_LOGI(TAG, "Static IP: %s / %s gw=%s", cfg->ip, cfg->netmask, cfg->gateway);
 }
 
 /* --------------- AP Auto-Stop Timer --------------- */
@@ -197,6 +229,16 @@ bool wifi_manager_init(void)
     if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
                             saved_pass, sizeof(saved_pass))) {
         ESP_LOGI(TAG, "Found saved STA credentials for SSID: %s", saved_ssid);
+
+        /* Load optional static IP config and apply before connecting */
+        wifi_sta_ip_config_t saved_ip = {0};
+        if (nvs_store_load_sta_ip(saved_ip.ip, sizeof(saved_ip.ip),
+                                  saved_ip.gateway, sizeof(saved_ip.gateway),
+                                  saved_ip.netmask, sizeof(saved_ip.netmask),
+                                  saved_ip.dns, sizeof(saved_ip.dns))) {
+            apply_static_ip(&saved_ip);
+        }
+
         wifi_config_t sta_cfg = {0};
         strncpy((char *)sta_cfg.sta.ssid, saved_ssid, 32);
         if (saved_pass[0]) {
@@ -259,12 +301,25 @@ bool wifi_manager_stop_ap(void)
 
 /* --------------- STA --------------- */
 
-bool wifi_manager_connect_sta(const char *ssid, const char *password)
+bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi_sta_ip_config_t *ip_config)
 {
     if (!ssid || !ssid[0]) return false;
 
     s_sta_retry_count = 0;
     nvs_store_save_wifi(ssid, password);
+
+    /* Save and apply static IP config if provided, otherwise clear it */
+    if (ip_config && ip_config->ip[0]) {
+        nvs_store_save_sta_ip(ip_config->ip, ip_config->gateway,
+                               ip_config->netmask, ip_config->dns);
+        apply_static_ip(ip_config);
+    } else {
+        nvs_store_clear_sta_ip();
+        /* Restore DHCP - restart DHCP client */
+        if (s_sta_netif) {
+            esp_netif_dhcpc_start(s_sta_netif);
+        }
+    }
 
     esp_wifi_disconnect();
 
@@ -314,6 +369,10 @@ bool wifi_manager_forget_sta(void)
     s_sta_ssid[0] = '\0';
     s_sta_retry_count = 0;
     nvs_store_clear_wifi();
+    nvs_store_clear_sta_ip();
+    if (s_sta_netif) {
+        esp_netif_dhcpc_start(s_sta_netif);
+    }
     if (!s_ap_enabled) {
         wifi_manager_start_ap();
     }
