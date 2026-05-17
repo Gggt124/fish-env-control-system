@@ -8,6 +8,7 @@
 #include "lwip/ip4_addr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include <string.h>
 
 static const char *TAG = "wifi_mgr";
@@ -36,6 +37,8 @@ static wifi_scan_entry_t s_scan_results[WIFI_SCAN_MAX];
 static int s_scan_count = 0;
 
 static esp_timer_handle_t s_ap_stop_timer = NULL;
+
+static SemaphoreHandle_t s_wifi_mutex;
 
 /* --------------- Helpers --------------- */
 
@@ -89,8 +92,10 @@ static void apply_static_ip(const wifi_sta_ip_config_t *cfg)
 static void ap_stop_timer_cb(void *arg)
 {
     ESP_LOGI(TAG, "AP auto-stop timer expired, stopping AP");
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     esp_wifi_set_mode(WIFI_MODE_STA);
     s_ap_enabled = false;
+    xSemaphoreGive(s_wifi_mutex);
 }
 
 /* --------------- Event Handler --------------- */
@@ -101,13 +106,18 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
         case WIFI_EVENT_STA_START:
+            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
             if (s_sta_configured) {
+                xSemaphoreGive(s_wifi_mutex);
                 esp_wifi_connect();
+            } else {
+                xSemaphoreGive(s_wifi_mutex);
             }
             break;
         case WIFI_EVENT_STA_DISCONNECTED: {
             wifi_event_sta_disconnected_t *ev = (wifi_event_sta_disconnected_t *)event_data;
             ESP_LOGW(TAG, "STA disconnected, reason=%d", ev->reason);
+            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
             s_sta_connected = false;
             s_sta_ip[0] = '\0';
             s_sta_ssid[0] = '\0';
@@ -116,16 +126,21 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 esp_timer_stop(s_ap_stop_timer);
             }
 
-            /* Don't count scan-initiated disconnects as real retries */
             if (!s_scan_in_progress) {
                 s_sta_retry_count++;
             }
-            if (s_sta_retry_count > STA_MAX_RETRY) {
+            bool retry_limit_reached = s_sta_retry_count > STA_MAX_RETRY;
+            bool sta_configured = s_sta_configured;
+            bool scan_in_progress = s_scan_in_progress;
+            bool ap_enabled = s_ap_enabled;
+            xSemaphoreGive(s_wifi_mutex);
+
+            if (retry_limit_reached) {
                 ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
-                if (!s_ap_enabled) {
+                if (!ap_enabled) {
                     wifi_manager_start_ap();
                 }
-            } else if (s_sta_configured && !s_scan_in_progress) {
+            } else if (sta_configured && !scan_in_progress) {
                 esp_wifi_connect();
             }
             break;
@@ -144,6 +159,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             wifi_ap_record_t *ap_info = calloc(num, sizeof(wifi_ap_record_t));
             if (ap_info) {
                 esp_wifi_scan_get_ap_records(&num, ap_info);
+                xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
                 for (int i = 0; i < num; i++) {
                     strncpy(s_scan_results[i].ssid, (char *)ap_info[i].ssid, 32);
                     s_scan_results[i].ssid[32] = '\0';
@@ -154,12 +170,15 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                     s_scan_results[i].channel = ap_info[i].primary;
                 }
                 s_scan_count = num;
-                free(ap_info);
-            }
-            if (s_scan_callback) {
-                s_scan_callback(s_scan_user_ctx, s_scan_results, s_scan_count);
+                wifi_scan_cb_t cb = s_scan_callback;
+                void *ctx = s_scan_user_ctx;
                 s_scan_callback = NULL;
                 s_scan_user_ctx = NULL;
+                xSemaphoreGive(s_wifi_mutex);
+                free(ap_info);
+                if (cb) {
+                    cb(ctx, s_scan_results, s_scan_count);
+                }
             }
             break;
         }
@@ -170,6 +189,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         switch (event_id) {
         case IP_EVENT_STA_GOT_IP: {
             ip_event_got_ip_t *ev = (ip_event_got_ip_t *)event_data;
+            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
             snprintf(s_sta_ip, sizeof(s_sta_ip), IPSTR, IP2STR(&ev->ip_info.ip));
             s_sta_connected = true;
             s_sta_retry_count = 0;
@@ -181,9 +201,14 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 s_sta_ssid[32] = '\0';
             }
 
-            if (s_ap_enabled && s_ap_auto_stop && s_ap_stop_timer) {
-                ESP_LOGI(TAG, "Starting AP auto-stop timer (%lu ms)", (unsigned long)s_ap_stop_timeout_ms);
-                esp_timer_start_once(s_ap_stop_timer, s_ap_stop_timeout_ms * 1000);
+            bool ap_enabled = s_ap_enabled;
+            bool ap_auto_stop = s_ap_auto_stop;
+            uint32_t ap_stop_timeout_ms = s_ap_stop_timeout_ms;
+            xSemaphoreGive(s_wifi_mutex);
+
+            if (ap_enabled && ap_auto_stop && s_ap_stop_timer) {
+                ESP_LOGI(TAG, "Starting AP auto-stop timer (%lu ms)", (unsigned long)ap_stop_timeout_ms);
+                esp_timer_start_once(s_ap_stop_timer, ap_stop_timeout_ms * 1000);
             }
             break;
         }
@@ -217,6 +242,8 @@ bool wifi_manager_init(void)
                         &wifi_event_handler, NULL, NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+
+    s_wifi_mutex = xSemaphoreCreateMutex();
 
     /* Load AP config from NVS */
     nvs_store_load_ap_config(&s_ap_stop_timeout_ms, &s_ap_auto_stop);
@@ -269,6 +296,7 @@ bool wifi_manager_init(void)
 
 bool wifi_manager_start_ap(void)
 {
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     esp_wifi_set_mode(WIFI_MODE_APSTA);
 
     wifi_config_t ap_cfg = {
@@ -285,17 +313,20 @@ bool wifi_manager_start_ap(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
     s_ap_enabled = true;
     ESP_LOGI(TAG, "SoftAP started: SSID=%s, IP=%s", AP_SSID, s_ap_ip);
+    xSemaphoreGive(s_wifi_mutex);
     return true;
 }
 
 bool wifi_manager_stop_ap(void)
 {
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     s_ap_enabled = false;
     ESP_LOGI(TAG, "SoftAP stopped");
+    xSemaphoreGive(s_wifi_mutex);
     return true;
 }
 
@@ -305,7 +336,10 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 {
     if (!ssid || !ssid[0]) return false;
 
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_sta_retry_count = 0;
+    xSemaphoreGive(s_wifi_mutex);
+
     nvs_store_save_wifi(ssid, password);
 
     /* Save and apply static IP config if provided, otherwise clear it */
@@ -334,6 +368,11 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         ESP_LOGE(TAG, "Failed to set STA config");
         return false;
     }
+
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    s_sta_configured = true;
+    xSemaphoreGive(s_wifi_mutex);
+
     if (esp_wifi_connect() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start STA connect");
         return false;
@@ -345,6 +384,7 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 
 bool wifi_manager_disconnect_sta(void)
 {
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
@@ -354,11 +394,13 @@ bool wifi_manager_disconnect_sta(void)
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     s_sta_retry_count = 0;
+    xSemaphoreGive(s_wifi_mutex);
     return ret == ESP_OK;
 }
 
 bool wifi_manager_forget_sta(void)
 {
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
@@ -368,12 +410,15 @@ bool wifi_manager_forget_sta(void)
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     s_sta_retry_count = 0;
+    bool ap_enabled = s_ap_enabled;
+    xSemaphoreGive(s_wifi_mutex);
+
     nvs_store_clear_wifi();
     nvs_store_clear_sta_ip();
     if (s_sta_netif) {
         esp_netif_dhcpc_start(s_sta_netif);
     }
-    if (!s_ap_enabled) {
+    if (!ap_enabled) {
         wifi_manager_start_ap();
     }
     return true;
@@ -385,9 +430,11 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
 {
     if (!callback) return false;
 
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_scan_callback = callback;
     s_scan_user_ctx = user_ctx;
     s_scan_count = 0;
+    xSemaphoreGive(s_wifi_mutex);
 
     wifi_scan_config_t scan_cfg = {
         .ssid = NULL,
@@ -401,8 +448,10 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
 
     esp_err_t ret = esp_wifi_scan_start(&scan_cfg, false);
     if (ret != ESP_OK) {
+        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
         s_scan_callback = NULL;
         s_scan_user_ctx = NULL;
+        xSemaphoreGive(s_wifi_mutex);
         return false;
     }
     return true;
@@ -410,30 +459,67 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
 
 void wifi_manager_sta_disconnect_for_scan(void)
 {
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_scan_in_progress = true;
+    xSemaphoreGive(s_wifi_mutex);
     esp_wifi_disconnect();
     vTaskDelay(pdMS_TO_TICKS(200));
 }
 
 void wifi_manager_sta_reconnect_after_scan(void)
 {
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_scan_in_progress = false;
     s_sta_retry_count = 0;
-    if (s_ap_enabled && s_ap_auto_stop && s_ap_stop_timer) {
+    bool ap_enabled = s_ap_enabled;
+    bool ap_auto_stop = s_ap_auto_stop;
+    bool sta_configured = s_sta_configured;
+    xSemaphoreGive(s_wifi_mutex);
+
+    if (ap_enabled && ap_auto_stop && s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
-    if (s_sta_configured) {
+    if (sta_configured) {
         esp_wifi_connect();
     }
 }
 
 /* --------------- State Getters --------------- */
 
-bool wifi_manager_is_ap_enabled(void)     { return s_ap_enabled; }
-bool wifi_manager_is_sta_connected(void)  { return s_sta_connected; }
-char* wifi_manager_get_ap_ip(void)        { return s_ap_ip; }
-char* wifi_manager_get_sta_ip(void)       { return s_sta_ip; }
-char* wifi_manager_get_sta_ssid(void)     { return s_sta_ssid; }
+bool wifi_manager_is_ap_enabled(void)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool v = s_ap_enabled;
+    xSemaphoreGive(s_wifi_mutex);
+    return v;
+}
+
+bool wifi_manager_is_sta_connected(void)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool v = s_sta_connected;
+    xSemaphoreGive(s_wifi_mutex);
+    return v;
+}
+
+char* wifi_manager_get_ap_ip(void)
+{
+    return s_ap_ip;
+}
+
+char* wifi_manager_get_sta_ip(void)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    xSemaphoreGive(s_wifi_mutex);
+    return s_sta_ip;
+}
+
+char* wifi_manager_get_sta_ssid(void)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    xSemaphoreGive(s_wifi_mutex);
+    return s_sta_ssid;
+}
 
 int64_t wifi_manager_get_uptime_ms(void)
 {

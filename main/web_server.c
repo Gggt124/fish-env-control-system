@@ -10,6 +10,7 @@
 #include "esp_heap_caps.h"
 #include "esp_idf_version.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "cJSON.h"
 #include <string.h>
 #include <stdio.h>
@@ -42,7 +43,27 @@ extern const uint8_t _binary_status_html_end[]   asm("_binary_status_html_end");
 #define DEFAULT_USERNAME "admin"
 #define DEFAULT_PASSWORD "admin123"
 
+#define RATE_LIMIT_MAX     5
+#define RATE_LIMIT_WINDOW  30
+
 /* --------------- Helpers --------------- */
+
+static void url_decode(char *dst, const char *src)
+{
+    while (*src) {
+        if (*src == '+') {
+            *dst++ = ' ';
+            src++;
+        } else if (*src == '%' && src[1] && src[2]) {
+            char hex[3] = {src[1], src[2], '\0'};
+            *dst++ = (char)strtol(hex, NULL, 16);
+            src += 3;
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    *dst = '\0';
+}
 
 /* Extract session token from Cookie header.
    WARNING: This is a local-prototype auth scheme.
@@ -218,6 +239,17 @@ static esp_err_t handle_app_js(httpd_req_t *req)
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
+    static int s_login_attempts = 0;
+    static int64_t s_login_block_until = 0;
+
+    int64_t now = esp_timer_get_time() / 1000000;
+    if (s_login_block_until > now) {
+        char resp[128];
+        int remaining = (int)(s_login_block_until - now);
+        snprintf(resp, sizeof(resp), "{\"ok\":false,\"error\":\"rate_limited\",\"retry_after\":%d}", remaining);
+        return send_json(req, resp, "429 Too Many Requests");
+    }
+
     char body[256] = {0};
     int ret = httpd_req_recv(req, body, sizeof(body) - 1);
     if (ret <= 0) {
@@ -233,16 +265,20 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         user_start += 9;
         const char *user_end = strchr(user_start, '&');
         size_t len = user_end ? (size_t)(user_end - user_start) : strlen(user_start);
-        if (len > 63) len = 63;
-        memcpy(username, user_start, len);
+        if (len > sizeof(username) - 1) len = sizeof(username) - 1;
+        char tmp[64] = {0};
+        memcpy(tmp, user_start, len);
+        url_decode(username, tmp);
 
         const char *pass_start = strstr(body, "password=");
         if (pass_start) {
             pass_start += 9;
             const char *pass_end = strchr(pass_start, '&');
             len = pass_end ? (size_t)(pass_end - pass_start) : strlen(pass_start);
-            if (len > 63) len = 63;
-            memcpy(password, pass_start, len);
+            if (len > sizeof(password) - 1) len = sizeof(password) - 1;
+            char tmp2[64] = {0};
+            memcpy(tmp2, pass_start, len);
+            url_decode(password, tmp2);
         }
     } else {
         cJSON *root = cJSON_Parse(body);
@@ -260,11 +296,19 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
+        s_login_attempts++;
+        if (s_login_attempts >= RATE_LIMIT_MAX) {
+            s_login_block_until = now + RATE_LIMIT_WINDOW;
+        }
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
     if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
         ESP_LOGW(TAG, "Login failed");
+        s_login_attempts++;
+        if (s_login_attempts >= RATE_LIMIT_MAX) {
+            s_login_block_until = now + RATE_LIMIT_WINDOW;
+        }
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
@@ -273,9 +317,11 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
+    s_login_attempts = 0;
+    s_login_block_until = 0;
+
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
-    cJSON_AddStringToObject(resp, "token", token);
     cJSON_AddStringToObject(resp, "username", username);
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);

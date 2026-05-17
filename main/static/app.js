@@ -44,11 +44,15 @@ function apiPost(url, body, cb) {
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function() {
-        if (xhr.status === 200) {
-            try { cb(null, JSON.parse(xhr.responseText)); }
-            catch(e) { cb(e, null); }
-        } else {
-            cb(new Error('HTTP ' + xhr.status), null);
+        try {
+            var parsed = JSON.parse(xhr.responseText);
+            cb(null, parsed);
+        } catch(e) {
+            if (xhr.status === 200) {
+                cb(e, null);
+            } else {
+                cb(new Error('HTTP ' + xhr.status), null);
+            }
         }
     };
     xhr.onerror = function() { cb(new Error('Network error'), null); };
@@ -86,23 +90,27 @@ function initLogin() {
 
         if (!username || !password) {
             errEl.style.display = 'block';
-            errEl.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+            errEl.textContent = '\u0e01\u0e23\u0e38\u0e13\u0e32\u0e01\u0e23\u0e2d\u0e01\u0e0a\u0e37\u0e48\u0e2d\u0e1c\u0e39\u0e49\u0e43\u0e0a\u0e49\u0e41\u0e25\u0e30\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19';
             return;
         }
 
         btn.disabled = true;
-        btn.textContent = 'กำลังเข้าสู่ระบบ...';
+        btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a...';
         errEl.style.display = 'none';
 
         apiPost('/api/login', { username: username, password: password }, function(err, data) {
             btn.disabled = false;
-            btn.textContent = 'เข้าสู่ระบบ';
+            btn.textContent = '\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a';
 
             if (err || !data || !data.ok) {
                 errEl.style.display = 'block';
-                errEl.textContent = data && data.error === 'invalid_credentials'
-                    ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
-                    : 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+                if (data && data.error === 'rate_limited' && data.retry_after) {
+                    errEl.textContent = '\u0e1e\u0e22\u0e32\u0e22\u0e32\u0e21\u0e25\u0e47\u0e2d\u0e01\u0e2d\u0e34\u0e19\u0e21\u0e32\u0e01\u0e40\u0e01\u0e34\u0e19\u0e44\u0e1b \u0e01\u0e23\u0e38\u0e13\u0e32\u0e23\u0e2d ' + data.retry_after + ' \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35\u0e41\u0e25\u0e49\u0e27\u0e25\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48';
+                } else if (data && data.error === 'invalid_credentials') {
+                    errEl.textContent = '\u0e0a\u0e37\u0e48\u0e2d\u0e1c\u0e39\u0e49\u0e43\u0e0a\u0e49\u0e2b\u0e23\u0e37\u0e2d\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e44\u0e21\u0e48\u0e16\u0e39\u0e01\u0e15\u0e49\u0e2d\u0e07';
+                } else {
+                    errEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14 \u0e01\u0e23\u0e38\u0e13\u0e32\u0e25\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48';
+                }
                 return;
             }
 
@@ -225,13 +233,13 @@ function refreshStatus() {
         /* STA Status */
         var staStatus = document.getElementById('card-sta-status');
         var staSsid = document.getElementById('card-sta-ssid');
-        if (staStatus) staStatus.textContent = data.sta_connected ? 'เชื่อมต่อแล้ว' : 'ไม่ได้เชื่อมต่อ';
+        if (staStatus) staStatus.textContent = data.sta_connected ? '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27' : '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
         if (staSsid) {
             if (data.sta_connected) {
                 staSsid.textContent = 'Station: ' + (data.sta_ssid || '--');
                 staSsid.className = 'card-sub good';
             } else {
-                staSsid.textContent = 'Station: ไม่ได้เชื่อมต่อ';
+                staSsid.textContent = 'Station: \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
                 staSsid.className = 'card-sub neutral';
             }
         }
@@ -331,20 +339,20 @@ function doScan() {
     var list = document.getElementById('network-list');
     var placeholder = document.getElementById('scan-placeholder');
 
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> กำลังสแกน...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class=\"spinner\"></span> \u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e41\u0e01\u0e19...'; }
 
     apiGet('/api/wifi/scan', function(err, data) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; สแกนใหม่'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; \u0e2a\u0e41\u0e01\u0e19\u0e43\u0e2b\u0e21\u0e48'; }
         if (placeholder) placeholder.style.display = 'none';
 
         if (err || !data || !data.ok) {
-            if (list) list.innerHTML = '<li style="padding:32px;text-align:center;color:var(--error);">สแกนไม่สำเร็จ</li>';
+            if (list) list.innerHTML = '<li style=\"padding:32px;text-align:center;color:var(--error);\">\u0e2a\u0e41\u0e01\u0e19\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08</li>';
             return;
         }
 
         var nets = data.networks || [];
         if (nets.length === 0) {
-            if (list) list.innerHTML = '<li style="padding:32px;text-align:center;color:var(--outline);">ไม่พบเครือข่าย</li>';
+            if (list) list.innerHTML = '<li style=\"padding:32px;text-align:center;color:var(--outline);\">\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22</li>';
             return;
         }
 
@@ -354,30 +362,30 @@ function doScan() {
         var html = '';
         for (var i = 0; i < nets.length; i++) {
             var sigClass = 'weak';
-            var sigLabel = 'อ่อน';
+            var sigLabel = '\u0e2d\u0e48\u0e2d\u0e19';
             var sigIcon = '&#9641;';
-            if (nets[i].rssi >= -50) { sigClass = 'strong'; sigLabel = 'ดีมาก'; sigIcon = '&#9643;'; }
-            else if (nets[i].rssi >= -70) { sigClass = 'good'; sigLabel = 'ดี'; sigIcon = '&#9642;'; }
+            if (nets[i].rssi >= -50) { sigClass = 'strong'; sigLabel = '\u0e14\u0e35\u0e21\u0e32\u0e01'; sigIcon = '&#9643;'; }
+            else if (nets[i].rssi >= -70) { sigClass = 'good'; sigLabel = '\u0e14\u0e35'; sigIcon = '&#9642;'; }
 
-            html += '<li class="network-item' + (selectedSsid === nets[i].ssid ? ' selected' : '') + '" ' +
-                    'data-ssid="' + escHtml(nets[i].ssid) + '" ' +
-                    'onclick="selectNetwork(\'' + escJs(nets[i].ssid) + '\')">' +
-                '<div class="network-item-left">' +
-                    '<div class="network-icon">' + sigIcon + '</div>' +
-                    '<div class="network-info">' +
-                        '<div class="net-ssid">' + escHtml(nets[i].ssid) + '</div>' +
-                        '<div class="net-detail">' +
+            html += '<li class=\"network-item' + (selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
+                    'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
+                    'onclick=\"selectNetwork(\'' + escJs(nets[i].ssid) + '\')\">' +
+                '<div class=\"network-item-left\">' +
+                    '<div class=\"network-icon\">' + sigIcon + '</div>' +
+                    '<div class=\"network-info\">' +
+                        '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
+                        '<div class=\"net-detail\">' +
                             (nets[i].auth !== 'Open' ? '&#128274; ' : '') + escHtml(nets[i].auth) +
                             ' &bull; Ch ' + nets[i].channel +
                         '</div>' +
                     '</div>' +
                 '</div>' +
-                '<div class="network-item-right">' +
-                    '<div class="net-signal">' +
-                        '<div class="sig-label ' + sigClass + '">' + sigLabel + '</div>' +
-                        '<div class="sig-dbm">' + nets[i].rssi + ' dBm</div>' +
+                '<div class=\"network-item-right\">' +
+                    '<div class=\"net-signal\">' +
+                        '<div class=\"sig-label ' + sigClass + '\">' + sigLabel + '</div>' +
+                        '<div class=\"sig-dbm\">' + nets[i].rssi + ' dBm</div>' +
                     '</div>' +
-                    '<button class="btn btn-outline btn-sm">เลือก</button>' +
+                    '<button class=\"btn btn-outline btn-sm\">\u0e40\u0e25\u0e37\u0e2d\u0e01</button>' +
                 '</div>' +
             '</li>';
         }
@@ -471,7 +479,7 @@ function doConnect() {
     var connectBtn = document.getElementById('connect-btn');
     var statusEl = document.getElementById('connect-status');
 
-    if (connectBtn) { connectBtn.disabled = true; connectBtn.textContent = 'กำลังเชื่อมต่อ...'; }
+    if (connectBtn) { connectBtn.disabled = true; connectBtn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; }
     if (statusEl) { statusEl.textContent = ''; statusEl.style.color = 'var(--on-surface-variant)'; }
 
     updateStepper(3);
@@ -484,23 +492,23 @@ function doConnect() {
     }
 
     apiPost('/api/wifi/connect', body, function(err, data) {
-        if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = 'เชื่อมต่อ'; }
+        if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
 
         if (err) {
-            if (statusEl) { statusEl.textContent = 'เกิดข้อผิดพลาด'; statusEl.style.color = 'var(--error)'; }
+            if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14'; statusEl.style.color = 'var(--error)'; }
             updateStepper(2);
             return;
         }
 
         if (data && data.ok) {
-            if (statusEl) { statusEl.textContent = 'เชื่อมต่อสำเร็จ! IP: ' + (data.ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
+            if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
             /* Mark step 3 as done */
             updateStepper(3, true);
             /* Update AP pill */
             updateApPill();
         } else {
             if (statusEl) {
-                statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ' + (data && data.error ? data.error : 'ลองอีกครั้ง');
+                statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: ' + (data && data.error ? data.error : '\u0e25\u0e2d\u0e07\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07');
                 statusEl.style.color = 'var(--error)';
             }
             updateStepper(2);
