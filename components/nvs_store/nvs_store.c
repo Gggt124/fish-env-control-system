@@ -1,7 +1,10 @@
 #include "nvs_store.h"
 #include "nvs_flash.h"
 #include "nvs.h"
+#include "esp_log.h"
 #include <string.h>
+
+static const char *TAG = "nvs_store";
 
 #define NVS_NAMESPACE    "wifi_cfg"
 #define NVS_KEY_SSID     "sta_ssid"
@@ -19,6 +22,13 @@ bool nvs_store_init(void)
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         nvs_flash_erase();
         ret = nvs_flash_init();
+    }
+    if (ret == ESP_OK) {
+#if defined(CONFIG_NVS_ENCRYPTION) && CONFIG_NVS_ENCRYPTION
+        ESP_LOGI(TAG, "NVS init OK (encryption enabled)");
+#else
+        ESP_LOGI(TAG, "NVS init OK (no encryption)");
+#endif
     }
     return ret == ESP_OK;
 }

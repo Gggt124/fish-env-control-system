@@ -68,15 +68,23 @@ void app_main(void)
         ESP_LOGI(TAG, "DNS fallback server started (port 53)");
     }
 
-    /* 8. Initialize watchdog (30s timeout) */
+    /* 8. Initialize task watchdog (30s timeout with panic) */
     esp_task_wdt_config_t wdt_config = {
         .timeout_ms = 30000,
         .idle_core_mask = 0,
         .trigger_panic = true,
     };
-    esp_task_wdt_init(&wdt_config);
-    esp_task_wdt_add(NULL);
-    ESP_LOGI(TAG, "Watchdog initialized (30s timeout)");
+    esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
+    if (wdt_ret == ESP_OK) {
+        esp_task_wdt_add(NULL);
+        ESP_LOGI(TAG, "TWDT initialized (30s timeout, panic on trigger)");
+    } else if (wdt_ret == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "TWDT already initialized, adding main task (timeout may differ)");
+        esp_task_wdt_add(NULL);
+    } else {
+        ESP_LOGE(TAG, "TWDT init failed: %s (continuing without watchdog)",
+                 esp_err_to_name(wdt_ret));
+    }
 
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  System Ready");
@@ -92,7 +100,8 @@ void app_main(void)
     ESP_LOGI(TAG, "  WARNING: Change default credentials!");
     ESP_LOGI(TAG, "========================================");
 
-    /* Main loop - reset watchdog, retry HTTP server, log status */
+    /* Main loop — reset WDT every 5s, retry HTTP server, log status every 30s */
+    uint32_t loop_counter = 0;
     while (1) {
         esp_task_wdt_reset();
 
@@ -103,11 +112,16 @@ void app_main(void)
             }
         }
 
-        vTaskDelay(pdMS_TO_TICKS(30000));
-        ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu",
-            wifi_manager_is_ap_enabled() ? "ON" : "OFF",
-            wifi_manager_get_ap_ip(),
-            wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "disconnected",
-            (unsigned long)wifi_manager_get_free_heap());
+        loop_counter++;
+        if (loop_counter >= 6) {
+            ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu",
+                wifi_manager_is_ap_enabled() ? "ON" : "OFF",
+                wifi_manager_get_ap_ip(),
+                wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "disconnected",
+                (unsigned long)wifi_manager_get_free_heap());
+            loop_counter = 0;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
