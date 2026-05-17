@@ -179,3 +179,53 @@ If build succeeds and `main_dashboard_mcu.bin` is generated, the project is vali
 2. Open `http://192.168.4.1`
 3. Login admin/admin123
 4. Verify dashboard loads, Wi-Fi scan works
+
+## Knowledge Base (MCU / ESP32)
+
+ก่อนเริ่มทำงานทุกครั้ง  Agent **ต้อง** ใช้ LLM Wiki เพื่อค้นหาข้อมูล MCU และ ESP32 ที่จำเป็น
+
+### LLM Wiki
+
+- Wiki อยู่ที่ `~/llm-wiki/` — ใช้ `index.md` เพื่อนำทางและค้นหาหน้าที่เกี่ยวข้อง
+- หน้าสำคัญที่เกี่ยวข้องกับโปรเจกต์นี้:
+  - `wiki/esp-idf.md` — ESP-IDF framework
+  - `wiki/esp32-wifi-patterns.md` — Wi-Fi AP+STA, scan/connect
+  - `wiki/esp32-http-server.md` — HTTP server, auth middleware, embedded files
+  - `wiki/esp32-nvs-storage.md` — NVS key-value persistence
+  - `wiki/esp32-session-auth.md` — In-memory login session
+  - `wiki/esp32-component-layout.md` — Project structure, CMakeLists patterns
+  - `wiki/main-dashboard-mcu.md` — ภาพรวมโปรเจกต์นี้
+
+### ข้อบังคับการใช้
+
+Agent ต้องเรียก `/wiki query <topic>` ในกรณีต่อไปนี้:
+
+- **ก่อน implement หรือแก้ไข component ใดๆ** — ค้นหา best practices, architecture patterns, gotchas ที่เกี่ยวข้อง
+- **เมื่อพบ API หรือ pattern ของ ESP-IDF ที่ไม่คุ้นเคย** — ค้นหาจาก wiki ก่อนเขียนโค้ด
+- **เมื่อเรียนรู้ pattern ใหม่จาก external repo** — ใช้ `/wiki ingest <source>` เพื่อบันทึกความรู้
+- **เมื่อมีข้อสงสัยเกี่ยวกับพฤติกรรมของ ESP32 หรือ MCU** — ใช้ `/wiki query <question>` เพื่อถาม
+
+### คำสั่งที่รองรับ
+
+| คำสั่ง | การทำงาน |
+|--------|----------|
+| `/wiki query <question>` | ค้นหาคำตอบจาก wiki |
+| `/wiki ingest <source>` | บันทึกความรู้ใหม่ |
+| `/wiki lint` | ตรวจสอบ health ของ wiki |
+
+## Agent Skills
+
+Skills เหล่านี้ถูกติดตั้งไว้ในระบบแล้ว Agent **ควร** ใช้ `skill` tool เมื่อภารกิจตรงกับขอบเขตของ skill นั้น
+
+| Skill | เมื่อใดควรใช้ |
+|-------|--------------|
+| `esp32-firmware-engineer` | Implement/แก้ไข firmware, review embedded code, แก้ boot/runtime failures, optimize RAM/flash, low-power design, บูรณาการ LVGL, หรือทำงาน ESP-IDF โดยตรง |
+| `esp32-debugging` | เจอ compilation error, runtime panic / Guru Meditation, memory crash, stack overflow, I2C/SPI/UART ล้มเหลว, หรือ debug serial output |
+| `embedded-systems` | งาน microcontroller ทั่วไป, FreeRTOS, bare-metal, peripheral config, interrupt handlers, DMA, real-time systems |
+| `esp32-serial-commands` | ต้องส่งคำสั่งผ่าน serial port เพื่อ emulate button press / user action สำหรับ testing |
+| `llm-wiki` | ค้นหาความรู้ MCU/ESP32 จาก wiki ในเครื่อง (ดูส่วน Knowledge Base ด้านบน) |
+| `agent-lessons` | เมื่อ user สั่ง "save lessons", "update lessons", "what we learned" |
+| `find-skills` | เมื่อ user ถามหาความสามารถที่อาจมี skill รองรับ |
+| `general-plan-implement-workflow` | งานซับซ้อนที่ต้องการ systematic planning ก่อน implement |
+
+**ข้อบังคับ**: ก่อน implement หรือ debug งานที่เกี่ยวกับ ESP32/MCU/firmware ให้ตรวจสอบว่างานตรงกับ skill ในตารางหรือไม่ ถ้าตรงให้เรียกใช้ skill นั้น (`skill` tool) ก่อนเริ่มทำงาน
