@@ -1,127 +1,173 @@
-# ESP32 Control System - Phase 1 Foundation
+# ESP32 Wi-Fi Setup / Web Server Template
 
-Minimal ESP32 web-based control system. Local web server with login, Wi-Fi management, and SoftAP fallback.
+Reusable ESP-IDF foundation for ESP32 projects that need local setup over Wi-Fi:
+SoftAP fallback, STA Wi-Fi configuration, login/session auth, status JSON, and
+embedded HTML/CSS/JS pages.
 
-## Hardware
+This repository is intended to be cloned as a starting point for other ESP32
+projects. Keep project-specific features such as relays, sensors, MQTT, OTA, and
+cloud integrations in the downstream project, not in this template.
 
-- **Board**: ESP32 DevKit V1 (30-pin) or ESP32-S3 compatible
-- **Framework**: ESP-IDF (tested with v5.x)
+## Baseline
 
-## Features (Phase 1)
+- Target: classic ESP32 / ESP32 DevKit V1
+- Framework: ESP-IDF only, no Arduino or PlatformIO
+- ESP-IDF baseline for this workspace: `C:\esp-idf\`
+- Static frontend: embedded files, no CDN, no internet dependency
+- Flash layout: 4 MB flash with custom `partitions.csv`
 
-- Local web server on ESP32
-- Login session system (cookie-based, in-memory)
-- Wi-Fi scan / connect / configuration page
-- SoftAP fallback mode (`ESP32-Control-Setup`, open network)
-- Dashboard with connection status, memory, uptime
-- Responsive UI (sidebar on desktop, stacked on mobile)
-- Thai language UI labels
+## Features
 
-## Not Yet Implemented
+- SoftAP setup network: `ESP32-Control-Setup`
+- Captive-portal DNS fallback on AP clients
+- mDNS hostname: `home1.local`
+- Login page with in-memory cookie sessions
+- Wi-Fi scan/connect/disconnect APIs
+- Optional static STA IP fields in the Wi-Fi page
+- Device status page and `/api/status`
+- Reusable components for NVS, sessions, and Wi-Fi management
 
-- OTA firmware update
-- Relay / GPIO control
-- Sensor telemetry and charts
-- MQTT / cloud backend
-- SPIFFS / LittleFS file storage
-- Real-time WebSocket updates
-- Production-grade security
-- Multi-user management
+## First File To Edit
+
+For a new project, start with:
+
+```text
+components/app_config/app_config.h
+```
+
+Change these values before touching the Wi-Fi or web-server internals:
+
+- `APP_TEMPLATE_NAME`
+- `APP_TEMPLATE_FIRMWARE_VERSION`
+- `APP_TEMPLATE_AP_SSID`
+- `APP_TEMPLATE_MDNS_HOSTNAME`
+- `APP_TEMPLATE_MDNS_INSTANCE_NAME`
+- `APP_TEMPLATE_DEFAULT_USERNAME`
+- `APP_TEMPLATE_DEFAULT_PASSWORD`
+- `APP_TEMPLATE_AP_AUTO_STOP_DEFAULT`
+- `APP_TEMPLATE_AP_STOP_TMO_DEFAULT_MS`
+
+Default login is `admin` / `admin123`. Change it before using the template
+outside local development.
 
 ## Quick Start
 
-### Prerequisites
-
-ESP-IDF installed and available. Export the environment first:
+From PowerShell:
 
 ```powershell
-# On Windows (PowerShell)
-& "C:\path\to\esp-idf\export.ps1"
-
-# Verify
-idf.py --version
+.\scripts\build.ps1
 ```
 
-### Build and Flash
+Manual equivalent:
 
-```bash
-# 1. Set target chip
-idf.py set-target esp32
-
-# 2. Configure (optional - review Wi-Fi/defaults if needed)
-idf.py menuconfig
-
-# 3. Build
+```powershell
+chcp 65001 > $null
+& "C:\esp-idf\export.ps1"
 idf.py build
+```
 
-# 4. Flash and monitor (replace COMx with your port)
+Flash and monitor:
+
+```powershell
+chcp 65001 > $null
+& "C:\esp-idf\export.ps1"
 idf.py -p COMx flash monitor
 ```
 
-### How to Connect
+Replace `COMx` with the ESP32 serial port.
 
-1. On your phone/laptop, connect to Wi-Fi network: **ESP32-Control-Setup** (open, no password)
-2. Open browser and go to: **http://192.168.4.1**
-3. Login with default credentials:
-   - **Username**: `admin`
-   - **Password**: `admin123`
-   > ⚠️ **WARNING**: Change these before any production use!
-4. Go to **Wi-Fi Settings** → click **Scan** → select your home Wi-Fi → enter password → **Connect**
-5. The ESP32 will connect to your home Wi-Fi while keeping the AP active as fallback
+## Manual Test
+
+1. Flash the firmware.
+2. Connect phone or laptop to Wi-Fi `ESP32-Control-Setup`.
+3. Open `http://192.168.4.1`.
+4. Login with the configured credentials.
+5. Open Wi-Fi Settings, scan networks, and connect STA.
+6. Reboot and confirm saved STA credentials load from NVS.
+7. Confirm AP fallback still works if STA connection fails.
 
 ## Project Structure
 
-```
+```text
 main_dashboard_mcu/
-├── CMakeLists.txt              # Root ESP-IDF build
-├── sdkconfig.defaults           # Default config (target=esp32)
-├── .gitignore
-├── README.md
+├── CMakeLists.txt
+├── sdkconfig.defaults
+├── partitions.csv
+├── TEMPLATE.md
+├── docs/
+│   └── components.md
+├── scripts/
+│   └── build.ps1
+├── components/
+│   ├── app_config/       # Template-level constants to customize first
+│   ├── nvs_store/        # NVS Wi-Fi credential and IP config storage
+│   ├── session/          # In-memory login sessions
+│   └── wifi_manager/     # AP+STA, scan, connect, fallback behavior
 └── main/
-    ├── CMakeLists.txt           # Component registration + embed static files
-    ├── app_main.c               # Boot sequence
-    ├── wifi_manager.h/c         # AP + STA, scan, connect, event handling
-    ├── web_server.h/c           # HTTP routes, auth middleware, static serving
-    ├── session.h/c              # In-memory login tokens
-    ├── nvs_store.h/c            # NVS Wi-Fi credential storage
-    └── static/
-        ├── login.html           # Login page (Thai UI)
-        ├── dashboard.html       # Dashboard with status cards
-        ├── wifi.html            # Wi-Fi scan/connect page
-        ├── style.css            # Plain CSS design system
-        └── app.js               # Vanilla JS (API calls, session, UI)
+    ├── app_main.c        # Boot sequence and service startup
+    ├── web_server.c/h    # HTTP routes, auth, static serving, APIs
+    ├── dns_server.c/h    # Captive-portal DNS fallback
+    └── static/           # Embedded HTML/CSS/JS
 ```
 
-## API Routes
+## Core API Routes
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/` | No | Redirect to /dashboard or /login |
+| GET | `/` | No | Redirect to dashboard or login |
 | GET | `/login` | No | Login page |
-| POST | `/api/login` | No | Login (JSON body: `{username, password}`) |
-| POST | `/api/logout` | No | Logout, clear session |
-| GET | `/dashboard` | Yes | Dashboard page |
-| GET | `/wifi` | Yes | Wi-Fi config page |
-| GET | `/style.css` | No | Stylesheet |
-| GET | `/app.js` | No | JavaScript |
-| GET | `/api/wifi/scan` | Yes | Scan networks → JSON |
-| POST | `/api/wifi/connect` | Yes | Connect to SSID (`{ssid, password}`) |
+| POST | `/api/login` | No | Login |
+| POST | `/api/logout` | No | Logout and clear session |
+| GET | `/dashboard` | Yes | Example dashboard |
+| GET | `/status` | Yes | Full status page |
+| GET | `/wifi` | Yes | Wi-Fi setup page |
+| GET | `/api/wifi/scan` | Yes | Scan networks |
+| POST | `/api/wifi/connect` | Yes | Connect STA |
+| POST | `/api/wifi/disconnect` | Yes | Disconnect STA |
 | GET | `/api/status` | Yes | Device status JSON |
+
+## Template Boundaries
+
+Keep these as template core:
+
+- `components/app_config`
+- `components/nvs_store`
+- `components/session`
+- `components/wifi_manager`
+- login/session routes
+- Wi-Fi scan/connect/disconnect routes
+- status API
+
+Customize these for each product:
+
+- `main/static/dashboard.html`
+- `main/static/status.html`
+- branding text in `main/static/*.html`
+- product-specific API routes in `main/web_server.c`
+- product-specific startup code after the template services in `app_main.c`
 
 ## Security Notes
 
-This is a **local-prototype** system. Security is minimal by design:
+This is a local setup template, not production internet-facing security.
 
-- Session tokens are random (esp_random) but transmitted as plain HTTP cookies
-- Credentials are hardcoded (`admin`/`admin123`) - must be changed for production
-- No HTTPS/TLS (ESP32 serves HTTP only)
-- Basic login rate limiting only
-- Basic Origin/Referer POST check only
-- Wi-Fi passwords are stored in NVS (not encrypted in development)
-- Flash/NVS encryption is disabled for faster development; re-enable with Secure Boot for production
+- HTTP only, no TLS
+- Cookie session is intentionally readable by JavaScript
+- Default credentials are compile-time constants
+- Wi-Fi credentials are stored in NVS without encryption in development
+- Flash encryption and secure boot are disabled in `sdkconfig.defaults`
 
-**Not suitable for internet-facing deployment without significant hardening.**
+For production, add a hardening pass before shipping: unique credentials,
+secure boot, flash/NVS encryption, tighter session cookie policy, and a threat
+model for the final network exposure.
 
-## License
+## Validation
 
-MIT
+The template is valid when:
+
+```powershell
+.\scripts\build.ps1
+```
+
+finishes successfully and `build\main_dashboard_mcu.bin` is generated.
+
+No unit tests are included in this phase.

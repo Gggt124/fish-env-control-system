@@ -56,35 +56,67 @@ const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode)
     }
 }
 
-static void apply_static_ip(const wifi_sta_ip_config_t *cfg)
+static void restore_sta_dhcp(void)
 {
-    if (!cfg || !cfg->ip[0]) return;
+    if (s_sta_netif) {
+        esp_err_t err = esp_netif_dhcpc_start(s_sta_netif);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "DHCP client start returned %d", err);
+        }
+    }
+}
+
+static bool apply_static_ip(const wifi_sta_ip_config_t *cfg)
+{
+    if (!cfg || !cfg->ip[0]) return false;
+
+    if (!cfg->gateway[0]) {
+        ESP_LOGW(TAG, "Static IP ignored: gateway is required");
+        return false;
+    }
 
     if (!s_sta_netif) {
         ESP_LOGE(TAG, "STA netif not available for static IP");
-        return;
+        return false;
     }
 
-    esp_netif_dhcpc_stop(s_sta_netif);
+    ip4_addr_t ip;
+    ip4_addr_t gw;
+    ip4_addr_t mask;
+    ip4_addr_t dns_addr;
+    const char *netmask = cfg->netmask[0] ? cfg->netmask : "255.255.255.0";
+    const char *dns = cfg->dns[0] ? cfg->dns : cfg->gateway;
 
-    ip4_addr_t tmp;
+    if (!ip4addr_aton(cfg->ip, &ip) ||
+        !ip4addr_aton(cfg->gateway, &gw) ||
+        !ip4addr_aton(netmask, &mask) ||
+        !ip4addr_aton(dns, &dns_addr)) {
+        ESP_LOGW(TAG, "Static IP ignored: invalid IP/gateway/netmask/DNS value");
+        return false;
+    }
+
     esp_netif_ip_info_t ip_info;
     memset(&ip_info, 0, sizeof(ip_info));
-    ip4addr_aton(cfg->ip, &tmp); ip_info.ip.addr = tmp.addr;
-    ip4addr_aton(cfg->gateway[0] ? cfg->gateway : cfg->ip, &tmp); ip_info.gw.addr = tmp.addr;
-    ip4addr_aton(cfg->netmask[0] ? cfg->netmask : "255.255.255.0", &tmp); ip_info.netmask.addr = tmp.addr;
-    esp_netif_set_ip_info(s_sta_netif, &ip_info);
+    ip_info.ip.addr = ip.addr;
+    ip_info.gw.addr = gw.addr;
+    ip_info.netmask.addr = mask.addr;
 
-    if (cfg->dns[0] || cfg->gateway[0]) {
-        esp_netif_dns_info_t dns;
-        memset(&dns, 0, sizeof(dns));
-        ip4addr_aton(cfg->dns[0] ? cfg->dns : cfg->gateway, &tmp);
-        dns.ip.u_addr.ip4.addr = tmp.addr;
-        dns.ip.type = ESP_IPADDR_TYPE_V4;
-        esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_MAIN, &dns);
+    esp_netif_dhcpc_stop(s_sta_netif);
+    esp_err_t err = esp_netif_set_ip_info(s_sta_netif, &ip_info);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set static IP info: %d", err);
+        restore_sta_dhcp();
+        return false;
     }
 
-    ESP_LOGI(TAG, "Static IP: %s / %s gw=%s", cfg->ip, cfg->netmask, cfg->gateway);
+    esp_netif_dns_info_t dns_info;
+    memset(&dns_info, 0, sizeof(dns_info));
+    dns_info.ip.u_addr.ip4.addr = dns_addr.addr;
+    dns_info.ip.type = ESP_IPADDR_TYPE_V4;
+    esp_netif_set_dns_info(s_sta_netif, ESP_NETIF_DNS_MAIN, &dns_info);
+
+    ESP_LOGI(TAG, "Static IP: %s / %s gw=%s dns=%s", cfg->ip, netmask, cfg->gateway, dns);
+    return true;
 }
 
 /* --------------- AP Auto-Stop Timer --------------- */
@@ -263,7 +295,11 @@ bool wifi_manager_init(void)
                                   saved_ip.gateway, sizeof(saved_ip.gateway),
                                   saved_ip.netmask, sizeof(saved_ip.netmask),
                                   saved_ip.dns, sizeof(saved_ip.dns))) {
-            apply_static_ip(&saved_ip);
+            if (!apply_static_ip(&saved_ip)) {
+                ESP_LOGW(TAG, "Clearing invalid saved static IP config; using DHCP");
+                nvs_store_clear_sta_ip();
+                restore_sta_dhcp();
+            }
         }
 
         wifi_config_t sta_cfg = {0};
@@ -309,7 +345,7 @@ bool wifi_manager_start_ap(void)
             .ssid = AP_SSID,
             .password = "",
             .ssid_len = strlen(AP_SSID),
-            .channel = 1,
+            .channel = APP_TEMPLATE_AP_CHANNEL,
             .authmode = WIFI_AUTH_OPEN,
             .max_connection = AP_MAX_CONN,
         },
@@ -347,6 +383,10 @@ bool wifi_manager_stop_ap(void)
 bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi_sta_ip_config_t *ip_config)
 {
     if (!ssid || !ssid[0]) return false;
+    if (ip_config && ip_config->ip[0] && !ip_config->gateway[0]) {
+        ESP_LOGW(TAG, "Static IP connect rejected: gateway is required");
+        return false;
+    }
 
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_sta_retry_count = 0;
@@ -356,15 +396,14 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 
     /* Save and apply static IP config if provided, otherwise clear it */
     if (ip_config && ip_config->ip[0]) {
+        if (!apply_static_ip(ip_config)) {
+            return false;
+        }
         nvs_store_save_sta_ip(ip_config->ip, ip_config->gateway,
                                ip_config->netmask, ip_config->dns);
-        apply_static_ip(ip_config);
     } else {
         nvs_store_clear_sta_ip();
-        /* Restore DHCP - restart DHCP client */
-        if (s_sta_netif) {
-            esp_netif_dhcpc_start(s_sta_netif);
-        }
+        restore_sta_dhcp();
     }
 
     esp_wifi_disconnect();
@@ -434,9 +473,7 @@ bool wifi_manager_forget_sta(void)
 
     nvs_store_clear_wifi();
     nvs_store_clear_sta_ip();
-    if (s_sta_netif) {
-        esp_netif_dhcpc_start(s_sta_netif);
-    }
+    restore_sta_dhcp();
     if (!ap_enabled) {
         wifi_manager_start_ap();
     }

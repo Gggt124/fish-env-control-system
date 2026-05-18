@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "app_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,8 +15,8 @@ extern "C" {
  * Keys: "sta_ssid", "sta_pass", "sta_ip", "sta_gw", "sta_netmask", "sta_dns"
  */
 
-#define AP_STOP_TMO_DEFAULT_MS  60000
-#define AP_AUTO_STOP_DEFAULT    true
+#define AP_STOP_TMO_DEFAULT_MS  APP_TEMPLATE_AP_STOP_TMO_DEFAULT_MS
+#define AP_AUTO_STOP_DEFAULT    APP_TEMPLATE_AP_AUTO_STOP_DEFAULT
 
 bool nvs_store_init(void);
 bool nvs_store_save_wifi(const char *ssid, const char *password);

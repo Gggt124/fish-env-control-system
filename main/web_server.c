@@ -1,4 +1,5 @@
 #include "web_server.h"
+#include "app_config.h"
 #include "session.h"
 #include "wifi_manager.h"
 #include "dns_server.h"
@@ -36,15 +37,15 @@ extern const uint8_t _binary_status_html_start[] asm("_binary_status_html_start"
 extern const uint8_t _binary_status_html_end[]   asm("_binary_status_html_end");
 
 /*
- * WARNING: Default credentials are admin/admin123.
+ * WARNING: Default credentials come from app_config.h.
  * These MUST be changed before any production deployment.
  * This is a local-prototype login system, not internet-facing security.
  */
-#define DEFAULT_USERNAME "admin"
-#define DEFAULT_PASSWORD "admin123"
+#define DEFAULT_USERNAME APP_TEMPLATE_DEFAULT_USERNAME
+#define DEFAULT_PASSWORD APP_TEMPLATE_DEFAULT_PASSWORD
 
-#define RATE_LIMIT_MAX     5
-#define RATE_LIMIT_WINDOW  30
+#define RATE_LIMIT_MAX     APP_TEMPLATE_LOGIN_RATE_LIMIT_MAX
+#define RATE_LIMIT_WINDOW  APP_TEMPLATE_LOGIN_RATE_LIMIT_SEC
 
 /* --------------- Helpers --------------- */
 
@@ -169,7 +170,7 @@ static bool is_same_origin(httpd_req_t *req)
     const char *sta_ip = wifi_manager_get_sta_ip();
     if (sta_ip && sta_ip[0] && strstr(buf, sta_ip)) return true;
 
-    if (strstr(buf, "home1.local")) return true;
+    if (strstr(buf, APP_TEMPLATE_MDNS_HOSTNAME ".local")) return true;
 
     ESP_LOGW(TAG, "Cross-origin POST blocked: %s", buf);
     return false;
@@ -528,6 +529,10 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_password\"}", "400 Bad Request");
     }
 
+    if (has_static_ip && !ip_cfg.gateway[0]) {
+        return send_json(req, "{\"ok\":false,\"error\":\"missing_gateway\"}", "400 Bad Request");
+    }
+
     if (!wifi_manager_connect_sta(ssid, password, has_static_ip ? &ip_cfg : NULL)) {
         return send_json(req, "{\"ok\":false,\"error\":\"connect_error\"}", "200 OK");
     }
@@ -604,7 +609,8 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     cJSON_AddNumberToObject(root, "chip_cores", chip.cores);
     cJSON_AddNumberToObject(root, "cpu_freq_mhz", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
     cJSON_AddStringToObject(root, "idf_version", esp_get_idf_version());
-    cJSON_AddStringToObject(root, "project_version", "v1.0.0");
+    cJSON_AddStringToObject(root, "project_name", APP_TEMPLATE_NAME);
+    cJSON_AddStringToObject(root, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
 
     /* ---------- MAC addresses ---------- */
     uint8_t mac[6];
@@ -678,7 +684,7 @@ bool web_server_start(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 18;
+    config.max_uri_handlers = APP_TEMPLATE_HTTP_MAX_URI_HANDLERS;
     config.lru_purge_enable = true;
 
     if (httpd_start(&server, &config) != ESP_OK) {

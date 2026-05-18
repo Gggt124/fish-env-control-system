@@ -13,6 +13,7 @@ idf_component_register(
         "static/style.css"
         "static/app.js"
     REQUIRES
+        app_config
         nvs_store
         session
         wifi_manager

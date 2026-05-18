@@ -1,5 +1,5 @@
 /*
- * ESP32 Control System - Application JavaScript
+ * ESP32 Wi-Fi Setup/Web Server Template - Application JavaScript
  * Vanilla JS, no frameworks. Compact for ESP32 flash.
  */
 
@@ -300,6 +300,7 @@ function refreshStatus() {
         }
 
         /* Dashboard summary */
+        setText('card-version', data.project_version || '--');
         setText('dash-chip', data.chip_model || '--');
         setText('dash-project-version', data.project_version || '--');
         setText('dash-wifi-mode', data.wifi_mode || '--');

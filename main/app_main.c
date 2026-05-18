@@ -1,3 +1,4 @@
+#include "app_config.h"
 #include "nvs_store.h"
 #include "wifi_manager.h"
 #include "session.h"
@@ -16,8 +17,8 @@ static bool s_http_server_retry = false;
 void app_main(void)
 {
     ESP_LOGI(TAG, "========================================");
-    ESP_LOGI(TAG, "  ESP32 Control System v1.0.0");
-    ESP_LOGI(TAG, "  Phase 1 Foundation");
+    ESP_LOGI(TAG, "  %s %s", APP_TEMPLATE_NAME, APP_TEMPLATE_FIRMWARE_VERSION);
+    ESP_LOGI(TAG, "  %s", APP_TEMPLATE_PHASE_LABEL);
     ESP_LOGI(TAG, "========================================");
 
     /* 1. Initialize NVS storage */
@@ -37,7 +38,7 @@ void app_main(void)
     } else {
         ESP_LOGI(TAG, "Wi-Fi initialized");
     }
-    ESP_LOGI(TAG, "AP SSID: %s, IP: %s", "ESP32-Control-Setup", wifi_manager_get_ap_ip());
+    ESP_LOGI(TAG, "AP SSID: %s, IP: %s", APP_TEMPLATE_AP_SSID, wifi_manager_get_ap_ip());
 
     /* 4. Start HTTP server */
     if (!web_server_start()) {
@@ -55,10 +56,10 @@ void app_main(void)
     if (mdns_err != ESP_OK) {
         ESP_LOGE(TAG, "mDNS init failed: %d", mdns_err);
     } else {
-        mdns_hostname_set("home1");
-        mdns_instance_name_set("ESP32 Dashboard");
+        mdns_hostname_set(APP_TEMPLATE_MDNS_HOSTNAME);
+        mdns_instance_name_set(APP_TEMPLATE_MDNS_INSTANCE_NAME);
         mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
-        ESP_LOGI(TAG, "mDNS initialized: http://home1.local");
+        ESP_LOGI(TAG, "mDNS initialized: http://%s.local", APP_TEMPLATE_MDNS_HOSTNAME);
     }
 
     /* 7. Start captive-portal DNS server (responds all queries with AP IP) */
@@ -70,14 +71,15 @@ void app_main(void)
 
     /* 8. Initialize task watchdog (30s timeout with panic) */
     esp_task_wdt_config_t wdt_config = {
-        .timeout_ms = 30000,
+        .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
         .idle_core_mask = 0,
         .trigger_panic = true,
     };
     esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
     if (wdt_ret == ESP_OK) {
         esp_task_wdt_add(NULL);
-        ESP_LOGI(TAG, "TWDT initialized (30s timeout, panic on trigger)");
+        ESP_LOGI(TAG, "TWDT initialized (%d ms timeout, panic on trigger)",
+                 APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS);
     } else if (wdt_ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "TWDT already initialized, adding main task (timeout may differ)");
         esp_task_wdt_add(NULL);
@@ -88,15 +90,15 @@ void app_main(void)
 
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  System Ready");
-    ESP_LOGI(TAG, "  AP SSID: %s", "ESP32-Control-Setup");
+    ESP_LOGI(TAG, "  AP SSID: %s", APP_TEMPLATE_AP_SSID);
     ESP_LOGI(TAG, "  AP IP: %s", wifi_manager_get_ap_ip());
-    ESP_LOGI(TAG, "  URL: http://home1.local (all devices on AP)");
+    ESP_LOGI(TAG, "  URL: http://%s.local (mDNS)", APP_TEMPLATE_MDNS_HOSTNAME);
     ESP_LOGI(TAG, "  URL: http://%s (direct IP - always works)", wifi_manager_get_ap_ip());
     if (wifi_manager_is_sta_connected()) {
         ESP_LOGI(TAG, "  STA IP: %s", wifi_manager_get_sta_ip());
-        ESP_LOGI(TAG, "  URL: http://home1.local (desktop/iOS on LAN)");
+        ESP_LOGI(TAG, "  URL: http://%s.local (desktop/iOS on LAN)", APP_TEMPLATE_MDNS_HOSTNAME);
     }
-    ESP_LOGI(TAG, "  Login: admin / admin123");
+    ESP_LOGI(TAG, "  Login: %s / %s", APP_TEMPLATE_DEFAULT_USERNAME, APP_TEMPLATE_DEFAULT_PASSWORD);
     ESP_LOGI(TAG, "  WARNING: Change default credentials!");
     ESP_LOGI(TAG, "========================================");
 
@@ -113,7 +115,7 @@ void app_main(void)
         }
 
         loop_counter++;
-        if (loop_counter >= 6) {
+        if (loop_counter >= APP_TEMPLATE_STATUS_LOG_INTERVALS) {
             ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu",
                 wifi_manager_is_ap_enabled() ? "ON" : "OFF",
                 wifi_manager_get_ap_ip(),

@@ -2,10 +2,10 @@
 
 ## Project
 
-ESP32 Control System — Phase 1 Foundation. ESP-IDF firmware with local web server, login/session, Wi-Fi config, SoftAP fallback.
+ESP32 Wi-Fi Setup/Web Server Template. ESP-IDF firmware with local web server, login/session, Wi-Fi config, SoftAP fallback.
 
 - **Target**: ESP32 DevKit V1 (classic ESP32), ESP-IDF framework only (not Arduino/PlatformIO)
-- **Scope**: Phase 1 only — no OTA, relay, sensors, MQTT, cloud, or multi-user yet
+- **Scope**: reusable Wi-Fi setup/web server foundation only — no OTA, relay, sensors, MQTT, cloud, or multi-user yet
 
 ## Environment
 
@@ -55,6 +55,7 @@ main_dashboard_mcu/
 ├── CMakeLists.txt              # Root ESP-IDF build, EXTRA_COMPONENT_DIRS → components/
 ├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", custom partition table, dev flash workflow
 ├── components/
+│   ├── app_config/             # Template constants: names, AP SSID, mDNS, credentials
 │   ├── nvs_store/              # Reusable: NVS Wi-Fi credential I/O
 │   │   ├── CMakeLists.txt       # REQUIRES nvs_flash
 │   │   ├── nvs_store.h
@@ -73,7 +74,8 @@ main_dashboard_mcu/
 │   ├── web_server.c/h           # 11 HTTP routes, auth middleware, static serving
 │   └── static/
 │       ├── login.html           # Login page (Thai UI, form → /api/login)
-│       ├── dashboard.html       # Dashboard with 4 status cards
+│       ├── dashboard.html       # Example dashboard with 4 status cards
+│       ├── status.html          # Full status page
 │       ├── wifi.html            # Wi-Fi scan/connect page
 │       ├── style.css            # Plain CSS design system (~500 lines, no CDN)
 │       └── app.js               # Vanilla JS API calls, session, UI logic
@@ -84,9 +86,10 @@ main_dashboard_mcu/
 
 ```
 main (app_main + web_server + static)
-├── nvs_store ────── nvs_flash
-├── session ──────── esp_system
-├── wifi_manager ─── nvs_store, esp_wifi, esp_event, esp_netif, esp_timer
+├── app_config
+├── nvs_store ────── app_config, nvs_flash
+├── session ──────── app_config, esp_system
+├── wifi_manager ─── app_config, nvs_store, esp_wifi, esp_event, esp_netif, esp_timer
 ├── esp_http_server
 └── esp_wifi
 ```
@@ -122,7 +125,7 @@ Get-Content build\login.html.S -First 10
 
 - Username: `admin`, Password: `admin123`
 - WARNING: Must be changed before any production use
-- Stored in `web_server.c` as `DEFAULT_USERNAME` / `DEFAULT_PASSWORD`
+- Stored in `components/app_config/app_config.h` as `APP_TEMPLATE_DEFAULT_USERNAME` / `APP_TEMPLATE_DEFAULT_PASSWORD`
 
 ### Session cookies
 
@@ -149,11 +152,13 @@ Frontend uses plain CSS/HTML/JS — **no CDN links** (no Tailwind, no Google Fon
 | POST | `/api/login` | No | Body: `{"username":"...","password":"..."}` |
 | POST | `/api/logout` | No | Clears cookie |
 | GET | `/dashboard` | Yes | Dashboard page |
+| GET | `/status` | Yes | Status page |
 | GET | `/wifi` | Yes | Wi-Fi config page |
 | GET | `/style.css` | No | Static CSS |
 | GET | `/app.js` | No | Static JS |
 | GET | `/api/wifi/scan` | Yes | Returns `{"ok":true,"networks":[...]}` |
 | POST | `/api/wifi/connect` | Yes | Body: `{"ssid":"...","password":"..."}` |
+| POST | `/api/wifi/disconnect` | Yes | Disconnect STA |
 | GET | `/api/status` | Yes | Returns device status JSON |
 
 ## NVS Keys

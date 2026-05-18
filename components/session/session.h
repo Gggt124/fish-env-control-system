@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "app_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +17,7 @@ extern "C" {
  */
 
 #define SESSION_TOKEN_LEN 17  /* 16 hex chars + null */
-#define SESSION_MAX_AGE_SEC 1800  /* 30-minute idle timeout */
+#define SESSION_MAX_AGE_SEC APP_TEMPLATE_SESSION_MAX_AGE_SEC
 
 bool session_init(void);
 bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN]);

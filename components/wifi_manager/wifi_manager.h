@@ -2,15 +2,16 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "app_config.h"
 #include "esp_wifi_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define AP_SSID         "ESP32-Control-Setup"
-#define AP_MAX_CONN     4
-#define WIFI_SCAN_MAX   20
+#define AP_SSID         APP_TEMPLATE_AP_SSID
+#define AP_MAX_CONN     APP_TEMPLATE_AP_MAX_CONN
+#define WIFI_SCAN_MAX   APP_TEMPLATE_WIFI_SCAN_MAX
 
 typedef struct {
     char ssid[33];
