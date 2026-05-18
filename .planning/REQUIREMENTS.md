@@ -104,55 +104,55 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HW-01 | Pending | Pending |
-| HW-02 | Pending | Pending |
-| HW-03 | Pending | Pending |
-| HW-04 | Pending | Pending |
-| HW-05 | Pending | Pending |
-| HW-06 | Pending | Pending |
-| TIME-01 | Pending | Pending |
-| TIME-02 | Pending | Pending |
-| TIME-03 | Pending | Pending |
-| TIME-04 | Pending | Pending |
-| TIME-05 | Pending | Pending |
-| TIME-06 | Pending | Pending |
-| TIME-07 | Pending | Pending |
-| TIME-08 | Pending | Pending |
-| RUN-01 | Pending | Pending |
-| RUN-02 | Pending | Pending |
-| RUN-03 | Pending | Pending |
-| RUN-04 | Pending | Pending |
-| RUN-05 | Pending | Pending |
-| RUN-06 | Pending | Pending |
-| RUN-07 | Pending | Pending |
-| RUN-08 | Pending | Pending |
-| RUN-09 | Pending | Pending |
-| RUN-10 | Pending | Pending |
-| RUN-11 | Pending | Pending |
-| API-01 | Pending | Pending |
-| API-02 | Pending | Pending |
-| API-03 | Pending | Pending |
-| API-04 | Pending | Pending |
-| API-05 | Pending | Pending |
-| API-06 | Pending | Pending |
-| UI-01 | Pending | Pending |
-| UI-02 | Pending | Pending |
-| UI-03 | Pending | Pending |
-| UI-04 | Pending | Pending |
-| UI-05 | Pending | Pending |
-| UI-06 | Pending | Pending |
-| UI-07 | Pending | Pending |
-| VAL-01 | Pending | Pending |
-| VAL-02 | Pending | Pending |
-| VAL-03 | Pending | Pending |
-| VAL-04 | Pending | Pending |
-| VAL-05 | Pending | Pending |
+| HW-01 | Phase 1 | Pending |
+| HW-02 | Phase 1 | Pending |
+| HW-03 | Phase 1 | Pending |
+| HW-04 | Phase 1 | Pending |
+| HW-05 | Phase 1 | Pending |
+| HW-06 | Phase 1 | Pending |
+| TIME-01 | Phase 4 | Pending |
+| TIME-02 | Phase 4 | Pending |
+| TIME-03 | Phase 4 | Pending |
+| TIME-04 | Phase 4 | Pending |
+| TIME-05 | Phase 1 | Pending |
+| TIME-06 | Phase 1 | Pending |
+| TIME-07 | Phase 1 | Pending |
+| TIME-08 | Phase 2 | Pending |
+| RUN-01 | Phase 3 | Pending |
+| RUN-02 | Phase 3 | Pending |
+| RUN-03 | Phase 1 | Pending |
+| RUN-04 | Phase 2 | Pending |
+| RUN-05 | Phase 2 | Pending |
+| RUN-06 | Phase 1 | Pending |
+| RUN-07 | Phase 1 | Pending |
+| RUN-08 | Phase 1 | Pending |
+| RUN-09 | Phase 1 | Pending |
+| RUN-10 | Phase 1 | Pending |
+| RUN-11 | Phase 1 | Pending |
+| API-01 | Phase 3 | Pending |
+| API-02 | Phase 3 | Pending |
+| API-03 | Phase 3 | Pending |
+| API-04 | Phase 3 | Pending |
+| API-05 | Phase 3 | Pending |
+| API-06 | Phase 3 | Pending |
+| UI-01 | Phase 4 | Pending |
+| UI-02 | Phase 4 | Pending |
+| UI-03 | Phase 4 | Pending |
+| UI-04 | Phase 4 | Pending |
+| UI-05 | Phase 4 | Pending |
+| UI-06 | Phase 4 | Pending |
+| UI-07 | Phase 4 | Pending |
+| VAL-01 | Phase 1 | Pending |
+| VAL-02 | Phase 5 | Pending |
+| VAL-03 | Phase 5 | Pending |
+| VAL-04 | Phase 5 | Pending |
+| VAL-05 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 42 total
-- Mapped to phases: 0
-- Unmapped: 42
+- Mapped to phases: 42
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-18*
-*Last updated: 2026-05-18 after initial definition*
+*Last updated: 2026-05-18 after roadmap creation*
