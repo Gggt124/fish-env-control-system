@@ -36,10 +36,9 @@ idf.py set-target esp32
 # Build
 idf.py build
 
-# Flash + monitor (replace COMx, dev mode)
-idf.py -p COMx flash monitor
-
-# Encrypted flash (required after Enabling NVS flash encryption)
+# Flash + monitor (replace COMx)
+# WARNING: Flash encryption IS ENABLED (eFuse burned). DO NOT use plain "flash"!
+# Always use encrypted-flash — regular flash will brick the device until reflashed.
 idf.py -p COMx encrypted-flash monitor
 
 # Clean build
