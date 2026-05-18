@@ -12,7 +12,7 @@ cloud integrations in the downstream project, not in this template.
 
 - Target: classic ESP32 / ESP32 DevKit V1
 - Framework: ESP-IDF only, no Arduino or PlatformIO
-- ESP-IDF baseline for this workspace: `C:\esp-idf\`
+- ESP-IDF path: set `IDF_PATH` to your ESP-IDF install path (for example `C:\esp-idf`)
 - Static frontend: embedded files, no CDN, no internet dependency
 - Flash layout: 4 MB flash with custom `partitions.csv`
 
@@ -20,7 +20,7 @@ cloud integrations in the downstream project, not in this template.
 
 - SoftAP setup network: `ESP32-Control-Setup`
 - Captive-portal DNS fallback on AP clients
-- mDNS hostname: `home1.local`
+- mDNS hostname: `esp32-setup.local`
 - Login page with in-memory cookie sessions
 - Wi-Fi scan/connect/disconnect APIs
 - Optional static STA IP fields in the Wi-Fi page
@@ -58,11 +58,18 @@ From PowerShell:
 .\scripts\build.ps1
 ```
 
+If ESP-IDF is installed elsewhere:
+
+```powershell
+.\scripts\build.ps1 -IdfPath "D:\esp-idf"
+```
+
 Manual equivalent:
 
 ```powershell
 chcp 65001 > $null
-& "C:\esp-idf\export.ps1"
+$env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
+& "$env:IDF_PATH\export.ps1"
 idf.py build
 ```
 
@@ -70,7 +77,8 @@ Flash and monitor:
 
 ```powershell
 chcp 65001 > $null
-& "C:\esp-idf\export.ps1"
+$env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
+& "$env:IDF_PATH\export.ps1"
 idf.py -p COMx flash monitor
 ```
 

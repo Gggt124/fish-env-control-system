@@ -1,4 +1,4 @@
-# Production Readiness Plan
+# Development Roadmap
 
 > เป้าหมาย: ยกระดับ `main_dashboard_mcu` จาก prototype สู่ production-grade firmware
 > วิธีใช้: session แต่ละรอบให้ติ๊ก checkbox ที่ทำเสร็จแล้ว (`[ ]`) เพื่อให้ session ถัดไปรู้ความคืบหน้า

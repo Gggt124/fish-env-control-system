@@ -9,10 +9,12 @@ ESP32 Wi-Fi Setup/Web Server Template. ESP-IDF firmware with local web server, l
 
 ## Environment
 
-ESP-IDF installed at `C:\esp-idf\`. Must export before every `idf.py` command:
+ESP-IDF must be installed and exported before every `idf.py` command. Prefer
+setting `IDF_PATH` to the local ESP-IDF install path:
 
 ```powershell
-& "C:\esp-idf\export.ps1"
+$env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
+& "$env:IDF_PATH\export.ps1"
 ```
 
 **Unicode workaround**: `idf.py` warns about Unicode charset on Windows. Run this first in each PowerShell session:
@@ -24,7 +26,8 @@ chcp 65001 > $null
 If Python dependencies are missing, run:
 
 ```powershell
-& "C:\Espressif\python_env\idf6.1_py3.13_env\Scripts\python.exe" -m pip install -r "C:\esp-idf\tools\requirements\requirements.core.txt" -c "C:\Espressif\espidf.constraints.v6.1.txt"
+idf.py --version
+python -m pip install -r "$env:IDF_PATH\tools\requirements\requirements.core.txt"
 ```
 
 ## Build / Flash / Monitor
@@ -44,7 +47,7 @@ idf.py fullclean
 idf.py build
 ```
 
-Run sequentially: `export → chcp → idf.py`. Build output is in `build/` (gitignored).
+Run sequentially: `chcp → export → idf.py`. Build output is in `build/` (gitignored).
 
 If a board was previously flashed with flash encryption enabled, disable it once in development mode by building/flashing plaintext firmware, then burning `FLASH_CRYPT_CNT` so the value becomes even. After that, regular `idf.py flash` works again.
 
@@ -187,77 +190,8 @@ If build succeeds and `main_dashboard_mcu.bin` is generated, the project is vali
 3. Login admin/admin123
 4. Verify dashboard loads, Wi-Fi scan works
 
-## Knowledge Base (MCU / ESP32)
+## Local Agent Notes
 
-Agent **MUST** use the LLM Wiki to find required MCU and ESP32 information before every task.
-
-### LLM Wiki
-
-- Wiki is at `~/llm-wiki/` — use `index.md` to navigate and find relevant pages
-- Relevant pages for this project:
-  - `wiki/esp-idf.md` — ESP-IDF framework
-  - `wiki/esp32-wifi-patterns.md` — Wi-Fi AP+STA, scan/connect
-  - `wiki/esp32-http-server.md` — HTTP server, auth middleware, embedded files
-  - `wiki/esp32-nvs-storage.md` — NVS key-value persistence
-  - `wiki/esp32-session-auth.md` — In-memory login session
-  - `wiki/esp32-component-layout.md` — Project structure, CMakeLists patterns
-  - `wiki/main-dashboard-mcu.md` — Project overview
-
-### Usage Rules
-
-Agent MUST call `/wiki query <topic>` in the following cases:
-
-- **Before implementing or modifying any component** — search for best practices, architecture patterns, and gotchas
-- **When encountering an unfamiliar ESP-IDF API or pattern** — search the wiki before writing code
-- **When learning a new pattern from an external repo** — use `/wiki ingest <source>` to record the knowledge
-- **When unsure about ESP32 or MCU behavior** — use `/wiki query <question>` to ask
-
-### Supported Commands
-
-| Command | Description |
-|---------|-------------|
-| `/wiki query <question>` | Search the wiki for an answer |
-| `/wiki ingest <source>` | Record new knowledge into the wiki |
-| `/wiki lint` | Check wiki health and consistency |
-
-## Agent Skills
-
-These skills are installed on the system. Agent **should** use the `skill` tool when a task matches the skill's scope.
-
-| Skill | When to use |
-|-------|-------------|
-| `esp32-firmware-engineer` | Implement/edit firmware, review embedded code, fix boot/runtime failures, optimize RAM/flash, low-power design, integrate LVGL, or work directly with ESP-IDF |
-| `esp32-debugging` | Compilation error, runtime panic / Guru Meditation, memory crash, stack overflow, I2C/SPI/UART failure, or debug serial output |
-| `embedded-systems` | General microcontroller work, FreeRTOS, bare-metal, peripheral config, interrupt handlers, DMA, real-time systems |
-| `esp32-serial-commands` | Need to send serial port commands to emulate button press / user action for testing |
-| `llm-wiki` | Search MCU/ESP32 knowledge from the local wiki (see Knowledge Base section above) |
-| `agent-lessons` | When user says "save lessons", "update lessons", "what we learned" |
-| `find-skills` | When user asks about capabilities that may have a matching skill |
-| `general-plan-implement-workflow` | Complex tasks that require systematic planning before implementation |
-
-**Rule**: Before implementing ESP32/MCU/firmware work, check if the task matches a skill in the table. If it does, load the skill with the `skill` tool **during the planning/research phase** (not at implementation time). Read its relevant references before creating the plan.
-
-### Mandatory `esp32-firmware-engineer` Rule
-
-Agent **MUST** load the `esp32-firmware-engineer` skill using the `skill` tool **during the planning phase** (before creating the implementation plan, at Phase 5-6 when following `general-plan-implement-workflow`), and read its relevant references before implementation.
-
-#### When to load & read
-
-| Phase | Action |
-|-------|--------|
-| **Knowledge / Research** (planning) | Load skill + read references matching the task layer (e.g. `communication-protocols.md` for networking, `rtos-patterns.md` for FreeRTOS, `esp-idf-checklists.md` always) |
-| **After plan approval** (implementation) | Skill already loaded — proceed with coding using knowledge from references |
-
-#### Trigger cases
-
-- **Firmware implementation**: writing or editing C/C++ code in `main/` or `components/`
-- **Build/config**: modifying `CMakeLists.txt`, `sdkconfig`, or `sdkconfig.defaults`
-- **Debugging**: investigating boot failure, runtime panic, Guru Meditation, or serial logs
-- **Peripherals / RTOS**: FreeRTOS tasks/queues, GPIO, I2C, SPI, UART, ADC, PWM, Wi-Fi, BLE
-- **Optimization**: RAM/flash usage, power consumption, boot time
-- **Hardware bring-up**: new board, pin mapping, peripheral integration
-- **Code review**: reviewing embedded firmware code written by others
-
-**Exceptions**: Not required for frontend-only work (HTML/CSS/JS in `main/static/`) or documentation-only changes unrelated to firmware logic.
-
-**Violating this rule may lead to lower code quality or introduce subtle bugs.**
+Machine-specific agent workflows, local knowledge bases, private paths, and
+custom skill requirements belong in `AGENTS.local.md`. That file is ignored by
+git so this template stays usable on other machines.

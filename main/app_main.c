@@ -98,7 +98,7 @@ void app_main(void)
         ESP_LOGI(TAG, "  STA IP: %s", wifi_manager_get_sta_ip());
         ESP_LOGI(TAG, "  URL: http://%s.local (desktop/iOS on LAN)", APP_TEMPLATE_MDNS_HOSTNAME);
     }
-    ESP_LOGI(TAG, "  Login: %s / %s", APP_TEMPLATE_DEFAULT_USERNAME, APP_TEMPLATE_DEFAULT_PASSWORD);
+    ESP_LOGI(TAG, "  Login user: %s", APP_TEMPLATE_DEFAULT_USERNAME);
     ESP_LOGI(TAG, "  WARNING: Change default credentials!");
     ESP_LOGI(TAG, "========================================");
 

@@ -1,4 +1,4 @@
-# Agent Lessons — main_dashboard_mcu
+# Development Notes
 
 ## ESP-IDF Build
 

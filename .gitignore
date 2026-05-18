@@ -11,6 +11,7 @@ sdkconfig.old
 flasher_args.json
 cmake-build-*/
 .vscode/
+AGENTS.local.md
 .dependencies
 managed_components/
 dependencies.lock

@@ -23,7 +23,7 @@ extern "C" {
 #define APP_TEMPLATE_AP_MAX_CONN           4
 #define APP_TEMPLATE_WIFI_SCAN_MAX         20
 
-#define APP_TEMPLATE_MDNS_HOSTNAME         "home1"
+#define APP_TEMPLATE_MDNS_HOSTNAME         "esp32-setup"
 #define APP_TEMPLATE_MDNS_INSTANCE_NAME    "ESP32 Dashboard"
 
 #define APP_TEMPLATE_DEFAULT_USERNAME      "admin"
