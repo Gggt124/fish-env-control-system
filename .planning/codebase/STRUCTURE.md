@@ -1,0 +1,86 @@
+---
+generated: 2026-05-18
+focus: arch
+---
+
+# Structure
+
+## Repository Layout
+
+- `CMakeLists.txt` is the root ESP-IDF project file and adds `components/` as extra component directory.
+- `sdkconfig.defaults` holds portable default ESP-IDF configuration.
+- `partitions.csv` defines the custom flash partition table.
+- `dependencies.lock` records resolved ESP-IDF component manager dependencies.
+- `README.md` documents build, manual test, template boundaries, and security notes.
+- `AGENTS.md` documents local agent instructions and project-specific gotchas.
+- `REFERENCE.md` tracks external repository references and provenance.
+- `ROADMAP.md`, `DESIGN.md`, and `TEMPLATE.md` are planning/design artifacts.
+- `docs/` contains project documentation.
+- `scripts/` contains local automation.
+- `components/` contains reusable ESP-IDF components.
+- `main/` contains app-specific firmware, routes, captive DNS, and embedded frontend.
+
+## Root Build Files
+
+- `CMakeLists.txt` includes ESP-IDF project CMake and declares project name `fish_pump_relay_timer_control`.
+- `sdkconfig.defaults` sets target, partition table, flash size, development security defaults, and task watchdog behavior.
+- `partitions.csv` defines `nvs`, `phy_init`, and `factory`.
+
+## Components
+
+- `components/app_config/`
+  - `app_config.h`: template constants for product name, firmware version, AP, mDNS, credentials, limits, AP auto-stop, HTTP handler capacity, watchdog timeout.
+  - `CMakeLists.txt`: header-only component registration.
+- `components/nvs_store/`
+  - `nvs_store.h`: public persistence API for Wi-Fi credentials, AP config, and static IP config.
+  - `nvs_store.c`: NVS namespace/key implementation.
+  - `CMakeLists.txt`: depends on `app_config` and `nvs_flash`.
+- `components/session/`
+  - `session.h`: RAM session API and token length constants.
+  - `session.c`: token creation, validation, expiry, and destruction.
+  - `CMakeLists.txt`: depends on `app_config`, `esp_system`, `esp_timer`, and `freertos`.
+- `components/wifi_manager/`
+  - `wifi_manager.h`: AP/STA/scan/status API.
+  - `wifi_manager.c`: Wi-Fi initialization, events, AP fallback, STA connect/disconnect, static IP, scan, status getters.
+  - `CMakeLists.txt`: depends on `app_config`, `nvs_store`, `esp_wifi`, `esp_event`, `esp_netif`, `esp_timer`, and `freertos`.
+
+## Main Application
+
+- `main/app_main.c`: boot sequence and main loop.
+- `main/web_server.c`: HTTP server routes, auth middleware, cJSON API handlers, static file serving, status aggregation.
+- `main/web_server.h`: `web_server_start()` declaration.
+- `main/dns_server.c`: UDP DNS fallback server.
+- `main/dns_server.h`: DNS lifecycle declarations.
+- `main/CMakeLists.txt`: registers app sources, embeds static files, and declares dependencies.
+- `main/idf_component.yml`: managed component dependencies for cJSON and mDNS.
+
+## Static UI
+
+- `main/static/login.html`: Thai login page.
+- `main/static/dashboard.html`: dashboard cards and summary.
+- `main/static/status.html`: full device status page.
+- `main/static/wifi.html`: Wi-Fi scan/connect page with optional static IP fields.
+- `main/static/style.css`: plain CSS visual system.
+- `main/static/app.js`: vanilla JS API helpers, auth redirect logic, polling, Wi-Fi scan/connect UI, and HTML escaping utilities.
+
+## Documentation
+
+- `docs/components.md` summarizes component responsibilities and NVS keys.
+- `docs/development-notes.md` captures ESP-IDF, Windows, frontend, and Wi-Fi manager development lessons.
+- `README.md` is the primary operator/developer guide.
+- `AGENTS.md` is the active agent instruction set for this workspace.
+
+## Naming Conventions
+
+- Public component APIs use prefixes matching their component: `nvs_store_*`, `session_*`, `wifi_manager_*`, `dns_server_*`, `web_server_*`.
+- Static file symbols use `_binary_<filename>_<start|end>` because ESP-IDF strips the directory prefix for `EMBED_FILES`.
+- Static C globals use `s_` prefixes, such as `s_sta_connected`, `s_sessions`, and `s_dns_task`.
+- ESP-IDF logs use per-file `TAG` constants.
+
+## Places To Extend
+
+- Template constants: `components/app_config/app_config.h`.
+- Product-specific startup after base services: `main/app_main.c`.
+- Product-specific routes and pages: `main/web_server.c` and `main/static/`.
+- Hardware control should be added only after board variant, relay pins, and timing rules are defined.
+
