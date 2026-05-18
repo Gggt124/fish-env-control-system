@@ -3,7 +3,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 set(EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/components")
 
-project(main_dashboard_mcu)
+project(fish_pump_relay_timer_control)
 
 # Use sdkconfig.defaults if present
 if(EXISTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults)

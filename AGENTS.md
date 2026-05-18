@@ -2,10 +2,10 @@
 
 ## Project
 
-ESP32 Wi-Fi Setup/Web Server Template. ESP-IDF firmware with local web server, login/session, Wi-Fi config, SoftAP fallback.
+Fish Pump Relay Timer Control. ESP-IDF firmware with local web server, login/session, Wi-Fi config, SoftAP fallback.
 
 - **Target**: ESP32 DevKit V1 (classic ESP32), ESP-IDF framework only (not Arduino/PlatformIO)
-- **Scope**: reusable Wi-Fi setup/web server foundation only — no OTA, relay, sensors, MQTT, cloud, or multi-user yet
+- **Scope**: Wi-Fi setup/web server foundation for a downstream pump controller. Do not add relay GPIO/timer behavior until the exact ESP32 variant, board, relay pin map, and timing requirements are explicit.
 
 ## Environment
 
@@ -54,7 +54,7 @@ If a board was previously flashed with flash encryption enabled, disable it once
 ## Project Structure
 
 ```
-main_dashboard_mcu/
+fish_pump_relay_timer_control/
 ├── CMakeLists.txt              # Root ESP-IDF build, EXTRA_COMPONENT_DIRS → components/
 ├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", custom partition table, dev flash workflow
 ├── components/
@@ -126,7 +126,7 @@ Get-Content build\login.html.S -First 10
 
 ### Default credentials
 
-- Username: `admin`, Password: `admin123`
+- Username: `admin`, Password: `change-me`
 - WARNING: Must be changed before any production use
 - Stored in `components/app_config/app_config.h` as `APP_TEMPLATE_DEFAULT_USERNAME` / `APP_TEMPLATE_DEFAULT_PASSWORD`
 
@@ -136,7 +136,7 @@ Session cookie is **non-HttpOnly** by design — JavaScript needs to read `docum
 
 ### Wi-Fi behavior
 
-- Boots in APSTA mode: AP (`ESP32-Control-Setup`, open, 192.168.4.1) + optional STA
+- Boots in APSTA mode: AP (`FishPump-Setup`, open, 192.168.4.1) + optional STA
 - STA credentials auto-loaded from NVS on boot
 - If saved STA fails (wrong password etc.), reconnection retries automatically
 - AP stays active always as fallback
@@ -184,10 +184,10 @@ Namespace `wifi_cfg`: `sta_ssid` (string), `sta_pass` (string)
 idf.py build
 ```
 
-If build succeeds and `main_dashboard_mcu.bin` is generated, the project is valid. No unit tests in this phase. Manual testing:
-1. Connect to Wi-Fi `ESP32-Control-Setup`
+If build succeeds and `fish_pump_relay_timer_control.bin` is generated, the project is valid. No unit tests in this phase. Manual testing:
+1. Connect to Wi-Fi `FishPump-Setup`
 2. Open `http://192.168.4.1`
-3. Login admin/admin123
+3. Login admin/change-me
 4. Verify dashboard loads, Wi-Fi scan works
 
 ## Local Agent Notes

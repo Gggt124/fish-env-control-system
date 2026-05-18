@@ -1,6 +1,7 @@
-# ESP32 Wi-Fi Setup / Web Server Template
+# Fish Pump Relay Timer Control
 
-Reusable ESP-IDF foundation for ESP32 projects that need local setup over Wi-Fi:
+ESP-IDF firmware for a fish pump relay timer controller, based on a reusable
+local Wi-Fi setup/web dashboard foundation. The current baseline includes
 SoftAP fallback, STA Wi-Fi configuration, login/session auth, status JSON, and
 embedded HTML/CSS/JS pages.
 
@@ -18,9 +19,9 @@ cloud integrations in the downstream project, not in this template.
 
 ## Features
 
-- SoftAP setup network: `ESP32-Control-Setup`
+- SoftAP setup network: `FishPump-Setup`
 - Captive-portal DNS fallback on AP clients
-- mDNS hostname: `esp32-setup.local`
+- mDNS hostname: `fish-pump.local`
 - Login page with in-memory cookie sessions
 - Wi-Fi scan/connect/disconnect APIs
 - Optional static STA IP fields in the Wi-Fi page
@@ -47,7 +48,7 @@ Change these values before touching the Wi-Fi or web-server internals:
 - `APP_TEMPLATE_AP_AUTO_STOP_DEFAULT`
 - `APP_TEMPLATE_AP_STOP_TMO_DEFAULT_MS`
 
-Default login is `admin` / `admin123`. Change it before using the template
+Default login is `admin` / `change-me`. Change it before using the firmware
 outside local development.
 
 ## Quick Start
@@ -87,7 +88,7 @@ Replace `COMx` with the ESP32 serial port.
 ## Manual Test
 
 1. Flash the firmware.
-2. Connect phone or laptop to Wi-Fi `ESP32-Control-Setup`.
+2. Connect phone or laptop to Wi-Fi `FishPump-Setup`.
 3. Open `http://192.168.4.1`.
 4. Login with the configured credentials.
 5. Open Wi-Fi Settings, scan networks, and connect STA.
@@ -97,7 +98,7 @@ Replace `COMx` with the ESP32 serial port.
 ## Project Structure
 
 ```text
-main_dashboard_mcu/
+fish_pump_relay_timer_control/
 ├── CMakeLists.txt
 ├── sdkconfig.defaults
 ├── partitions.csv
@@ -176,6 +177,6 @@ The template is valid when:
 .\scripts\build.ps1
 ```
 
-finishes successfully and `build\main_dashboard_mcu.bin` is generated.
+finishes successfully and `build\fish_pump_relay_timer_control.bin` is generated.
 
 No unit tests are included in this phase.

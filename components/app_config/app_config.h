@@ -14,20 +14,20 @@
 extern "C" {
 #endif
 
-#define APP_TEMPLATE_NAME                  "ESP32 Control Template"
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v1.0.0"
-#define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup/Web Server Template"
+#define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.0"
+#define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
-#define APP_TEMPLATE_AP_SSID               "ESP32-Control-Setup"
+#define APP_TEMPLATE_AP_SSID               "FishPump-Setup"
 #define APP_TEMPLATE_AP_CHANNEL            1
 #define APP_TEMPLATE_AP_MAX_CONN           4
 #define APP_TEMPLATE_WIFI_SCAN_MAX         20
 
-#define APP_TEMPLATE_MDNS_HOSTNAME         "esp32-setup"
-#define APP_TEMPLATE_MDNS_INSTANCE_NAME    "ESP32 Dashboard"
+#define APP_TEMPLATE_MDNS_HOSTNAME         "fish-pump"
+#define APP_TEMPLATE_MDNS_INSTANCE_NAME    "Fish Pump Dashboard"
 
 #define APP_TEMPLATE_DEFAULT_USERNAME      "admin"
-#define APP_TEMPLATE_DEFAULT_PASSWORD      "admin123"
+#define APP_TEMPLATE_DEFAULT_PASSWORD      "change-me"
 
 #define APP_TEMPLATE_SESSION_MAX_AGE_SEC   1800
 #define APP_TEMPLATE_LOGIN_RATE_LIMIT_MAX  5
