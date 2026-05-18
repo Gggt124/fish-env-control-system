@@ -37,9 +37,7 @@ idf.py set-target esp32
 idf.py build
 
 # Flash + monitor (replace COMx)
-# WARNING: Flash encryption IS ENABLED (eFuse burned). DO NOT use plain "flash"!
-# Always use encrypted-flash — regular flash will brick the device until reflashed.
-idf.py -p COMx encrypted-flash monitor
+idf.py -p COMx flash monitor
 
 # Clean build
 idf.py fullclean
@@ -48,12 +46,14 @@ idf.py build
 
 Run sequentially: `export → chcp → idf.py`. Build output is in `build/` (gitignored).
 
+If a board was previously flashed with flash encryption enabled, disable it once in development mode by building/flashing plaintext firmware, then burning `FLASH_CRYPT_CNT` so the value becomes even. After that, regular `idf.py flash` works again.
+
 ## Project Structure
 
 ```
 main_dashboard_mcu/
 ├── CMakeLists.txt              # Root ESP-IDF build, EXTRA_COMPONENT_DIRS → components/
-├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", flash encryption dev mode, encrypted NVS
+├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", custom partition table, dev flash workflow
 ├── components/
 │   ├── nvs_store/              # Reusable: NVS Wi-Fi credential I/O
 │   │   ├── CMakeLists.txt       # REQUIRES nvs_flash
@@ -164,7 +164,7 @@ Namespace `wifi_cfg`: `sta_ssid` (string), `sta_pass` (string)
 
 - OTA update logic, relay/GPIO control, sensor telemetry, charts, MQTT/cloud, SPIFFS/LittleFS, WebSocket, multi-user, HTTPS, CSRF protection
 - No hardware GPIO assignments without explicit pin map
-- Keep `sdkconfig.defaults` minimal — only `CONFIG_IDF_TARGET` and `CONFIG_PARTITION_TABLE_SINGLE_APP`
+- Keep `sdkconfig.defaults` minimal — target, partition table, flash size, and required development boot defaults only
 
 ## Reference Tracking
 

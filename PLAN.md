@@ -86,11 +86,11 @@
 
 ## P2 — Medium (Ops / Config / Testing)
 
-### P2-1: NVS Encryption + Flash Encryption config
-- [x] `sdkconfig.defaults` — add `CONFIG_SECURE_FLASH_ENC_ENABLED=y` + dev mode
-- [x] `sdkconfig.defaults` — add bootloader size opts (compiled date off, log ERROR)
-- [x] Create `partitions.csv` with PT offset 0x9000 + `nvs_key` partition (encrypted)
-- [x] Build + encrypted-flash: boot OK, NVS keys generated, NVS encrypted
+### P2-1: Flash/NVS Encryption evaluation (DEFERRED during active development)
+- [x] Tested `CONFIG_SECURE_FLASH_ENC_ENABLED=y` in development mode
+- [x] Tested `partitions.csv` with PT offset 0x9000 + `nvs_key` partition
+- [x] Decision: disable Flash/NVS encryption during active development to keep plain `idf.py flash` workflow
+- [ ] Re-enable Secure Boot v2 + Flash Encryption Release for production hardening (see P3-2)
 
 ### P2-2: Unit test harness (SKIPPED — Phase 1 scope: no unit tests per AGENTS.md)
 
@@ -112,9 +112,10 @@
 
 ### P3-2: Secure Boot v2 + Flash Encryption Release
 - [ ] Configure Secure Boot v2 in menuconfig
+- [ ] Re-enable Flash Encryption in release mode
 - [ ] Generate signing keys
 - [ ] Sign firmware images
-- [ ] Burn eFuses (one-time irreversible)
+- [ ] Burn production eFuses only after validation (one-time irreversible)
 - [ ] Verify chain of trust on boot
 
 ### P3-3: OTA update

@@ -115,9 +115,10 @@ This is a **local-prototype** system. Security is minimal by design:
 - Session tokens are random (esp_random) but transmitted as plain HTTP cookies
 - Credentials are hardcoded (`admin`/`admin123`) - must be changed for production
 - No HTTPS/TLS (ESP32 serves HTTP only)
-- No brute-force protection
-- No CSRF protection
-- Passwords stored in NVS (not encrypted)
+- Basic login rate limiting only
+- Basic Origin/Referer POST check only
+- Wi-Fi passwords are stored in NVS (not encrypted in development)
+- Flash/NVS encryption is disabled for faster development; re-enable with Secure Boot for production
 
 **Not suitable for internet-facing deployment without significant hardening.**
 
