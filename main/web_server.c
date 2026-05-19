@@ -287,6 +287,155 @@ static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_setting
     return true;
 }
 
+static bool api_pump_add_minimal_status(cJSON *root)
+{
+    if (!root) {
+        return false;
+    }
+
+    pump_control_status_t status = {0};
+    if (!pump_control_get_status(&status)) {
+        return false;
+    }
+
+    cJSON *status_obj = cJSON_AddObjectToObject(root, "status");
+    if (!status_obj) {
+        return false;
+    }
+
+    cJSON_AddBoolToObject(status_obj, "running", status.running);
+    cJSON_AddBoolToObject(status_obj, "initialized", status.initialized);
+    cJSON_AddBoolToObject(status_obj, "config_valid", status.config_valid);
+    cJSON_AddBoolToObject(status_obj, "relay_energized", status.relay_energized);
+    cJSON_AddNumberToObject(status_obj, "countdown_sec", status.countdown_sec);
+    return true;
+}
+
+static bool api_pump_json_has_field(const cJSON *root, const char *name)
+{
+    return cJSON_GetObjectItem(root, name) != NULL;
+}
+
+static bool api_pump_required_u32(const cJSON *root, const char *name, uint32_t *out,
+                                  const char **error_code, const char **error_message)
+{
+    const cJSON *item = cJSON_GetObjectItem(root, name);
+    if (!item) {
+        *error_code = "missing_field";
+        *error_message = name;
+        return false;
+    }
+    if (!cJSON_IsNumber(item) || item->valuedouble < 0 ||
+        item->valuedouble != (double)(uint32_t)item->valuedouble) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+    if ((uint32_t)item->valuedouble < APP_TEMPLATE_PUMP_TIMER_MIN_SEC ||
+        (uint32_t)item->valuedouble > APP_TEMPLATE_PUMP_TIMER_MAX_SEC) {
+        *error_code = "duration_out_of_range";
+        *error_message = name;
+        return false;
+    }
+
+    *out = (uint32_t)item->valuedouble;
+    return true;
+}
+
+static bool api_pump_required_bool(const cJSON *root, const char *name, bool *out,
+                                   const char **error_code, const char **error_message)
+{
+    const cJSON *item = cJSON_GetObjectItem(root, name);
+    if (!item) {
+        *error_code = "missing_field";
+        *error_message = name;
+        return false;
+    }
+    if (!cJSON_IsBool(item)) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+
+    *out = cJSON_IsTrue(item);
+    return true;
+}
+
+static bool api_pump_parse_settings_payload(const cJSON *root,
+                                            nvs_store_pump_settings_t *settings,
+                                            const char **error_code,
+                                            const char **error_message)
+{
+    if (!root || !settings) {
+        *error_code = "invalid_json";
+        *error_message = "Expected a JSON object";
+        return false;
+    }
+
+    const char *readonly_fields[] = {"float_gpio", "relay_gpio", "debounce_ms"};
+    for (size_t i = 0; i < sizeof(readonly_fields) / sizeof(readonly_fields[0]); i++) {
+        if (api_pump_json_has_field(root, readonly_fields[i])) {
+            *error_code = "read_only_field";
+            *error_message = readonly_fields[i];
+            return false;
+        }
+    }
+
+    if (!api_pump_required_u32(root, "timer1_on_sec", &settings->timer1_on_sec,
+                               error_code, error_message) ||
+        !api_pump_required_u32(root, "timer1_off_sec", &settings->timer1_off_sec,
+                               error_code, error_message) ||
+        !api_pump_required_u32(root, "timer2_on_sec", &settings->timer2_on_sec,
+                               error_code, error_message) ||
+        !api_pump_required_u32(root, "timer2_off_sec", &settings->timer2_off_sec,
+                               error_code, error_message) ||
+        !api_pump_required_bool(root, "auto_start", &settings->auto_start,
+                                error_code, error_message)) {
+        return false;
+    }
+
+    const cJSON *polarity = cJSON_GetObjectItem(root, "relay_polarity");
+    if (!polarity) {
+        *error_code = "missing_field";
+        *error_message = "relay_polarity";
+        return false;
+    }
+    if (!api_pump_parse_relay_polarity(polarity, &settings->relay_active_low)) {
+        *error_code = "invalid_relay_polarity";
+        *error_message = "relay_polarity";
+        return false;
+    }
+
+    return true;
+}
+
+static esp_err_t api_pump_send_config(httpd_req_t *req,
+                                      const nvs_store_pump_settings_t *settings,
+                                      nvs_store_pump_settings_load_status_t status,
+                                      bool include_status)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    api_pump_add_config_fields(root, settings, status);
+    if (include_status) {
+        api_pump_add_minimal_status(root);
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
 /* Scan context for non-blocking callback */
 typedef struct {
     SemaphoreHandle_t sem;
@@ -688,6 +837,92 @@ static esp_err_t handle_get_status(httpd_req_t *req)
     return serve_static(req,
         _binary_status_html_start, _binary_status_html_end,
         "text/html; charset=utf-8");
+}
+
+/* GET /api/pump/config - protected, return persisted pump config plus read-only hardware defaults */
+static esp_err_t handle_api_pump_config_get(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    nvs_store_pump_settings_t settings;
+    nvs_store_pump_settings_load_status_t status = nvs_store_load_pump_settings(&settings);
+    if (status == NVS_STORE_PUMP_SETTINGS_DEFAULTS_ERROR) {
+        return send_api_error(req, "settings_load_failed", "Could not load pump settings",
+                              "500 Internal Server Error");
+    }
+
+    return api_pump_send_config(req, &settings, status, false);
+}
+
+/* POST /api/pump/config - protected, full replacement for editable pump settings */
+static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req)) {
+        return send_api_error(req, "forbidden", "Cross-origin pump config save blocked",
+                              "403 Forbidden");
+    }
+
+    char body[512] = {0};
+    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
+    if (ret <= 0) {
+        return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
+    }
+    body[ret] = '\0';
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root || !cJSON_IsObject(root)) {
+        if (root) {
+            cJSON_Delete(root);
+        }
+        return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
+    }
+
+    nvs_store_pump_settings_t settings = {0};
+    const char *error_code = NULL;
+    const char *error_message = NULL;
+    bool valid = api_pump_parse_settings_payload(root, &settings, &error_code, &error_message);
+    cJSON_Delete(root);
+    if (!valid) {
+        return send_api_error(req, error_code, error_message, "400 Bad Request");
+    }
+
+    pump_control_status_t before_status = {0};
+    bool had_status = pump_control_get_status(&before_status);
+    bool was_running = had_status && before_status.running;
+
+    if (!nvs_store_save_pump_settings(&settings)) {
+        return send_api_error(req, "settings_save_failed", "Could not save pump settings",
+                              "500 Internal Server Error");
+    }
+
+    pump_control_config_t config;
+    api_pump_settings_to_runtime_config(&settings, &config);
+
+    if (was_running) {
+        pump_control_stop();
+    }
+
+    if (!pump_control_init(&config)) {
+        pump_control_stop();
+        return send_api_error(req, "runtime_apply_failed",
+                              "Saved settings but could not apply pump runtime config",
+                              "500 Internal Server Error");
+    }
+
+    if (was_running && !pump_control_start()) {
+        pump_control_stop();
+        return send_api_error(req, "restart_failed",
+                              "Saved settings but could not restart pump control",
+                              "500 Internal Server Error");
+    }
+
+    return api_pump_send_config(req, &settings, NVS_STORE_PUMP_SETTINGS_LOADED, true);
 }
 
 /* GET /api/status - protected, return device status JSON */
