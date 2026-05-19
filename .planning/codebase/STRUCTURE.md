@@ -43,6 +43,10 @@ focus: arch
   - `wifi_manager.h`: AP/STA/scan/status API.
   - `wifi_manager.c`: Wi-Fi initialization, events, AP fallback, STA connect/disconnect, static IP, scan, status getters.
   - `CMakeLists.txt`: depends on `app_config`, `nvs_store`, `esp_wifi`, `esp_event`, `esp_netif`, `esp_timer`, and `freertos`.
+- `components/pump_control/`
+  - `pump_control.h`: public pump config/status types and default/init/start/stop/status API.
+  - `pump_control.c`: GPIO validation, relay inactive initialization, float debounce, timer selection, ON/OFF phase transitions, and status snapshots.
+  - `CMakeLists.txt`: depends on `app_config`, `esp_driver_gpio`, `esp_timer`, and `freertos`.
 
 ## Main Application
 
@@ -80,7 +84,6 @@ focus: arch
 ## Places To Extend
 
 - Template constants: `components/app_config/app_config.h`.
-- Product-specific startup after base services: `main/app_main.c`.
+- Product-specific startup and safe hardware initialization: `main/app_main.c`.
 - Product-specific routes and pages: `main/web_server.c` and `main/static/`.
-- Hardware control should be added only after board variant, relay pins, and timing rules are defined.
-
+- Pump runtime persistence, APIs, and UI controls should build on `components/pump_control/` without moving GPIO logic into `main/`.

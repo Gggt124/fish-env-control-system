@@ -7,7 +7,7 @@ focus: tech
 
 ## Summary
 
-This repository is classic ESP32 firmware built with ESP-IDF. It provides a reusable local Wi-Fi setup and web dashboard foundation for a fish pump relay timer controller, but it intentionally does not implement relay GPIO or scheduling behavior yet.
+This repository is classic ESP32 firmware built with ESP-IDF. It provides a reusable local Wi-Fi setup and web dashboard foundation plus a hardware-safe pump-control core for a fish pump relay timer controller.
 
 ## Languages
 
@@ -31,8 +31,9 @@ This repository is classic ESP32 firmware built with ESP-IDF. It provides a reus
 - Event loop and netif setup: `esp_event`, `esp_netif`, used by `components/wifi_manager/wifi_manager.c`.
 - HTTP server: `esp_http_server`, used by `main/web_server.c`.
 - NVS: `nvs_flash`, `nvs`, wrapped by `components/nvs_store/nvs_store.c`.
-- Timers and uptime: `esp_timer`, used by `components/session/session.c`, `components/wifi_manager/wifi_manager.c`, and `main/web_server.c`.
-- FreeRTOS tasks and semaphores: used by `components/session/session.c`, `components/wifi_manager/wifi_manager.c`, `main/dns_server.c`, and `main/app_main.c`.
+- GPIO driver: `esp_driver_gpio`, used by `components/pump_control/pump_control.c` for float input and relay output.
+- Timers and uptime: `esp_timer`, used by `components/session/session.c`, `components/wifi_manager/wifi_manager.c`, `components/pump_control/pump_control.c`, and `main/web_server.c`.
+- FreeRTOS tasks and semaphores: used by `components/session/session.c`, `components/wifi_manager/wifi_manager.c`, `components/pump_control/pump_control.c`, `main/dns_server.c`, and `main/app_main.c`.
 - Task watchdog: `esp_task_wdt`, initialized manually in `main/app_main.c`.
 - LwIP sockets and IPv4 parsing: `main/dns_server.c` and `components/wifi_manager/wifi_manager.c`.
 - Heap and chip status APIs: `esp_heap_caps`, `esp_chip_info`, `esp_mac`, `esp_idf_version`, used in `main/web_server.c`.
@@ -69,6 +70,5 @@ The resolved dependency lock is stored in `dependencies.lock`.
 
 ## Configuration Surface
 
-- Product names, AP SSID, mDNS host, credentials, limits, AP auto-stop settings, HTTP handler capacity, and watchdog timeout live in `components/app_config/app_config.h`.
+- Product names, AP SSID, mDNS host, credentials, limits, AP auto-stop settings, HTTP handler capacity, watchdog timeout, and pump-control source defaults live in `components/app_config/app_config.h`.
 - Wi-Fi and optional static IP runtime settings persist in NVS through `components/nvs_store/nvs_store.c`.
-
