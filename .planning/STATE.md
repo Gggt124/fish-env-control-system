@@ -6,10 +6,10 @@ status: ready_to_plan
 last_updated: 2026-05-19T20:09:44.749Z
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
   completed_plans: 9
-  percent: 40
+  percent: 60
 stopped_at: Phase 03 complete (3/3) — ready to discuss Phase 4
 ---
 
@@ -43,11 +43,11 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 
 ## Current Phase
 
-### Phase 1: Hardware-Safe Pump Control Core
+### Phase 4: Web Pump Control UI
 
-**Goal:** Add the pump-control component with safe GPIO defaults, relay inactive initialization, timer state machine, and build validation.
+**Goal:** Add the local web UI for timer setup, auto-start, start/stop, and live pump status without external dependencies.
 
-**Requirements:** HW-01, HW-02, HW-03, HW-04, HW-05, HW-06, TIME-05, TIME-06, TIME-07, RUN-03, RUN-06, RUN-07, RUN-08, RUN-09, RUN-10, RUN-11, VAL-01
+**Requirements:** TIME-01, TIME-02, TIME-03, TIME-04, UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07
 
 **Status:** Ready to plan
 
