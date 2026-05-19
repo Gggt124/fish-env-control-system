@@ -41,12 +41,12 @@
 
 ### Web API
 
-- [ ] **API-01**: Authenticated API returns pump configuration including timer durations, auto-start setting, relay polarity, and configured GPIO defaults.
-- [ ] **API-02**: Authenticated API saves pump configuration after validating timer durations and polarity.
+- [x] **API-01**: Authenticated API returns pump configuration including timer durations, auto-start setting, relay polarity, and configured GPIO defaults.
+- [x] **API-02**: Authenticated API saves pump configuration after validating timer durations and polarity.
 - [ ] **API-03**: Authenticated API starts pump control.
 - [ ] **API-04**: Authenticated API stops pump control.
 - [ ] **API-05**: Authenticated API returns pump status including running state, float state, active timer, current phase, countdown, relay state, and auto-start state.
-- [ ] **API-06**: Pump APIs follow the existing session auth and same-origin POST protection patterns.
+- [x] **API-06**: Pump APIs follow the existing session auth and same-origin POST protection patterns.
 
 ### Web UI
 
@@ -129,12 +129,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RUN-09 | Phase 1 | Complete |
 | RUN-10 | Phase 1 | Complete |
 | RUN-11 | Phase 1 | Complete |
-| API-01 | Phase 3 | Pending |
-| API-02 | Phase 3 | Pending |
+| API-01 | Phase 3 | Complete |
+| API-02 | Phase 3 | Complete |
 | API-03 | Phase 3 | Pending |
 | API-04 | Phase 3 | Pending |
 | API-05 | Phase 3 | Pending |
-| API-06 | Phase 3 | Pending |
+| API-06 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
 | UI-03 | Phase 4 | Pending |
