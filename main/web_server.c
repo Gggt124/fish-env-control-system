@@ -49,6 +49,8 @@ extern const uint8_t _binary_status_html_end[]   asm("_binary_status_html_end");
 #define RATE_LIMIT_MAX     APP_TEMPLATE_LOGIN_RATE_LIMIT_MAX
 #define RATE_LIMIT_WINDOW  APP_TEMPLATE_LOGIN_RATE_LIMIT_SEC
 
+static bool api_pump_add_status_object(cJSON *root);
+
 /* --------------- Helpers --------------- */
 
 static void url_decode(char *dst, const char *src)
@@ -205,6 +207,30 @@ static esp_err_t send_api_error(httpd_req_t *req, const char *code, const char *
     if (!json_str) {
         return send_json(req, "{\"ok\":false,\"error\":\"memory\",\"message\":\"JSON allocation failed\"}",
                          "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, status);
+    free(json_str);
+    return result;
+}
+
+static esp_err_t send_api_error_with_pump_status(httpd_req_t *req, const char *code,
+                                                 const char *message, const char *status)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", false);
+    cJSON_AddStringToObject(root, "error", code);
+    cJSON_AddStringToObject(root, "message", message);
+    api_pump_add_status_object(root);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
 
     esp_err_t result = send_json(req, json_str, status);
@@ -977,6 +1003,143 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
     }
 
     return api_pump_send_config(req, &settings, NVS_STORE_PUMP_SETTINGS_LOADED, true);
+}
+
+/* GET /api/pump/status - protected, return machine-friendly pump runtime status */
+static esp_err_t handle_api_pump_status(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    if (!api_pump_add_status_fields(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
+                              "409 Conflict");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
+/* POST /api/pump/start - protected, idempotently start pump control */
+static esp_err_t handle_api_pump_start(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req)) {
+        return send_api_error(req, "forbidden", "Cross-origin pump start blocked", "403 Forbidden");
+    }
+
+    pump_control_status_t before_status = {0};
+    if (!pump_control_get_status(&before_status)) {
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
+                              "409 Conflict");
+    }
+
+    bool already_running = before_status.running;
+    if (!already_running && !pump_control_start()) {
+        pump_control_stop();
+        return send_api_error_with_pump_status(req, "start_failed",
+                                               "Pump control could not be started",
+                                               "500 Internal Server Error");
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddBoolToObject(root, "already_running", already_running);
+    if (!api_pump_add_status_object(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
+                              "409 Conflict");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
+/* POST /api/pump/stop - protected, idempotently stop pump control */
+static esp_err_t handle_api_pump_stop(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req)) {
+        return send_api_error(req, "forbidden", "Cross-origin pump stop blocked", "403 Forbidden");
+    }
+
+    pump_control_status_t before_status = {0};
+    if (!pump_control_get_status(&before_status)) {
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
+                              "409 Conflict");
+    }
+
+    bool already_stopped = !before_status.running;
+    if (!already_stopped || before_status.relay_energized) {
+        if (!pump_control_stop()) {
+            return send_api_error_with_pump_status(req, "stop_failed",
+                                                   "Pump control could not be stopped",
+                                                   "500 Internal Server Error");
+        }
+    }
+
+    pump_control_status_t after_status = {0};
+    if (!pump_control_get_status(&after_status) ||
+        after_status.running || after_status.relay_energized) {
+        return send_api_error_with_pump_status(req, "stop_failed",
+                                               "Pump relay inactive state could not be confirmed",
+                                               "409 Conflict");
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddBoolToObject(root, "already_stopped", already_stopped);
+    if (!api_pump_add_status_object(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
+                              "409 Conflict");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
 }
 
 /* GET /api/status - protected, return device status JSON */
