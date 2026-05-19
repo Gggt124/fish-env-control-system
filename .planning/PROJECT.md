@@ -24,14 +24,16 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Pump control core defines GPIO32 active-low binary float input with debounce for timer selection — Phase 1
 - ✓ Pump control core implements Timer 1/Timer 2 ON/OFF defaults, bounds, and relay phase behavior — Phase 1
 - ✓ ESP-IDF build succeeds with pump control integrated — Phase 1
+- ✓ Timer 1/Timer 2 ON/OFF settings persist in NVS through the `pump_cfg` namespace — Phase 2
+- ✓ Pump boot behavior loads persisted settings before pump initialization and defaults safely when missing — Phase 2
+- ✓ Auto-start is persisted at the firmware layer and disabled saved settings suppress boot start — Phase 2
 
 ### Active
 
 - [ ] User can configure Timer 1 ON/OFF durations from the web UI.
 - [ ] User can configure Timer 2 ON/OFF durations from the web UI.
-- [ ] Timer settings persist in NVS and survive reboot.
 - [ ] User can start and stop pump control from the web UI.
-- [ ] User can choose whether pump control auto-starts on boot; default is auto-start enabled.
+- [ ] User can choose whether pump control auto-starts on boot from authenticated API and web UI controls.
 - [ ] Dashboard displays active timer, current phase, countdown, float state, relay state, and auto-start state.
 - [ ] Firmware preserves AP/Wi-Fi setup access while pump control is running.
 
@@ -85,7 +87,7 @@ Recommended initial hardware contract:
 | Recommend GPIO32 for float switch input with pull-up to GND | GPIO32 is a conservative input-capable pin with internal pull-up support and avoids boot strapping pins | Validated as Phase 1 source default |
 | Recommend GPIO26 for relay output | GPIO26 is a general-purpose output and avoids common boot/programming pins | Validated as Phase 1 source default |
 | Make relay polarity configurable | Relay modules are often active-low, so firmware must not assume one electrical polarity forever | Validated in Phase 1 pump config |
-| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | — Pending |
+| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | Firmware persistence validated in Phase 2; API/UI controls pending |
 | Default Timer 1 is ON 20s / OFF 1:00 and Timer 2 is ON 10s / OFF 3:00 | User corrected defaults from the reference flow document | Validated as Phase 1 source defaults |
 
 ## Evolution
@@ -106,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 after Phase 1 completion*
+*Last updated: 2026-05-19 after Phase 2 completion*
