@@ -8,11 +8,11 @@
 ### Hardware Configuration
 
 - [ ] **HW-01**: Firmware uses ESP32 DevKit V1 30-pin / classic ESP32 as the target board.
-- [ ] **HW-02**: Firmware reads one binary float switch input with internal pull-up enabled and switch-to-GND treated as active.
-- [ ] **HW-03**: Firmware uses GPIO32 as the default float switch input unless changed in source configuration.
+- [x] **HW-02**: Firmware reads one binary float switch input with internal pull-up enabled and switch-to-GND treated as active.
+- [x] **HW-03**: Firmware uses GPIO32 as the default float switch input unless changed in source configuration.
 - [ ] **HW-04**: Firmware drives one relay output GPIO and initializes it inactive before pump control starts.
-- [ ] **HW-05**: Firmware uses GPIO26 as the default relay output unless changed in source configuration.
-- [ ] **HW-06**: Firmware supports configurable relay polarity so active-high and active-low relay modules can be handled safely.
+- [x] **HW-05**: Firmware uses GPIO26 as the default relay output unless changed in source configuration.
+- [x] **HW-06**: Firmware supports configurable relay polarity so active-high and active-low relay modules can be handled safely.
 
 ### Timer Configuration
 
@@ -20,9 +20,9 @@
 - [ ] **TIME-02**: User can configure Timer 1 OFF duration in minutes and seconds from the web UI.
 - [ ] **TIME-03**: User can configure Timer 2 ON duration in minutes and seconds from the web UI.
 - [ ] **TIME-04**: User can configure Timer 2 OFF duration in minutes and seconds from the web UI.
-- [ ] **TIME-05**: Default Timer 1 duration is ON 20 seconds and OFF 1 minute.
-- [ ] **TIME-06**: Default Timer 2 duration is ON 10 seconds and OFF 3 minutes.
-- [ ] **TIME-07**: Firmware rejects invalid timer settings that could cause zero-duration or rapid relay chatter.
+- [x] **TIME-05**: Default Timer 1 duration is ON 20 seconds and OFF 1 minute.
+- [x] **TIME-06**: Default Timer 2 duration is ON 10 seconds and OFF 3 minutes.
+- [x] **TIME-07**: Firmware rejects invalid timer settings that could cause zero-duration or rapid relay chatter.
 - [ ] **TIME-08**: Timer settings persist in NVS and survive reboot.
 
 ### Pump Runtime
@@ -105,18 +105,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | HW-01 | Phase 1 | Pending |
-| HW-02 | Phase 1 | Pending |
-| HW-03 | Phase 1 | Pending |
+| HW-02 | Phase 1 | Complete |
+| HW-03 | Phase 1 | Complete |
 | HW-04 | Phase 1 | Pending |
-| HW-05 | Phase 1 | Pending |
-| HW-06 | Phase 1 | Pending |
+| HW-05 | Phase 1 | Complete |
+| HW-06 | Phase 1 | Complete |
 | TIME-01 | Phase 4 | Pending |
 | TIME-02 | Phase 4 | Pending |
 | TIME-03 | Phase 4 | Pending |
 | TIME-04 | Phase 4 | Pending |
-| TIME-05 | Phase 1 | Pending |
-| TIME-06 | Phase 1 | Pending |
-| TIME-07 | Phase 1 | Pending |
+| TIME-05 | Phase 1 | Complete |
+| TIME-06 | Phase 1 | Complete |
+| TIME-07 | Phase 1 | Complete |
 | TIME-08 | Phase 2 | Pending |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
