@@ -1,5 +1,6 @@
 #include "app_config.h"
 #include "nvs_store.h"
+#include "pump_control.h"
 #include "wifi_manager.h"
 #include "session.h"
 #include "web_server.h"
@@ -20,6 +21,14 @@ void app_main(void)
     ESP_LOGI(TAG, "  %s %s", APP_TEMPLATE_NAME, APP_TEMPLATE_FIRMWARE_VERSION);
     ESP_LOGI(TAG, "  %s", APP_TEMPLATE_PHASE_LABEL);
     ESP_LOGI(TAG, "========================================");
+
+    pump_control_config_t pump_config = pump_control_default_config();
+    if (pump_control_init(&pump_config)) {
+        ESP_LOGI(TAG, "Pump control initialized stopped: relay GPIO=%d, float GPIO=%d",
+                 pump_config.relay_gpio, pump_config.float_gpio);
+    } else {
+        ESP_LOGE(TAG, "Pump control init failed; continuing with Wi-Fi/web setup");
+    }
 
     /* 1. Initialize NVS storage */
     if (!nvs_store_init()) {

@@ -15,6 +15,7 @@ idf_component_register(
     REQUIRES
         app_config
         nvs_store
+        pump_control
         session
         wifi_manager
         esp_http_server
