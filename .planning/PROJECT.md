@@ -27,6 +27,9 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Timer 1/Timer 2 ON/OFF settings persist in NVS through the `pump_cfg` namespace — Phase 2
 - ✓ Pump boot behavior loads persisted settings before pump initialization and defaults safely when missing — Phase 2
 - ✓ Auto-start is persisted at the firmware layer and disabled saved settings suppress boot start — Phase 2
+- ✓ Authenticated `/api/pump/config` returns and saves validated pump settings while keeping GPIO/debounce read-only — Phase 3
+- ✓ Authenticated `/api/pump/status` returns machine-friendly pump runtime state — Phase 3
+- ✓ Authenticated `/api/pump/start` and `/api/pump/stop` provide idempotent runtime controls with same-origin POST protection — Phase 3
 
 ### Active
 
@@ -87,8 +90,9 @@ Recommended initial hardware contract:
 | Recommend GPIO32 for float switch input with pull-up to GND | GPIO32 is a conservative input-capable pin with internal pull-up support and avoids boot strapping pins | Validated as Phase 1 source default |
 | Recommend GPIO26 for relay output | GPIO26 is a general-purpose output and avoids common boot/programming pins | Validated as Phase 1 source default |
 | Make relay polarity configurable | Relay modules are often active-low, so firmware must not assume one electrical polarity forever | Validated in Phase 1 pump config |
-| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | Firmware persistence validated in Phase 2; API/UI controls pending |
+| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | Firmware persistence validated in Phase 2; authenticated API validated in Phase 3; UI controls pending |
 | Default Timer 1 is ON 20s / OFF 1:00 and Timer 2 is ON 10s / OFF 3:00 | User corrected defaults from the reference flow document | Validated as Phase 1 source defaults |
+| Keep pump APIs under `/api/pump/*` | Separates pump control contracts from existing system/Wi-Fi status routes | Validated in Phase 3 |
 
 ## Evolution
 
@@ -108,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-19 after Phase 2 completion*
+*Last updated: 2026-05-20 after Phase 3 completion*
