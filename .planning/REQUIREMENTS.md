@@ -7,7 +7,7 @@
 
 ### Hardware Configuration
 
-- [ ] **HW-01**: Firmware uses ESP32 DevKit V1 30-pin / classic ESP32 as the target board.
+- [x] **HW-01**: Firmware uses ESP32 DevKit V1 30-pin / classic ESP32 as the target board.
 - [x] **HW-02**: Firmware reads one binary float switch input with internal pull-up enabled and switch-to-GND treated as active.
 - [x] **HW-03**: Firmware uses GPIO32 as the default float switch input unless changed in source configuration.
 - [x] **HW-04**: Firmware drives one relay output GPIO and initializes it inactive before pump control starts.
@@ -60,7 +60,7 @@
 
 ### Validation
 
-- [ ] **VAL-01**: `idf.py build` succeeds after pump control changes.
+- [x] **VAL-01**: `idf.py build` succeeds after pump control changes.
 - [ ] **VAL-02**: Manual hardware test confirms float OFF selects Timer 1 and float ON selects Timer 2.
 - [ ] **VAL-03**: Manual hardware test confirms relay output follows ON/OFF phase and stop forces relay inactive.
 - [ ] **VAL-04**: Manual reboot test confirms timer settings and auto-start preference persist.
@@ -104,7 +104,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HW-01 | Phase 1 | Pending |
+| HW-01 | Phase 1 | Complete |
 | HW-02 | Phase 1 | Complete |
 | HW-03 | Phase 1 | Complete |
 | HW-04 | Phase 1 | Complete |
@@ -142,7 +142,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-05 | Phase 4 | Pending |
 | UI-06 | Phase 4 | Pending |
 | UI-07 | Phase 4 | Pending |
-| VAL-01 | Phase 1 | Pending |
+| VAL-01 | Phase 1 | Complete |
 | VAL-02 | Phase 5 | Pending |
 | VAL-03 | Phase 5 | Pending |
 | VAL-04 | Phase 5 | Pending |
