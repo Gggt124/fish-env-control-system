@@ -10,7 +10,7 @@
 - [ ] **HW-01**: Firmware uses ESP32 DevKit V1 30-pin / classic ESP32 as the target board.
 - [x] **HW-02**: Firmware reads one binary float switch input with internal pull-up enabled and switch-to-GND treated as active.
 - [x] **HW-03**: Firmware uses GPIO32 as the default float switch input unless changed in source configuration.
-- [ ] **HW-04**: Firmware drives one relay output GPIO and initializes it inactive before pump control starts.
+- [x] **HW-04**: Firmware drives one relay output GPIO and initializes it inactive before pump control starts.
 - [x] **HW-05**: Firmware uses GPIO26 as the default relay output unless changed in source configuration.
 - [x] **HW-06**: Firmware supports configurable relay polarity so active-high and active-low relay modules can be handled safely.
 
@@ -29,15 +29,15 @@
 
 - [ ] **RUN-01**: User can start pump control from the web UI.
 - [ ] **RUN-02**: User can stop pump control from the web UI.
-- [ ] **RUN-03**: Stop immediately de-energizes the relay and leaves the controller in a stopped state.
+- [x] **RUN-03**: Stop immediately de-energizes the relay and leaves the controller in a stopped state.
 - [ ] **RUN-04**: Pump control auto-starts on boot by default after saved configuration loads.
 - [ ] **RUN-05**: User can disable or enable auto-start from the web UI, and the setting persists in NVS.
-- [ ] **RUN-06**: Float switch inactive/OFF selects Timer 1.
-- [ ] **RUN-07**: Float switch active/ON selects Timer 2.
-- [ ] **RUN-08**: When the selected timer changes because float state changes, the newly selected timer starts at its ON phase.
-- [ ] **RUN-09**: Active timer alternates between ON and OFF phases using its configured durations.
-- [ ] **RUN-10**: Relay is energized only during the active timer's ON phase.
-- [ ] **RUN-11**: Relay is de-energized during OFF phase, stopped state, invalid config, and initialization.
+- [x] **RUN-06**: Float switch inactive/OFF selects Timer 1.
+- [x] **RUN-07**: Float switch active/ON selects Timer 2.
+- [x] **RUN-08**: When the selected timer changes because float state changes, the newly selected timer starts at its ON phase.
+- [x] **RUN-09**: Active timer alternates between ON and OFF phases using its configured durations.
+- [x] **RUN-10**: Relay is energized only during the active timer's ON phase.
+- [x] **RUN-11**: Relay is de-energized during OFF phase, stopped state, invalid config, and initialization.
 
 ### Web API
 
@@ -107,7 +107,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HW-01 | Phase 1 | Pending |
 | HW-02 | Phase 1 | Complete |
 | HW-03 | Phase 1 | Complete |
-| HW-04 | Phase 1 | Pending |
+| HW-04 | Phase 1 | Complete |
 | HW-05 | Phase 1 | Complete |
 | HW-06 | Phase 1 | Complete |
 | TIME-01 | Phase 4 | Pending |
@@ -120,15 +120,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-08 | Phase 2 | Pending |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
-| RUN-03 | Phase 1 | Pending |
+| RUN-03 | Phase 1 | Complete |
 | RUN-04 | Phase 2 | Pending |
 | RUN-05 | Phase 2 | Pending |
-| RUN-06 | Phase 1 | Pending |
-| RUN-07 | Phase 1 | Pending |
-| RUN-08 | Phase 1 | Pending |
-| RUN-09 | Phase 1 | Pending |
-| RUN-10 | Phase 1 | Pending |
-| RUN-11 | Phase 1 | Pending |
+| RUN-06 | Phase 1 | Complete |
+| RUN-07 | Phase 1 | Complete |
+| RUN-08 | Phase 1 | Complete |
+| RUN-09 | Phase 1 | Complete |
+| RUN-10 | Phase 1 | Complete |
+| RUN-11 | Phase 1 | Complete |
 | API-01 | Phase 3 | Pending |
 | API-02 | Phase 3 | Pending |
 | API-03 | Phase 3 | Pending |
