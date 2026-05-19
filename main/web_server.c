@@ -1,5 +1,7 @@
 #include "web_server.h"
 #include "app_config.h"
+#include "nvs_store.h"
+#include "pump_control.h"
 #include "session.h"
 #include "wifi_manager.h"
 #include "dns_server.h"
@@ -183,6 +185,106 @@ static esp_err_t send_json(httpd_req_t *req, const char *json, const char *statu
     httpd_resp_set_status(req, status);
     httpd_resp_send(req, json, strlen(json));
     return ESP_OK;
+}
+
+static esp_err_t send_api_error(httpd_req_t *req, const char *code, const char *message,
+                                const char *status)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\",\"message\":\"JSON allocation failed\"}",
+                         "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", false);
+    cJSON_AddStringToObject(root, "error", code);
+    cJSON_AddStringToObject(root, "message", message);
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\",\"message\":\"JSON allocation failed\"}",
+                         "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, status);
+    free(json_str);
+    return result;
+}
+
+static const char *api_pump_settings_status_name(nvs_store_pump_settings_load_status_t status)
+{
+    switch (status) {
+    case NVS_STORE_PUMP_SETTINGS_LOADED:
+        return "loaded";
+    case NVS_STORE_PUMP_SETTINGS_DEFAULTS_MISSING:
+        return "defaults_missing";
+    case NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID:
+        return "defaults_invalid";
+    case NVS_STORE_PUMP_SETTINGS_DEFAULTS_ERROR:
+    default:
+        return "defaults_error";
+    }
+}
+
+static const char *api_pump_relay_polarity_name(bool relay_active_low)
+{
+    return relay_active_low ? "active_low" : "active_high";
+}
+
+static bool api_pump_parse_relay_polarity(const cJSON *item, bool *relay_active_low)
+{
+    if (!item || !cJSON_IsString(item) || !relay_active_low) {
+        return false;
+    }
+    if (strcmp(item->valuestring, "active_low") == 0) {
+        *relay_active_low = true;
+        return true;
+    }
+    if (strcmp(item->valuestring, "active_high") == 0) {
+        *relay_active_low = false;
+        return true;
+    }
+    return false;
+}
+
+static void api_pump_settings_to_runtime_config(const nvs_store_pump_settings_t *settings,
+                                                pump_control_config_t *config)
+{
+    if (!settings || !config) {
+        return;
+    }
+
+    *config = pump_control_default_config();
+    config->timer1.on_sec = settings->timer1_on_sec;
+    config->timer1.off_sec = settings->timer1_off_sec;
+    config->timer2.on_sec = settings->timer2_on_sec;
+    config->timer2.off_sec = settings->timer2_off_sec;
+    config->relay_polarity = settings->relay_active_low
+        ? PUMP_CONTROL_RELAY_ACTIVE_LOW
+        : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
+}
+
+static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_settings_t *settings,
+                                       nvs_store_pump_settings_load_status_t status)
+{
+    if (!root || !settings) {
+        return false;
+    }
+
+    pump_control_config_t defaults = pump_control_default_config();
+    cJSON_AddNumberToObject(root, "timer1_on_sec", settings->timer1_on_sec);
+    cJSON_AddNumberToObject(root, "timer1_off_sec", settings->timer1_off_sec);
+    cJSON_AddNumberToObject(root, "timer2_on_sec", settings->timer2_on_sec);
+    cJSON_AddNumberToObject(root, "timer2_off_sec", settings->timer2_off_sec);
+    cJSON_AddBoolToObject(root, "auto_start", settings->auto_start);
+    cJSON_AddStringToObject(root, "relay_polarity",
+                            api_pump_relay_polarity_name(settings->relay_active_low));
+    cJSON_AddNumberToObject(root, "float_gpio", defaults.float_gpio);
+    cJSON_AddNumberToObject(root, "relay_gpio", defaults.relay_gpio);
+    cJSON_AddNumberToObject(root, "debounce_ms", defaults.debounce_ms);
+    cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(status));
+    return true;
 }
 
 /* Scan context for non-blocking callback */
