@@ -27,8 +27,8 @@
 
 ### Pump Runtime
 
-- [ ] **RUN-01**: User can start pump control from the web UI.
-- [ ] **RUN-02**: User can stop pump control from the web UI.
+- [x] **RUN-01**: User can start pump control from the web UI.
+- [x] **RUN-02**: User can stop pump control from the web UI.
 - [x] **RUN-03**: Stop immediately de-energizes the relay and leaves the controller in a stopped state.
 - [x] **RUN-04**: Pump control auto-starts on boot by default after saved configuration loads.
 - [x] **RUN-05**: User can disable or enable auto-start from the web UI, and the setting persists in NVS.
@@ -43,9 +43,9 @@
 
 - [x] **API-01**: Authenticated API returns pump configuration including timer durations, auto-start setting, relay polarity, and configured GPIO defaults.
 - [x] **API-02**: Authenticated API saves pump configuration after validating timer durations and polarity.
-- [ ] **API-03**: Authenticated API starts pump control.
-- [ ] **API-04**: Authenticated API stops pump control.
-- [ ] **API-05**: Authenticated API returns pump status including running state, float state, active timer, current phase, countdown, relay state, and auto-start state.
+- [x] **API-03**: Authenticated API starts pump control.
+- [x] **API-04**: Authenticated API stops pump control.
+- [x] **API-05**: Authenticated API returns pump status including running state, float state, active timer, current phase, countdown, relay state, and auto-start state.
 - [x] **API-06**: Pump APIs follow the existing session auth and same-origin POST protection patterns.
 
 ### Web UI
@@ -118,8 +118,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-06 | Phase 1 | Complete |
 | TIME-07 | Phase 1 | Complete |
 | TIME-08 | Phase 2 | Complete |
-| RUN-01 | Phase 3 | Pending |
-| RUN-02 | Phase 3 | Pending |
+| RUN-01 | Phase 3 | Complete |
+| RUN-02 | Phase 3 | Complete |
 | RUN-03 | Phase 1 | Complete |
 | RUN-04 | Phase 2 | Complete |
 | RUN-05 | Phase 2 | Complete |
@@ -131,9 +131,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RUN-11 | Phase 1 | Complete |
 | API-01 | Phase 3 | Complete |
 | API-02 | Phase 3 | Complete |
-| API-03 | Phase 3 | Pending |
-| API-04 | Phase 3 | Pending |
-| API-05 | Phase 3 | Pending |
+| API-03 | Phase 3 | Complete |
+| API-04 | Phase 3 | Complete |
+| API-05 | Phase 3 | Complete |
 | API-06 | Phase 3 | Complete |
 | UI-01 | Phase 4 | Pending |
 | UI-02 | Phase 4 | Pending |
