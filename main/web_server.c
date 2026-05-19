@@ -287,7 +287,46 @@ static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_setting
     return true;
 }
 
-static bool api_pump_add_minimal_status(cJSON *root)
+static const char *api_pump_float_state_name(pump_control_float_state_t state)
+{
+    switch (state) {
+    case PUMP_CONTROL_FLOAT_OFF:
+        return "off";
+    case PUMP_CONTROL_FLOAT_ON:
+        return "on";
+    case PUMP_CONTROL_FLOAT_UNKNOWN:
+    default:
+        return "unknown";
+    }
+}
+
+static const char *api_pump_active_timer_name(pump_control_active_timer_t timer)
+{
+    switch (timer) {
+    case PUMP_CONTROL_TIMER_1:
+        return "timer1";
+    case PUMP_CONTROL_TIMER_2:
+        return "timer2";
+    case PUMP_CONTROL_TIMER_NONE:
+    default:
+        return "none";
+    }
+}
+
+static const char *api_pump_timer_phase_name(pump_control_timer_phase_t phase)
+{
+    switch (phase) {
+    case PUMP_CONTROL_PHASE_ON:
+        return "on";
+    case PUMP_CONTROL_PHASE_OFF:
+        return "off";
+    case PUMP_CONTROL_PHASE_IDLE:
+    default:
+        return "idle";
+    }
+}
+
+static bool api_pump_add_status_fields(cJSON *root)
 {
     if (!root) {
         return false;
@@ -298,17 +337,32 @@ static bool api_pump_add_minimal_status(cJSON *root)
         return false;
     }
 
+    nvs_store_pump_settings_t settings;
+    nvs_store_pump_settings_load_status_t settings_status = nvs_store_load_pump_settings(&settings);
+
+    cJSON_AddBoolToObject(root, "running", status.running);
+    cJSON_AddBoolToObject(root, "initialized", status.initialized);
+    cJSON_AddBoolToObject(root, "config_valid", status.config_valid);
+    cJSON_AddBoolToObject(root, "initial_stabilizing", status.initial_stabilizing);
+    cJSON_AddStringToObject(root, "float_state", api_pump_float_state_name(status.float_state));
+    cJSON_AddStringToObject(root, "active_timer", api_pump_active_timer_name(status.active_timer));
+    cJSON_AddStringToObject(root, "phase", api_pump_timer_phase_name(status.phase));
+    cJSON_AddNumberToObject(root, "countdown_sec", status.countdown_sec);
+    cJSON_AddBoolToObject(root, "relay_energized", status.relay_energized);
+    cJSON_AddNumberToObject(root, "float_gpio", status.float_gpio);
+    cJSON_AddNumberToObject(root, "relay_gpio", status.relay_gpio);
+    cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
+    cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
+    return true;
+}
+
+static bool api_pump_add_status_object(cJSON *root)
+{
     cJSON *status_obj = cJSON_AddObjectToObject(root, "status");
     if (!status_obj) {
         return false;
     }
-
-    cJSON_AddBoolToObject(status_obj, "running", status.running);
-    cJSON_AddBoolToObject(status_obj, "initialized", status.initialized);
-    cJSON_AddBoolToObject(status_obj, "config_valid", status.config_valid);
-    cJSON_AddBoolToObject(status_obj, "relay_energized", status.relay_energized);
-    cJSON_AddNumberToObject(status_obj, "countdown_sec", status.countdown_sec);
-    return true;
+    return api_pump_add_status_fields(status_obj);
 }
 
 static bool api_pump_json_has_field(const cJSON *root, const char *name)
@@ -422,7 +476,7 @@ static esp_err_t api_pump_send_config(httpd_req_t *req,
     cJSON_AddBoolToObject(root, "ok", true);
     api_pump_add_config_fields(root, settings, status);
     if (include_status) {
-        api_pump_add_minimal_status(root);
+        api_pump_add_status_object(root);
     }
 
     char *json_str = cJSON_PrintUnformatted(root);
