@@ -20,6 +20,10 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ SoftAP fallback and Wi-Fi STA setup are available through the local UI — existing
 - ✓ Wi-Fi credentials and optional static IP configuration persist in NVS — existing
 - ✓ Device status JSON reports system, Wi-Fi, heap, uptime, and service state — existing
+- ✓ Pump control core initializes GPIO26 relay output inactive during boot and leaves control stopped — Phase 1
+- ✓ Pump control core defines GPIO32 active-low binary float input with debounce for timer selection — Phase 1
+- ✓ Pump control core implements Timer 1/Timer 2 ON/OFF defaults, bounds, and relay phase behavior — Phase 1
+- ✓ ESP-IDF build succeeds with pump control integrated — Phase 1
 
 ### Active
 
@@ -28,11 +32,6 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - [ ] Timer settings persist in NVS and survive reboot.
 - [ ] User can start and stop pump control from the web UI.
 - [ ] User can choose whether pump control auto-starts on boot; default is auto-start enabled.
-- [ ] Firmware reads a binary float switch input and treats switch-to-GND as active-low.
-- [ ] Float OFF selects Timer 1; Float ON selects Timer 2.
-- [ ] Switching float state resets the newly selected timer to its ON phase.
-- [ ] Relay output energizes during ON phase and de-energizes during OFF phase.
-- [ ] Relay GPIO and relay polarity are configurable because relay modules may be active-high or active-low.
 - [ ] Dashboard displays active timer, current phase, countdown, float state, relay state, and auto-start state.
 - [ ] Firmware preserves AP/Wi-Fi setup access while pump control is running.
 
@@ -81,13 +80,13 @@ Recommended initial hardware contract:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Build real firmware rather than only UI simulation | User selected hardware control as the target milestone | — Pending |
-| Use ESP32 DevKit V1 30-pin classic ESP32 | User confirmed board variant | — Pending |
-| Recommend GPIO32 for float switch input with pull-up to GND | GPIO32 is a conservative input-capable pin with internal pull-up support and avoids boot strapping pins | — Pending |
-| Recommend GPIO26 for relay output | GPIO26 is a general-purpose output and avoids common boot/programming pins | — Pending |
-| Make relay polarity configurable | Relay modules are often active-low, so firmware must not assume one electrical polarity forever | — Pending |
+| Build real firmware rather than only UI simulation | User selected hardware control as the target milestone | Validated in Phase 1 core |
+| Use ESP32 DevKit V1 30-pin classic ESP32 | User confirmed board variant | Validated by Phase 1 build target |
+| Recommend GPIO32 for float switch input with pull-up to GND | GPIO32 is a conservative input-capable pin with internal pull-up support and avoids boot strapping pins | Validated as Phase 1 source default |
+| Recommend GPIO26 for relay output | GPIO26 is a general-purpose output and avoids common boot/programming pins | Validated as Phase 1 source default |
+| Make relay polarity configurable | Relay modules are often active-low, so firmware must not assume one electrical polarity forever | Validated in Phase 1 pump config |
 | Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | — Pending |
-| Default Timer 1 is ON 20s / OFF 1:00 and Timer 2 is ON 10s / OFF 3:00 | User corrected defaults from the reference flow document | — Pending |
+| Default Timer 1 is ON 20s / OFF 1:00 and Timer 2 is ON 10s / OFF 3:00 | User corrected defaults from the reference flow document | Validated as Phase 1 source defaults |
 
 ## Evolution
 
@@ -107,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-18 after initialization*
+*Last updated: 2026-05-19 after Phase 1 completion*
