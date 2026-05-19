@@ -23,15 +23,15 @@
 - [x] **TIME-05**: Default Timer 1 duration is ON 20 seconds and OFF 1 minute.
 - [x] **TIME-06**: Default Timer 2 duration is ON 10 seconds and OFF 3 minutes.
 - [x] **TIME-07**: Firmware rejects invalid timer settings that could cause zero-duration or rapid relay chatter.
-- [ ] **TIME-08**: Timer settings persist in NVS and survive reboot.
+- [x] **TIME-08**: Timer settings persist in NVS and survive reboot.
 
 ### Pump Runtime
 
 - [ ] **RUN-01**: User can start pump control from the web UI.
 - [ ] **RUN-02**: User can stop pump control from the web UI.
 - [x] **RUN-03**: Stop immediately de-energizes the relay and leaves the controller in a stopped state.
-- [ ] **RUN-04**: Pump control auto-starts on boot by default after saved configuration loads.
-- [ ] **RUN-05**: User can disable or enable auto-start from the web UI, and the setting persists in NVS.
+- [x] **RUN-04**: Pump control auto-starts on boot by default after saved configuration loads.
+- [x] **RUN-05**: User can disable or enable auto-start from the web UI, and the setting persists in NVS.
 - [x] **RUN-06**: Float switch inactive/OFF selects Timer 1.
 - [x] **RUN-07**: Float switch active/ON selects Timer 2.
 - [x] **RUN-08**: When the selected timer changes because float state changes, the newly selected timer starts at its ON phase.
@@ -117,12 +117,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TIME-05 | Phase 1 | Complete |
 | TIME-06 | Phase 1 | Complete |
 | TIME-07 | Phase 1 | Complete |
-| TIME-08 | Phase 2 | Pending |
+| TIME-08 | Phase 2 | Complete |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
 | RUN-03 | Phase 1 | Complete |
-| RUN-04 | Phase 2 | Pending |
-| RUN-05 | Phase 2 | Pending |
+| RUN-04 | Phase 2 | Complete |
+| RUN-05 | Phase 2 | Complete |
 | RUN-06 | Phase 1 | Complete |
 | RUN-07 | Phase 1 | Complete |
 | RUN-08 | Phase 1 | Complete |
