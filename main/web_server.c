@@ -1260,6 +1260,11 @@ bool web_server_start(void)
         { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect, .user_ctx = NULL },
         { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect, .user_ctx = NULL },
         { .uri = "/api/status",    .method = HTTP_GET,  .handler = handle_api_status,     .user_ctx = NULL },
+        { .uri = "/api/pump/config", .method = HTTP_GET,  .handler = handle_api_pump_config_get, .user_ctx = NULL },
+        { .uri = "/api/pump/config", .method = HTTP_POST, .handler = handle_api_pump_config_post, .user_ctx = NULL },
+        { .uri = "/api/pump/status", .method = HTTP_GET,  .handler = handle_api_pump_status, .user_ctx = NULL },
+        { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start,  .user_ctx = NULL },
+        { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop,   .user_ctx = NULL },
     };
 
     for (int i = 0; i < sizeof(routes) / sizeof(routes[0]); i++) {
