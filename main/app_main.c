@@ -7,6 +7,7 @@
 #include "dns_server.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "esp_err.h"
 #include "mdns.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -15,6 +16,37 @@
 static const char *TAG = "app_main";
 static bool s_http_server_retry = false;
 
+static const char *pump_settings_load_status_name(nvs_store_pump_settings_load_status_t status)
+{
+    switch (status) {
+    case NVS_STORE_PUMP_SETTINGS_LOADED:
+        return "saved";
+    case NVS_STORE_PUMP_SETTINGS_DEFAULTS_MISSING:
+        return "defaults-missing";
+    case NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID:
+        return "defaults-invalid";
+    case NVS_STORE_PUMP_SETTINGS_DEFAULTS_ERROR:
+    default:
+        return "defaults-error";
+    }
+}
+
+static void apply_pump_settings_to_config(pump_control_config_t *config,
+                                          const nvs_store_pump_settings_t *settings)
+{
+    if (!config || !settings) {
+        return;
+    }
+
+    config->timer1.on_sec = settings->timer1_on_sec;
+    config->timer1.off_sec = settings->timer1_off_sec;
+    config->timer2.on_sec = settings->timer2_on_sec;
+    config->timer2.off_sec = settings->timer2_off_sec;
+    config->relay_polarity = settings->relay_active_low
+        ? PUMP_CONTROL_RELAY_ACTIVE_LOW
+        : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
+}
+
 void app_main(void)
 {
     ESP_LOGI(TAG, "========================================");
@@ -22,20 +54,47 @@ void app_main(void)
     ESP_LOGI(TAG, "  %s", APP_TEMPLATE_PHASE_LABEL);
     ESP_LOGI(TAG, "========================================");
 
-    pump_control_config_t pump_config = pump_control_default_config();
-    if (pump_control_init(&pump_config)) {
-        ESP_LOGI(TAG, "Pump control initialized stopped: relay GPIO=%d, float GPIO=%d",
-                 pump_config.relay_gpio, pump_config.float_gpio);
-    } else {
-        ESP_LOGE(TAG, "Pump control init failed; continuing with Wi-Fi/web setup");
-    }
-
     /* 1. Initialize NVS storage */
     if (!nvs_store_init()) {
         ESP_LOGE(TAG, "NVS init failed");
         return;
     }
     ESP_LOGI(TAG, "NVS initialized");
+
+    nvs_store_pump_settings_t pump_settings;
+    nvs_store_pump_settings_load_status_t pump_settings_status =
+        nvs_store_load_pump_settings(&pump_settings);
+    pump_control_config_t pump_config = pump_control_default_config();
+    apply_pump_settings_to_config(&pump_config, &pump_settings);
+
+    bool allow_auto_start = pump_settings.auto_start;
+    if (pump_settings_status == NVS_STORE_PUMP_SETTINGS_LOADED) {
+        ESP_LOGI(TAG, "Pump settings loaded from NVS");
+    } else if (pump_settings_status == NVS_STORE_PUMP_SETTINGS_DEFAULTS_MISSING) {
+        ESP_LOGI(TAG, "Pump settings missing; using product defaults");
+    } else {
+        allow_auto_start = false;
+        ESP_LOGW(TAG, "Pump settings %s; using defaults and suppressing auto-start for this boot",
+                 pump_settings_load_status_name(pump_settings_status));
+    }
+
+    if (pump_control_init(&pump_config)) {
+        ESP_LOGI(TAG, "Pump control initialized: relay GPIO=%d, float GPIO=%d, auto_start=%s",
+                 pump_config.relay_gpio, pump_config.float_gpio,
+                 allow_auto_start ? "enabled" : "disabled");
+        if (allow_auto_start) {
+            if (pump_control_start()) {
+                ESP_LOGI(TAG, "Pump control auto-started");
+            } else {
+                pump_control_stop();
+                ESP_LOGE(TAG, "Pump control auto-start failed; continuing with Wi-Fi/web setup");
+            }
+        } else {
+            ESP_LOGI(TAG, "Pump control initialized stopped with relay inactive");
+        }
+    } else {
+        ESP_LOGE(TAG, "Pump control init failed; continuing with Wi-Fi/web setup");
+    }
 
     /* 2. Initialize session system */
     session_init();
