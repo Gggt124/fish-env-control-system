@@ -54,10 +54,24 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 5. ESP Wi-Fi station config is set with `esp_wifi_set_config()` and connection begins with `esp_wifi_connect()`.
 6. The handler waits 5 seconds, then reports success or failure using `wifi_manager_is_sta_connected()`, `wifi_manager_get_sta_ssid()`, and `wifi_manager_get_sta_ip()`.
 
+## Data Flow: Pump Config API
+
+1. Authenticated clients call GET `/api/pump/config` for persisted timer durations, `auto_start`, relay polarity, read-only GPIO/debounce defaults, and settings load health.
+2. Authenticated same-origin clients call POST `/api/pump/config` with a full replacement payload.
+3. `main/web_server.c` rejects read-only hardware/debounce fields, validates timer duration bounds and relay polarity, saves through `nvs_store_save_pump_settings()`, then reinitializes `pump_control` from defaults merged with saved settings.
+4. If the controller was running before save, the handler stops it to force relay inactive during reinit and restarts only after successful runtime apply.
+
+## Data Flow: Pump Runtime API
+
+- `/api/pump/status` returns machine-friendly pump runtime fields from `pump_control_get_status()` plus `auto_start` and `settings_status` from NVS.
+- `/api/pump/start` and `/api/pump/stop` are authenticated same-origin POST routes.
+- Start is idempotent when already running; stop is idempotent when already stopped and confirms relay inactive before success.
+
 ## Data Flow: Status
 
 - `/api/status` is handled in `handle_api_status()` in `main/web_server.c`.
 - Status combines chip metadata, IDF version, MAC addresses, heap metrics, uptime, Wi-Fi mode, AP client count, STA details, and captive DNS state.
+- Pump runtime status is intentionally separate under `/api/pump/status`.
 - Frontend pages update dashboard cards and status tables by polling `/api/status`.
 
 ## State Management
@@ -78,4 +92,4 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 
 ## Design Boundary
 
-The firmware now has the Phase 1 pump-control core, but persistence, web APIs, UI controls, auto-start behavior, and hardware validation are still deferred. Future extension points are `components/nvs_store/` for persisted settings, `main/web_server.c` for authenticated pump APIs, and `main/static/` for local UI controls.
+The firmware now has the pump-control core, NVS-backed pump settings, boot auto-start behavior, and authenticated pump API routes. UI controls and hardware validation are still deferred. Future extension points are `main/static/` for local UI controls and Phase 5 hardware procedures for flash/manual relay and float validation.

@@ -15,7 +15,8 @@ This firmware has only local-device integrations. It does not call cloud APIs, d
 - Static pages are embedded from `main/static/` by `main/CMakeLists.txt` and served from route handlers in `main/web_server.c`.
 - `main/static/app.js` talks to device-local APIs with JSON over HTTP.
 - Core pages are `/login`, `/dashboard`, `/status`, and `/wifi`.
-- API routes are `/api/login`, `/api/logout`, `/api/status`, `/api/wifi/scan`, `/api/wifi/connect`, and `/api/wifi/disconnect`.
+- API routes are `/api/login`, `/api/logout`, `/api/status`, `/api/wifi/scan`, `/api/wifi/connect`, `/api/wifi/disconnect`, and authenticated pump routes under `/api/pump/*`.
+- Pump API routes are GET/POST `/api/pump/config`, GET `/api/pump/status`, POST `/api/pump/start`, and POST `/api/pump/stop`.
 
 ## Wi-Fi Network Integration
 
@@ -33,6 +34,7 @@ This firmware has only local-device integrations. It does not call cloud APIs, d
 - Stored Wi-Fi keys: `sta_ssid` and `sta_pass`.
 - Stored static IP keys: `sta_ip`, `sta_gw`, `sta_netmask`, and `sta_dns`.
 - Stored AP behavior keys: `ap_stop_tmo` and `ap_auto_stop`.
+- Stored pump keys live in namespace `pump_cfg`: Timer 1/2 ON/OFF seconds, relay polarity, and auto-start.
 - NVS is initialized from `app_main()` through `nvs_store_init()`.
 - Development config disables NVS encryption in `sdkconfig.defaults`.
 
@@ -61,8 +63,9 @@ This firmware has only local-device integrations. It does not call cloud APIs, d
 ## Hardware Integration
 
 - Current hardware target is classic ESP32.
-- No relay GPIO, sensors, pump control, timers, or physical outputs are integrated in this phase.
-- `README.md`, `AGENTS.md`, and `main/static/dashboard.html` all preserve this boundary until exact board, pin map, and timing requirements are known.
+- `components/pump_control/` owns relay GPIO, binary float input, timer phase state, and start/stop behavior.
+- Default pump hardware settings are GPIO32 for the active-low float input and GPIO26 for the relay output with configurable polarity.
+- Manual hardware flashing and relay/float validation remain future validation work; Phase 3 only added authenticated API access and build validation.
 
 ## External Services Not Present
 
@@ -73,4 +76,3 @@ This firmware has only local-device integrations. It does not call cloud APIs, d
 - No HTTPS certificate integration.
 - No WebSocket.
 - No filesystem such as SPIFFS or LittleFS.
-
