@@ -37,7 +37,7 @@ This roadmap extends the existing Wi-Fi/web dashboard foundation into a real ESP
 1. Timer and control settings load from NVS with defaults when missing.
 2. Timer 1 defaults to ON 20s / OFF 1:00.
 3. Timer 2 defaults to ON 10s / OFF 3:00.
-4. Auto-start defaults enabled but can be persisted as disabled.
+4. Auto-start defaults disabled but can be persisted as enabled.
 5. Reboot behavior follows the saved auto-start value.
 
 ### Phase 3: Authenticated Pump Control API

@@ -30,7 +30,7 @@
 - [x] **RUN-01**: User can start pump control from the web UI.
 - [x] **RUN-02**: User can stop pump control from the web UI.
 - [x] **RUN-03**: Stop immediately de-energizes the relay and leaves the controller in a stopped state.
-- [x] **RUN-04**: Pump control auto-starts on boot by default after saved configuration loads.
+- [x] **RUN-04**: Pump control does not auto-start on boot by default; user can enable auto-start from the web UI and the setting persists in NVS.
 - [x] **RUN-05**: User can disable or enable auto-start from the web UI, and the setting persists in NVS.
 - [x] **RUN-06**: Float switch inactive/OFF selects Timer 1.
 - [x] **RUN-07**: Float switch active/ON selects Timer 2.

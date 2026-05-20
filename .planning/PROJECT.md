@@ -77,7 +77,7 @@ Recommended initial hardware contract:
 - **Board**: ESP32 DevKit V1 30-pin / classic ESP32 — pin recommendations and build target assume this board.
 - **Float input**: Binary switch only — do not model real hardware as continuous water level.
 - **GPIO safety**: Use conservative default pins and configurable polarity — relay modules vary and wrong polarity can energize the pump unexpectedly.
-- **Boot behavior**: Auto-start is enabled by default but must be user-configurable and persisted.
+- **Boot behavior**: Auto-start is disabled by default but must be user-configurable and persisted.
 - **Local operation**: UI must work without internet because SoftAP setup mode has no external connectivity.
 - **Existing foundation**: Preserve Wi-Fi setup, SoftAP fallback, login/session, captive DNS, and status routes while adding pump control.
 - **Validation**: `idf.py build` remains the main automated validation gate; hardware behavior needs manual flash/device testing.
