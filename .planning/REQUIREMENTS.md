@@ -16,10 +16,10 @@
 
 ### Timer Configuration
 
-- [ ] **TIME-01**: User can configure Timer 1 ON duration in minutes and seconds from the web UI.
-- [ ] **TIME-02**: User can configure Timer 1 OFF duration in minutes and seconds from the web UI.
-- [ ] **TIME-03**: User can configure Timer 2 ON duration in minutes and seconds from the web UI.
-- [ ] **TIME-04**: User can configure Timer 2 OFF duration in minutes and seconds from the web UI.
+- [x] **TIME-01**: User can configure Timer 1 ON duration in minutes and seconds from the web UI.
+- [x] **TIME-02**: User can configure Timer 1 OFF duration in minutes and seconds from the web UI.
+- [x] **TIME-03**: User can configure Timer 2 ON duration in minutes and seconds from the web UI.
+- [x] **TIME-04**: User can configure Timer 2 OFF duration in minutes and seconds from the web UI.
 - [x] **TIME-05**: Default Timer 1 duration is ON 20 seconds and OFF 1 minute.
 - [x] **TIME-06**: Default Timer 2 duration is ON 10 seconds and OFF 3 minutes.
 - [x] **TIME-07**: Firmware rejects invalid timer settings that could cause zero-duration or rapid relay chatter.
@@ -50,13 +50,13 @@
 
 ### Web UI
 
-- [ ] **UI-01**: Dashboard or pump page shows Timer 1 and Timer 2 ON/OFF settings.
-- [ ] **UI-02**: UI lets the user save timer settings and auto-start preference.
-- [ ] **UI-03**: UI provides Start and Stop controls.
-- [ ] **UI-04**: UI displays active timer, current phase, and countdown as MM:SS.
-- [ ] **UI-05**: UI displays float switch state as binary ON/OFF or high/low, not as real 0-100% water level.
-- [ ] **UI-06**: UI displays relay state as energized/de-energized or open/closed.
-- [ ] **UI-07**: UI remains usable without internet and uses no CDN dependencies.
+- [x] **UI-01**: Dashboard or pump page shows Timer 1 and Timer 2 ON/OFF settings.
+- [x] **UI-02**: UI lets the user save timer settings and auto-start preference.
+- [x] **UI-03**: UI provides Start and Stop controls.
+- [x] **UI-04**: UI displays active timer, current phase, and countdown as MM:SS.
+- [x] **UI-05**: UI displays float switch state as binary ON/OFF or high/low, not as real 0-100% water level.
+- [x] **UI-06**: UI displays relay state as energized/de-energized or open/closed.
+- [x] **UI-07**: UI remains usable without internet and uses no CDN dependencies.
 
 ### Validation
 
@@ -110,10 +110,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HW-04 | Phase 1 | Complete |
 | HW-05 | Phase 1 | Complete |
 | HW-06 | Phase 1 | Complete |
-| TIME-01 | Phase 4 | Pending |
-| TIME-02 | Phase 4 | Pending |
-| TIME-03 | Phase 4 | Pending |
-| TIME-04 | Phase 4 | Pending |
+| TIME-01 | Phase 4 | Complete |
+| TIME-02 | Phase 4 | Complete |
+| TIME-03 | Phase 4 | Complete |
+| TIME-04 | Phase 4 | Complete |
 | TIME-05 | Phase 1 | Complete |
 | TIME-06 | Phase 1 | Complete |
 | TIME-07 | Phase 1 | Complete |
@@ -135,13 +135,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-04 | Phase 3 | Complete |
 | API-05 | Phase 3 | Complete |
 | API-06 | Phase 3 | Complete |
-| UI-01 | Phase 4 | Pending |
-| UI-02 | Phase 4 | Pending |
-| UI-03 | Phase 4 | Pending |
-| UI-04 | Phase 4 | Pending |
-| UI-05 | Phase 4 | Pending |
-| UI-06 | Phase 4 | Pending |
-| UI-07 | Phase 4 | Pending |
+| UI-01 | Phase 4 | Complete |
+| UI-02 | Phase 4 | Complete |
+| UI-03 | Phase 4 | Complete |
+| UI-04 | Phase 4 | Complete |
+| UI-05 | Phase 4 | Complete |
+| UI-06 | Phase 4 | Complete |
+| UI-07 | Phase 4 | Complete |
 | VAL-01 | Phase 1 | Complete |
 | VAL-02 | Phase 5 | Pending |
 | VAL-03 | Phase 5 | Pending |
