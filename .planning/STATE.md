@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: verifying
-last_updated: "2026-05-20T20:40:00.000Z"
+milestone_name: MVP
+status: complete
+last_updated: "2026-05-20T22:10:00.000Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 5
@@ -20,7 +20,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-18)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 5 — hardware validation and regression pass
+**Current focus:** Planning next milestone (v1.1)
 
 ## Workflow
 

@@ -36,10 +36,20 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ User can choose whether pump control auto-starts on boot from authenticated API and web UI controls — Phase 4
 - ✓ Dashboard displays active timer, current phase, countdown, float state, relay state, and auto-start state — Phase 4
 - ✓ Firmware preserves AP/Wi-Fi setup access while pump control is running — Phase 4
+- ✓ Manual hardware test confirms float OFF selects Timer 1 and float ON selects Timer 2 — Phase 5
+- ✓ Manual hardware test confirms relay follows ON/OFF phase and Stop forces inactive — Phase 5
+- ✓ Manual reboot test confirms timer settings and auto-start preference persist — Phase 5
+- ✓ Manual access test confirms Wi-Fi setup, SoftAP fallback, login, and status pages still work while pump control is present — Phase 5
 
 ### Active
 
-- [ ] Manual flash/device validation confirms relay, float switch, timer switching, persistence, and UI runtime behavior on the ESP32 hardware.
+- [ ] Event log of float changes, timer phase changes, relay changes, and start/stop events (MON-01)
+- [ ] Export pump configuration and status for troubleshooting (MON-02)
+- [ ] User-configurable float GPIO from web UI (HW2-01)
+- [ ] User-configurable relay GPIO from web UI (HW2-02)
+- [ ] User-configurable float debounce duration from web UI (HW2-03)
+- [ ] Explicit relay test mode with timeout and warning (SAFE-01)
+- [ ] Maximum continuous relay ON duration enforcement (SAFE-02)
 
 ### Out of Scope
 
@@ -49,22 +59,34 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - OTA update, MQTT/cloud, charts, WebSocket, HTTPS, and multi-user management — not needed for the local controller milestone.
 - Production security hardening beyond the existing local prototype model — can be handled in a later hardening pass.
 
+## Current State
+
+**Shipped:** v1.0 MVP on 2026-05-20
+
+The firmware is a complete ESP32 pump relay controller with:
+- Hardware-safe pump control core (GPIO32 float, GPIO26 relay, active-low defaults)
+- Two configurable timers with NVS persistence and reboot survival
+- Authenticated web API for config, status, start, and stop
+- Local Thai-language dashboard with live status polling and countdown
+- Manual hardware validation passed on real ESP32 DevKit V1
+
+**Codebase:** ~44,900 lines across C, HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.1.
+**Partition usage:** 49% of dual OTA app slots (`0x1F0000` each on 4MB flash).
+**Binary:** `build/fish_pump_relay_timer_control.bin` generates successfully.
+
+## Next Milestone Goals
+
+v1.1 targets operator convenience and safety improvements:
+- Event log and export for troubleshooting
+- GPIO and debounce configurability from the web UI
+- Relay test mode and maximum ON duration safety limits
+- Performance and flash usage optimization if partition pressure becomes critical
+
 ## Context
 
-The current codebase is a brownfield ESP-IDF project with a reusable local web setup foundation. Codebase mapping exists under `.planning/codebase/` and shows clean component boundaries for app config, NVS storage, session handling, Wi-Fi management, the HTTP server, captive DNS, and static UI assets.
+The codebase is a brownfield ESP-IDF project with a reusable local web setup foundation. Codebase mapping exists under `.planning/codebase/` and shows clean component boundaries for app config, NVS storage, session handling, Wi-Fi management, the HTTP server, captive DNS, and static UI assets.
 
-The user supplied `ref-file/flow-document-v6.md` and `ref-file/flow-diagram-5.html` as the design reference for the next product behavior. The flow defines a Dual Timer + Float Switch + Relay controller:
-
-- Timer 1 default: ON 20 seconds, OFF 1 minute.
-- Timer 2 default: ON 10 seconds, OFF 3 minutes.
-- Float switch is binary only.
-- Float OFF / water below switch point selects Timer 1.
-- Float ON / water above switch point selects Timer 2.
-- Each timer alternates ON and OFF phases.
-- Relay is energized only during ON phase.
-- A UI simulation exists in `ref-file/flow-diagram-5.html`, but the milestone target is real ESP32 firmware controlling GPIO, not just a prototype.
-
-Recommended initial hardware contract:
+Recommended hardware contract (validated):
 
 - Board: ESP32 DevKit V1 30-pin, classic ESP32.
 - Float switch input: GPIO32, internal pull-up enabled, float switch closes to GND when active.
@@ -91,10 +113,11 @@ Recommended initial hardware contract:
 | Recommend GPIO32 for float switch input with pull-up to GND | GPIO32 is a conservative input-capable pin with internal pull-up support and avoids boot strapping pins | Validated as Phase 1 source default |
 | Recommend GPIO26 for relay output | GPIO26 is a general-purpose output and avoids common boot/programming pins | Validated as Phase 1 source default |
 | Make relay polarity configurable | Relay modules are often active-low, so firmware must not assume one electrical polarity forever | Validated in Phase 1 pump config |
-| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | Firmware persistence validated in Phase 2; authenticated API validated in Phase 3; UI controls validated in Phase 4 |
+| Auto-start pump control disabled by default, with persisted user override | Safer boot behavior after hardware validation; user can enable via UI | Changed during quick task 260520-s4a; firmware persistence validated in Phase 2; authenticated API validated in Phase 3; UI controls validated in Phase 4 |
 | Default Timer 1 is ON 20s / OFF 1:00 and Timer 2 is ON 10s / OFF 3:00 | User corrected defaults from the reference flow document | Validated as Phase 1 source defaults |
 | Keep pump APIs under `/api/pump/*` | Separates pump control contracts from existing system/Wi-Fi status routes | Validated in Phase 3 |
 | Make `/dashboard` the pump control surface | Operator needs timer setup, Start/Stop, and live runtime state before system diagnostics | Validated in Phase 4 |
+| Hardware validation on real ESP32 DevKit V1 with GPIO32/GPIO26 wiring | Confirmed float switching, relay phase behavior, Stop safety, and reboot persistence on actual device | Validated in Phase 5 |
 
 ## Evolution
 
@@ -114,4 +137,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after Phase 4 completion*
+*Last updated: 2026-05-20 after v1.0 milestone completion*
