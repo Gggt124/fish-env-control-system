@@ -61,11 +61,11 @@ focus: arch
 ## Static UI
 
 - `main/static/login.html`: Thai login page.
-- `main/static/dashboard.html`: dashboard cards and summary.
+- `main/static/dashboard.html`: authenticated pump-control dashboard with runtime panel, timer settings, Start/Stop controls, and compact system summary.
 - `main/static/status.html`: full device status page.
 - `main/static/wifi.html`: Wi-Fi scan/connect page with optional static IP fields.
 - `main/static/style.css`: plain CSS visual system.
-- `main/static/app.js`: vanilla JS API helpers, auth redirect logic, polling, Wi-Fi scan/connect UI, and HTML escaping utilities.
+- `main/static/app.js`: vanilla JS API helpers, auth redirect logic, pump dashboard config/status/actions, system polling, Wi-Fi scan/connect UI, and HTML escaping utilities.
 
 ## Documentation
 
@@ -86,4 +86,4 @@ focus: arch
 - Template constants: `components/app_config/app_config.h`.
 - Product-specific startup and safe hardware initialization: `main/app_main.c`.
 - Product-specific routes and pages: `main/web_server.c` and `main/static/`.
-- Pump runtime persistence, APIs, and UI controls should build on `components/pump_control/` without moving GPIO logic into `main/`.
+- Pump runtime persistence, APIs, and UI controls build on `components/pump_control/` without moving GPIO logic into `main/`.

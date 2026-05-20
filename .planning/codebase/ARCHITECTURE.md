@@ -72,7 +72,7 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 - `/api/status` is handled in `handle_api_status()` in `main/web_server.c`.
 - Status combines chip metadata, IDF version, MAC addresses, heap metrics, uptime, Wi-Fi mode, AP client count, STA details, and captive DNS state.
 - Pump runtime status is intentionally separate under `/api/pump/status`.
-- Frontend pages update dashboard cards and status tables by polling `/api/status`.
+- Frontend pages update compact system status and status tables by polling `/api/status`; the dashboard uses `/api/pump/status` for pump runtime state.
 
 ## State Management
 
@@ -92,4 +92,4 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 
 ## Design Boundary
 
-The firmware now has the pump-control core, NVS-backed pump settings, boot auto-start behavior, and authenticated pump API routes. UI controls and hardware validation are still deferred. Future extension points are `main/static/` for local UI controls and Phase 5 hardware procedures for flash/manual relay and float validation.
+The firmware now has the pump-control core, NVS-backed pump settings, boot auto-start behavior, authenticated pump API routes, and a local pump-control dashboard. Hardware validation is still deferred to Phase 5 hardware procedures for flash/manual relay and float validation.

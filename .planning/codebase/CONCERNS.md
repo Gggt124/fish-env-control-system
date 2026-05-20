@@ -53,9 +53,8 @@ The codebase is intentionally a local setup prototype. Most concerns are accepta
 
 ## Product Scope Risks
 
-- The repository name and UI mention fish pump relay timer control, but relay/timer behavior is intentionally absent.
+- Hardware relay/float behavior still needs manual Phase 5 validation on the ESP32 board even though firmware, APIs, and dashboard controls now build.
 - Adding relay GPIO assignments before board variant and pin map are confirmed would violate the documented phase boundary.
-- Current dashboard cards are placeholders for system/network state, not pump control telemetry.
 
 ## Code Hygiene Notes
 
@@ -71,4 +70,3 @@ The codebase is intentionally a local setup prototype. Most concerns are accepta
 - Flash encryption, NVS encryption, and secure boot.
 - Stronger per-client rate limiting.
 - Automated tests for session, input validation, Wi-Fi state transitions, and HTTP route behavior.
-
