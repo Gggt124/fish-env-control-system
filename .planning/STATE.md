@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-last_updated: "2026-05-20T20:22:26.9425343+07:00"
+last_updated: "2026-05-20T20:36:25.0387407+07:00"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -55,6 +55,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260520-s4a | Smooth pump countdown UI and update safe defaults | 2026-05-20 | c56ad65 | [260520-s4a-smooth-pump-countdown-ui-and-update-safe](./quick/260520-s4a-smooth-pump-countdown-ui-and-update-safe/) |
+| 260520-siy | Switch to dual OTA partition layout | 2026-05-20 | b7e88c7 | [260520-siy-switch-to-dual-ota-partition-layout](./quick/260520-siy-switch-to-dual-ota-partition-layout/) |
 
 ## Notes
 
@@ -63,8 +64,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 - Recommended relay default: GPIO26 output, polarity configurable.
 - Auto-start defaults disabled but must be persisted and user-toggleable.
 - Hardware validation passed on the user's real ESP32/relay/float setup; latest quick task is smoothing countdown UI and changing safer defaults.
+- Flash layout now uses dual OTA app slots sized `0x1F0000` each on the 4MB ESP32 flash.
 
-Last activity: 2026-05-20 - Completed quick task 260520-s4a: Smooth pump countdown UI and update safe defaults.
+Last activity: 2026-05-20 - Completed quick task 260520-siy: Switch to dual OTA partition layout.
 
 ---
 *State initialized: 2026-05-18*
