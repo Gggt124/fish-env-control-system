@@ -251,7 +251,7 @@ The control logic is intentionally simple and hardware-real: the float switch is
 ## Build Configuration
 - `sdkconfig.defaults` sets a custom partition table, development flash workflow, 4 MB flash, and manual task watchdog initialization.
 - Flash and NVS encryption are disabled in `sdkconfig.defaults` for local development.
-- `partitions.csv` defines `nvs`, `phy_init`, and one `factory` app partition sized at 1 MB.
+- `partitions.csv` defines `nvs`, `otadata`, `phy_init`, and two OTA app slots sized `0x1F0000` bytes each.
 - `main/CMakeLists.txt` embeds the static frontend with `EMBED_FILES` for `login.html`, `dashboard.html`, `status.html`, `wifi.html`, `style.css`, and `app.js`.
 - Embedded file symbols are filename-based in `main/web_server.c`, for example `_binary_login_html_start`.
 ## Local Build Workflow
