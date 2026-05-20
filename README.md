@@ -74,16 +74,16 @@ $env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
 idf.py build
 ```
 
-Flash and monitor:
+Flash:
 
 ```powershell
-chcp 65001 > $null
-$env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
-& "$env:IDF_PATH\export.ps1"
-idf.py -p COMx flash monitor
+.\scripts\flash.ps1 -Port COMx
 ```
 
 Replace `COMx` with the ESP32 serial port.
+
+The flash wrapper applies the same Windows encoding workaround as the build
+wrapper (`chcp 65001` and `PYTHONUTF8=1`) before exporting ESP-IDF.
 
 ## Manual Test
 
@@ -106,7 +106,8 @@ fish_pump_relay_timer_control/
 ├── docs/
 │   └── components.md
 ├── scripts/
-│   └── build.ps1
+│   ├── build.ps1
+│   └── flash.ps1
 ├── components/
 │   ├── app_config/       # Template-level constants to customize first
 │   ├── nvs_store/        # NVS Wi-Fi credential and IP config storage
