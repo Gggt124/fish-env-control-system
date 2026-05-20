@@ -148,8 +148,47 @@ static void format_mac(const uint8_t *mac, char *out)
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
+static bool host_equals(const char *host_start, size_t host_len, const char *expected)
+{
+    return expected && strlen(expected) == host_len &&
+           strncmp(host_start, expected, host_len) == 0;
+}
+
+static bool header_matches_allowed_origin(const char *header)
+{
+    if (!header || !header[0]) {
+        return false;
+    }
+
+    const char *host_start = strstr(header, "://");
+    host_start = host_start ? host_start + 3 : header;
+
+    const char *host_end = host_start;
+    while (*host_end && *host_end != ':' && *host_end != '/' &&
+           *host_end != '?' && *host_end != '#') {
+        host_end++;
+    }
+
+    size_t host_len = (size_t)(host_end - host_start);
+    if (host_len == 0) {
+        return false;
+    }
+
+    const char *ap_ip = wifi_manager_get_ap_ip();
+    if (host_equals(host_start, host_len, ap_ip)) {
+        return true;
+    }
+
+    const char *sta_ip = wifi_manager_get_sta_ip();
+    if (sta_ip && sta_ip[0] && host_equals(host_start, host_len, sta_ip)) {
+        return true;
+    }
+
+    return host_equals(host_start, host_len, APP_TEMPLATE_MDNS_HOSTNAME ".local");
+}
+
 /* Check Origin/Referer to prevent cross-site POST (CSRF mitigation) */
-static bool is_same_origin(httpd_req_t *req)
+static bool is_same_origin(httpd_req_t *req, bool allow_missing_header)
 {
     size_t buf_len = httpd_req_get_hdr_value_len(req, "Origin");
     char buf[128] = {0};
@@ -165,16 +204,10 @@ static bool is_same_origin(httpd_req_t *req)
 
     if (buf[0] == '\0') {
         ESP_LOGW(TAG, "POST request without Origin/Referer header");
-        return true;
+        return allow_missing_header;
     }
 
-    const char *ap_ip = wifi_manager_get_ap_ip();
-    if (ap_ip && strstr(buf, ap_ip)) return true;
-
-    const char *sta_ip = wifi_manager_get_sta_ip();
-    if (sta_ip && sta_ip[0] && strstr(buf, sta_ip)) return true;
-
-    if (strstr(buf, APP_TEMPLATE_MDNS_HOSTNAME ".local")) return true;
+    if (header_matches_allowed_origin(buf)) return true;
 
     ESP_LOGW(TAG, "Cross-origin POST blocked: %s", buf);
     return false;
@@ -405,20 +438,26 @@ static bool api_pump_required_u32(const cJSON *root, const char *name, uint32_t 
         *error_message = name;
         return false;
     }
-    if (!cJSON_IsNumber(item) || item->valuedouble < 0 ||
-        item->valuedouble != (double)(uint32_t)item->valuedouble) {
+    if (!cJSON_IsNumber(item) || !(item->valuedouble >= 0.0)) {
         *error_code = "invalid_type";
         *error_message = name;
         return false;
     }
-    if ((uint32_t)item->valuedouble < APP_TEMPLATE_PUMP_TIMER_MIN_SEC ||
-        (uint32_t)item->valuedouble > APP_TEMPLATE_PUMP_TIMER_MAX_SEC) {
+    if (item->valuedouble < (double)APP_TEMPLATE_PUMP_TIMER_MIN_SEC ||
+        item->valuedouble > (double)APP_TEMPLATE_PUMP_TIMER_MAX_SEC) {
         *error_code = "duration_out_of_range";
         *error_message = name;
         return false;
     }
 
-    *out = (uint32_t)item->valuedouble;
+    uint32_t value = (uint32_t)item->valuedouble;
+    if ((double)value != item->valuedouble) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+
+    *out = value;
     return true;
 }
 
@@ -619,7 +658,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     static int s_login_attempts = 0;
     static int64_t s_login_block_until = 0;
 
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
@@ -725,7 +764,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 /* POST /api/logout */
 static esp_err_t handle_api_logout(httpd_req_t *req)
 {
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
@@ -794,7 +833,7 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
@@ -894,7 +933,7 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
@@ -943,7 +982,7 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, false)) {
         return send_api_error(req, "forbidden", "Cross-origin pump config save blocked",
                               "403 Forbidden");
     }
@@ -1042,7 +1081,7 @@ static esp_err_t handle_api_pump_start(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, false)) {
         return send_api_error(req, "forbidden", "Cross-origin pump start blocked", "403 Forbidden");
     }
 
@@ -1091,7 +1130,7 @@ static esp_err_t handle_api_pump_stop(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    if (!is_same_origin(req)) {
+    if (!is_same_origin(req, false)) {
         return send_api_error(req, "forbidden", "Cross-origin pump stop blocked", "403 Forbidden");
     }
 
