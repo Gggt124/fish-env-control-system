@@ -131,7 +131,9 @@ function doLogout() {
 /* ======== Dashboard Page ======== */
 
 var pumpConfig = null;
-var pumpRelayPolarity = 'active_low';
+var pumpRelayPolarity = null;
+var pumpConfigLoaded = false;
+var pumpEditVersion = 0;
 var pumpDirty = false;
 var pumpPending = false;
 var pumpLastStatus = null;
@@ -148,6 +150,7 @@ function initPumpDashboard() {
     if (window.location.pathname !== '/dashboard') return;
     wirePumpForm();
     wirePumpActions();
+    updatePumpConfigSaveButton(false);
     updatePumpButtons();
     loadPumpConfig();
     syncPumpStatus(true);
@@ -203,10 +206,12 @@ function wirePumpActions() {
 }
 
 function markPumpDirty() {
+    pumpEditVersion += 1;
     pumpDirty = true;
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.remove('hidden');
     setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+    updatePumpConfigSaveButton(true);
 }
 
 function setPumpClean(label) {
@@ -214,19 +219,35 @@ function setPumpClean(label) {
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.add('hidden');
     setText('pump-config-state', label || 'บันทึกแล้ว');
+    updatePumpConfigSaveButton(true);
+}
+
+function updatePumpConfigSaveButton(enabled) {
+    var saveBtn = pumpEl('pump-save-config');
+    if (saveBtn) saveBtn.disabled = !enabled || !pumpConfigLoaded || !pumpRelayPolarity;
 }
 
 function loadPumpConfig() {
+    var requestEditVersion = pumpEditVersion;
     setText('pump-config-state', 'กำลังโหลดค่า...');
     setPumpAlert('pump-config-error', '');
+    updatePumpConfigSaveButton(false);
     apiGet('/api/pump/config', function(err, data) {
         if (err || !data || !data.ok) {
+            pumpConfigLoaded = false;
             setText('pump-config-state', 'โหลดค่าไม่สำเร็จ');
-            setPumpAlert('pump-config-error', 'โหลดค่าตั้งเวลาไม่สำเร็จ แต่ยังสามารถดูสถานะปั๊มได้');
+            setPumpAlert('pump-config-error', 'โหลดค่าตั้งเวลาไม่สำเร็จ กรุณาโหลดค่าให้สำเร็จก่อนบันทึก');
+            updatePumpConfigSaveButton(false);
             return;
         }
         pumpConfig = data;
-        pumpRelayPolarity = data.relay_polarity || pumpRelayPolarity;
+        pumpRelayPolarity = data.relay_polarity || null;
+        pumpConfigLoaded = !!pumpRelayPolarity;
+        if (pumpEditVersion !== requestEditVersion) {
+            setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+            updatePumpConfigSaveButton(pumpConfigLoaded);
+            return;
+        }
         setDurationFields('timer1-on', data.timer1_on_sec);
         setDurationFields('timer1-off', data.timer1_off_sec);
         setDurationFields('timer2-on', data.timer2_on_sec);
@@ -315,8 +336,16 @@ function validatePumpConfig() {
 }
 
 function savePumpConfig() {
-    var payload = validatePumpConfig();
     var saveBtn = pumpEl('pump-save-config');
+    if (!pumpConfigLoaded || !pumpRelayPolarity) {
+        setText('pump-config-state', 'ยังบันทึกไม่ได้');
+        setPumpAlert('pump-config-error', 'กรุณาโหลดค่าจากอุปกรณ์ให้สำเร็จก่อนบันทึก');
+        updatePumpConfigSaveButton(false);
+        return;
+    }
+
+    var requestEditVersion = pumpEditVersion;
+    var payload = validatePumpConfig();
     if (!payload) {
         setPumpAlert('pump-config-error', 'ตรวจสอบค่าตั้งเวลาแล้วลองบันทึกอีกครั้ง');
         return;
@@ -337,13 +366,19 @@ function savePumpConfig() {
         if (err || !data || !data.ok) {
             setText('pump-config-state', 'บันทึกไม่สำเร็จ');
             setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
+            updatePumpConfigSaveButton(true);
             return;
         }
         pumpConfig = data.config || data;
         if (pumpConfig.relay_polarity) pumpRelayPolarity = pumpConfig.relay_polarity;
-        setPumpClean('บันทึกแล้ว');
+        pumpConfigLoaded = !!pumpRelayPolarity;
+        if (pumpEditVersion === requestEditVersion) {
+            setPumpClean('บันทึกแล้ว');
+        } else {
+            setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+            updatePumpConfigSaveButton(pumpConfigLoaded);
+        }
         showToast('บันทึกค่าปั๊มเรียบร้อย', 'success');
-        loadPumpConfig();
         if (data.status) applyPumpStatus(data.status, true);
         syncPumpStatus(true);
     });
