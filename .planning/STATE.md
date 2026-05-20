@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-last_updated: "2026-05-20T11:35:00.471Z"
+last_updated: "2026-05-20T20:22:26.9425343+07:00"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -50,12 +50,21 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 
 **Status:** Ready to plan
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260520-s4a | Smooth pump countdown UI and update safe defaults | 2026-05-20 | c56ad65 | [260520-s4a-smooth-pump-countdown-ui-and-update-safe](./quick/260520-s4a-smooth-pump-countdown-ui-and-update-safe/) |
+
 ## Notes
 
 - User confirmed ESP32 DevKit V1 30-pin.
 - Recommended float switch wiring: GPIO32 input pull-up, switch closes to GND.
 - Recommended relay default: GPIO26 output, polarity configurable.
-- Auto-start defaults enabled but must be persisted and user-toggleable.
+- Auto-start defaults disabled but must be persisted and user-toggleable.
+- Hardware validation passed on the user's real ESP32/relay/float setup; latest quick task is smoothing countdown UI and changing safer defaults.
+
+Last activity: 2026-05-20 - Completed quick task 260520-s4a: Smooth pump countdown UI and update safe defaults.
 
 ---
 *State initialized: 2026-05-18*
