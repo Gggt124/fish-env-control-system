@@ -2,7 +2,7 @@
 phase: 04-web-pump-control-ui
 phase_number: "04"
 phase_name: web-pump-control-ui
-status: issues_found
+status: clean
 depth: standard
 files_reviewed: 3
 scope_source: SUMMARY.md
@@ -12,10 +12,12 @@ reviewed_files:
   - main/static/style.css
 findings:
   critical: 0
-  warning: 2
+  warning: 0
   info: 0
-  total: 2
+  total: 0
 updated: 2026-05-20
+supersedes_review_commit: bc588eb
+fix_commit: e49e091
 ---
 
 # Phase 04 Code Review: Web Pump Control UI
@@ -28,33 +30,25 @@ Reviewed Phase 4 source scope from the phase summary artifacts:
 - `main/static/dashboard.html`
 - `main/static/style.css`
 
-Found two warning-level issues in the dashboard config workflow. Both are frontend state-management problems that can affect operator confidence or hardware-safety assumptions without requiring backend changes.
+No open issues remain at standard review depth. The two warning findings from the first Phase 4 review are resolved in fix commit `e49e091`.
 
-## Findings
+## Resolved Findings
 
 ### WR-001: Late config responses can overwrite in-progress timer edits
 
-**Severity:** Warning
+**Status:** Resolved
 
 **File:** `main/static/app.js:219`
 
-`loadPumpConfig()` unconditionally writes all timer fields, updates `pump-auto-start`, clears validation, and calls `setPumpClean()` when its async `/api/pump/config` response arrives. It is called during dashboard initialization and again after a successful save at `main/static/app.js:346`. If an operator starts editing before the initial config request returns, or changes fields while a save/follow-up reload is in flight, the late response can replace the current form values and hide the unsaved warning.
-
-That makes timer edits easy to lose silently. In the worst case, the UI can display "loaded" or "saved" after replacing operator-entered values with older values from a request that started before those edits.
-
-**Recommendation:** Track a config request sequence or dirty timestamp and only apply `loadPumpConfig()` results when no local edits happened after the request started. Also consider disabling inputs during the initial load/save round trip, or avoiding the post-save reload when the POST response already contains the applied config.
+`loadPumpConfig()` now captures the edit version at request start. When a response returns after local edits, the handler updates device metadata such as relay polarity but does not rewrite timer fields, clear validation, or mark the form clean. The save flow also no longer triggers a post-save reload that could race with fresh edits; it relies on the POST response and preserves an unsaved state if edits occur while the save request is in flight.
 
 ### WR-002: Saving before config load can replace relay polarity with the UI default
 
-**Severity:** Warning
+**Status:** Resolved
 
 **File:** `main/static/app.js:133`
 
-The dashboard hides relay polarity as intended, but it initializes `pumpRelayPolarity` to `'active_low'` before the persisted config is loaded. `validatePumpConfig()` always includes that value in the full replacement payload at `main/static/app.js:313`. If `/api/pump/config` fails or has not completed and the operator enters timer values and saves, the UI sends `active_low` rather than preserving the device's actual configured polarity.
-
-This conflicts with the project's GPIO safety constraint: relay modules vary, and an unintended polarity change can energize the pump unexpectedly once the backend applies the saved full replacement config.
-
-**Recommendation:** Block pump config saves until `pumpConfig` has loaded successfully and `pumpRelayPolarity` came from the device. If the config load fails, keep the save button disabled and ask the operator to retry loading instead of constructing a replacement payload with a client-side hardware default.
+`pumpRelayPolarity` now starts as `null` and the save button stays disabled until `/api/pump/config` loads successfully. `savePumpConfig()` also has a hard guard that rejects saves without a loaded device polarity, so the full replacement payload cannot silently substitute a client-side relay polarity default.
 
 ## Positive Checks
 
@@ -69,6 +63,6 @@ This conflicts with the project's GPIO safety constraint: relay modules vary, an
 
 - Review depth: standard.
 - Scope source: Phase 4 `*-SUMMARY.md` artifacts.
-- `node --check main/static/app.js` passed.
+- `node --check main/static/app.js` passed after the fix.
 - Static review covered frontend state flow, API contract compatibility with `main/web_server.c`, validation bounds, and hidden hardware field preservation.
-- No ESP-IDF build was run during this review; Phase 4 verification already records a successful `.\scripts\build.ps1` run.
+- No ESP-IDF build was run during this fix pass; Phase 4 verification already records a successful `.\scripts\build.ps1` run.
