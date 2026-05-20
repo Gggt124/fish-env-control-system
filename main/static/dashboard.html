@@ -52,99 +52,156 @@
 <main class="main-content">
     <div class="page-header">
         <div class="header-left">
-            <h1>Pump Dashboard</h1>
-            <p>สถานะระบบและการเชื่อมต่อ</p>
+            <h1>Pump Control</h1>
+            <p>ควบคุม Timer 1 / Timer 2 และติดตามสถานะปั๊ม</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-outline btn-sm" onclick="refreshStatus()">&#8635; Refresh</button>
+            <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)">&#8635; Sync</button>
             <a href="/wifi" class="btn btn-primary btn-sm">&#128246; Wi-Fi Setup</a>
         </div>
     </div>
 
-    <!-- Status Cards -->
-    <div class="status-grid">
-        <div class="card">
-            <div class="card-header">
-                <span class="card-label">สถานะ Wi-Fi</span>
-                <span style="color:var(--primary);font-size:20px;">&#128246;</span>
+    <!-- Pump Runtime -->
+    <section class="pump-runtime section-card" id="pump-runtime-panel">
+        <div class="pump-runtime-main">
+            <div>
+                <div class="runtime-eyebrow" id="pump-sync-state">รอข้อมูลจากอุปกรณ์</div>
+                <h2 id="pump-running-label">ระบบปั๊ม: --</h2>
             </div>
-            <div class="card-value" id="card-sta-status">--</div>
-            <div class="card-sub neutral" id="card-sta-ssid">Station: --</div>
-            <div class="card-sub neutral" id="card-sta-ip">Station IP: --</div>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                <span class="card-label">AP Mode</span>
-                <span style="color:var(--secondary);font-size:20px;">&#9673;</span>
-            </div>
-            <div class="card-value" id="card-ap-status">Active</div>
-            <div class="card-sub good" id="card-ap-ip">IP: --</div>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                <span class="card-label">หน่วยความจำ</span>
-                <span style="color:var(--primary);font-size:20px;">&#9881;</span>
-            </div>
-            <div class="card-value" id="card-heap">--</div>
-            <div class="progress-bar">
-                <div class="fill" id="card-heap-bar" style="width:40%;"></div>
+            <div class="pump-countdown-wrap">
+                <span class="summary-label">เวลาคงเหลือ</span>
+                <div class="pump-countdown" id="pump-countdown">--:--</div>
             </div>
         </div>
-        <div class="card">
-            <div class="card-header">
-                <span class="card-label">เวลาทำงาน</span>
-                <span style="color:var(--primary);font-size:20px;">&#9202;</span>
+        <div class="pump-runtime-grid">
+            <div class="runtime-stat primary">
+                <span class="summary-label">Timer</span>
+                <strong id="pump-active-timer">--</strong>
             </div>
-            <div class="card-value" id="card-uptime">--</div>
-            <div class="card-sub neutral" id="card-version">v1.0.0</div>
+            <div class="runtime-stat primary">
+                <span class="summary-label">Phase</span>
+                <strong id="pump-phase">--</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Float Switch</span>
+                <strong id="pump-float-state">ลูกลอย: --</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Relay Output</span>
+                <strong id="pump-relay-state">รีเลย์: --</strong>
+            </div>
         </div>
-    </div>
+        <div class="pump-runtime-actions">
+            <button class="btn btn-primary" id="pump-start-btn" type="button">Start</button>
+            <button class="btn btn-danger" id="pump-stop-btn" type="button">Stop</button>
+            <span class="runtime-action-state" id="pump-action-state"></span>
+        </div>
+        <div class="pump-alert hidden" id="pump-status-error"></div>
+    </section>
+
+    <!-- Pump Settings -->
+    <section class="section-card pump-settings">
+        <div class="section-heading-row">
+            <div>
+                <h3>ตั้งค่า Timer</h3>
+                <p>ตั้งเวลาเปิด/ปิดของ Timer 1 และ Timer 2 แล้วบันทึกลงอุปกรณ์</p>
+            </div>
+            <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
+        </div>
+
+        <form id="pump-config-form" novalidate>
+            <div class="timer-grid">
+                <fieldset class="timer-card">
+                    <legend>Timer 1 - เมื่อลูกลอย OFF</legend>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer1-on-min">ช่วงเปิด นาที</label>
+                            <input id="timer1-on-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer1-on-sec">ช่วงเปิด วินาที</label>
+                            <input id="timer1-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer1-on-error"></div>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer1-off-min">ช่วงปิด นาที</label>
+                            <input id="timer1-off-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer1-off-sec">ช่วงปิด วินาที</label>
+                            <input id="timer1-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer1-off-error"></div>
+                </fieldset>
+
+                <fieldset class="timer-card">
+                    <legend>Timer 2 - เมื่อลูกลอย ON</legend>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer2-on-min">ช่วงเปิด นาที</label>
+                            <input id="timer2-on-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer2-on-sec">ช่วงเปิด วินาที</label>
+                            <input id="timer2-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer2-on-error"></div>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer2-off-min">ช่วงปิด นาที</label>
+                            <input id="timer2-off-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer2-off-sec">ช่วงปิด วินาที</label>
+                            <input id="timer2-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer2-off-error"></div>
+                </fieldset>
+            </div>
+
+            <div class="settings-actions">
+                <label class="toggle-row" for="pump-auto-start">
+                    <input id="pump-auto-start" type="checkbox">
+                    <span>
+                        <strong>Auto-start หลังบูต</strong>
+                        <small>บันทึกเป็นพฤติกรรมตอนเปิดเครื่อง ไม่สั่ง Start/Stop ทันที</small>
+                    </span>
+                </label>
+                <div class="settings-button-row">
+                    <span class="unsaved-warning hidden" id="pump-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
+                    <button class="btn btn-primary" id="pump-save-config" type="submit">บันทึกค่า</button>
+                </div>
+            </div>
+            <div class="pump-alert hidden" id="pump-config-error"></div>
+        </form>
+    </section>
 
     <!-- Summary Row -->
-    <div class="section-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--sp-md);">
-            <h3>Quick Status</h3>
-            <a href="/status" class="btn btn-outline btn-sm">&#9881; ดูสถานะทั้งหมด</a>
+    <section class="section-card compact-status">
+        <div class="section-heading-row">
+            <div>
+                <h3>Quick Status</h3>
+                <p>ข้อมูลระบบแบบย่อ</p>
+            </div>
+            <div class="quick-links">
+                <a href="/status" class="btn btn-outline btn-sm">&#9881; System Status</a>
+                <a href="/wifi" class="btn btn-outline btn-sm">&#128246; Wi-Fi Settings</a>
+            </div>
         </div>
         <div class="summary-grid" style="margin-top:var(--sp-md);">
-            <div class="summary-item">
-                <span class="summary-label">Chip</span>
-                <span class="summary-value" id="dash-chip">--</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Heap Usage</span>
-                <span class="summary-value" id="dash-heap-pct">--</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">STA RSSI</span>
-                <span class="summary-value" id="dash-rssi">--</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">AP Clients</span>
-                <span class="summary-value" id="dash-ap-clients">--</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Wi-Fi Mode</span>
-                <span class="summary-value" id="dash-wifi-mode">--</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-label">Firmware</span>
-                <span class="summary-value" id="dash-project-version">v1.0.0</span>
-            </div>
+            <div class="summary-item"><span class="summary-label">Chip</span><span class="summary-value" id="dash-chip">--</span></div>
+            <div class="summary-item"><span class="summary-label">Heap Usage</span><span class="summary-value" id="dash-heap-pct">--</span></div>
+            <div class="summary-item"><span class="summary-label">STA RSSI</span><span class="summary-value" id="dash-rssi">--</span></div>
+            <div class="summary-item"><span class="summary-label">AP Clients</span><span class="summary-value" id="dash-ap-clients">--</span></div>
+            <div class="summary-item"><span class="summary-label">Wi-Fi Mode</span><span class="summary-value" id="dash-wifi-mode">--</span></div>
+            <div class="summary-item"><span class="summary-label">Firmware</span><span class="summary-value" id="dash-project-version">v1.0.0</span></div>
         </div>
-    </div>
-
-    <!-- About section -->
-    <div class="section-card">
-        <h3>เกี่ยวกับระบบ</h3>
-        <p style="font-size:14px;color:var(--on-surface-variant);line-height:1.6;">
-            Fish pump relay timer control base firmware<br>
-            &#8226; Web Server, Login Session<br>
-            &#8226; Wi-Fi Scan / Connect / Config<br>
-            &#8226; SoftAP Fallback Mode<br><br>
-            <em>Relay control and scheduling will be added after the ESP32 variant, relay pin map, and timing requirements are confirmed.</em>
-        </p>
-    </div>
+    </section>
 
     <!-- Footer -->
     <footer class="app-footer">
