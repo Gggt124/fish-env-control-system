@@ -2,12 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-last_updated: "2026-05-20T20:36:25.0387407+07:00"
+status: executing
+last_updated: "2026-05-20T14:16:10.464Z"
+last_activity: 2026-05-20
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 12
+  total_plans: 13
   completed_plans: 12
   percent: 80
 ---
@@ -42,13 +43,13 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 
 ## Current Phase
 
-### Phase 4: Web Pump Control UI
+### Phase 5: Hardware Validation And Regression Pass
 
-**Goal:** Add the local web UI for timer setup, auto-start, start/stop, and live pump status without external dependencies.
+**Goal:** Validate the complete controller on ESP32 hardware and confirm existing Wi-Fi/setup behavior still works.
 
-**Requirements:** TIME-01, TIME-02, TIME-03, TIME-04, UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07
+**Requirements:** VAL-02, VAL-03, VAL-04, VAL-05
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ### Quick Tasks Completed
 
@@ -66,7 +67,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 - Hardware validation passed on the user's real ESP32/relay/float setup; latest quick task is smoothing countdown UI and changing safer defaults.
 - Flash layout now uses dual OTA app slots sized `0x1F0000` each on the 4MB ESP32 flash.
 
-Last activity: 2026-05-20 - Completed quick task 260520-siy: Switch to dual OTA partition layout.
+Last activity: 2026-05-20 - Created Phase 5 hardware validation and regression pass plan.
 
 ---
 *State initialized: 2026-05-18*
