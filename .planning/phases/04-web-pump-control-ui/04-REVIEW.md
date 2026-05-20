@@ -18,6 +18,7 @@ findings:
 updated: 2026-05-20
 supersedes_review_commit: bc588eb
 fix_commit: e49e091
+current_source_delta_after_resolution: none
 ---
 
 # Phase 04 Code Review: Web Pump Control UI
@@ -30,39 +31,43 @@ Reviewed Phase 4 source scope from the phase summary artifacts:
 - `main/static/dashboard.html`
 - `main/static/style.css`
 
-No open issues remain at standard review depth. The two warning findings from the first Phase 4 review are resolved in fix commit `e49e091`.
+No open issues were found at standard review depth. The current source files retain the fixes for the earlier Phase 4 warning findings, and no additional Phase 4 source changes exist after the resolution commit `b23ae5e`.
 
-## Resolved Findings
+## Findings
+
+No Critical, Warning, or Info findings.
+
+## Resolved Findings Rechecked
 
 ### WR-001: Late config responses can overwrite in-progress timer edits
 
-**Status:** Resolved
+**Status:** Still resolved
 
-**File:** `main/static/app.js:219`
+**File:** `main/static/app.js:230`
 
-`loadPumpConfig()` now captures the edit version at request start. When a response returns after local edits, the handler updates device metadata such as relay polarity but does not rewrite timer fields, clear validation, or mark the form clean. The save flow also no longer triggers a post-save reload that could race with fresh edits; it relies on the POST response and preserves an unsaved state if edits occur while the save request is in flight.
+`loadPumpConfig()` captures `pumpEditVersion` at request start and avoids rewriting timer fields or clearing validation when local edits happen before the response returns. The save flow also compares the edit version from request start before marking the form clean.
 
 ### WR-002: Saving before config load can replace relay polarity with the UI default
 
-**Status:** Resolved
+**Status:** Still resolved
 
-**File:** `main/static/app.js:133`
+**File:** `main/static/app.js:225`
 
-`pumpRelayPolarity` now starts as `null` and the save button stays disabled until `/api/pump/config` loads successfully. `savePumpConfig()` also has a hard guard that rejects saves without a loaded device polarity, so the full replacement payload cannot silently substitute a client-side relay polarity default.
+`pumpRelayPolarity` starts as `null`; the save button and `savePumpConfig()` both require a successfully loaded device polarity before posting the full replacement payload.
 
-## Positive Checks
+## Review Notes
 
-- Dashboard DOM IDs match the JavaScript selectors for runtime status, timer fields, auto-start, save, Start, Stop, and alerts.
-- Frontend timer validation matches backend bounds: 5 to 86400 seconds, with second subfields limited to 0..59.
-- The frontend does not submit read-only hardware fields (`float_gpio`, `relay_gpio`, `debounce_ms`) in the pump config payload.
-- Start and Stop actions use the authenticated pump API endpoints and disable while an action is pending or status is stale.
-- Status rendering uses the backend's machine-friendly values for `active_timer`, `phase`, `float_state`, `relay_energized`, and `countdown_sec`.
+- Dashboard DOM IDs match JavaScript selectors for runtime status, timer fields, auto-start, save, Start, Stop, and alert elements.
+- Timer validation still matches the backend bounds: integer durations from 5 to 86400 seconds, with second subfields limited to 0..59.
+- The frontend does not submit read-only hardware fields (`float_gpio`, `relay_gpio`, `debounce_ms`) in `/api/pump/config`.
+- Start and Stop actions use authenticated pump API endpoints and disable while pending, stale, missing status, or invalid config.
+- Status rendering matches the backend response fields: `active_timer`, `phase`, `float_state`, `relay_energized`, `countdown_sec`, `settings_status`, and `auto_start`.
 - Static assets remain local-only; no CDN or external frontend dependency was introduced.
 
-## Verification Notes
+## Verification
 
-- Review depth: standard.
-- Scope source: Phase 4 `*-SUMMARY.md` artifacts.
-- `node --check main/static/app.js` passed after the fix.
-- Static review covered frontend state flow, API contract compatibility with `main/web_server.c`, validation bounds, and hidden hardware field preservation.
-- No ESP-IDF build was run during this fix pass; Phase 4 verification already records a successful `.\scripts\build.ps1` run.
+- `node --check main/static/app.js` passed.
+- `rg "http://|https://|cdn|Tailwind|Google Fonts|Material Symbols|float_gpio|relay_gpio|debounce_ms|water level|ระดับน้ำ.*%|0-100" main/static` returned no matches.
+- `rg` selector checks confirmed the pump dashboard IDs are present across `dashboard.html`, `app.js`, and `style.css`.
+- `git diff --name-only b23ae5e458a8ed254fd767885f6912b6e64f3e6c..HEAD -- .` returned no Phase 4 source files after GSD artifact exclusions.
+- No ESP-IDF build was run during this review pass; Phase 4 verification already records a successful `.\scripts\build.ps1` run.
