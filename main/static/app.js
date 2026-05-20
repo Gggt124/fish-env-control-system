@@ -130,10 +130,392 @@ function doLogout() {
 
 /* ======== Dashboard Page ======== */
 
+var pumpConfig = null;
+var pumpRelayPolarity = 'active_low';
+var pumpDirty = false;
+var pumpPending = false;
+var pumpLastStatus = null;
+var pumpLastSyncMs = 0;
+var pumpLocalCountdown = null;
+var pumpPollTimer = null;
+var pumpTickTimer = null;
+
 function initDashboard() {
+    initPumpDashboard();
+}
+
+function initPumpDashboard() {
     if (window.location.pathname !== '/dashboard') return;
+    wirePumpForm();
+    wirePumpActions();
+    updatePumpButtons();
+    loadPumpConfig();
+    syncPumpStatus(true);
     refreshStatus();
     setInterval(refreshStatus, 10000);
+    startPumpLiveTimers();
+    document.addEventListener('visibilitychange', handlePumpVisibilityChange);
+}
+
+function pumpEl(id) {
+    return document.getElementById(id);
+}
+
+function setPumpAlert(id, message) {
+    var el = pumpEl(id);
+    if (!el) return;
+    if (message) {
+        el.textContent = message;
+        el.classList.remove('hidden');
+    } else {
+        el.textContent = '';
+        el.classList.add('hidden');
+    }
+}
+
+function wirePumpForm() {
+    var form = pumpEl('pump-config-form');
+    if (form) {
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            savePumpConfig();
+        };
+    }
+
+    var ids = [
+        'timer1-on-min', 'timer1-on-sec', 'timer1-off-min', 'timer1-off-sec',
+        'timer2-on-min', 'timer2-on-sec', 'timer2-off-min', 'timer2-off-sec',
+        'pump-auto-start'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        var input = pumpEl(ids[i]);
+        if (!input) continue;
+        input.oninput = markPumpDirty;
+        input.onchange = markPumpDirty;
+    }
+}
+
+function wirePumpActions() {
+    var startBtn = pumpEl('pump-start-btn');
+    var stopBtn = pumpEl('pump-stop-btn');
+    if (startBtn) startBtn.onclick = startPump;
+    if (stopBtn) stopBtn.onclick = stopPump;
+}
+
+function markPumpDirty() {
+    pumpDirty = true;
+    var warning = pumpEl('pump-unsaved-warning');
+    if (warning) warning.classList.remove('hidden');
+    setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+}
+
+function setPumpClean(label) {
+    pumpDirty = false;
+    var warning = pumpEl('pump-unsaved-warning');
+    if (warning) warning.classList.add('hidden');
+    setText('pump-config-state', label || 'บันทึกแล้ว');
+}
+
+function loadPumpConfig() {
+    setText('pump-config-state', 'กำลังโหลดค่า...');
+    setPumpAlert('pump-config-error', '');
+    apiGet('/api/pump/config', function(err, data) {
+        if (err || !data || !data.ok) {
+            setText('pump-config-state', 'โหลดค่าไม่สำเร็จ');
+            setPumpAlert('pump-config-error', 'โหลดค่าตั้งเวลาไม่สำเร็จ แต่ยังสามารถดูสถานะปั๊มได้');
+            return;
+        }
+        pumpConfig = data;
+        pumpRelayPolarity = data.relay_polarity || pumpRelayPolarity;
+        setDurationFields('timer1-on', data.timer1_on_sec);
+        setDurationFields('timer1-off', data.timer1_off_sec);
+        setDurationFields('timer2-on', data.timer2_on_sec);
+        setDurationFields('timer2-off', data.timer2_off_sec);
+        var autoStart = pumpEl('pump-auto-start');
+        if (autoStart) autoStart.checked = !!data.auto_start;
+        clearPumpValidation();
+        setPumpClean('โหลดค่าแล้ว');
+    });
+}
+
+function setDurationFields(prefix, totalSec) {
+    totalSec = Number(totalSec || 0);
+    var minEl = pumpEl(prefix + '-min');
+    var secEl = pumpEl(prefix + '-sec');
+    if (minEl) minEl.value = Math.floor(totalSec / 60);
+    if (secEl) secEl.value = totalSec % 60;
+}
+
+function readDuration(prefix, label) {
+    var minEl = pumpEl(prefix + '-min');
+    var secEl = pumpEl(prefix + '-sec');
+    var errEl = pumpEl(prefix + '-error');
+    var rawMin = minEl ? minEl.value.trim() : '';
+    var rawSec = secEl ? secEl.value.trim() : '';
+    var fail = function(message) {
+        if (errEl) errEl.textContent = message;
+        if (minEl) minEl.classList.add('invalid');
+        if (secEl) secEl.classList.add('invalid');
+        return { ok: false, value: 0 };
+    };
+
+    if (rawMin === '' || rawSec === '') {
+        return fail(label + ': กรุณากรอกนาทีและวินาที');
+    }
+    if (!/^\d+$/.test(rawMin) || !/^\d+$/.test(rawSec)) {
+        return fail(label + ': ต้องเป็นจำนวนเต็ม 0 หรือมากกว่า');
+    }
+
+    var minutes = parseInt(rawMin, 10);
+    var seconds = parseInt(rawSec, 10);
+    if (seconds > 59) {
+        return fail(label + ': วินาทีต้องอยู่ระหว่าง 0..59');
+    }
+
+    var total = (minutes * 60) + seconds;
+    if (total < 5 || total > 86400) {
+        return fail(label + ': ระยะเวลาต้องอยู่ระหว่าง 5..86400 วินาที');
+    }
+
+    if (errEl) errEl.textContent = '';
+    if (minEl) minEl.classList.remove('invalid');
+    if (secEl) secEl.classList.remove('invalid');
+    return { ok: true, value: total };
+}
+
+function clearPumpValidation() {
+    var ids = ['timer1-on', 'timer1-off', 'timer2-on', 'timer2-off'];
+    for (var i = 0; i < ids.length; i++) {
+        var errEl = pumpEl(ids[i] + '-error');
+        var minEl = pumpEl(ids[i] + '-min');
+        var secEl = pumpEl(ids[i] + '-sec');
+        if (errEl) errEl.textContent = '';
+        if (minEl) minEl.classList.remove('invalid');
+        if (secEl) secEl.classList.remove('invalid');
+    }
+}
+
+function validatePumpConfig() {
+    clearPumpValidation();
+    var timer1On = readDuration('timer1-on', 'Timer 1 ช่วงเปิด');
+    var timer1Off = readDuration('timer1-off', 'Timer 1 ช่วงปิด');
+    var timer2On = readDuration('timer2-on', 'Timer 2 ช่วงเปิด');
+    var timer2Off = readDuration('timer2-off', 'Timer 2 ช่วงปิด');
+    if (!timer1On.ok || !timer1Off.ok || !timer2On.ok || !timer2Off.ok) {
+        return null;
+    }
+    return {
+        timer1_on_sec: timer1On.value,
+        timer1_off_sec: timer1Off.value,
+        timer2_on_sec: timer2On.value,
+        timer2_off_sec: timer2Off.value,
+        auto_start: !!(pumpEl('pump-auto-start') && pumpEl('pump-auto-start').checked),
+        relay_polarity: pumpRelayPolarity
+    };
+}
+
+function savePumpConfig() {
+    var payload = validatePumpConfig();
+    var saveBtn = pumpEl('pump-save-config');
+    if (!payload) {
+        setPumpAlert('pump-config-error', 'ตรวจสอบค่าตั้งเวลาแล้วลองบันทึกอีกครั้ง');
+        return;
+    }
+
+    setPumpAlert('pump-config-error', '');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'กำลังบันทึก...';
+    }
+    setText('pump-config-state', 'กำลังบันทึก...');
+
+    apiPost('/api/pump/config', payload, function(err, data) {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'บันทึกค่า';
+        }
+        if (err || !data || !data.ok) {
+            setText('pump-config-state', 'บันทึกไม่สำเร็จ');
+            setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
+            return;
+        }
+        pumpConfig = data.config || data;
+        if (pumpConfig.relay_polarity) pumpRelayPolarity = pumpConfig.relay_polarity;
+        setPumpClean('บันทึกแล้ว');
+        showToast('บันทึกค่าปั๊มเรียบร้อย', 'success');
+        loadPumpConfig();
+        if (data.status) applyPumpStatus(data.status, true);
+        syncPumpStatus(true);
+    });
+}
+
+function startPump() {
+    requestPumpAction('/api/pump/start', 'กำลังสั่ง Start...', 'เริ่มระบบปั๊มแล้ว');
+}
+
+function stopPump() {
+    requestPumpAction('/api/pump/stop', 'กำลังสั่ง Stop...', 'หยุดระบบปั๊มแล้ว');
+}
+
+function requestPumpAction(url, pendingText, successText) {
+    if (pumpPending) return;
+    pumpPending = true;
+    setText('pump-action-state', pendingText);
+    updatePumpButtons();
+    apiPost(url, {}, function(err, data) {
+        pumpPending = false;
+        if (err || !data || !data.ok) {
+            setText('pump-action-state', '');
+            setPumpAlert('pump-status-error', (data && data.message) ? data.message : 'สั่งงานปั๊มไม่สำเร็จ');
+            updatePumpButtons();
+            showToast('สั่งงานปั๊มไม่สำเร็จ', 'error');
+            return;
+        }
+        if (data.status) applyPumpStatus(data.status, true);
+        setText('pump-action-state', data.already_running ? 'ระบบทำงานอยู่แล้ว' : (data.already_stopped ? 'ระบบหยุดอยู่แล้ว' : ''));
+        setPumpAlert('pump-status-error', '');
+        updatePumpButtons();
+        showToast(successText, 'success');
+        syncPumpStatus(true);
+    });
+}
+
+function syncPumpStatus(force) {
+    if (window.location.pathname !== '/dashboard') return;
+    if (document.hidden && !force) return;
+    apiGet('/api/pump/status', function(err, data) {
+        if (err || !data || !data.ok) {
+            handlePumpStatusFailure();
+            return;
+        }
+        applyPumpStatus(data, true);
+    });
+}
+
+function applyPumpStatus(status, authoritative) {
+    pumpLastStatus = status;
+    if (authoritative) {
+        pumpLastSyncMs = Date.now();
+        pumpLocalCountdown = Number(status.countdown_sec || 0);
+    }
+
+    setText('pump-running-label', status.running ? 'ระบบปั๊ม: กำลังทำงาน' : 'ระบบปั๊ม: หยุดอยู่');
+    setText('pump-countdown', formatPumpCountdown(pumpLocalCountdown));
+    setText('pump-active-timer', renderPumpTimer(status.active_timer));
+    setText('pump-phase', renderPumpPhase(status.active_timer, status.phase));
+    setText('pump-float-state', renderFloatState(status.float_state));
+    setText('pump-relay-state', renderRelayState(status.relay_energized));
+
+    var sync = pumpEl('pump-sync-state');
+    if (sync) {
+        sync.className = status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good';
+        sync.textContent = status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงก์ล่าสุดจากอุปกรณ์';
+    }
+    if (!pumpDirty && status.settings_status) {
+        setText('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
+    }
+    setPumpAlert('pump-status-error', status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : '');
+    updatePumpButtons();
+}
+
+function handlePumpStatusFailure() {
+    var now = Date.now();
+    var stale = !pumpLastSyncMs || (now - pumpLastSyncMs > 5000);
+    var sync = pumpEl('pump-sync-state');
+    if (sync) {
+        sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
+        sync.textContent = stale ? 'สถานะปั๊มขาดการซิงก์' : 'รอซิงก์จากอุปกรณ์';
+    }
+    if (stale) {
+        setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงก์สำเร็จ');
+    }
+    updatePumpButtons();
+}
+
+function updatePumpButtons() {
+    var startBtn = pumpEl('pump-start-btn');
+    var stopBtn = pumpEl('pump-stop-btn');
+    var stale = !pumpLastSyncMs || (Date.now() - pumpLastSyncMs > 5000);
+    var disabled = pumpPending || stale || !pumpLastStatus || pumpLastStatus.config_valid === false;
+    if (startBtn) startBtn.disabled = disabled || !!(pumpLastStatus && pumpLastStatus.running);
+    if (stopBtn) stopBtn.disabled = disabled || !(pumpLastStatus && pumpLastStatus.running);
+}
+
+function startPumpLiveTimers() {
+    stopPumpLiveTimers();
+    if (document.hidden) return;
+    pumpPollTimer = setInterval(function() { syncPumpStatus(false); }, 2000);
+    pumpTickTimer = setInterval(tickPumpCountdown, 1000);
+}
+
+function stopPumpLiveTimers() {
+    if (pumpPollTimer) clearInterval(pumpPollTimer);
+    if (pumpTickTimer) clearInterval(pumpTickTimer);
+    pumpPollTimer = null;
+    pumpTickTimer = null;
+}
+
+function handlePumpVisibilityChange() {
+    if (document.hidden) {
+        stopPumpLiveTimers();
+    } else {
+        startPumpLiveTimers();
+        syncPumpStatus(true);
+    }
+}
+
+function tickPumpCountdown() {
+    if (!pumpLastStatus) return;
+    if (pumpLastStatus.running && pumpLocalCountdown !== null && pumpLocalCountdown > 0) {
+        pumpLocalCountdown -= 1;
+        setText('pump-countdown', formatPumpCountdown(pumpLocalCountdown));
+    }
+    if (pumpLastSyncMs && Date.now() - pumpLastSyncMs > 5000) {
+        handlePumpStatusFailure();
+    }
+}
+
+function formatPumpCountdown(value) {
+    if (value === null || value === undefined || isNaN(value)) return '--:--';
+    var seconds = Math.max(0, Math.floor(Number(value)));
+    var minutes = Math.floor(seconds / 60);
+    var rem = seconds % 60;
+    return minutes + ':' + (rem < 10 ? '0' : '') + rem;
+}
+
+function renderPumpTimer(value) {
+    if (value === 'timer1') return 'Timer 1';
+    if (value === 'timer2') return 'Timer 2';
+    return '--';
+}
+
+function renderPumpPhase(timer, phase) {
+    if (!timer || timer === 'none' || !phase || phase === 'idle') return 'Idle';
+    var timerLabel = renderPumpTimer(timer);
+    if (phase === 'on') return timerLabel + ' - ช่วงเปิด';
+    if (phase === 'off') return timerLabel + ' - ช่วงปิด';
+    return timerLabel + ' - --';
+}
+
+function renderFloatState(value) {
+    if (value === 'off') return 'ลูกลอย: OFF (ใช้ Timer 1)';
+    if (value === 'on') return 'ลูกลอย: ON (ใช้ Timer 2)';
+    return 'ลูกลอย: ไม่ทราบสถานะ';
+}
+
+function renderRelayState(value) {
+    if (value === true) return 'รีเลย์: ON (จ่ายปั๊ม)';
+    if (value === false) return 'รีเลย์: OFF (ตัดปั๊ม)';
+    return 'รีเลย์: ไม่ทราบสถานะ';
+}
+
+function renderSettingsStatus(value, autoStart) {
+    var label = 'สถานะค่า: ' + value;
+    if (value === 'loaded') label = 'ค่าโหลดแล้ว';
+    else if (value === 'defaults_missing') label = 'ใช้ค่าเริ่มต้น';
+    else if (value === 'defaults_invalid') label = 'ค่าเริ่มต้นไม่ถูกต้อง';
+    else if (value === 'defaults_error') label = 'โหลดค่าเริ่มต้นผิดพลาด';
+    return label + ' • Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
 /* ======== Status Page ======== */
