@@ -30,15 +30,16 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Authenticated `/api/pump/config` returns and saves validated pump settings while keeping GPIO/debounce read-only — Phase 3
 - ✓ Authenticated `/api/pump/status` returns machine-friendly pump runtime state — Phase 3
 - ✓ Authenticated `/api/pump/start` and `/api/pump/stop` provide idempotent runtime controls with same-origin POST protection — Phase 3
+- ✓ User can configure Timer 1 ON/OFF durations from the web UI — Phase 4
+- ✓ User can configure Timer 2 ON/OFF durations from the web UI — Phase 4
+- ✓ User can start and stop pump control from the web UI — Phase 4
+- ✓ User can choose whether pump control auto-starts on boot from authenticated API and web UI controls — Phase 4
+- ✓ Dashboard displays active timer, current phase, countdown, float state, relay state, and auto-start state — Phase 4
+- ✓ Firmware preserves AP/Wi-Fi setup access while pump control is running — Phase 4
 
 ### Active
 
-- [ ] User can configure Timer 1 ON/OFF durations from the web UI.
-- [ ] User can configure Timer 2 ON/OFF durations from the web UI.
-- [ ] User can start and stop pump control from the web UI.
-- [ ] User can choose whether pump control auto-starts on boot from authenticated API and web UI controls.
-- [ ] Dashboard displays active timer, current phase, countdown, float state, relay state, and auto-start state.
-- [ ] Firmware preserves AP/Wi-Fi setup access while pump control is running.
+- [ ] Manual flash/device validation confirms relay, float switch, timer switching, persistence, and UI runtime behavior on the ESP32 hardware.
 
 ### Out of Scope
 
@@ -90,9 +91,10 @@ Recommended initial hardware contract:
 | Recommend GPIO32 for float switch input with pull-up to GND | GPIO32 is a conservative input-capable pin with internal pull-up support and avoids boot strapping pins | Validated as Phase 1 source default |
 | Recommend GPIO26 for relay output | GPIO26 is a general-purpose output and avoids common boot/programming pins | Validated as Phase 1 source default |
 | Make relay polarity configurable | Relay modules are often active-low, so firmware must not assume one electrical polarity forever | Validated in Phase 1 pump config |
-| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | Firmware persistence validated in Phase 2; authenticated API validated in Phase 3; UI controls pending |
+| Auto-start pump control by default, with persisted user override | User wants automatic boot operation but wants the ability to disable it | Firmware persistence validated in Phase 2; authenticated API validated in Phase 3; UI controls validated in Phase 4 |
 | Default Timer 1 is ON 20s / OFF 1:00 and Timer 2 is ON 10s / OFF 3:00 | User corrected defaults from the reference flow document | Validated as Phase 1 source defaults |
 | Keep pump APIs under `/api/pump/*` | Separates pump control contracts from existing system/Wi-Fi status routes | Validated in Phase 3 |
+| Make `/dashboard` the pump control surface | Operator needs timer setup, Start/Stop, and live runtime state before system diagnostics | Validated in Phase 4 |
 
 ## Evolution
 
@@ -112,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after Phase 3 completion*
+*Last updated: 2026-05-20 after Phase 4 completion*
