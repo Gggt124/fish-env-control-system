@@ -61,10 +61,10 @@
 ### Validation
 
 - [x] **VAL-01**: `idf.py build` succeeds after pump control changes.
-- [ ] **VAL-02**: Manual hardware test confirms float OFF selects Timer 1 and float ON selects Timer 2.
-- [ ] **VAL-03**: Manual hardware test confirms relay output follows ON/OFF phase and stop forces relay inactive.
-- [ ] **VAL-04**: Manual reboot test confirms timer settings and auto-start preference persist.
-- [ ] **VAL-05**: Manual access test confirms Wi-Fi setup, SoftAP fallback, login, and status pages still work while pump control is present.
+- [x] **VAL-02**: Manual hardware test confirms float OFF selects Timer 1 and float ON selects Timer 2.
+- [x] **VAL-03**: Manual hardware test confirms relay output follows ON/OFF phase and stop forces relay inactive.
+- [x] **VAL-04**: Manual reboot test confirms timer settings and auto-start preference persist.
+- [x] **VAL-05**: Manual access test confirms Wi-Fi setup, SoftAP fallback, login, and status pages still work while pump control is present.
 
 ## v2 Requirements
 
@@ -143,10 +143,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UI-06 | Phase 4 | Complete |
 | UI-07 | Phase 4 | Complete |
 | VAL-01 | Phase 1 | Complete |
-| VAL-02 | Phase 5 | Pending |
-| VAL-03 | Phase 5 | Pending |
-| VAL-04 | Phase 5 | Pending |
-| VAL-05 | Phase 5 | Pending |
+| VAL-02 | Phase 5 | Complete |
+| VAL-03 | Phase 5 | Complete |
+| VAL-04 | Phase 5 | Complete |
+| VAL-05 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 42 total
@@ -155,4 +155,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-05-18*
-*Last updated: 2026-05-18 after roadmap creation*
+*Last updated: 2026-05-20 after Phase 5 closeout*

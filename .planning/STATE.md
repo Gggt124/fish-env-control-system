@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-last_updated: "2026-05-20T14:16:10.464Z"
+status: verifying
+last_updated: "2026-05-20T20:40:00.000Z"
 last_activity: 2026-05-20
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
-  percent: 80
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -49,7 +49,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 
 **Requirements:** VAL-02, VAL-03, VAL-04, VAL-05
 
-**Status:** Ready to execute
+**Status:** Complete — build validated, static regression checks passed, manual hardware evidence preserved in `05-01-SUMMARY.md`.
 
 ### Quick Tasks Completed
 
@@ -67,7 +67,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-18)
 - Hardware validation passed on the user's real ESP32/relay/float setup; latest quick task is smoothing countdown UI and changing safer defaults.
 - Flash layout now uses dual OTA app slots sized `0x1F0000` each on the 4MB ESP32 flash.
 
-Last activity: 2026-05-20 - Created Phase 5 hardware validation and regression pass plan.
+Last activity: 2026-05-20 - Executed Phase 5 plan 05-01: build validation, static regression checks, manual hardware evidence preservation, and closeout summary.
 
 ---
 *State initialized: 2026-05-18*
