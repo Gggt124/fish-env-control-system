@@ -10,7 +10,7 @@ Important values:
 - AP SSID and channel
 - mDNS hostname and instance name
 - default login credentials
-- session timeout
+- session timeout (`0` disables automatic expiry)
 - AP auto-stop default
 - HTTP route capacity
 - watchdog timeout
@@ -37,7 +37,7 @@ Keys:
 Small RAM-only session store for the local web UI.
 
 - Token length: 16 hex chars plus null terminator
-- Default max age: `APP_TEMPLATE_SESSION_MAX_AGE_SEC`
+- Default max age: `APP_TEMPLATE_SESSION_MAX_AGE_SEC` (`0` means no automatic timeout)
 - No reboot persistence
 - Intended for local setup only
 

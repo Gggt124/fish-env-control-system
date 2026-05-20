@@ -126,7 +126,7 @@ Get-Content build\login.html.S -First 10
 
 ### Default credentials
 
-- Username: `admin`, Password: `change-me`
+- Username: `admin`, Password: `admin123`
 - WARNING: Must be changed before any production use
 - Stored in `components/app_config/app_config.h` as `APP_TEMPLATE_DEFAULT_USERNAME` / `APP_TEMPLATE_DEFAULT_PASSWORD`
 
@@ -187,7 +187,7 @@ idf.py build
 If build succeeds and `fish_pump_relay_timer_control.bin` is generated, the project is valid. No unit tests in this phase. Manual testing:
 1. Connect to Wi-Fi `FishPump-Setup`
 2. Open `http://192.168.4.1`
-3. Login admin/change-me
+3. Login admin/admin123
 4. Verify dashboard loads, Wi-Fi scan works
 
 ## Local Agent Notes
@@ -213,7 +213,7 @@ The control logic is intentionally simple and hardware-real: the float switch is
 - **Board**: ESP32 DevKit V1 30-pin / classic ESP32 — pin recommendations and build target assume this board.
 - **Float input**: Binary switch only — do not model real hardware as continuous water level.
 - **GPIO safety**: Use conservative default pins and configurable polarity — relay modules vary and wrong polarity can energize the pump unexpectedly.
-- **Boot behavior**: Auto-start is enabled by default but must be user-configurable and persisted.
+- **Boot behavior**: Auto-start is disabled by default and must be user-configurable and persisted.
 - **Local operation**: UI must work without internet because SoftAP setup mode has no external connectivity.
 - **Existing foundation**: Preserve Wi-Fi setup, SoftAP fallback, login/session, captive DNS, and status routes while adding pump control.
 - **Validation**: `idf.py build` remains the main automated validation gate; hardware behavior needs manual flash/device testing.

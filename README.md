@@ -48,7 +48,7 @@ Change these values before touching the Wi-Fi or web-server internals:
 - `APP_TEMPLATE_AP_AUTO_STOP_DEFAULT`
 - `APP_TEMPLATE_AP_STOP_TMO_DEFAULT_MS`
 
-Default login is `admin` / `change-me`. Change it before using the firmware
+Default login is `admin` / `admin123`. Change it before using the firmware
 outside local development.
 
 ## Quick Start

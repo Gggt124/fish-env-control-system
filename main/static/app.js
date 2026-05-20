@@ -138,9 +138,17 @@ var pumpDirty = false;
 var pumpPending = false;
 var pumpLastStatus = null;
 var pumpLastSyncMs = 0;
-var pumpLocalCountdown = null;
+var pumpCountdownDeadlineMs = null;
+var pumpCountdownStatusKey = '';
+var pumpDisplayedCountdownSec = null;
+var pumpStatusRequestInFlight = false;
+var pumpAwaitingRolloverSync = false;
 var pumpPollTimer = null;
 var pumpTickTimer = null;
+var PUMP_STATUS_POLL_MS = 750;
+var PUMP_COUNTDOWN_TICK_MS = 250;
+var PUMP_STALE_MS = 5000;
+var PUMP_DEADLINE_DRIFT_MS = 1500;
 
 function initDashboard() {
     initPumpDashboard();
@@ -418,7 +426,10 @@ function requestPumpAction(url, pendingText, successText) {
 function syncPumpStatus(force) {
     if (window.location.pathname !== '/dashboard') return;
     if (document.hidden && !force) return;
+    if (pumpStatusRequestInFlight) return;
+    pumpStatusRequestInFlight = true;
     apiGet('/api/pump/status', function(err, data) {
+        pumpStatusRequestInFlight = false;
         if (err || !data || !data.ok) {
             handlePumpStatusFailure();
             return;
@@ -431,11 +442,12 @@ function applyPumpStatus(status, authoritative) {
     pumpLastStatus = status;
     if (authoritative) {
         pumpLastSyncMs = Date.now();
-        pumpLocalCountdown = Number(status.countdown_sec || 0);
+        pumpAwaitingRolloverSync = false;
+        updatePumpCountdownDeadline(status);
     }
 
     setText('pump-running-label', status.running ? 'ระบบปั๊ม: กำลังทำงาน' : 'ระบบปั๊ม: หยุดอยู่');
-    setText('pump-countdown', formatPumpCountdown(pumpLocalCountdown));
+    renderPumpCountdown();
     setText('pump-active-timer', renderPumpTimer(status.active_timer));
     setText('pump-phase', renderPumpPhase(status.active_timer, status.phase));
     setText('pump-float-state', renderFloatState(status.float_state));
@@ -455,7 +467,7 @@ function applyPumpStatus(status, authoritative) {
 
 function handlePumpStatusFailure() {
     var now = Date.now();
-    var stale = !pumpLastSyncMs || (now - pumpLastSyncMs > 5000);
+    var stale = !pumpLastSyncMs || (now - pumpLastSyncMs > PUMP_STALE_MS);
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
@@ -470,7 +482,7 @@ function handlePumpStatusFailure() {
 function updatePumpButtons() {
     var startBtn = pumpEl('pump-start-btn');
     var stopBtn = pumpEl('pump-stop-btn');
-    var stale = !pumpLastSyncMs || (Date.now() - pumpLastSyncMs > 5000);
+    var stale = !pumpLastSyncMs || (Date.now() - pumpLastSyncMs > PUMP_STALE_MS);
     var disabled = pumpPending || stale || !pumpLastStatus || pumpLastStatus.config_valid === false;
     if (startBtn) startBtn.disabled = disabled || !!(pumpLastStatus && pumpLastStatus.running);
     if (stopBtn) stopBtn.disabled = disabled || !(pumpLastStatus && pumpLastStatus.running);
@@ -479,8 +491,8 @@ function updatePumpButtons() {
 function startPumpLiveTimers() {
     stopPumpLiveTimers();
     if (document.hidden) return;
-    pumpPollTimer = setInterval(function() { syncPumpStatus(false); }, 2000);
-    pumpTickTimer = setInterval(tickPumpCountdown, 1000);
+    pumpPollTimer = setInterval(function() { syncPumpStatus(false); }, PUMP_STATUS_POLL_MS);
+    pumpTickTimer = setInterval(tickPumpCountdown, PUMP_COUNTDOWN_TICK_MS);
 }
 
 function stopPumpLiveTimers() {
@@ -501,13 +513,93 @@ function handlePumpVisibilityChange() {
 
 function tickPumpCountdown() {
     if (!pumpLastStatus) return;
-    if (pumpLastStatus.running && pumpLocalCountdown !== null && pumpLocalCountdown > 0) {
-        pumpLocalCountdown -= 1;
-        setText('pump-countdown', formatPumpCountdown(pumpLocalCountdown));
+    if (pumpLastStatus.running) {
+        if (getPumpCountdownSec() <= 0 && !predictPumpPhaseAdvance()) {
+            requestPumpRolloverSync();
+        }
+        renderPumpCountdown();
     }
-    if (pumpLastSyncMs && Date.now() - pumpLastSyncMs > 5000) {
+    if (pumpLastSyncMs && Date.now() - pumpLastSyncMs > PUMP_STALE_MS) {
         handlePumpStatusFailure();
     }
+}
+
+function pumpStatusKey(status) {
+    if (!status) return '';
+    return [
+        status.running ? '1' : '0',
+        status.initial_stabilizing ? '1' : '0',
+        status.active_timer || '',
+        status.phase || ''
+    ].join('|');
+}
+
+function updatePumpCountdownDeadline(status) {
+    var countdown = Number(status && status.countdown_sec || 0);
+    var key = pumpStatusKey(status);
+    if (!status || !status.running || status.phase === 'idle' || countdown <= 0) {
+        pumpCountdownDeadlineMs = null;
+        pumpCountdownStatusKey = key;
+        pumpDisplayedCountdownSec = countdown;
+        return;
+    }
+
+    var nextDeadline = Date.now() + (countdown * 1000);
+    var shouldReset = !pumpCountdownDeadlineMs ||
+        pumpCountdownStatusKey !== key ||
+        Math.abs(nextDeadline - pumpCountdownDeadlineMs) > PUMP_DEADLINE_DRIFT_MS;
+
+    if (shouldReset) {
+        pumpCountdownDeadlineMs = nextDeadline;
+    }
+    pumpCountdownStatusKey = key;
+    pumpDisplayedCountdownSec = getPumpCountdownSec();
+}
+
+function getPumpCountdownSec() {
+    if (!pumpCountdownDeadlineMs) {
+        return pumpDisplayedCountdownSec;
+    }
+    return Math.max(0, Math.ceil((pumpCountdownDeadlineMs - Date.now()) / 1000));
+}
+
+function renderPumpCountdown() {
+    pumpDisplayedCountdownSec = getPumpCountdownSec();
+    setText('pump-countdown', formatPumpCountdown(pumpDisplayedCountdownSec));
+}
+
+function getPumpDurationSec(timer, phase) {
+    if (!pumpConfig || (timer !== 'timer1' && timer !== 'timer2')) return null;
+    if (phase !== 'on' && phase !== 'off') return null;
+    var value = Number(pumpConfig[timer + '_' + phase + '_sec']);
+    if (!isFinite(value) || value <= 0) return null;
+    return value;
+}
+
+function predictPumpPhaseAdvance() {
+    if (!pumpLastStatus || !pumpLastStatus.running || pumpLastStatus.initial_stabilizing) return false;
+    if (pumpLastStatus.phase !== 'on' && pumpLastStatus.phase !== 'off') return false;
+
+    var nextPhase = pumpLastStatus.phase === 'on' ? 'off' : 'on';
+    var nextDuration = getPumpDurationSec(pumpLastStatus.active_timer, nextPhase);
+    if (!nextDuration) return false;
+
+    pumpLastStatus.phase = nextPhase;
+    pumpLastStatus.countdown_sec = nextDuration;
+    pumpLastStatus.relay_energized = nextPhase === 'on';
+    pumpCountdownStatusKey = pumpStatusKey(pumpLastStatus);
+    pumpCountdownDeadlineMs = Date.now() + (nextDuration * 1000);
+    pumpDisplayedCountdownSec = nextDuration;
+
+    setText('pump-phase', renderPumpPhase(pumpLastStatus.active_timer, pumpLastStatus.phase));
+    setText('pump-relay-state', renderRelayState(pumpLastStatus.relay_energized));
+    return true;
+}
+
+function requestPumpRolloverSync() {
+    if (pumpAwaitingRolloverSync) return;
+    pumpAwaitingRolloverSync = true;
+    syncPumpStatus(true);
 }
 
 function formatPumpCountdown(value) {

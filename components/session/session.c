@@ -78,7 +78,7 @@ bool session_validate(const char *token)
     int64_t now = esp_timer_get_time() / 1000000;
     for (int i = 0; i < MAX_SESSIONS; i++) {
         if (s_sessions[i].active && strcmp(s_sessions[i].token, token) == 0) {
-            if ((now - s_sessions[i].created_at) > SESSION_MAX_AGE_SEC) {
+            if (SESSION_MAX_AGE_SEC > 0 && (now - s_sessions[i].created_at) > SESSION_MAX_AGE_SEC) {
                 memset(&s_sessions[i], 0, sizeof(session_entry_t));
                 xSemaphoreGive(s_session_mutex);
                 return false;
