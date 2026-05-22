@@ -60,3 +60,44 @@ The storage defaults are defined before runtime enforcement:
 The 300 second minimum off-time is a conservative compressor-protection default.
 If the downstream hardware is only a fan, later UI/API phases can expose it as a
 setting while preserving the safe default.
+
+## NVS Schema
+
+The `nvs_store` component owns all raw keys.
+
+Namespace `hw_cfg` stores active and pending hardware maps:
+
+| Group | Keys | Intent |
+|-------|------|--------|
+| Active map | `act_float`, `act_r1`, `act_r2`, `act_ds`, `act_cool` | GPIOs used at boot after validation. |
+| Pending map | `pend_valid`, `pend_float`, `pend_r1`, `pend_r2`, `pend_ds`, `pend_cool` | Saved installer changes that require reboot before becoming active. |
+
+Pending GPIO values do not change runtime behavior immediately. Firmware reports
+reboot required when a valid pending map exists and differs from the active map.
+Phase 9 will expose authenticated mutation APIs for this schema.
+
+Namespace `pump_cfg` keeps v1.0 keys and adds v1.1 fields:
+
+| Key | Intent |
+|-----|--------|
+| `t1_on`, `t1_off`, `t2_on`, `t2_off` | Existing timer durations. |
+| `relay_low` | Legacy Relay 1 polarity compatibility alias. |
+| `auto_start` | Existing pump auto-start setting. |
+| `r1_low`, `r2_low` | Independent Relay 1 and Relay 2 active-low settings. |
+| `t1_start`, `t2_start` | Timer start phase, `on` or `off`. |
+
+If `r1_low` is missing, firmware seeds Relay 1 from legacy `relay_low`. Missing
+`r2_low` and timer start-phase keys default safely without erasing saved timer
+durations.
+
+Namespace `cool_cfg` stores cooling defaults:
+
+| Key | Intent |
+|-----|--------|
+| `threshold_x10` | Cooling threshold in tenths of a degree C. |
+| `hyst_x10` | Hysteresis in tenths of a degree C. |
+| `auto_en` | Cooling auto-enable on boot. |
+| `mode` | Cooling mode: auto, force off, or test on. |
+| `test_tmo_s` | Test-on timeout seconds. |
+| `min_off_s` | Compressor minimum off-time seconds. |
+| `relay_low` | Cooling relay active-low setting. |

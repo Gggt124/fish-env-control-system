@@ -35,6 +35,14 @@ Keys:
 It also owns project-specific persistent pump hardware settings. Raw NVS keys
 stay inside `components/nvs_store/nvs_store.c`; higher layers use typed wrappers.
 
+Project namespaces:
+
+- `hw_cfg`: active GPIO map and pending GPIO map; pending values require reboot.
+- `pump_cfg`: timer durations, `relay_low` legacy alias, `r1_low`, `r2_low`,
+  `t1_start`, `t2_start`, and auto-start.
+- `cool_cfg`: threshold, hysteresis, auto-enable, mode, test timeout,
+  compressor minimum off-time, and cooling relay polarity.
+
 ## hardware_map
 
 Low-level hardware contract for the ESP32 DevKit V1 pin map.

@@ -23,6 +23,32 @@ static const char *TAG = "nvs_store";
 #define NVS_PUMP_KEY_T2_OFF      "t2_off"
 #define NVS_PUMP_KEY_RELAY_LOW   "relay_low"
 #define NVS_PUMP_KEY_AUTO_START  "auto_start"
+#define NVS_PUMP_KEY_RELAY1_LOW  "r1_low"
+#define NVS_PUMP_KEY_RELAY2_LOW  "r2_low"
+#define NVS_PUMP_KEY_T1_START    "t1_start"
+#define NVS_PUMP_KEY_T2_START    "t2_start"
+
+#define NVS_HW_NAMESPACE         "hw_cfg"
+#define NVS_HW_KEY_ACT_FLOAT     "act_float"
+#define NVS_HW_KEY_ACT_R1        "act_r1"
+#define NVS_HW_KEY_ACT_R2        "act_r2"
+#define NVS_HW_KEY_ACT_DS        "act_ds"
+#define NVS_HW_KEY_ACT_COOL      "act_cool"
+#define NVS_HW_KEY_PEND_VALID    "pend_valid"
+#define NVS_HW_KEY_PEND_FLOAT    "pend_float"
+#define NVS_HW_KEY_PEND_R1       "pend_r1"
+#define NVS_HW_KEY_PEND_R2       "pend_r2"
+#define NVS_HW_KEY_PEND_DS       "pend_ds"
+#define NVS_HW_KEY_PEND_COOL     "pend_cool"
+
+#define NVS_COOL_NAMESPACE       "cool_cfg"
+#define NVS_COOL_KEY_THRESHOLD   "threshold_x10"
+#define NVS_COOL_KEY_HYST        "hyst_x10"
+#define NVS_COOL_KEY_AUTO_EN     "auto_en"
+#define NVS_COOL_KEY_MODE        "mode"
+#define NVS_COOL_KEY_TEST_TMO    "test_tmo_s"
+#define NVS_COOL_KEY_MIN_OFF     "min_off_s"
+#define NVS_COOL_KEY_RELAY_LOW   "relay_low"
 
 static bool pump_duration_valid(uint32_t seconds)
 {
@@ -41,7 +67,23 @@ static bool pump_settings_valid(const nvs_store_pump_settings_t *settings)
            pump_duration_valid(settings->timer1_on_sec) &&
            pump_duration_valid(settings->timer1_off_sec) &&
            pump_duration_valid(settings->timer2_on_sec) &&
-           pump_duration_valid(settings->timer2_off_sec);
+           pump_duration_valid(settings->timer2_off_sec) &&
+           hardware_map_timer_start_phase_valid(settings->timer1_start_phase) &&
+           hardware_map_timer_start_phase_valid(settings->timer2_start_phase);
+}
+
+static bool cooling_settings_valid(const nvs_store_cooling_settings_t *settings)
+{
+    return settings &&
+           settings->threshold_c_x10 >= -550 &&
+           settings->threshold_c_x10 <= 1250 &&
+           settings->hysteresis_c_x10 > 0 &&
+           settings->hysteresis_c_x10 <= 500 &&
+           settings->test_timeout_sec > 0 &&
+           settings->test_timeout_sec <= 3600 &&
+           settings->compressor_min_off_sec <= 86400 &&
+           hardware_map_cooling_mode_valid(settings->mode) &&
+           hardware_map_polarity_valid(settings->relay_polarity);
 }
 
 static esp_err_t load_u32_key(nvs_handle_t handle, const char *key, uint32_t *out)
@@ -61,6 +103,30 @@ static esp_err_t load_bool_key(nvs_handle_t handle, const char *key, bool *out)
     }
     *out = raw != 0;
     return ESP_OK;
+}
+
+static esp_err_t load_gpio_key(nvs_handle_t handle, const char *key, gpio_num_t *out)
+{
+    uint32_t raw = 0;
+    esp_err_t ret = nvs_get_u32(handle, key, &raw);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    if (raw > GPIO_NUM_MAX) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    *out = (gpio_num_t)raw;
+    return ESP_OK;
+}
+
+static esp_err_t load_u8_key(nvs_handle_t handle, const char *key, uint8_t *out)
+{
+    return nvs_get_u8(handle, key, out);
+}
+
+static bool set_gpio_key(nvs_handle_t handle, const char *key, gpio_num_t gpio)
+{
+    return nvs_set_u32(handle, key, (uint32_t)gpio) == ESP_OK;
 }
 
 static bool erase_optional_key(nvs_handle_t handle, const char *key)
@@ -276,6 +342,14 @@ void nvs_store_pump_settings_defaults(nvs_store_pump_settings_t *out)
     out->timer2_on_sec = APP_TEMPLATE_PUMP_TIMER2_ON_SEC;
     out->timer2_off_sec = APP_TEMPLATE_PUMP_TIMER2_OFF_SEC;
     out->relay_active_low = APP_TEMPLATE_PUMP_RELAY_ACTIVE_LOW;
+    out->relay1_active_low = APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY1_ACTIVE_LOW;
+    out->relay2_active_low = APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY2_ACTIVE_LOW;
+    out->timer1_start_phase = APP_TEMPLATE_PUMP_TIMER_START_ON
+        ? HARDWARE_TIMER_START_PHASE_ON
+        : HARDWARE_TIMER_START_PHASE_OFF;
+    out->timer2_start_phase = APP_TEMPLATE_PUMP_TIMER_START_ON
+        ? HARDWARE_TIMER_START_PHASE_ON
+        : HARDWARE_TIMER_START_PHASE_OFF;
     out->auto_start = APP_TEMPLATE_PUMP_AUTO_START_DEFAULT;
 }
 
@@ -298,8 +372,13 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
     }
 
     nvs_store_pump_settings_t loaded = {0};
+    nvs_store_pump_settings_defaults(&loaded);
     bool relay_active_low = false;
+    bool relay1_active_low = loaded.relay1_active_low;
+    bool relay2_active_low = loaded.relay2_active_low;
     bool auto_start = false;
+    uint8_t timer1_start = (uint8_t)loaded.timer1_start_phase;
+    uint8_t timer2_start = (uint8_t)loaded.timer2_start_phase;
 
     esp_err_t results[] = {
         load_u32_key(handle, NVS_PUMP_KEY_T1_ON, &loaded.timer1_on_sec),
@@ -309,19 +388,46 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
         load_bool_key(handle, NVS_PUMP_KEY_RELAY_LOW, &relay_active_low),
         load_bool_key(handle, NVS_PUMP_KEY_AUTO_START, &auto_start),
     };
-    nvs_close(handle);
 
     for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
         if (results[i] == ESP_ERR_NVS_NOT_FOUND) {
+            nvs_close(handle);
             return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
         }
         if (results[i] != ESP_OK) {
             ESP_LOGW(TAG, "Invalid pump settings in NVS (%s)", esp_err_to_name(results[i]));
+            nvs_close(handle);
             return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
         }
     }
 
+    esp_err_t r1_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY1_LOW, &relay1_active_low);
+    if (r1_ret == ESP_ERR_NVS_NOT_FOUND) {
+        relay1_active_low = relay_active_low;
+    } else if (r1_ret != ESP_OK) {
+        nvs_close(handle);
+        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+    }
+
+    esp_err_t r2_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY2_LOW, &relay2_active_low);
+    if (r2_ret != ESP_OK && r2_ret != ESP_ERR_NVS_NOT_FOUND) {
+        nvs_close(handle);
+        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+    }
+
+    esp_err_t t1_ret = load_u8_key(handle, NVS_PUMP_KEY_T1_START, &timer1_start);
+    esp_err_t t2_ret = load_u8_key(handle, NVS_PUMP_KEY_T2_START, &timer2_start);
+    nvs_close(handle);
+    if ((t1_ret != ESP_OK && t1_ret != ESP_ERR_NVS_NOT_FOUND) ||
+        (t2_ret != ESP_OK && t2_ret != ESP_ERR_NVS_NOT_FOUND)) {
+        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+    }
+
     loaded.relay_active_low = relay_active_low;
+    loaded.relay1_active_low = relay1_active_low;
+    loaded.relay2_active_low = relay2_active_low;
+    loaded.timer1_start_phase = (hardware_timer_start_phase_t)timer1_start;
+    loaded.timer2_start_phase = (hardware_timer_start_phase_t)timer2_start;
     loaded.auto_start = auto_start;
     if (!pump_settings_valid(&loaded)) {
         return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
@@ -345,7 +451,11 @@ bool nvs_store_save_pump_settings(const nvs_store_pump_settings_t *settings)
     if (nvs_set_u32(handle, NVS_PUMP_KEY_T1_OFF, settings->timer1_off_sec) != ESP_OK) ok = false;
     if (nvs_set_u32(handle, NVS_PUMP_KEY_T2_ON, settings->timer2_on_sec) != ESP_OK) ok = false;
     if (nvs_set_u32(handle, NVS_PUMP_KEY_T2_OFF, settings->timer2_off_sec) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY_LOW, settings->relay_active_low ? 1 : 0) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY_LOW, settings->relay1_active_low ? 1 : 0) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY1_LOW, settings->relay1_active_low ? 1 : 0) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY2_LOW, settings->relay2_active_low ? 1 : 0) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_PUMP_KEY_T1_START, (uint8_t)settings->timer1_start_phase) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_PUMP_KEY_T2_START, (uint8_t)settings->timer2_start_phase) != ESP_OK) ok = false;
     if (nvs_set_u8(handle, NVS_PUMP_KEY_AUTO_START, settings->auto_start ? 1 : 0) != ESP_OK) ok = false;
 
     if (ok && nvs_commit(handle) != ESP_OK) ok = false;
@@ -364,7 +474,353 @@ bool nvs_store_clear_pump_settings(void)
     if (!erase_optional_key(handle, NVS_PUMP_KEY_T2_ON)) ok = false;
     if (!erase_optional_key(handle, NVS_PUMP_KEY_T2_OFF)) ok = false;
     if (!erase_optional_key(handle, NVS_PUMP_KEY_RELAY_LOW)) ok = false;
+    if (!erase_optional_key(handle, NVS_PUMP_KEY_RELAY1_LOW)) ok = false;
+    if (!erase_optional_key(handle, NVS_PUMP_KEY_RELAY2_LOW)) ok = false;
+    if (!erase_optional_key(handle, NVS_PUMP_KEY_T1_START)) ok = false;
+    if (!erase_optional_key(handle, NVS_PUMP_KEY_T2_START)) ok = false;
     if (!erase_optional_key(handle, NVS_PUMP_KEY_AUTO_START)) ok = false;
+
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+void nvs_store_hardware_map_defaults(hardware_map_t *out)
+{
+    if (out) {
+        *out = hardware_map_defaults();
+    }
+}
+
+static bool set_hardware_map_keys(nvs_handle_t handle, const hardware_map_t *map,
+                                  const char *float_key, const char *r1_key,
+                                  const char *r2_key, const char *ds_key,
+                                  const char *cool_key)
+{
+    return set_gpio_key(handle, float_key, map->float_input_gpio) &&
+           set_gpio_key(handle, r1_key, map->pump_relay1_gpio) &&
+           set_gpio_key(handle, r2_key, map->pump_relay2_gpio) &&
+           set_gpio_key(handle, ds_key, map->ds18b20_data_gpio) &&
+           set_gpio_key(handle, cool_key, map->cooling_relay_gpio);
+}
+
+static esp_err_t load_hardware_map_keys(nvs_handle_t handle, hardware_map_t *map,
+                                        const char *float_key, const char *r1_key,
+                                        const char *r2_key, const char *ds_key,
+                                        const char *cool_key)
+{
+    esp_err_t results[] = {
+        load_gpio_key(handle, float_key, &map->float_input_gpio),
+        load_gpio_key(handle, r1_key, &map->pump_relay1_gpio),
+        load_gpio_key(handle, r2_key, &map->pump_relay2_gpio),
+        load_gpio_key(handle, ds_key, &map->ds18b20_data_gpio),
+        load_gpio_key(handle, cool_key, &map->cooling_relay_gpio),
+    };
+
+    for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
+        if (results[i] != ESP_OK) {
+            return results[i];
+        }
+    }
+    return ESP_OK;
+}
+
+nvs_store_hardware_map_load_status_t nvs_store_load_hardware_map(hardware_map_t *out)
+{
+    if (!out) {
+        return NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR;
+    }
+
+    nvs_store_hardware_map_defaults(out);
+
+    nvs_handle_t handle;
+    esp_err_t open_ret = nvs_open(NVS_HW_NAMESPACE, NVS_READONLY, &handle);
+    if (open_ret == ESP_ERR_NVS_NOT_FOUND) {
+        return NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    }
+    if (open_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Open %s failed: %s", NVS_HW_NAMESPACE, esp_err_to_name(open_ret));
+        return NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR;
+    }
+
+    hardware_map_t loaded = {0};
+    esp_err_t ret = load_hardware_map_keys(handle, &loaded,
+                                           NVS_HW_KEY_ACT_FLOAT,
+                                           NVS_HW_KEY_ACT_R1,
+                                           NVS_HW_KEY_ACT_R2,
+                                           NVS_HW_KEY_ACT_DS,
+                                           NVS_HW_KEY_ACT_COOL);
+    nvs_close(handle);
+    if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        return NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    }
+    if (ret != ESP_OK || !hardware_map_validate(&loaded)) {
+        ESP_LOGW(TAG, "Invalid active hardware map in NVS");
+        return NVS_STORE_HARDWARE_MAP_DEFAULTS_INVALID;
+    }
+
+    *out = loaded;
+    return NVS_STORE_HARDWARE_MAP_LOADED;
+}
+
+bool nvs_store_save_hardware_map(const hardware_map_t *map)
+{
+    if (!hardware_map_validate(map)) {
+        return false;
+    }
+
+    nvs_handle_t handle;
+    if (nvs_open(NVS_HW_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = set_hardware_map_keys(handle, map,
+                                    NVS_HW_KEY_ACT_FLOAT,
+                                    NVS_HW_KEY_ACT_R1,
+                                    NVS_HW_KEY_ACT_R2,
+                                    NVS_HW_KEY_ACT_DS,
+                                    NVS_HW_KEY_ACT_COOL);
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_clear_hardware_map(void)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_HW_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (!erase_optional_key(handle, NVS_HW_KEY_ACT_FLOAT)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_ACT_R1)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_ACT_R2)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_ACT_DS)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_ACT_COOL)) ok = false;
+
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+nvs_store_pending_hardware_map_load_status_t nvs_store_load_pending_hardware_map(hardware_map_t *out)
+{
+    if (!out) {
+        return NVS_STORE_PENDING_HARDWARE_MAP_ERROR;
+    }
+    *out = hardware_map_defaults();
+
+    nvs_handle_t handle;
+    esp_err_t open_ret = nvs_open(NVS_HW_NAMESPACE, NVS_READONLY, &handle);
+    if (open_ret == ESP_ERR_NVS_NOT_FOUND) {
+        return NVS_STORE_PENDING_HARDWARE_MAP_NOT_FOUND;
+    }
+    if (open_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Open %s failed: %s", NVS_HW_NAMESPACE, esp_err_to_name(open_ret));
+        return NVS_STORE_PENDING_HARDWARE_MAP_ERROR;
+    }
+
+    bool pending_valid = false;
+    esp_err_t valid_ret = load_bool_key(handle, NVS_HW_KEY_PEND_VALID, &pending_valid);
+    if (valid_ret == ESP_ERR_NVS_NOT_FOUND || !pending_valid) {
+        nvs_close(handle);
+        return NVS_STORE_PENDING_HARDWARE_MAP_NOT_FOUND;
+    }
+    if (valid_ret != ESP_OK) {
+        nvs_close(handle);
+        return NVS_STORE_PENDING_HARDWARE_MAP_INVALID;
+    }
+
+    hardware_map_t loaded = {0};
+    esp_err_t ret = load_hardware_map_keys(handle, &loaded,
+                                           NVS_HW_KEY_PEND_FLOAT,
+                                           NVS_HW_KEY_PEND_R1,
+                                           NVS_HW_KEY_PEND_R2,
+                                           NVS_HW_KEY_PEND_DS,
+                                           NVS_HW_KEY_PEND_COOL);
+    nvs_close(handle);
+    if (ret != ESP_OK || !hardware_map_validate(&loaded)) {
+        return NVS_STORE_PENDING_HARDWARE_MAP_INVALID;
+    }
+
+    *out = loaded;
+    return NVS_STORE_PENDING_HARDWARE_MAP_LOADED;
+}
+
+bool nvs_store_save_pending_hardware_map(const hardware_map_t *map)
+{
+    if (!hardware_map_validate(map)) {
+        return false;
+    }
+
+    nvs_handle_t handle;
+    if (nvs_open(NVS_HW_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = set_hardware_map_keys(handle, map,
+                                    NVS_HW_KEY_PEND_FLOAT,
+                                    NVS_HW_KEY_PEND_R1,
+                                    NVS_HW_KEY_PEND_R2,
+                                    NVS_HW_KEY_PEND_DS,
+                                    NVS_HW_KEY_PEND_COOL);
+    if (nvs_set_u8(handle, NVS_HW_KEY_PEND_VALID, 1) != ESP_OK) ok = false;
+
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_clear_pending_hardware_map(void)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_HW_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (!erase_optional_key(handle, NVS_HW_KEY_PEND_VALID)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_PEND_FLOAT)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_PEND_R1)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_PEND_R2)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_PEND_DS)) ok = false;
+    if (!erase_optional_key(handle, NVS_HW_KEY_PEND_COOL)) ok = false;
+
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_hardware_reboot_required(bool *reboot_required)
+{
+    if (!reboot_required) {
+        return false;
+    }
+
+    hardware_map_t active = {0};
+    hardware_map_t pending = {0};
+    nvs_store_hardware_map_load_status_t active_status = nvs_store_load_hardware_map(&active);
+    nvs_store_pending_hardware_map_load_status_t pending_status =
+        nvs_store_load_pending_hardware_map(&pending);
+
+    if (active_status == NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR ||
+        pending_status == NVS_STORE_PENDING_HARDWARE_MAP_ERROR ||
+        pending_status == NVS_STORE_PENDING_HARDWARE_MAP_INVALID) {
+        return false;
+    }
+
+    *reboot_required = pending_status == NVS_STORE_PENDING_HARDWARE_MAP_LOADED &&
+        hardware_map_reboot_required(&active, &pending);
+    return true;
+}
+
+void nvs_store_cooling_settings_defaults(nvs_store_cooling_settings_t *out)
+{
+    if (!out) {
+        return;
+    }
+
+    out->threshold_c_x10 = APP_TEMPLATE_COOLING_THRESHOLD_C_X10;
+    out->hysteresis_c_x10 = APP_TEMPLATE_COOLING_HYSTERESIS_C_X10;
+    out->auto_enable = APP_TEMPLATE_COOLING_AUTO_ENABLE_DEFAULT;
+    out->mode = HARDWARE_COOLING_MODE_FORCE_OFF;
+    out->test_timeout_sec = APP_TEMPLATE_COOLING_TEST_TIMEOUT_SEC;
+    out->compressor_min_off_sec = APP_TEMPLATE_COOLING_MIN_OFF_SEC;
+    out->relay_polarity = APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_ACTIVE_LOW
+        ? HARDWARE_RELAY_ACTIVE_LOW
+        : HARDWARE_RELAY_ACTIVE_HIGH;
+}
+
+nvs_store_cooling_settings_load_status_t nvs_store_load_cooling_settings(nvs_store_cooling_settings_t *out)
+{
+    if (!out) {
+        return NVS_STORE_COOLING_SETTINGS_DEFAULTS_ERROR;
+    }
+
+    nvs_store_cooling_settings_defaults(out);
+
+    nvs_handle_t handle;
+    esp_err_t open_ret = nvs_open(NVS_COOL_NAMESPACE, NVS_READONLY, &handle);
+    if (open_ret == ESP_ERR_NVS_NOT_FOUND) {
+        return NVS_STORE_COOLING_SETTINGS_DEFAULTS_MISSING;
+    }
+    if (open_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Open %s failed: %s", NVS_COOL_NAMESPACE, esp_err_to_name(open_ret));
+        return NVS_STORE_COOLING_SETTINGS_DEFAULTS_ERROR;
+    }
+
+    nvs_store_cooling_settings_t loaded = {0};
+    nvs_store_cooling_settings_defaults(&loaded);
+    uint8_t auto_enable = 0;
+    uint8_t mode = 0;
+    bool relay_active_low = APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_ACTIVE_LOW;
+    esp_err_t results[] = {
+        nvs_get_i32(handle, NVS_COOL_KEY_THRESHOLD, &loaded.threshold_c_x10),
+        nvs_get_i32(handle, NVS_COOL_KEY_HYST, &loaded.hysteresis_c_x10),
+        nvs_get_u8(handle, NVS_COOL_KEY_AUTO_EN, &auto_enable),
+        nvs_get_u8(handle, NVS_COOL_KEY_MODE, &mode),
+        nvs_get_u32(handle, NVS_COOL_KEY_TEST_TMO, &loaded.test_timeout_sec),
+        nvs_get_u32(handle, NVS_COOL_KEY_MIN_OFF, &loaded.compressor_min_off_sec),
+        load_bool_key(handle, NVS_COOL_KEY_RELAY_LOW, &relay_active_low),
+    };
+    nvs_close(handle);
+
+    for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
+        if (results[i] == ESP_ERR_NVS_NOT_FOUND) {
+            return NVS_STORE_COOLING_SETTINGS_DEFAULTS_MISSING;
+        }
+        if (results[i] != ESP_OK) {
+            return NVS_STORE_COOLING_SETTINGS_DEFAULTS_INVALID;
+        }
+    }
+
+    if (!pump_bool_raw_valid(auto_enable)) {
+        return NVS_STORE_COOLING_SETTINGS_DEFAULTS_INVALID;
+    }
+    loaded.auto_enable = auto_enable != 0;
+    loaded.mode = (hardware_cooling_mode_t)mode;
+    loaded.relay_polarity = relay_active_low
+        ? HARDWARE_RELAY_ACTIVE_LOW
+        : HARDWARE_RELAY_ACTIVE_HIGH;
+
+    if (!cooling_settings_valid(&loaded)) {
+        return NVS_STORE_COOLING_SETTINGS_DEFAULTS_INVALID;
+    }
+
+    *out = loaded;
+    return NVS_STORE_COOLING_SETTINGS_LOADED;
+}
+
+bool nvs_store_save_cooling_settings(const nvs_store_cooling_settings_t *settings)
+{
+    if (!cooling_settings_valid(settings)) {
+        return false;
+    }
+
+    nvs_handle_t handle;
+    if (nvs_open(NVS_COOL_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (nvs_set_i32(handle, NVS_COOL_KEY_THRESHOLD, settings->threshold_c_x10) != ESP_OK) ok = false;
+    if (nvs_set_i32(handle, NVS_COOL_KEY_HYST, settings->hysteresis_c_x10) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_COOL_KEY_AUTO_EN, settings->auto_enable ? 1 : 0) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_COOL_KEY_MODE, (uint8_t)settings->mode) != ESP_OK) ok = false;
+    if (nvs_set_u32(handle, NVS_COOL_KEY_TEST_TMO, settings->test_timeout_sec) != ESP_OK) ok = false;
+    if (nvs_set_u32(handle, NVS_COOL_KEY_MIN_OFF, settings->compressor_min_off_sec) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_COOL_KEY_RELAY_LOW,
+                   settings->relay_polarity == HARDWARE_RELAY_ACTIVE_LOW ? 1 : 0) != ESP_OK) ok = false;
+
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_clear_cooling_settings(void)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_COOL_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_THRESHOLD)) ok = false;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_HYST)) ok = false;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_AUTO_EN)) ok = false;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_MODE)) ok = false;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_TEST_TMO)) ok = false;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_MIN_OFF)) ok = false;
+    if (!erase_optional_key(handle, NVS_COOL_KEY_RELAY_LOW)) ok = false;
 
     if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
