@@ -2,6 +2,7 @@
 title: "Define safe GPIO map and cooling hardware contract"
 date: "2026-05-22"
 priority: "high"
+resolves_phase: 6
 ---
 
 # Define Safe GPIO Map And Cooling Hardware Contract

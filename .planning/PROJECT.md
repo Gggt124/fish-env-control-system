@@ -10,6 +10,17 @@ The control logic is intentionally simple and hardware-real: the float switch is
 
 The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
 
+## Current Milestone: v1.1 Dual Relay Cooling And Install UI
+
+**Goal:** Extend the validated pump controller into a safer installable system with two timer/relay channels, a separate DS18B20 cooling channel, and guarded owner-accessible hardware configuration.
+
+**Target features:**
+- Dual timer/relay pump control where Float ON selects Timer 1/Relay 1 and Float OFF selects Timer 2/Relay 2.
+- Float changes interrupt the active timer, force the old relay OFF, and restart the newly selected timer from its configured start phase.
+- DS18B20 cooling control on a dedicated relay with threshold, hysteresis, sensor fault safe-off, and compressor-protection-aware override modes.
+- Hardware/Install web flow with safe GPIO dropdown enums, active vs pending GPIO maps, confirmation guardrails, and reboot-required status.
+- Owner dashboard remains focused on daily operation while showing pump, cooling, temperature, relay, countdown, and sensor fault state.
+
 ## Requirements
 
 ### Validated
@@ -43,13 +54,11 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ### Active
 
-- [ ] Event log of float changes, timer phase changes, relay changes, and start/stop events (MON-01)
-- [ ] Export pump configuration and status for troubleshooting (MON-02)
-- [ ] User-configurable float GPIO from web UI (HW2-01)
-- [ ] User-configurable relay GPIO from web UI (HW2-02)
-- [ ] User-configurable float debounce duration from web UI (HW2-03)
-- [ ] Explicit relay test mode with timeout and warning (SAFE-01)
-- [ ] Maximum continuous relay ON duration enforcement (SAFE-02)
+- [ ] Pump control uses two separate timer/relay channels selected by binary float state.
+- [ ] Float state changes restart the selected timer cycle and force the previously selected relay OFF.
+- [ ] Temperature cooling control uses DS18B20 and a dedicated relay separate from pump relays.
+- [ ] Cooling control provides explicit enable, auto-enable preference, safe override modes, and compressor protection.
+- [ ] Web Hardware/Install GPIO map uses firmware-defined safe enum options and pending reboot behavior.
 
 ### Out of Scope
 
@@ -73,14 +82,6 @@ The firmware is a complete ESP32 pump relay controller with:
 **Codebase:** ~44,900 lines across C, HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.1.
 **Partition usage:** 49% of dual OTA app slots (`0x1F0000` each on 4MB flash).
 **Binary:** `build/fish_pump_relay_timer_control.bin` generates successfully.
-
-## Next Milestone Goals
-
-v1.1 targets operator convenience and safety improvements:
-- Event log and export for troubleshooting
-- GPIO and debounce configurability from the web UI
-- Relay test mode and maximum ON duration safety limits
-- Performance and flash usage optimization if partition pressure becomes critical
 
 ## Context
 
@@ -137,4 +138,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after v1.0 milestone completion*
+*Last updated: 2026-05-22 after v1.1 milestone start*
