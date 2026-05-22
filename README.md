@@ -16,6 +16,8 @@ cloud integrations in the downstream project, not in this template.
 - ESP-IDF path: set `IDF_PATH` to your ESP-IDF install path (for example `C:\esp-idf`)
 - Static frontend: embedded files, no CDN, no internet dependency
 - Flash layout: 4 MB flash with custom dual-OTA `partitions.csv`
+- Hardware contract: safe ESP32 DevKit V1 defaults are documented in
+  `docs/hardware.md`
 
 ## Features
 

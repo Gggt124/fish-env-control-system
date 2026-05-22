@@ -32,6 +32,21 @@ Keys:
 - `ap_stop_tmo`
 - `ap_auto_stop`
 
+It also owns project-specific persistent pump hardware settings. Raw NVS keys
+stay inside `components/nvs_store/nvs_store.c`; higher layers use typed wrappers.
+
+## hardware_map
+
+Low-level hardware contract for the ESP32 DevKit V1 pin map.
+
+- Defines `hardware_role_t` for float input, pump Relay 1, pump Relay 2,
+  DS18B20 data, and cooling relay.
+- Exposes conservative role-specific GPIO option lists and defaults.
+- Exposes relay polarity, timer start phase, and cooling mode enums.
+- Validates maps without initializing GPIO hardware.
+
+Detailed wiring and defaults are documented in `docs/hardware.md`.
+
 ## session
 
 Small RAM-only session store for the local web UI.
