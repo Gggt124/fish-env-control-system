@@ -1,5 +1,6 @@
 #include "web_server.h"
 #include "app_config.h"
+#include "hardware_map.h"
 #include "nvs_store.h"
 #include "pump_control.h"
 #include "session.h"
@@ -286,6 +287,21 @@ static const char *api_pump_settings_status_name(nvs_store_pump_settings_load_st
     }
 }
 
+static const char *api_hardware_map_status_name(nvs_store_hardware_map_load_status_t status)
+{
+    switch (status) {
+    case NVS_STORE_HARDWARE_MAP_LOADED:
+        return "loaded";
+    case NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING:
+        return "defaults_missing";
+    case NVS_STORE_HARDWARE_MAP_DEFAULTS_INVALID:
+        return "defaults_invalid";
+    case NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR:
+    default:
+        return "defaults_error";
+    }
+}
+
 static const char *api_pump_relay_polarity_name(bool relay_active_low)
 {
     return relay_active_low ? "active_low" : "active_high";
@@ -307,6 +323,17 @@ static bool api_pump_parse_relay_polarity(const cJSON *item, bool *relay_active_
     return false;
 }
 
+static bool api_pump_load_active_hardware_map(hardware_map_t *map,
+                                              nvs_store_hardware_map_load_status_t *status)
+{
+    if (!map || !status) {
+        return false;
+    }
+
+    *status = nvs_store_load_hardware_map(map);
+    return *status != NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR;
+}
+
 static void api_pump_settings_to_runtime_config(const nvs_store_pump_settings_t *settings,
                                                 pump_control_config_t *config)
 {
@@ -315,11 +342,16 @@ static void api_pump_settings_to_runtime_config(const nvs_store_pump_settings_t 
     }
 
     *config = pump_control_default_config();
+    hardware_map_t active_map = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t map_status = NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    api_pump_load_active_hardware_map(&active_map, &map_status);
+    config->float_gpio = active_map.float_input_gpio;
+    config->relay_gpio = active_map.pump_relay1_gpio;
     config->timer1.on_sec = settings->timer1_on_sec;
     config->timer1.off_sec = settings->timer1_off_sec;
     config->timer2.on_sec = settings->timer2_on_sec;
     config->timer2.off_sec = settings->timer2_off_sec;
-    config->relay_polarity = settings->relay_active_low
+    config->relay_polarity = settings->relay1_active_low
         ? PUMP_CONTROL_RELAY_ACTIVE_LOW
         : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
 }
@@ -331,6 +363,14 @@ static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_setting
         return false;
     }
 
+    hardware_map_t active_map = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t map_status = NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    api_pump_load_active_hardware_map(&active_map, &map_status);
+    bool hardware_reboot_required = false;
+    bool hardware_reboot_status_ok = nvs_store_hardware_reboot_required(&hardware_reboot_required);
+    nvs_store_cooling_settings_t cooling_settings;
+    nvs_store_cooling_settings_defaults(&cooling_settings);
+    nvs_store_load_cooling_settings(&cooling_settings);
     pump_control_config_t defaults = pump_control_default_config();
     cJSON_AddNumberToObject(root, "timer1_on_sec", settings->timer1_on_sec);
     cJSON_AddNumberToObject(root, "timer1_off_sec", settings->timer1_off_sec);
@@ -338,10 +378,28 @@ static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_setting
     cJSON_AddNumberToObject(root, "timer2_off_sec", settings->timer2_off_sec);
     cJSON_AddBoolToObject(root, "auto_start", settings->auto_start);
     cJSON_AddStringToObject(root, "relay_polarity",
-                            api_pump_relay_polarity_name(settings->relay_active_low));
-    cJSON_AddNumberToObject(root, "float_gpio", defaults.float_gpio);
-    cJSON_AddNumberToObject(root, "relay_gpio", defaults.relay_gpio);
+                            api_pump_relay_polarity_name(settings->relay1_active_low));
+    cJSON_AddNumberToObject(root, "float_gpio", active_map.float_input_gpio);
+    cJSON_AddNumberToObject(root, "relay_gpio", active_map.pump_relay1_gpio);
     cJSON_AddNumberToObject(root, "debounce_ms", defaults.debounce_ms);
+    cJSON_AddNumberToObject(root, "pump_relay1_gpio", active_map.pump_relay1_gpio);
+    cJSON_AddNumberToObject(root, "pump_relay2_gpio", active_map.pump_relay2_gpio);
+    cJSON_AddNumberToObject(root, "ds18b20_gpio", active_map.ds18b20_data_gpio);
+    cJSON_AddNumberToObject(root, "cooling_relay_gpio", active_map.cooling_relay_gpio);
+    cJSON_AddStringToObject(root, "relay1_polarity",
+                            api_pump_relay_polarity_name(settings->relay1_active_low));
+    cJSON_AddStringToObject(root, "relay2_polarity",
+                            api_pump_relay_polarity_name(settings->relay2_active_low));
+    cJSON_AddStringToObject(root, "timer1_start_phase",
+                            hardware_map_timer_start_phase_name(settings->timer1_start_phase));
+    cJSON_AddStringToObject(root, "timer2_start_phase",
+                            hardware_map_timer_start_phase_name(settings->timer2_start_phase));
+    cJSON_AddStringToObject(root, "cooling_relay_polarity",
+                            hardware_map_polarity_name(cooling_settings.relay_polarity));
+    cJSON_AddBoolToObject(root, "hardware_reboot_required",
+                          hardware_reboot_status_ok && hardware_reboot_required);
+    cJSON_AddBoolToObject(root, "hardware_fields_read_only", true);
+    cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(status));
     return true;
 }
@@ -398,6 +456,14 @@ static bool api_pump_add_status_fields(cJSON *root)
 
     nvs_store_pump_settings_t settings;
     nvs_store_pump_settings_load_status_t settings_status = nvs_store_load_pump_settings(&settings);
+    hardware_map_t active_map = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t map_status = NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    api_pump_load_active_hardware_map(&active_map, &map_status);
+    bool hardware_reboot_required = false;
+    bool hardware_reboot_status_ok = nvs_store_hardware_reboot_required(&hardware_reboot_required);
+    nvs_store_cooling_settings_t cooling_settings;
+    nvs_store_cooling_settings_defaults(&cooling_settings);
+    nvs_store_load_cooling_settings(&cooling_settings);
 
     cJSON_AddBoolToObject(root, "running", status.running);
     cJSON_AddBoolToObject(root, "initialized", status.initialized);
@@ -410,6 +476,23 @@ static bool api_pump_add_status_fields(cJSON *root)
     cJSON_AddBoolToObject(root, "relay_energized", status.relay_energized);
     cJSON_AddNumberToObject(root, "float_gpio", status.float_gpio);
     cJSON_AddNumberToObject(root, "relay_gpio", status.relay_gpio);
+    cJSON_AddNumberToObject(root, "pump_relay1_gpio", active_map.pump_relay1_gpio);
+    cJSON_AddNumberToObject(root, "pump_relay2_gpio", active_map.pump_relay2_gpio);
+    cJSON_AddNumberToObject(root, "ds18b20_gpio", active_map.ds18b20_data_gpio);
+    cJSON_AddNumberToObject(root, "cooling_relay_gpio", active_map.cooling_relay_gpio);
+    cJSON_AddStringToObject(root, "relay1_polarity",
+                            api_pump_relay_polarity_name(settings.relay1_active_low));
+    cJSON_AddStringToObject(root, "relay2_polarity",
+                            api_pump_relay_polarity_name(settings.relay2_active_low));
+    cJSON_AddStringToObject(root, "cooling_relay_polarity",
+                            hardware_map_polarity_name(cooling_settings.relay_polarity));
+    cJSON_AddStringToObject(root, "timer1_start_phase",
+                            hardware_map_timer_start_phase_name(settings.timer1_start_phase));
+    cJSON_AddStringToObject(root, "timer2_start_phase",
+                            hardware_map_timer_start_phase_name(settings.timer2_start_phase));
+    cJSON_AddBoolToObject(root, "hardware_reboot_required",
+                          hardware_reboot_status_ok && hardware_reboot_required);
+    cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
     return true;
@@ -491,7 +574,21 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         return false;
     }
 
-    const char *readonly_fields[] = {"float_gpio", "relay_gpio", "debounce_ms"};
+    const char *readonly_fields[] = {
+        "float_gpio",
+        "relay_gpio",
+        "debounce_ms",
+        "pump_relay1_gpio",
+        "pump_relay2_gpio",
+        "ds18b20_gpio",
+        "cooling_relay_gpio",
+        "relay1_polarity",
+        "relay2_polarity",
+        "cooling_relay_polarity",
+        "timer1_start_phase",
+        "timer2_start_phase",
+        "hardware_reboot_required"
+    };
     for (size_t i = 0; i < sizeof(readonly_fields) / sizeof(readonly_fields[0]); i++) {
         if (api_pump_json_has_field(root, readonly_fields[i])) {
             *error_code = "read_only_field";
@@ -524,6 +621,7 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         *error_message = "relay_polarity";
         return false;
     }
+    settings->relay1_active_low = settings->relay_active_low;
 
     return true;
 }
@@ -1002,7 +1100,9 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
         return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
     }
 
-    nvs_store_pump_settings_t settings = {0};
+    nvs_store_pump_settings_t settings;
+    nvs_store_pump_settings_defaults(&settings);
+    nvs_store_load_pump_settings(&settings);
     const char *error_code = NULL;
     const char *error_message = NULL;
     bool valid = api_pump_parse_settings_payload(root, &settings, &error_code, &error_message);

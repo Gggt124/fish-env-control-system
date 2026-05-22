@@ -14,6 +14,7 @@ idf_component_register(
         "static/app.js"
     REQUIRES
         app_config
+        hardware_map
         nvs_store
         pump_control
         session

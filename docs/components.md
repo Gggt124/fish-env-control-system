@@ -92,3 +92,13 @@ Template-owned routes:
 
 Add product-specific pages and APIs here, but keep auth/session and Wi-Fi route
 behavior stable unless the template contract changes.
+
+Phase 6 integration notes:
+
+- `main/app_main.c` loads the active hardware map and current pump settings at
+  boot. The existing single-relay runtime consumes only the float GPIO and pump
+  Relay 1 GPIO until Phase 7 changes pump behavior.
+- `main/web_server.c` keeps `/api/pump/config` compatible with existing clients
+  while surfacing hardware map fields as read-only data.
+- Relay 2, DS18B20, and cooling relay pins are stored and reported but not
+  driven in Phase 6.

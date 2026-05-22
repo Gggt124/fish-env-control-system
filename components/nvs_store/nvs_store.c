@@ -423,9 +423,9 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
         return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
     }
 
-    loaded.relay_active_low = relay_active_low;
     loaded.relay1_active_low = relay1_active_low;
     loaded.relay2_active_low = relay2_active_low;
+    loaded.relay_active_low = relay1_active_low;
     loaded.timer1_start_phase = (hardware_timer_start_phase_t)timer1_start;
     loaded.timer2_start_phase = (hardware_timer_start_phase_t)timer2_start;
     loaded.auto_start = auto_start;

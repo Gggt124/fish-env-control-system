@@ -67,3 +67,22 @@
 - Don't assume `wifi_manager_disconnect_sta()` is enough by itself — if AP auto-stop timer already fired (`WIFI_MODE_STA` + `s_ap_enabled=false`), the disconnect leaves the device unreachable via AP
 
 ---
+
+## Phase 6 Hardware Contract
+
+### DO
+- Treat `components/hardware_map` as the single source for safe GPIO options,
+  role names, defaults, and map validation.
+- Keep raw NVS keys inside `components/nvs_store`; higher layers should use
+  typed load/save helpers.
+- Preserve current runtime behavior until Phase 7: float GPIO and pump Relay 1
+  feed the existing single-relay pump control, while Relay 2 and cooling relay
+  remain stored/read-only.
+- Keep pending hardware maps separate from active maps. Pending values require
+  reboot before use.
+
+### DON'T
+- Don't duplicate GPIO safety lists in web handlers or UI code.
+- Don't drive Relay 2, DS18B20, or cooling relay from Phase 6 integration code.
+- Don't accept hardware or cooling mutation fields in `/api/pump/config`; Phase
+  9 owns authenticated mutation APIs.
