@@ -31,7 +31,7 @@ This repository is classic ESP32 firmware built with ESP-IDF. It provides a reus
 - Event loop and netif setup: `esp_event`, `esp_netif`, used by `components/wifi_manager/wifi_manager.c`.
 - HTTP server: `esp_http_server`, used by `main/web_server.c`.
 - NVS: `nvs_flash`, `nvs`, wrapped by `components/nvs_store/nvs_store.c`.
-- GPIO driver: `esp_driver_gpio`, used by `components/pump_control/pump_control.c` for float input and relay output.
+- GPIO driver: `esp_driver_gpio`, used by `components/pump_control/pump_control.c` for float input and relay output and by `components/hardware_map/` for GPIO role metadata.
 - Timers and uptime: `esp_timer`, used by `components/session/session.c`, `components/wifi_manager/wifi_manager.c`, `components/pump_control/pump_control.c`, and `main/web_server.c`.
 - FreeRTOS tasks and semaphores: used by `components/session/session.c`, `components/wifi_manager/wifi_manager.c`, `components/pump_control/pump_control.c`, `main/dns_server.c`, and `main/app_main.c`.
 - Task watchdog: `esp_task_wdt`, initialized manually in `main/app_main.c`.
@@ -70,5 +70,6 @@ The resolved dependency lock is stored in `dependencies.lock`.
 
 ## Configuration Surface
 
-- Product names, AP SSID, mDNS host, credentials, limits, AP auto-stop settings, HTTP handler capacity, watchdog timeout, and pump-control source defaults live in `components/app_config/app_config.h`.
-- Wi-Fi and optional static IP runtime settings persist in NVS through `components/nvs_store/nvs_store.c`.
+- Product names, AP SSID, mDNS host, credentials, limits, AP auto-stop settings, HTTP handler capacity, watchdog timeout, pump-control defaults, and hardware-map defaults live in `components/app_config/app_config.h`.
+- Wi-Fi, optional static IP, pump settings, active/pending hardware maps, and cooling settings persist in NVS through `components/nvs_store/nvs_store.c`.
+- `components/hardware_map/` defines firmware-owned hardware roles, safe GPIO option lists, relay polarity enums, timer start phase enums, cooling mode enums, and map validation helpers.

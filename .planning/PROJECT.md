@@ -51,6 +51,11 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Manual hardware test confirms relay follows ON/OFF phase and Stop forces inactive — Phase 5
 - ✓ Manual reboot test confirms timer settings and auto-start preference persist — Phase 5
 - ✓ Manual access test confirms Wi-Fi setup, SoftAP fallback, login, and status pages still work while pump control is present — Phase 5
+- ✓ Firmware-defined safe GPIO options exist for float input, pump Relay 1, pump Relay 2, DS18B20 data, and cooling relay — Phase 6
+- ✓ Conservative ESP32 DevKit V1 defaults are GPIO32, GPIO26, GPIO27, GPIO33, and GPIO25 for the Phase 6 hardware roles — Phase 6
+- ✓ Relay 1, Relay 2, and cooling relay polarity are represented independently in persistent settings — Phase 6
+- ✓ DS18B20 powered-mode wiring assumptions are documented with 3.3 V rail and 4.7 kOhm pull-up — Phase 6
+- ✓ Active and pending GPIO maps, relay polarity, cooling settings, and timer start phases are stored through documented NVS schemas — Phase 6
 
 ### Active
 
@@ -58,7 +63,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - [ ] Float state changes restart the selected timer cycle and force the previously selected relay OFF.
 - [ ] Temperature cooling control uses DS18B20 and a dedicated relay separate from pump relays.
 - [ ] Cooling control provides explicit enable, auto-enable preference, safe override modes, and compressor protection.
-- [ ] Web Hardware/Install GPIO map uses firmware-defined safe enum options and pending reboot behavior.
+- [ ] Web Hardware/Install GPIO map exposes firmware-defined safe enum options and pending reboot behavior.
 
 ### Out of Scope
 
@@ -71,6 +76,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 ## Current State
 
 **Shipped:** v1.0 MVP on 2026-05-20
+**Current milestone:** v1.1 Phase 6 complete on 2026-05-22
 
 The firmware is a complete ESP32 pump relay controller with:
 - Hardware-safe pump control core (GPIO32 float, GPIO26 relay, active-low defaults)
@@ -78,9 +84,10 @@ The firmware is a complete ESP32 pump relay controller with:
 - Authenticated web API for config, status, start, and stop
 - Local Thai-language dashboard with live status polling and countdown
 - Manual hardware validation passed on real ESP32 DevKit V1
+- Firmware-owned hardware contract and persistent active/pending GPIO map foundation for v1.1
 
-**Codebase:** ~44,900 lines across C, HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.1.
-**Partition usage:** 49% of dual OTA app slots (`0x1F0000` each on 4MB flash).
+**Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.1.
+**Partition usage:** 51% free in dual OTA app slots (`0x1F0000` each on 4MB flash) after Phase 6.
 **Binary:** `build/fish_pump_relay_timer_control.bin` generates successfully.
 
 ## Context
@@ -91,7 +98,10 @@ Recommended hardware contract (validated):
 
 - Board: ESP32 DevKit V1 30-pin, classic ESP32.
 - Float switch input: GPIO32, internal pull-up enabled, float switch closes to GND when active.
-- Relay output: GPIO26, default inactive at boot, polarity configurable.
+- Pump Relay 1 output: GPIO26, default inactive at boot, polarity configurable.
+- Pump Relay 2 output: GPIO27, stored but not driven until Phase 7.
+- DS18B20 data: GPIO33, powered mode, external 4.7 kOhm pull-up to 3.3 V.
+- Cooling relay output: GPIO25, stored but not driven until Phase 8.
 - Avoid ESP32 flash pins, UART programming pins, input-only pins for relay output, and boot strapping pins for initial relay/float defaults.
 
 ## Constraints
@@ -119,6 +129,9 @@ Recommended hardware contract (validated):
 | Keep pump APIs under `/api/pump/*` | Separates pump control contracts from existing system/Wi-Fi status routes | Validated in Phase 3 |
 | Make `/dashboard` the pump control surface | Operator needs timer setup, Start/Stop, and live runtime state before system diagnostics | Validated in Phase 4 |
 | Hardware validation on real ESP32 DevKit V1 with GPIO32/GPIO26 wiring | Confirmed float switching, relay phase behavior, Stop safety, and reboot persistence on actual device | Validated in Phase 5 |
+| Make `hardware_map` the single source for safe role options | Later UI/API phases need enum-backed GPIO choices instead of freeform numeric pins | Validated in Phase 6 |
+| Store pending hardware map separately from active map | GPIO changes need reboot and wiring confirmation before becoming runtime-active | Validated in Phase 6 |
+| Keep Relay 2, DS18B20, and cooling relay read-only/inactive in Phase 6 | Runtime behavior belongs to later scoped phases | Validated in Phase 6 |
 
 ## Evolution
 
@@ -138,4 +151,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-22 after v1.1 milestone start*
+*Last updated: 2026-05-22 after Phase 6 completion*

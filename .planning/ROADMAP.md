@@ -43,13 +43,13 @@ Plans:
 
 **Wave 1**
 
-- [ ] 06-01: Hardware map component, safe GPIO defaults, and DS18B20 wiring contract
+- [x] 06-01: Hardware map component, safe GPIO defaults, and DS18B20 wiring contract
 
 **Wave 2 (blocked on Wave 1 completion)**
-- [ ] 06-02: Active/pending NVS hardware map, independent polarity, cooling defaults, and timer start-phase schema
+- [x] 06-02: Active/pending NVS hardware map, independent polarity, cooling defaults, and timer start-phase schema
 
 **Wave 3 (blocked on Waves 1-2 completion)**
-- [ ] 06-03: Boot/config/status integration, compatibility handoff, and ESP-IDF build validation
+- [x] 06-03: Boot/config/status integration, compatibility handoff, and ESP-IDF build validation
 
 #### Phase 7: Dual Timer Relay Pump Runtime
 
@@ -112,7 +112,7 @@ Plans:
 | 3. Authenticated Pump Control API | v1.0 | 3/3 | Complete | 2026-05-20 |
 | 4. Web Pump Control UI | v1.0 | 3/3 | Complete | 2026-05-20 |
 | 5. Hardware Validation And Regression Pass | v1.0 | 1/1 | Complete | 2026-05-20 |
-| 6. Hardware Contract And Persistent Map Foundation | v1.1 | 0/3 | Ready to execute | — |
+| 6. Hardware Contract And Persistent Map Foundation | v1.1 | 3/3 | Complete | 2026-05-22 |
 | 7. Dual Timer Relay Pump Runtime | v1.1 | 0/0 | Pending | — |
 | 8. DS18B20 Cooling Runtime | v1.1 | 0/0 | Pending | — |
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 0/0 | Pending | — |
@@ -120,4 +120,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-05-22 after v1.1 milestone approval*
+*Last updated: 2026-05-22 after Phase 6 completion*

@@ -8,11 +8,11 @@
 
 ### Hardware Contract
 
-- [ ] **HW-01**: Owner can rely on firmware-defined safe GPIO options for float input, Relay 1, Relay 2, DS18B20 data, and cooling relay roles.
-- [ ] **HW-02**: Owner can use conservative default GPIO recommendations for ESP32 DevKit V1 30-pin without conflicting with flash, programming, input-only, or boot-strapping pins.
-- [ ] **HW-03**: Owner can configure relay polarity independently for pump Relay 1, pump Relay 2, and cooling relay.
-- [ ] **HW-04**: Installer can wire a DS18B20 using documented powered-mode assumptions, pull-up resistor expectations, voltage rail, and connector labeling.
-- [ ] **HW-05**: Firmware can store active GPIO map, pending GPIO map, relay polarity, cooling settings, and timer start phase values in a documented NVS schema.
+- [x] **HW-01**: Owner can rely on firmware-defined safe GPIO options for float input, Relay 1, Relay 2, DS18B20 data, and cooling relay roles.
+- [x] **HW-02**: Owner can use conservative default GPIO recommendations for ESP32 DevKit V1 30-pin without conflicting with flash, programming, input-only, or boot-strapping pins.
+- [x] **HW-03**: Owner can configure relay polarity independently for pump Relay 1, pump Relay 2, and cooling relay.
+- [x] **HW-04**: Installer can wire a DS18B20 using documented powered-mode assumptions, pull-up resistor expectations, voltage rail, and connector labeling.
+- [x] **HW-05**: Firmware can store active GPIO map, pending GPIO map, relay polarity, cooling settings, and timer start phase values in a documented NVS schema.
 
 ### Pump Channels
 
@@ -70,11 +70,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HW-01 | Phase 6 | Pending |
-| HW-02 | Phase 6 | Pending |
-| HW-03 | Phase 6 | Pending |
-| HW-04 | Phase 6 | Pending |
-| HW-05 | Phase 6 | Pending |
+| HW-01 | Phase 6 | Complete |
+| HW-02 | Phase 6 | Complete |
+| HW-03 | Phase 6 | Complete |
+| HW-04 | Phase 6 | Complete |
+| HW-05 | Phase 6 | Complete |
 | PUMP-01 | Phase 7 | Pending |
 | PUMP-02 | Phase 7 | Pending |
 | PUMP-03 | Phase 7 | Pending |
@@ -103,4 +103,4 @@
 
 ---
 *Requirements defined: 2026-05-22*
-*Last updated: 2026-05-22 after v1.1 milestone approval*
+*Last updated: 2026-05-22 after Phase 6 verification*

@@ -32,9 +32,13 @@ focus: arch
   - `app_config.h`: template constants for product name, firmware version, AP, mDNS, credentials, limits, AP auto-stop, HTTP handler capacity, watchdog timeout.
   - `CMakeLists.txt`: header-only component registration.
 - `components/nvs_store/`
-  - `nvs_store.h`: public persistence API for Wi-Fi credentials, AP config, and static IP config.
+  - `nvs_store.h`: public persistence API for Wi-Fi credentials, AP config, static IP config, pump settings, active/pending hardware maps, and cooling settings.
   - `nvs_store.c`: NVS namespace/key implementation.
-  - `CMakeLists.txt`: depends on `app_config` and `nvs_flash`.
+  - `CMakeLists.txt`: depends on `app_config`, `hardware_map`, and `nvs_flash`.
+- `components/hardware_map/`
+  - `hardware_map.h`: public hardware role, GPIO option, relay polarity, timer start phase, cooling mode, map, and validation API.
+  - `hardware_map.c`: ESP32 DevKit V1 safe GPIO option lists, defaults, name helpers, and validation logic.
+  - `CMakeLists.txt`: depends on `app_config` and `esp_driver_gpio`.
 - `components/session/`
   - `session.h`: RAM session API and token length constants.
   - `session.c`: token creation, validation, expiry, and destruction.
@@ -86,4 +90,5 @@ focus: arch
 - Template constants: `components/app_config/app_config.h`.
 - Product-specific startup and safe hardware initialization: `main/app_main.c`.
 - Product-specific routes and pages: `main/web_server.c` and `main/static/`.
-- Pump runtime persistence, APIs, and UI controls build on `components/pump_control/` without moving GPIO logic into `main/`.
+- Hardware/install UI and APIs should consume role options from `components/hardware_map/` and persistence helpers from `components/nvs_store/`.
+- Pump runtime persistence, APIs, and UI controls build on `components/pump_control/` without moving GPIO drive logic into `main/`.

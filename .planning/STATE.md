@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dual Relay Cooling And Install UI
-status: executing
-last_updated: "2026-05-22T04:27:02.158Z"
+status: ready_to_plan
+last_updated: 2026-05-22T05:51:11.381Z
 last_activity: 2026-05-22
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 20
+stopped_at: Phase 06 complete (3/3) — ready to discuss Phase 7
 ---
 
 # Project State
@@ -20,7 +21,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-22)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 6: Hardware Contract And Persistent Map Foundation
+**Current focus:** Phase 7 — dual timer relay pump runtime
 
 ## Workflow
 
@@ -43,13 +44,13 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 
 ## Current Phase
 
-### Phase 6: Hardware Contract And Persistent Map Foundation
+### Phase 7: Dual Timer Relay Pump Runtime
 
-**Goal:** Define and implement the safe hardware contract before changing runtime control behavior.
+**Goal:** Replace the single relay-selected-timer model with two timer/relay channels controlled by binary float state.
 
-**Requirements:** HW-01, HW-02, HW-03, HW-04, HW-05
+**Requirements:** PUMP-01, PUMP-02, PUMP-03, PUMP-04, PUMP-05, PUMP-06
 
-**Status:** Ready to execute
+**Status:** Ready to discuss
 
 ### Quick Tasks Completed
 
@@ -76,7 +77,7 @@ Last activity: 2026-05-22
 
 ## Current Position
 
-Phase: 6 - Hardware Contract And Persistent Map Foundation
-Plan: —
-Status: Ready to execute
-Last activity: 2026-05-22 -- Phase 6 planning complete
+Phase: 7
+Plan: Not started
+Status: Ready to discuss Phase 7
+Last activity: 2026-05-22 -- Phase 06 completed and verified

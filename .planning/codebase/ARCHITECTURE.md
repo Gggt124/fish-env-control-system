@@ -18,6 +18,7 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 ## Component Boundaries
 
 - `components/app_config/app_config.h` is a header-only template configuration boundary.
+- `components/hardware_map/` owns firmware hardware roles, safe GPIO options, defaults, and validation helpers without initializing GPIO hardware.
 - `components/nvs_store/` owns persistent storage access and hides raw NVS keys from the rest of the app.
 - `components/session/` owns volatile login token lifecycle.
 - `components/wifi_manager/` owns ESP-IDF Wi-Fi mode, AP state, STA state, scans, retry behavior, static IP application, and fallback behavior.
@@ -27,15 +28,17 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 
 ## Data Flow: Boot
 
-1. `app_main()` calls `pump_control_default_config()` and `pump_control_init()` so the relay GPIO is driven inactive while pump control remains stopped.
-2. `app_main()` calls `nvs_store_init()` in `components/nvs_store/nvs_store.c`.
-3. `app_main()` calls `session_init()` in `components/session/session.c`.
-4. `app_main()` calls `wifi_manager_init()` in `components/wifi_manager/wifi_manager.c`.
-5. `wifi_manager_init()` initializes netif, event loop, AP/STA interfaces, ESP Wi-Fi, event handlers, and AP auto-stop timer.
-6. `wifi_manager_init()` loads saved STA credentials and optional static IP config through `nvs_store_load_wifi()` and `nvs_store_load_sta_ip()`.
-7. `wifi_manager_init()` starts Wi-Fi and then calls `wifi_manager_start_ap()`.
-8. `app_main()` starts HTTP via `web_server_start()`.
-9. `app_main()` starts mDNS and captive DNS.
+1. `app_main()` calls `nvs_store_init()` in `components/nvs_store/nvs_store.c`.
+2. `app_main()` loads the active hardware map, pump settings, cooling settings, and pending hardware-map status.
+3. `app_main()` merges the active float GPIO and pump Relay 1 GPIO into `pump_control_default_config()` and initializes the current single-relay runtime.
+4. `app_main()` suppresses auto-start if persisted pump or hardware settings are invalid.
+5. `app_main()` calls `session_init()` in `components/session/session.c`.
+6. `app_main()` calls `wifi_manager_init()` in `components/wifi_manager/wifi_manager.c`.
+7. `wifi_manager_init()` initializes netif, event loop, AP/STA interfaces, ESP Wi-Fi, event handlers, and AP auto-stop timer.
+8. `wifi_manager_init()` loads saved STA credentials and optional static IP config through `nvs_store_load_wifi()` and `nvs_store_load_sta_ip()`.
+9. `wifi_manager_init()` starts Wi-Fi and then calls `wifi_manager_start_ap()`.
+10. `app_main()` starts HTTP via `web_server_start()`.
+11. `app_main()` starts mDNS and captive DNS.
 
 ## Data Flow: Login
 
@@ -56,9 +59,9 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 
 ## Data Flow: Pump Config API
 
-1. Authenticated clients call GET `/api/pump/config` for persisted timer durations, `auto_start`, relay polarity, read-only GPIO/debounce defaults, and settings load health.
+1. Authenticated clients call GET `/api/pump/config` for persisted timer durations, `auto_start`, Relay 1 polarity, read-only active hardware map fields, pending reboot status, debounce defaults, and settings load health.
 2. Authenticated same-origin clients call POST `/api/pump/config` with a full replacement payload.
-3. `main/web_server.c` rejects read-only hardware/debounce fields, validates timer duration bounds and relay polarity, saves through `nvs_store_save_pump_settings()`, then reinitializes `pump_control` from defaults merged with saved settings.
+3. `main/web_server.c` rejects read-only hardware/debounce fields, validates timer duration bounds and Relay 1 polarity, saves through `nvs_store_save_pump_settings()`, then reinitializes `pump_control` from active map plus saved settings.
 4. If the controller was running before save, the handler stops it to force relay inactive during reinit and restarts only after successful runtime apply.
 
 ## Data Flow: Pump Runtime API
