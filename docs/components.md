@@ -55,6 +55,29 @@ Low-level hardware contract for the ESP32 DevKit V1 pin map.
 
 Detailed wiring and defaults are documented in `docs/hardware.md`.
 
+## cooling_control
+
+Component-owned DS18B20 cooling runtime.
+
+- Uses the active hardware map DS18B20 GPIO and cooling relay GPIO.
+- Uses ESP-IDF managed `espressif/onewire_bus` and `espressif/ds18b20`
+  components for powered-mode DS18B20 reads.
+- Keeps startup temperature as `unknown` until the first valid reading.
+- Declares sensor fault after 3 consecutive read failures and clears it after
+  2 consecutive successful readings.
+- Controls the dedicated cooling relay separately from pump relays.
+- In Auto mode, turns cooling ON at or above threshold and OFF below threshold
+  minus hysteresis.
+- Force OFF always holds the cooling relay inactive.
+- Test ON is runtime-only, timeout-limited, and still obeys compressor
+  minimum off-time.
+- Boot/reinit treats the relay as just turned OFF and enforces the configured
+  minimum off-time before any ON transition.
+
+`main/web_server.c` exposes runtime state through authenticated
+`GET /api/cooling/status`. Full cooling settings mutation remains a later
+API/UI phase.
+
 ## session
 
 Small RAM-only session store for the local web UI.
@@ -93,12 +116,12 @@ Template-owned routes:
 Add product-specific pages and APIs here, but keep auth/session and Wi-Fi route
 behavior stable unless the template contract changes.
 
-Phase 6 integration notes:
+Phase 6 through 8 integration notes:
 
 - `main/app_main.c` loads the active hardware map and current pump settings at
-  boot. The existing single-relay runtime consumes only the float GPIO and pump
-  Relay 1 GPIO until Phase 7 changes pump behavior.
+  boot. Phase 7 pump runtime consumes float, Relay 1, and Relay 2.
 - `main/web_server.c` keeps `/api/pump/config` compatible with existing clients
   while surfacing hardware map fields as read-only data.
-- Relay 2, DS18B20, and cooling relay pins are stored and reported but not
-  driven in Phase 6.
+- Phase 8 initializes `cooling_control` from active DS18B20/cooling relay GPIOs
+  and persisted cooling settings, then exposes status through
+  `/api/cooling/status` without adding cooling mutation routes.

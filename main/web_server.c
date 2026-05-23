@@ -1,5 +1,6 @@
 #include "web_server.h"
 #include "app_config.h"
+#include "cooling_control.h"
 #include "hardware_map.h"
 #include "nvs_store.h"
 #include "pump_control.h"
@@ -490,6 +491,64 @@ static const char *api_pump_timer_phase_name(pump_control_timer_phase_t phase)
     }
 }
 
+static const char *api_cooling_mode_name(cooling_control_mode_t mode)
+{
+    switch (mode) {
+    case COOLING_CONTROL_MODE_AUTO:
+        return "auto";
+    case COOLING_CONTROL_MODE_TEST_ON:
+        return "test_on";
+    case COOLING_CONTROL_MODE_FORCE_OFF:
+    default:
+        return "force_off";
+    }
+}
+
+static const char *api_cooling_sensor_state_name(cooling_control_sensor_state_t state)
+{
+    switch (state) {
+    case COOLING_CONTROL_SENSOR_OK:
+        return "ok";
+    case COOLING_CONTROL_SENSOR_FAULT:
+        return "fault";
+    case COOLING_CONTROL_SENSOR_UNKNOWN:
+    default:
+        return "unknown";
+    }
+}
+
+static const char *api_cooling_fault_code_name(cooling_control_fault_code_t code)
+{
+    switch (code) {
+    case COOLING_CONTROL_FAULT_READ_FAILED:
+        return "read_failed";
+    case COOLING_CONTROL_FAULT_OUT_OF_RANGE:
+        return "out_of_range";
+    case COOLING_CONTROL_FAULT_CONFIG_INVALID:
+        return "config_invalid";
+    case COOLING_CONTROL_FAULT_NONE:
+    default:
+        return "none";
+    }
+}
+
+static const char *api_cooling_blocked_reason_name(cooling_control_blocked_reason_t reason)
+{
+    switch (reason) {
+    case COOLING_CONTROL_BLOCKED_COMPRESSOR_LOCKOUT:
+        return "compressor_lockout";
+    case COOLING_CONTROL_BLOCKED_SENSOR_FAULT:
+        return "sensor_fault";
+    case COOLING_CONTROL_BLOCKED_FORCE_OFF:
+        return "force_off";
+    case COOLING_CONTROL_BLOCKED_CONFIG_INVALID:
+        return "config_invalid";
+    case COOLING_CONTROL_BLOCKED_NONE:
+    default:
+        return "none";
+    }
+}
+
 static bool api_pump_add_status_fields(cJSON *root)
 {
     if (!root) {
@@ -547,6 +606,42 @@ static bool api_pump_add_status_fields(cJSON *root)
     cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
+    return true;
+}
+
+static bool api_cooling_add_status_fields(cJSON *root)
+{
+    if (!root) {
+        return false;
+    }
+
+    cooling_control_status_t status = {0};
+    if (!cooling_control_get_status(&status)) {
+        return false;
+    }
+
+    cJSON_AddBoolToObject(root, "initialized", status.initialized);
+    cJSON_AddBoolToObject(root, "config_valid", status.config_valid);
+    cJSON_AddStringToObject(root, "mode", api_cooling_mode_name(status.mode));
+    cJSON_AddBoolToObject(root, "auto_enable", status.auto_enable);
+    cJSON_AddNumberToObject(root, "temperature_c", status.temperature_c);
+    cJSON_AddBoolToObject(root, "temperature_valid", status.temperature_valid);
+    cJSON_AddStringToObject(root, "sensor_state",
+                            api_cooling_sensor_state_name(status.sensor_state));
+    cJSON_AddBoolToObject(root, "fault", status.fault);
+    cJSON_AddStringToObject(root, "fault_code",
+                            api_cooling_fault_code_name(status.fault_code));
+    cJSON_AddBoolToObject(root, "relay_energized", status.relay_energized);
+    cJSON_AddNumberToObject(root, "threshold_c", (double)status.threshold_c_x10 / 10.0);
+    cJSON_AddNumberToObject(root, "hysteresis_c", (double)status.hysteresis_c_x10 / 10.0);
+    cJSON_AddBoolToObject(root, "lockout_active", status.lockout_active);
+    cJSON_AddNumberToObject(root, "lockout_remaining_sec", status.lockout_remaining_sec);
+    cJSON_AddNumberToObject(root, "test_remaining_sec", status.test_remaining_sec);
+    cJSON_AddBoolToObject(root, "cooling_demand", status.cooling_demand);
+    cJSON_AddStringToObject(root, "blocked_reason",
+                            api_cooling_blocked_reason_name(status.blocked_reason));
+    cJSON_AddNumberToObject(root, "ds18b20_gpio", status.ds18b20_gpio);
+    cJSON_AddNumberToObject(root, "cooling_relay_gpio", status.cooling_relay_gpio);
     return true;
 }
 
@@ -1250,6 +1345,36 @@ static esp_err_t handle_api_pump_status(httpd_req_t *req)
     return result;
 }
 
+/* GET /api/cooling/status - protected, return machine-friendly cooling runtime status */
+static esp_err_t handle_api_cooling_status(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    if (!api_cooling_add_status_fields(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "status_unavailable", "Cooling status is unavailable",
+                              "409 Conflict");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
 /* POST /api/pump/start - protected, idempotently start pump control */
 static esp_err_t handle_api_pump_start(httpd_req_t *req)
 {
@@ -1478,6 +1603,7 @@ bool web_server_start(void)
         { .uri = "/api/pump/config", .method = HTTP_GET,  .handler = handle_api_pump_config_get, .user_ctx = NULL },
         { .uri = "/api/pump/config", .method = HTTP_POST, .handler = handle_api_pump_config_post, .user_ctx = NULL },
         { .uri = "/api/pump/status", .method = HTTP_GET,  .handler = handle_api_pump_status, .user_ctx = NULL },
+        { .uri = "/api/cooling/status", .method = HTTP_GET, .handler = handle_api_cooling_status, .user_ctx = NULL },
         { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start,  .user_ctx = NULL },
         { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop,   .user_ctx = NULL },
     };

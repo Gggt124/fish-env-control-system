@@ -1,4 +1,5 @@
 #include "app_config.h"
+#include "cooling_control.h"
 #include "hardware_map.h"
 #include "nvs_store.h"
 #include "pump_control.h"
@@ -67,6 +68,27 @@ static pump_control_relay_polarity_t pump_relay_polarity_from_bool(bool active_l
     return active_low ? PUMP_CONTROL_RELAY_ACTIVE_LOW : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
 }
 
+static cooling_control_relay_polarity_t cooling_relay_polarity_from_hardware(
+    hardware_relay_polarity_t polarity)
+{
+    return polarity == HARDWARE_RELAY_ACTIVE_LOW
+        ? COOLING_CONTROL_RELAY_ACTIVE_LOW
+        : COOLING_CONTROL_RELAY_ACTIVE_HIGH;
+}
+
+static cooling_control_mode_t cooling_mode_from_hardware(hardware_cooling_mode_t mode)
+{
+    switch (mode) {
+    case HARDWARE_COOLING_MODE_AUTO:
+        return COOLING_CONTROL_MODE_AUTO;
+    case HARDWARE_COOLING_MODE_TEST_ON:
+        return COOLING_CONTROL_MODE_TEST_ON;
+    case HARDWARE_COOLING_MODE_FORCE_OFF:
+    default:
+        return COOLING_CONTROL_MODE_FORCE_OFF;
+    }
+}
+
 static pump_control_start_phase_t pump_start_phase_from_hardware(hardware_timer_start_phase_t phase)
 {
     return phase == HARDWARE_TIMER_START_PHASE_OFF
@@ -95,6 +117,25 @@ static void apply_pump_settings_to_config(pump_control_config_t *config,
     config->relay2_polarity = pump_relay_polarity_from_bool(settings->relay2_active_low);
     config->timer1_start_phase = pump_start_phase_from_hardware(settings->timer1_start_phase);
     config->timer2_start_phase = pump_start_phase_from_hardware(settings->timer2_start_phase);
+}
+
+static void apply_cooling_settings_to_config(cooling_control_config_t *config,
+                                             const nvs_store_cooling_settings_t *settings,
+                                             const hardware_map_t *hardware_map)
+{
+    if (!config || !settings || !hardware_map) {
+        return;
+    }
+
+    config->ds18b20_gpio = hardware_map->ds18b20_data_gpio;
+    config->cooling_relay_gpio = hardware_map->cooling_relay_gpio;
+    config->relay_polarity = cooling_relay_polarity_from_hardware(settings->relay_polarity);
+    config->threshold_c_x10 = settings->threshold_c_x10;
+    config->hysteresis_c_x10 = settings->hysteresis_c_x10;
+    config->auto_enable = settings->auto_enable;
+    config->mode = cooling_mode_from_hardware(settings->mode);
+    config->test_timeout_sec = settings->test_timeout_sec;
+    config->compressor_min_off_sec = settings->compressor_min_off_sec;
 }
 
 void app_main(void)
@@ -126,6 +167,8 @@ void app_main(void)
 
     pump_control_config_t pump_config = pump_control_default_config();
     apply_pump_settings_to_config(&pump_config, &pump_settings, &active_hardware_map);
+    cooling_control_config_t cooling_config = cooling_control_default_config();
+    apply_cooling_settings_to_config(&cooling_config, &cooling_settings, &active_hardware_map);
 
     bool allow_auto_start = pump_settings.auto_start;
     bool hardware_map_safe = hardware_map_status == NVS_STORE_HARDWARE_MAP_LOADED ||
@@ -160,13 +203,24 @@ void app_main(void)
         ESP_LOGW(TAG, "Pending hardware map status invalid; reboot-required state unavailable");
     }
     ESP_LOGI(TAG,
-             "Cooling settings (%s): mode=%s, threshold_x10=%ld, hysteresis_x10=%ld, auto_enable=%s, min_off=%lu sec (runtime inactive in Phase 7)",
+             "Cooling settings (%s): mode=%s, threshold_x10=%ld, hysteresis_x10=%ld, auto_enable=%s, min_off=%lu sec",
              cooling_settings_load_status_name(cooling_settings_status),
              hardware_map_cooling_mode_name(cooling_settings.mode),
              (long)cooling_settings.threshold_c_x10,
              (long)cooling_settings.hysteresis_c_x10,
              cooling_settings.auto_enable ? "true" : "false",
              (unsigned long)cooling_settings.compressor_min_off_sec);
+
+    if (cooling_control_init(&cooling_config)) {
+        ESP_LOGI(TAG,
+                 "Cooling runtime initialized: ds18b20 GPIO=%d, relay GPIO=%d, auto_enable=%s, min_off=%lu sec",
+                 cooling_config.ds18b20_gpio,
+                 cooling_config.cooling_relay_gpio,
+                 cooling_config.auto_enable ? "true" : "false",
+                 (unsigned long)cooling_config.compressor_min_off_sec);
+    } else {
+        ESP_LOGE(TAG, "Cooling runtime init failed or safe-disabled; continuing with Wi-Fi/web setup");
+    }
 
     if (pump_control_init(&pump_config)) {
         ESP_LOGI(TAG, "Pump control initialized: float GPIO=%d, relay1 GPIO=%d, relay2 GPIO=%d, auto_start=%s",

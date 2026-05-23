@@ -101,3 +101,26 @@
 ### DON'T
 - Don't bring DS18B20 cooling runtime, cooling relay control, or hardware GPIO mutation APIs into Phase 7.
 - Don't display Float state as unknown merely because the pump is stopped; the runtime keeps reading/debouncing float while stopped when configuration is valid.
+
+---
+
+## Phase 8 DS18B20 Cooling Runtime
+
+### DO
+- Keep `cooling_control` separate from `pump_control`; cooling relay state is not
+  part of `/api/pump/status`.
+- Use `/api/cooling/status` for validation fields: mode, auto-enable,
+  temperature validity, sensor state, fault code, relay state, demand,
+  blocked reason, lockout countdown, and test countdown.
+- Treat missing/unreadable DS18B20 as safe-off: fault after 3 consecutive failed
+  reads, recovery after 2 consecutive successful reads.
+- Preserve boot/reinit compressor protection. The cooling relay is treated as
+  just turned OFF on runtime init, so Auto and Test ON wait for min-off.
+- Keep Test ON runtime-only. It may be added to future mutation APIs, but it
+  must not persist across reboot.
+
+### DON'T
+- Don't add `/api/cooling/config` or cooling POST routes before the Phase 9 API
+  work.
+- Don't allow Test ON to bypass compressor lockout.
+- Don't rely on stale temperatures after a read failure or sensor fault.

@@ -1,8 +1,8 @@
 # Hardware Contract
 
-Phase 6 defines the firmware-owned hardware contract for the ESP32 DevKit V1
-30-pin target. It does not add dual-relay pump behavior, DS18B20 readings,
-cooling relay control, or installer mutation APIs.
+Phase 6 defined the firmware-owned hardware contract for the ESP32 DevKit V1
+30-pin target. Phase 8 now consumes the DS18B20 and cooling relay roles at
+runtime; installer mutation APIs remain future work.
 
 ## Board Assumptions
 
@@ -40,9 +40,9 @@ Phase 6 assumes powered mode for the DS18B20:
 - Add an external 4.7 kOhm pull-up resistor from DQ to 3.3 V.
 - Label the connector pins as `3V3`, `DQ`, and `GND`.
 
-Do not rely on the ESP32 internal pull-up alone for the one-wire bus. Cooling
-runtime belongs to a later phase and must fail with the cooling relay OFF if the
-sensor is missing or unreadable.
+Do not rely on the ESP32 internal pull-up alone for the one-wire bus. Phase 8
+cooling runtime reads this sensor through the `cooling_control` component and
+fails with the cooling relay OFF if the sensor is missing or unreadable.
 
 ## Compressor Protection Defaults
 
@@ -57,9 +57,9 @@ The storage defaults are defined before runtime enforcement:
 | Test-on timeout | 10 seconds |
 | Compressor minimum off-time | 300 seconds |
 
-The 300 second minimum off-time is a conservative compressor-protection default.
-If the downstream hardware is only a fan, later UI/API phases can expose it as a
-setting while preserving the safe default.
+The 300 second minimum off-time is enforced by Phase 8 before Auto or Test ON
+can energize the cooling relay. If the downstream hardware is only a fan, later
+UI/API phases can expose it as a setting while preserving the safe default.
 
 ## NVS Schema
 
