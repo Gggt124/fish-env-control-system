@@ -113,11 +113,11 @@ Plans:
 | 4. Web Pump Control UI | v1.0 | 3/3 | Complete | 2026-05-20 |
 | 5. Hardware Validation And Regression Pass | v1.0 | 1/1 | Complete | 2026-05-20 |
 | 6. Hardware Contract And Persistent Map Foundation | v1.1 | 3/3 | Complete | 2026-05-22 |
-| 7. Dual Timer Relay Pump Runtime | v1.1 | 0/0 | Pending | — |
+| 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 8. DS18B20 Cooling Runtime | v1.1 | 0/0 | Pending | — |
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 0/0 | Pending | — |
 | 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 0/0 | Pending | — |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-05-22 after Phase 6 completion*
+*Last updated: 2026-05-23 after Phase 7 completion*

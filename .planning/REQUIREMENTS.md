@@ -16,12 +16,12 @@
 
 ### Pump Channels
 
-- [ ] **PUMP-01**: User can run pump control with two separate timer/relay channels selected by binary float state.
-- [ ] **PUMP-02**: User sees `Float ON` select Timer 1 and Relay 1, with Relay 2 forced OFF.
-- [ ] **PUMP-03**: User sees `Float OFF` select Timer 2 and Relay 2, with Relay 1 forced OFF.
-- [ ] **PUMP-04**: User can configure independent Timer 1 and Timer 2 start phases as `ON` or `OFF`, defaulting both timers to `ON`.
-- [ ] **PUMP-05**: When float state changes, firmware stops the previous timer, forces its relay OFF immediately, and starts the newly selected timer from its configured start phase.
-- [ ] **PUMP-06**: When pump control is disabled, Relay 1 and Relay 2 remain OFF while float status continues to be read and displayed.
+- [x] **PUMP-01**: User can run pump control with two separate timer/relay channels selected by binary float state.
+- [x] **PUMP-02**: User sees `Float ON` select Timer 1 and Relay 1, with Relay 2 forced OFF.
+- [x] **PUMP-03**: User sees `Float OFF` select Timer 2 and Relay 2, with Relay 1 forced OFF.
+- [x] **PUMP-04**: User can configure independent Timer 1 and Timer 2 start phases as `ON` or `OFF`, defaulting both timers to `ON`.
+- [x] **PUMP-05**: When float state changes, firmware stops the previous timer, forces its relay OFF immediately, and starts the newly selected timer from its configured start phase.
+- [x] **PUMP-06**: When pump control is disabled, Relay 1 and Relay 2 remain OFF while float status continues to be read and displayed.
 
 ### Cooling Control
 
@@ -75,12 +75,12 @@
 | HW-03 | Phase 6 | Complete |
 | HW-04 | Phase 6 | Complete |
 | HW-05 | Phase 6 | Complete |
-| PUMP-01 | Phase 7 | Pending |
-| PUMP-02 | Phase 7 | Pending |
-| PUMP-03 | Phase 7 | Pending |
-| PUMP-04 | Phase 7 | Pending |
-| PUMP-05 | Phase 7 | Pending |
-| PUMP-06 | Phase 7 | Pending |
+| PUMP-01 | Phase 7 | Complete |
+| PUMP-02 | Phase 7 | Complete |
+| PUMP-03 | Phase 7 | Complete |
+| PUMP-04 | Phase 7 | Complete |
+| PUMP-05 | Phase 7 | Complete |
+| PUMP-06 | Phase 7 | Complete |
 | COOL-01 | Phase 8 | Pending |
 | COOL-02 | Phase 8 | Pending |
 | COOL-03 | Phase 8 | Pending |
