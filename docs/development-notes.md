@@ -124,3 +124,35 @@
   work.
 - Don't allow Test ON to bypass compressor lockout.
 - Don't rely on stale temperatures after a read failure or sensor fault.
+
+---
+
+## Phase 9 Authenticated Hardware And Cooling APIs
+
+### DO
+- Use `/api/hardware/map` for Hardware/Install UI data. The response includes
+  active GPIO values, pending GPIO values, safe dropdown options, pending
+  status, and reboot-required status.
+- Save GPIO edits as pending values only. POST `/api/hardware/map` requires
+  `confirm_reboot_required: true`, validates each GPIO against
+  `hardware_map_options_for_role()`, and clears pending state when submitted
+  values match the active map.
+- Use `/api/cooling/config` for persisted cooling threshold, hysteresis,
+  auto-enable, mode, test timeout, compressor minimum off-time, and cooling
+  relay polarity.
+- Use `/api/cooling/mode` for runtime Auto, Force OFF, and Test ON. Test ON is
+  timeout-limited by `cooling_control` and is not saved to NVS.
+- Use `/api/pump/config` for dual-channel pump settings. `relay1_polarity` and
+  `relay2_polarity` are independent; legacy `relay_polarity` is a Relay 1
+  compatibility alias.
+- Keep all mutation routes behind `require_auth(req)` and
+  `is_same_origin(req, false)`.
+
+### DON'T
+- Don't apply pending hardware map GPIOs to pump or cooling runtime before
+  reboot.
+- Don't persist `test_on` as a cooling config mode; route it through runtime
+  mode control.
+- Don't put GPIO mutation fields in `/api/pump/config`.
+- Don't claim the owner dashboard or Hardware/Install UI is complete in Phase
+  9. Phase 10 owns those frontend surfaces.

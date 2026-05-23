@@ -75,8 +75,16 @@ Component-owned DS18B20 cooling runtime.
   minimum off-time before any ON transition.
 
 `main/web_server.c` exposes runtime state through authenticated
-`GET /api/cooling/status`. Full cooling settings mutation remains a later
-API/UI phase.
+`GET /api/cooling/status`. Phase 9 also exposes authenticated cooling config
+and mode APIs:
+
+- `GET /api/cooling/config` returns persisted threshold, hysteresis,
+  auto-enable, mode, test timeout, compressor minimum off-time, relay polarity,
+  limits, enum values, and current cooling status.
+- `POST /api/cooling/config` validates and saves safe persistent settings,
+  then reapplies the runtime using the active hardware map.
+- `POST /api/cooling/mode` changes runtime mode. `test_on` is runtime-only and
+  is not persisted across reboot.
 
 ## session
 
@@ -125,3 +133,16 @@ Phase 6 through 8 integration notes:
 - Phase 8 initializes `cooling_control` from active DS18B20/cooling relay GPIOs
   and persisted cooling settings, then exposes status through
   `/api/cooling/status` without adding cooling mutation routes.
+
+Phase 9 API notes:
+
+- `/api/hardware/map` exposes active GPIO values, pending GPIO values, safe
+  role-specific GPIO option lists, and reboot-required state. POST saves
+  pending values only and requires `confirm_reboot_required: true`.
+- `/api/pump/config` supports dual-channel pump settings: `relay1_polarity`,
+  `relay2_polarity`, `timer1_start_phase`, and `timer2_start_phase`. The
+  legacy `relay_polarity` field remains a Relay 1 compatibility alias.
+- GPIO pin changes are not accepted through `/api/pump/config`; they belong to
+  `/api/hardware/map` and take effect only after reboot.
+- Phase 10 owns the owner dashboard and Hardware/Install UI that consume these
+  APIs.

@@ -137,6 +137,22 @@ fish_pump_relay_timer_control/
 | POST | `/api/wifi/connect` | Yes | Connect STA |
 | POST | `/api/wifi/disconnect` | Yes | Disconnect STA |
 | GET | `/api/status` | Yes | Device status JSON |
+| GET | `/api/pump/config` | Yes | Pump timers, auto-start, relay polarity, start phases, read-only active hardware fields |
+| POST | `/api/pump/config` | Yes | Save pump timers, auto-start, Relay 1/Relay 2 polarity, and Timer 1/Timer 2 start phases |
+| GET | `/api/pump/status` | Yes | Dual-relay pump runtime status |
+| POST | `/api/pump/start` | Yes | Start pump controller |
+| POST | `/api/pump/stop` | Yes | Stop pump controller and force pump relays inactive |
+| GET | `/api/hardware/map` | Yes | Active GPIO map, pending GPIO map, reboot-required status, and safe GPIO options |
+| POST | `/api/hardware/map` | Yes | Save pending GPIO map after `confirm_reboot_required:true`; takes effect after reboot |
+| GET | `/api/cooling/status` | Yes | Cooling runtime status, sensor state, relay state, lockout, and Test ON countdown |
+| GET | `/api/cooling/config` | Yes | Cooling settings, input limits, enum values, and current status |
+| POST | `/api/cooling/config` | Yes | Save cooling threshold, hysteresis, auto-enable, mode, test timeout, min-off, and relay polarity |
+| POST | `/api/cooling/mode` | Yes | Runtime Auto, Force OFF, or Test ON; Test ON is not persisted |
+
+GPIO pin changes are saved as pending values and require reboot before they
+become active. The Hardware/Install UI and owner dashboard for these APIs are
+planned as the next phase; the backend API surface is available first so the UI
+can remain dropdown-driven and avoid freeform GPIO entry.
 
 ## Template Boundaries
 

@@ -1328,8 +1328,6 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         "pump_relay2_gpio",
         "ds18b20_gpio",
         "cooling_relay_gpio",
-        "relay1_polarity",
-        "relay2_polarity",
         "cooling_relay_polarity",
         "hardware_reboot_required"
     };
@@ -1354,18 +1352,28 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         return false;
     }
 
-    const cJSON *polarity = cJSON_GetObjectItem(root, "relay_polarity");
-    if (!polarity) {
+    const cJSON *relay1_polarity = cJSON_GetObjectItem(root, "relay1_polarity");
+    const cJSON *legacy_polarity = cJSON_GetObjectItem(root, "relay_polarity");
+    const cJSON *relay1_source = relay1_polarity ? relay1_polarity : legacy_polarity;
+    if (!relay1_source) {
         *error_code = "missing_field";
-        *error_message = "relay_polarity";
+        *error_message = "relay1_polarity";
         return false;
     }
-    if (!api_pump_parse_relay_polarity(polarity, &settings->relay_active_low)) {
+    if (!api_pump_parse_relay_polarity(relay1_source, &settings->relay1_active_low)) {
         *error_code = "invalid_relay_polarity";
-        *error_message = "relay_polarity";
+        *error_message = relay1_polarity ? "relay1_polarity" : "relay_polarity";
         return false;
     }
-    settings->relay1_active_low = settings->relay_active_low;
+    settings->relay_active_low = settings->relay1_active_low;
+
+    const cJSON *relay2_polarity = cJSON_GetObjectItem(root, "relay2_polarity");
+    if (relay2_polarity &&
+        !api_pump_parse_relay_polarity(relay2_polarity, &settings->relay2_active_low)) {
+        *error_code = "invalid_relay_polarity";
+        *error_message = "relay2_polarity";
+        return false;
+    }
 
     const cJSON *timer1_start = cJSON_GetObjectItem(root, "timer1_start_phase");
     if (!timer1_start) {
