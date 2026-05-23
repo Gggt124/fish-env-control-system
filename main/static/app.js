@@ -196,6 +196,7 @@ function wirePumpForm() {
     var ids = [
         'timer1-on-min', 'timer1-on-sec', 'timer1-off-min', 'timer1-off-sec',
         'timer2-on-min', 'timer2-on-sec', 'timer2-off-min', 'timer2-off-sec',
+        'timer1-start-phase', 'timer2-start-phase',
         'pump-auto-start'
     ];
     for (var i = 0; i < ids.length; i++) {
@@ -260,6 +261,8 @@ function loadPumpConfig() {
         setDurationFields('timer1-off', data.timer1_off_sec);
         setDurationFields('timer2-on', data.timer2_on_sec);
         setDurationFields('timer2-off', data.timer2_off_sec);
+        setStartPhaseField('timer1-start-phase', data.timer1_start_phase);
+        setStartPhaseField('timer2-start-phase', data.timer2_start_phase);
         var autoStart = pumpEl('pump-auto-start');
         if (autoStart) autoStart.checked = !!data.auto_start;
         clearPumpValidation();
@@ -273,6 +276,12 @@ function setDurationFields(prefix, totalSec) {
     var secEl = pumpEl(prefix + '-sec');
     if (minEl) minEl.value = Math.floor(totalSec / 60);
     if (secEl) secEl.value = totalSec % 60;
+}
+
+function setStartPhaseField(id, value) {
+    var el = pumpEl(id);
+    if (!el) return;
+    el.value = value === 'off' ? 'off' : 'on';
 }
 
 function readDuration(prefix, label) {
@@ -312,6 +321,20 @@ function readDuration(prefix, label) {
     return { ok: true, value: total };
 }
 
+function readStartPhase(id, label) {
+    var el = pumpEl(id);
+    var errEl = pumpEl(id + '-error');
+    var value = el ? el.value : '';
+    if (value !== 'on' && value !== 'off') {
+        if (errEl) errEl.textContent = label + ': เลือก ON หรือ OFF';
+        if (el) el.classList.add('invalid');
+        return { ok: false, value: 'on' };
+    }
+    if (errEl) errEl.textContent = '';
+    if (el) el.classList.remove('invalid');
+    return { ok: true, value: value };
+}
+
 function clearPumpValidation() {
     var ids = ['timer1-on', 'timer1-off', 'timer2-on', 'timer2-off'];
     for (var i = 0; i < ids.length; i++) {
@@ -322,6 +345,13 @@ function clearPumpValidation() {
         if (minEl) minEl.classList.remove('invalid');
         if (secEl) secEl.classList.remove('invalid');
     }
+    var startIds = ['timer1-start-phase', 'timer2-start-phase'];
+    for (var j = 0; j < startIds.length; j++) {
+        var startEl = pumpEl(startIds[j]);
+        var startErr = pumpEl(startIds[j] + '-error');
+        if (startErr) startErr.textContent = '';
+        if (startEl) startEl.classList.remove('invalid');
+    }
 }
 
 function validatePumpConfig() {
@@ -330,7 +360,10 @@ function validatePumpConfig() {
     var timer1Off = readDuration('timer1-off', 'Timer 1 ช่วงปิด');
     var timer2On = readDuration('timer2-on', 'Timer 2 ช่วงเปิด');
     var timer2Off = readDuration('timer2-off', 'Timer 2 ช่วงปิด');
-    if (!timer1On.ok || !timer1Off.ok || !timer2On.ok || !timer2Off.ok) {
+    var timer1Start = readStartPhase('timer1-start-phase', 'Timer 1 เริ่มรอบ');
+    var timer2Start = readStartPhase('timer2-start-phase', 'Timer 2 เริ่มรอบ');
+    if (!timer1On.ok || !timer1Off.ok || !timer2On.ok || !timer2Off.ok ||
+        !timer1Start.ok || !timer2Start.ok) {
         return null;
     }
     return {
@@ -338,6 +371,8 @@ function validatePumpConfig() {
         timer1_off_sec: timer1Off.value,
         timer2_on_sec: timer2On.value,
         timer2_off_sec: timer2Off.value,
+        timer1_start_phase: timer1Start.value,
+        timer2_start_phase: timer2Start.value,
         auto_start: !!(pumpEl('pump-auto-start') && pumpEl('pump-auto-start').checked),
         relay_polarity: pumpRelayPolarity
     };
@@ -446,22 +481,27 @@ function applyPumpStatus(status, authoritative) {
         updatePumpCountdownDeadline(status);
     }
 
-    setText('pump-running-label', status.running ? 'ระบบปั๊ม: กำลังทำงาน' : 'ระบบปั๊ม: หยุดอยู่');
+    setText('pump-running-label', renderPumpRunLabel(status));
     renderPumpCountdown();
     setText('pump-active-timer', renderPumpTimer(status.active_timer));
-    setText('pump-phase', renderPumpPhase(status.active_timer, status.phase));
+    setText('pump-phase', renderPumpPhase(status.active_timer, status.phase, status.running));
     setText('pump-float-state', renderFloatState(status.float_state));
-    setText('pump-relay-state', renderRelayState(status.relay_energized));
+    setText('pump-relay-state', renderActiveRelayState(status));
+    setText('pump-relay-1-state', renderRelayChannelState('relay1', status));
+    setText('pump-relay-2-state', renderRelayChannelState('relay2', status));
 
     var sync = pumpEl('pump-sync-state');
     if (sync) {
-        sync.className = status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good';
-        sync.textContent = status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงก์ล่าสุดจากอุปกรณ์';
+        sync.className = status.fault ? 'runtime-eyebrow error' :
+            (status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
+        sync.textContent = status.fault ? 'ระบบ relay fault: ปิด relay ทั้งหมดแล้ว' :
+            (status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงก์ล่าสุดจากอุปกรณ์');
     }
     if (!pumpDirty && status.settings_status) {
         setText('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
     }
-    setPumpAlert('pump-status-error', status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : '');
+    setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
+        (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
     updatePumpButtons();
 }
 
@@ -530,6 +570,7 @@ function pumpStatusKey(status) {
         status.running ? '1' : '0',
         status.initial_stabilizing ? '1' : '0',
         status.active_timer || '',
+        status.active_relay || '',
         status.phase || ''
     ].join('|');
 }
@@ -587,12 +628,21 @@ function predictPumpPhaseAdvance() {
     pumpLastStatus.phase = nextPhase;
     pumpLastStatus.countdown_sec = nextDuration;
     pumpLastStatus.relay_energized = nextPhase === 'on';
+    if (pumpLastStatus.active_relay === 'relay1') {
+        pumpLastStatus.relay1_energized = nextPhase === 'on';
+        pumpLastStatus.relay2_energized = false;
+    } else if (pumpLastStatus.active_relay === 'relay2') {
+        pumpLastStatus.relay1_energized = false;
+        pumpLastStatus.relay2_energized = nextPhase === 'on';
+    }
     pumpCountdownStatusKey = pumpStatusKey(pumpLastStatus);
     pumpCountdownDeadlineMs = Date.now() + (nextDuration * 1000);
     pumpDisplayedCountdownSec = nextDuration;
 
-    setText('pump-phase', renderPumpPhase(pumpLastStatus.active_timer, pumpLastStatus.phase));
-    setText('pump-relay-state', renderRelayState(pumpLastStatus.relay_energized));
+    setText('pump-phase', renderPumpPhase(pumpLastStatus.active_timer, pumpLastStatus.phase, pumpLastStatus.running));
+    setText('pump-relay-state', renderActiveRelayState(pumpLastStatus));
+    setText('pump-relay-1-state', renderRelayChannelState('relay1', pumpLastStatus));
+    setText('pump-relay-2-state', renderRelayChannelState('relay2', pumpLastStatus));
     return true;
 }
 
@@ -616,24 +666,56 @@ function renderPumpTimer(value) {
     return '--';
 }
 
-function renderPumpPhase(timer, phase) {
+function renderPumpRunLabel(status) {
+    if (!status) return 'ระบบปั๊ม: --';
+    if (status.running) return 'ระบบปั๊ม: กำลังทำงาน';
+    if (status.active_timer && status.active_timer !== 'none') {
+        return 'ระบบปั๊ม: หยุดอยู่ - พร้อมเริ่ม ' + renderPumpTimer(status.active_timer);
+    }
+    return 'ระบบปั๊ม: หยุดอยู่';
+}
+
+function renderPumpPhase(timer, phase, running) {
     if (!timer || timer === 'none' || !phase || phase === 'idle') return 'Idle';
     var timerLabel = renderPumpTimer(timer);
-    if (phase === 'on') return timerLabel + ' - ช่วงเปิด';
-    if (phase === 'off') return timerLabel + ' - ช่วงปิด';
+    var prefix = running ? '' : 'พร้อมเริ่ม ';
+    if (phase === 'on') return prefix + timerLabel + ' - ช่วงเปิด';
+    if (phase === 'off') return prefix + timerLabel + ' - ช่วงปิด';
     return timerLabel + ' - --';
 }
 
 function renderFloatState(value) {
-    if (value === 'off') return 'ลูกลอย: OFF (ใช้ Timer 1)';
-    if (value === 'on') return 'ลูกลอย: ON (ใช้ Timer 2)';
+    if (value === 'on') return 'ลูกลอย: ON -> Timer 1 / Relay 1';
+    if (value === 'off') return 'ลูกลอย: OFF -> Timer 2 / Relay 2';
     return 'ลูกลอย: ไม่ทราบสถานะ';
 }
 
-function renderRelayState(value) {
-    if (value === true) return 'รีเลย์: ON (จ่ายปั๊ม)';
-    if (value === false) return 'รีเลย์: OFF (ตัดปั๊ม)';
-    return 'รีเลย์: ไม่ทราบสถานะ';
+function renderRelayName(value) {
+    if (value === 'relay1') return 'Relay 1';
+    if (value === 'relay2') return 'Relay 2';
+    return 'Relay: none';
+}
+
+function relayEnergizedFor(channel, status) {
+    if (!status) return false;
+    var field = channel === 'relay1' ? status.relay1_energized : status.relay2_energized;
+    if (typeof field === 'boolean') return field;
+    if (status.active_relay === channel) return !!status.relay_energized;
+    return false;
+}
+
+function renderActiveRelayState(status) {
+    if (!status || !status.active_relay || status.active_relay === 'none') return 'รีเลย์: --';
+    var label = renderRelayName(status.active_relay);
+    if (!status.running) return label + ' พร้อมเริ่ม (OFF)';
+    return label + (status.relay_energized ? ' ON' : ' OFF');
+}
+
+function renderRelayChannelState(channel, status) {
+    var label = renderRelayName(channel);
+    var energized = relayEnergizedFor(channel, status);
+    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' พร้อมเริ่ม';
+    return label + ': ' + (energized ? 'ON' : 'OFF') + suffix;
 }
 
 function renderSettingsStatus(value, autoStart) {

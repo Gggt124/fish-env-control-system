@@ -680,7 +680,8 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
     color: var(--on-surface-variant);
 }
 
-.duration-field input {
+.duration-field input,
+.duration-field select {
     width: 100%; min-height: 44px;
     padding: 8px 10px;
     border-radius: var(--radius-md);
@@ -690,15 +691,25 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
     font-size: 18px;
 }
 
-.duration-field input:focus {
+.duration-field select {
+    font-size: 15px;
+}
+
+.duration-field input:focus,
+.duration-field select:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(0, 88, 188, 0.15);
 }
 
-.duration-field input.invalid {
+.duration-field input.invalid,
+.duration-field select.invalid {
     border-color: var(--error);
     box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.12);
+}
+
+.start-phase-field {
+    margin-top: var(--sp-xs);
 }
 
 .field-error {

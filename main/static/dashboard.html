@@ -86,9 +86,17 @@
                 <span class="summary-label">Float Switch</span>
                 <strong id="pump-float-state">ลูกลอย: --</strong>
             </div>
-            <div class="runtime-stat">
-                <span class="summary-label">Relay Output</span>
+            <div class="runtime-stat primary">
+                <span class="summary-label">Active Relay</span>
                 <strong id="pump-relay-state">รีเลย์: --</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Relay 1</span>
+                <strong id="pump-relay-1-state">Relay 1: --</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Relay 2</span>
+                <strong id="pump-relay-2-state">Relay 2: --</strong>
             </div>
         </div>
         <div class="pump-runtime-actions">
@@ -104,7 +112,7 @@
         <div class="section-heading-row">
             <div>
                 <h3>ตั้งค่า Timer</h3>
-                <p>ตั้งเวลาเปิด/ปิดของ Timer 1 และ Timer 2 แล้วบันทึกลงอุปกรณ์</p>
+                <p>Float ON -> Timer 1 / Relay 1, Float OFF -> Timer 2 / Relay 2</p>
             </div>
             <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
         </div>
@@ -112,7 +120,7 @@
         <form id="pump-config-form" novalidate>
             <div class="timer-grid">
                 <fieldset class="timer-card">
-                    <legend>Timer 1 - เมื่อลูกลอย OFF</legend>
+                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย ON</legend>
                     <div class="duration-row">
                         <div class="duration-field">
                             <label for="timer1-on-min">ช่วงเปิด นาที</label>
@@ -135,10 +143,18 @@
                         </div>
                     </div>
                     <div class="field-error" id="timer1-off-error"></div>
+                    <div class="duration-field start-phase-field">
+                        <label for="timer1-start-phase">เริ่มรอบด้วย</label>
+                        <select id="timer1-start-phase" name="timer1_start_phase">
+                            <option value="on">ON - เปิด Relay 1 ก่อน</option>
+                            <option value="off">OFF - หน่วงปิดก่อน</option>
+                        </select>
+                    </div>
+                    <div class="field-error" id="timer1-start-phase-error"></div>
                 </fieldset>
 
                 <fieldset class="timer-card">
-                    <legend>Timer 2 - เมื่อลูกลอย ON</legend>
+                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย OFF</legend>
                     <div class="duration-row">
                         <div class="duration-field">
                             <label for="timer2-on-min">ช่วงเปิด นาที</label>
@@ -161,6 +177,14 @@
                         </div>
                     </div>
                     <div class="field-error" id="timer2-off-error"></div>
+                    <div class="duration-field start-phase-field">
+                        <label for="timer2-start-phase">เริ่มรอบด้วย</label>
+                        <select id="timer2-start-phase" name="timer2_start_phase">
+                            <option value="on">ON - เปิด Relay 2 ก่อน</option>
+                            <option value="off">OFF - หน่วงปิดก่อน</option>
+                        </select>
+                    </div>
+                    <div class="field-error" id="timer2-start-phase-error"></div>
                 </fieldset>
             </div>
 

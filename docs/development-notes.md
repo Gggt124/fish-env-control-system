@@ -86,3 +86,18 @@
 - Don't drive Relay 2, DS18B20, or cooling relay from Phase 6 integration code.
 - Don't accept hardware or cooling mutation fields in `/api/pump/config`; Phase
   9 owns authenticated mutation APIs.
+
+---
+
+## Phase 7 Dual Relay Pump Runtime
+
+### DO
+- Use the v1.1 mapping everywhere: Float ON -> Timer 1 / Relay 1, Float OFF -> Timer 2 / Relay 2.
+- Treat `active_relay`, `relay1_energized`, and `relay2_energized` as the source of truth for manual relay validation; `relay_energized` remains a compatibility alias only.
+- Keep stopped-state preview separate from running behavior. The controller may report a ready `active_timer`, `active_relay`, `phase`, and `countdown_sec` while `running=false`, but both relay energized fields must stay false.
+- Save Timer 1 and Timer 2 start phase as `on` or `off` through `/api/pump/config`; OFF is a real initial off phase, not a UI label.
+- During hardware validation, confirm Relay 1 and Relay 2 never energize together and confirmed float transitions turn the old relay OFF before the new channel starts.
+
+### DON'T
+- Don't bring DS18B20 cooling runtime, cooling relay control, or hardware GPIO mutation APIs into Phase 7.
+- Don't display Float state as unknown merely because the pump is stopped; the runtime keeps reading/debouncing float while stopped when configuration is valid.
