@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dual Relay Cooling And Install UI
-status: ready_to_plan
-last_updated: 2026-05-23T18:32:05.601Z
-last_activity: 2026-05-23
+status: ready_to_execute
+last_updated: 2026-05-24T00:00:00.000Z
+last_activity: 2026-05-24
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 12
+  total_plans: 15
   completed_plans: 12
   percent: 80
-stopped_at: Phase 09 complete (3/3) — ready to discuss Phase 10
+stopped_at: Phase 10 planned (3 plans) — ready to execute
 ---
 
 # Project State
@@ -21,7 +21,7 @@ stopped_at: Phase 09 complete (3/3) — ready to discuss Phase 10
 See: `.planning/PROJECT.md` (updated 2026-05-22)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 10 — owner dashboard, hardware install ui, and validation
+**Current focus:** Phase 10 — owner dashboard, hardware install UI, and validation
 
 ## Workflow
 
@@ -44,13 +44,13 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 
 ## Current Phase
 
-### Phase 9: Authenticated Hardware And Cooling APIs
+### Phase 10: Owner Dashboard, Hardware Install UI, And Validation
 
-**Goal:** Expose the new pump, cooling, and hardware-map contracts through authenticated local APIs.
+**Goal:** Deliver the owner-facing operation surface and installer-friendly hardware flow, then validate the full v1.1 behavior.
 
-**Requirements:** UI-03, UI-04, UI-05, UI-06, UI-07
+**Requirements:** UI-01, UI-02
 
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 **Plans:** 3
 
@@ -72,7 +72,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 - v1.1 planning preserves v1.0 phase directories and continues phase numbering from Phase 6.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 
-Last activity: 2026-05-23
+Last activity: 2026-05-24
 
 ---
 *State initialized: 2026-05-18*
@@ -80,6 +80,6 @@ Last activity: 2026-05-23
 ## Current Position
 
 Phase: 10
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-23
+Plan: 10-01
+Status: Ready to execute
+Last activity: 2026-05-24

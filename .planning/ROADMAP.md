@@ -117,6 +117,20 @@ Plans:
 4. UI works without CDN or internet access in SoftAP mode.
 5. Build and manual hardware validation cover dual pump relays, DS18B20 fault handling, cooling relay behavior, reboot persistence, and Wi-Fi/setup regression.
 
+**Plans:** 3/3 plans complete
+
+Plans:
+
+**Wave 1**
+
+- [ ] 10-01: Owner dashboard cooling operation surface
+
+**Wave 2 (blocked on Wave 1 completion)**
+- [ ] 10-02: Hardware/Install page, safe GPIO pending map flow, and protected route
+
+**Wave 3 (blocked on Waves 1-2 completion)**
+- [ ] 10-03: v1.1 validation, docs, and manual hardware closeout
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -130,8 +144,8 @@ Plans:
 | 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete   | 2026-05-23 |
-| 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 0/0 | Pending | — |
+| 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Planned | — |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-05-24 after Phase 9 planning*
+*Last updated: 2026-05-24 after Phase 10 planning*
