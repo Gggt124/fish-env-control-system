@@ -90,13 +90,13 @@ Plans:
 4. Pump configuration APIs support two relay channels and independent timer start phases.
 5. Same-origin POST protection and existing session auth remain intact for new mutation routes.
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 
 **Wave 1**
 
-- [ ] 09-01: Hardware map active/pending API and safe GPIO enum guardrails
+- [x] 09-01: Hardware map active/pending API and safe GPIO enum guardrails
 
 **Wave 2 (blocked on Wave 1 completion)**
 - [ ] 09-02: Cooling config and runtime mode mutation APIs
@@ -129,7 +129,7 @@ Plans:
 | 6. Hardware Contract And Persistent Map Foundation | v1.1 | 3/3 | Complete | 2026-05-22 |
 | 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
-| 9. Authenticated Hardware And Cooling APIs | v1.1 | 0/3 | Planned | — |
+| 9. Authenticated Hardware And Cooling APIs | v1.1 | 1/3 | In Progress|  |
 | 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 0/0 | Pending | — |
 
 ---

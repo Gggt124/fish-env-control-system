@@ -37,11 +37,11 @@
 
 - [ ] **UI-01**: Owner dashboard remains focused on daily operation and shows pump enabled state, float state, active timer/relay, countdown, temperature, cooling relay state, threshold, auto-enable setting, and sensor fault state.
 - [ ] **UI-02**: Owner-accessible Hardware/Install page shows wiring-oriented visualization, GPIO summary table, and a secondary technical pinout view.
-- [ ] **UI-03**: User can change GPIO mapping only through safe dropdown enum options, not freeform numeric input.
-- [ ] **UI-04**: User can save GPIO changes as pending persistent values that do not become active until reboot.
-- [ ] **UI-05**: User sees active GPIO values, pending GPIO values, and reboot-required status when pending values differ from active values.
-- [ ] **UI-06**: User must confirm a reboot/wiring safety checkbox before saving GPIO map changes.
-- [ ] **UI-07**: Authenticated APIs expose pump channel, cooling, and hardware map state with active vs pending GPIO fields and reboot-required status.
+- [x] **UI-03**: User can change GPIO mapping only through safe dropdown enum options, not freeform numeric input.
+- [x] **UI-04**: User can save GPIO changes as pending persistent values that do not become active until reboot.
+- [x] **UI-05**: User sees active GPIO values, pending GPIO values, and reboot-required status when pending values differ from active values.
+- [x] **UI-06**: User must confirm a reboot/wiring safety checkbox before saving GPIO map changes.
+- [x] **UI-07**: Authenticated APIs expose pump channel, cooling, and hardware map state with active vs pending GPIO fields and reboot-required status.
 
 ## Future Requirements
 
@@ -90,11 +90,11 @@
 | COOL-07 | Phase 8 | Complete |
 | UI-01 | Phase 10 | Pending |
 | UI-02 | Phase 10 | Pending |
-| UI-03 | Phase 9 | Pending |
-| UI-04 | Phase 9 | Pending |
-| UI-05 | Phase 9 | Pending |
-| UI-06 | Phase 9 | Pending |
-| UI-07 | Phase 9 | Pending |
+| UI-03 | Phase 9 | Complete |
+| UI-04 | Phase 9 | Complete |
+| UI-05 | Phase 9 | Complete |
+| UI-06 | Phase 9 | Complete |
+| UI-07 | Phase 9 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 25 total
