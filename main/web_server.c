@@ -670,6 +670,78 @@ static const char *api_cooling_mode_name(cooling_control_mode_t mode)
     }
 }
 
+static const char *api_cooling_settings_status_name(nvs_store_cooling_settings_load_status_t status)
+{
+    switch (status) {
+    case NVS_STORE_COOLING_SETTINGS_LOADED:
+        return "loaded";
+    case NVS_STORE_COOLING_SETTINGS_DEFAULTS_MISSING:
+        return "defaults_missing";
+    case NVS_STORE_COOLING_SETTINGS_DEFAULTS_INVALID:
+        return "defaults_invalid";
+    case NVS_STORE_COOLING_SETTINGS_DEFAULTS_ERROR:
+    default:
+        return "defaults_error";
+    }
+}
+
+static bool api_cooling_parse_mode(const cJSON *item, hardware_cooling_mode_t *mode)
+{
+    if (!item || !cJSON_IsString(item) || !mode) {
+        return false;
+    }
+    if (strcmp(item->valuestring, "auto") == 0) {
+        *mode = HARDWARE_COOLING_MODE_AUTO;
+        return true;
+    }
+    if (strcmp(item->valuestring, "force_off") == 0) {
+        *mode = HARDWARE_COOLING_MODE_FORCE_OFF;
+        return true;
+    }
+    if (strcmp(item->valuestring, "test_on") == 0) {
+        *mode = HARDWARE_COOLING_MODE_TEST_ON;
+        return true;
+    }
+    return false;
+}
+
+static bool api_cooling_parse_polarity(const cJSON *item, hardware_relay_polarity_t *polarity)
+{
+    if (!item || !cJSON_IsString(item) || !polarity) {
+        return false;
+    }
+    if (strcmp(item->valuestring, "active_low") == 0) {
+        *polarity = HARDWARE_RELAY_ACTIVE_LOW;
+        return true;
+    }
+    if (strcmp(item->valuestring, "active_high") == 0) {
+        *polarity = HARDWARE_RELAY_ACTIVE_HIGH;
+        return true;
+    }
+    return false;
+}
+
+static cooling_control_mode_t api_cooling_mode_from_hardware(hardware_cooling_mode_t mode)
+{
+    switch (mode) {
+    case HARDWARE_COOLING_MODE_AUTO:
+        return COOLING_CONTROL_MODE_AUTO;
+    case HARDWARE_COOLING_MODE_TEST_ON:
+        return COOLING_CONTROL_MODE_TEST_ON;
+    case HARDWARE_COOLING_MODE_FORCE_OFF:
+    default:
+        return COOLING_CONTROL_MODE_FORCE_OFF;
+    }
+}
+
+static cooling_control_relay_polarity_t api_cooling_polarity_from_hardware(
+    hardware_relay_polarity_t polarity)
+{
+    return polarity == HARDWARE_RELAY_ACTIVE_LOW
+        ? COOLING_CONTROL_RELAY_ACTIVE_LOW
+        : COOLING_CONTROL_RELAY_ACTIVE_HIGH;
+}
+
 static const char *api_cooling_sensor_state_name(cooling_control_sensor_state_t state)
 {
     switch (state) {
@@ -809,6 +881,147 @@ static bool api_cooling_add_status_fields(cJSON *root)
     cJSON_AddNumberToObject(root, "ds18b20_gpio", status.ds18b20_gpio);
     cJSON_AddNumberToObject(root, "cooling_relay_gpio", status.cooling_relay_gpio);
     return true;
+}
+
+static bool api_cooling_add_config_fields(cJSON *root,
+                                          const nvs_store_cooling_settings_t *settings,
+                                          nvs_store_cooling_settings_load_status_t status)
+{
+    if (!root || !settings) {
+        return false;
+    }
+
+    cJSON_AddStringToObject(root, "settings_status", api_cooling_settings_status_name(status));
+    cJSON_AddNumberToObject(root, "threshold_c", (double)settings->threshold_c_x10 / 10.0);
+    cJSON_AddNumberToObject(root, "threshold_c_x10", settings->threshold_c_x10);
+    cJSON_AddNumberToObject(root, "hysteresis_c", (double)settings->hysteresis_c_x10 / 10.0);
+    cJSON_AddNumberToObject(root, "hysteresis_c_x10", settings->hysteresis_c_x10);
+    cJSON_AddBoolToObject(root, "auto_enable", settings->auto_enable);
+    cJSON_AddStringToObject(root, "mode", hardware_map_cooling_mode_name(settings->mode));
+    cJSON_AddNumberToObject(root, "test_timeout_sec", settings->test_timeout_sec);
+    cJSON_AddNumberToObject(root, "compressor_min_off_sec", settings->compressor_min_off_sec);
+    cJSON_AddStringToObject(root, "cooling_relay_polarity",
+                            hardware_map_polarity_name(settings->relay_polarity));
+    return true;
+}
+
+static bool api_cooling_add_limits(cJSON *root)
+{
+    if (!root) {
+        return false;
+    }
+
+    cJSON *limits = cJSON_AddObjectToObject(root, "limits");
+    if (!limits) {
+        return false;
+    }
+    cJSON_AddNumberToObject(limits, "threshold_c_x10_min", -550);
+    cJSON_AddNumberToObject(limits, "threshold_c_x10_max", 1250);
+    cJSON_AddNumberToObject(limits, "hysteresis_c_x10_min", 1);
+    cJSON_AddNumberToObject(limits, "hysteresis_c_x10_max", 500);
+    cJSON_AddNumberToObject(limits, "test_timeout_sec_min", 1);
+    cJSON_AddNumberToObject(limits, "test_timeout_sec_max", 3600);
+    cJSON_AddNumberToObject(limits, "compressor_min_off_sec_min", 0);
+    cJSON_AddNumberToObject(limits, "compressor_min_off_sec_max", 86400);
+
+    cJSON *modes = cJSON_AddArrayToObject(root, "modes");
+    cJSON *polarities = cJSON_AddArrayToObject(root, "relay_polarities");
+    if (!modes || !polarities) {
+        return false;
+    }
+    cJSON_AddItemToArray(modes, cJSON_CreateString("auto"));
+    cJSON_AddItemToArray(modes, cJSON_CreateString("force_off"));
+    cJSON_AddItemToArray(modes, cJSON_CreateString("test_on"));
+    cJSON_AddItemToArray(polarities, cJSON_CreateString("active_low"));
+    cJSON_AddItemToArray(polarities, cJSON_CreateString("active_high"));
+    return true;
+}
+
+static void api_cooling_settings_to_runtime_config(const nvs_store_cooling_settings_t *settings,
+                                                   cooling_control_config_t *config)
+{
+    if (!settings || !config) {
+        return;
+    }
+
+    *config = cooling_control_default_config();
+    hardware_map_t active_map = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t map_status = nvs_store_load_hardware_map(&active_map);
+    if (map_status == NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR) {
+        return;
+    }
+
+    config->ds18b20_gpio = active_map.ds18b20_data_gpio;
+    config->cooling_relay_gpio = active_map.cooling_relay_gpio;
+    config->relay_polarity = api_cooling_polarity_from_hardware(settings->relay_polarity);
+    config->threshold_c_x10 = settings->threshold_c_x10;
+    config->hysteresis_c_x10 = settings->hysteresis_c_x10;
+    config->auto_enable = settings->auto_enable;
+    config->mode = api_cooling_mode_from_hardware(settings->mode);
+    config->test_timeout_sec = settings->test_timeout_sec;
+    config->compressor_min_off_sec = settings->compressor_min_off_sec;
+}
+
+static esp_err_t api_cooling_send_config(httpd_req_t *req,
+                                         const nvs_store_cooling_settings_t *settings,
+                                         nvs_store_cooling_settings_load_status_t status,
+                                         bool include_status)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    api_cooling_add_config_fields(root, settings, status);
+    api_cooling_add_limits(root);
+    if (include_status) {
+        cJSON *status_obj = cJSON_AddObjectToObject(root, "status");
+        if (!status_obj || !api_cooling_add_status_fields(status_obj)) {
+            cJSON_Delete(root);
+            return send_api_error(req, "status_unavailable", "Cooling status is unavailable",
+                                  "409 Conflict");
+        }
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
+static esp_err_t api_cooling_send_apply_error(httpd_req_t *req, const char *code,
+                                              const char *message,
+                                              const nvs_store_cooling_settings_t *settings)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", false);
+    cJSON_AddStringToObject(root, "error", code);
+    cJSON_AddStringToObject(root, "message", message);
+    api_cooling_add_config_fields(root, settings, NVS_STORE_COOLING_SETTINGS_LOADED);
+    cJSON *status_obj = cJSON_AddObjectToObject(root, "status");
+    if (status_obj) {
+        api_cooling_add_status_fields(status_obj);
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "500 Internal Server Error");
+    free(json_str);
+    return result;
 }
 
 static bool api_pump_add_status_object(cJSON *root)
@@ -953,6 +1166,143 @@ static bool api_hardware_parse_map_payload(const cJSON *root, hardware_map_t *ma
     if (!hardware_map_validate(map)) {
         *error_code = "invalid_hardware_map";
         *error_message = "map";
+        return false;
+    }
+
+    return true;
+}
+
+static bool api_cooling_required_i32_range(const cJSON *root, const char *name,
+                                           int32_t min_value, int32_t max_value,
+                                           int32_t *out,
+                                           const char **error_code,
+                                           const char **error_message)
+{
+    const cJSON *item = cJSON_GetObjectItem(root, name);
+    if (!item) {
+        *error_code = "missing_field";
+        *error_message = name;
+        return false;
+    }
+    if (!cJSON_IsNumber(item)) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+
+    int32_t value = item->valueint;
+    if ((double)value != item->valuedouble) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+    if (value < min_value || value > max_value) {
+        *error_code = "value_out_of_range";
+        *error_message = name;
+        return false;
+    }
+
+    *out = value;
+    return true;
+}
+
+static bool api_cooling_required_u32_range(const cJSON *root, const char *name,
+                                           uint32_t min_value, uint32_t max_value,
+                                           uint32_t *out,
+                                           const char **error_code,
+                                           const char **error_message)
+{
+    const cJSON *item = cJSON_GetObjectItem(root, name);
+    if (!item) {
+        *error_code = "missing_field";
+        *error_message = name;
+        return false;
+    }
+    if (!cJSON_IsNumber(item) || item->valuedouble < 0.0) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+
+    uint32_t value = (uint32_t)item->valuedouble;
+    if ((double)value != item->valuedouble) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+    if (value < min_value || value > max_value) {
+        *error_code = "value_out_of_range";
+        *error_message = name;
+        return false;
+    }
+
+    *out = value;
+    return true;
+}
+
+static bool api_cooling_required_bool(const cJSON *root, const char *name, bool *out,
+                                      const char **error_code, const char **error_message)
+{
+    const cJSON *item = cJSON_GetObjectItem(root, name);
+    if (!item) {
+        *error_code = "missing_field";
+        *error_message = name;
+        return false;
+    }
+    if (!cJSON_IsBool(item)) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+
+    *out = cJSON_IsTrue(item);
+    return true;
+}
+
+static bool api_cooling_parse_config_payload(const cJSON *root,
+                                             nvs_store_cooling_settings_t *settings,
+                                             const char **error_code,
+                                             const char **error_message)
+{
+    if (!root || !settings) {
+        *error_code = "invalid_json";
+        *error_message = "Expected a JSON object";
+        return false;
+    }
+
+    if (!api_cooling_required_i32_range(root, "threshold_c_x10", -550, 1250,
+                                        &settings->threshold_c_x10,
+                                        error_code, error_message) ||
+        !api_cooling_required_i32_range(root, "hysteresis_c_x10", 1, 500,
+                                        &settings->hysteresis_c_x10,
+                                        error_code, error_message) ||
+        !api_cooling_required_bool(root, "auto_enable", &settings->auto_enable,
+                                   error_code, error_message) ||
+        !api_cooling_required_u32_range(root, "test_timeout_sec", 1, 3600,
+                                        &settings->test_timeout_sec,
+                                        error_code, error_message) ||
+        !api_cooling_required_u32_range(root, "compressor_min_off_sec", 0, 86400,
+                                        &settings->compressor_min_off_sec,
+                                        error_code, error_message)) {
+        return false;
+    }
+
+    const cJSON *mode = cJSON_GetObjectItem(root, "mode");
+    if (!api_cooling_parse_mode(mode, &settings->mode)) {
+        *error_code = mode ? "invalid_cooling_mode" : "missing_field";
+        *error_message = "mode";
+        return false;
+    }
+    if (settings->mode == HARDWARE_COOLING_MODE_TEST_ON) {
+        *error_code = "test_mode_not_persistent";
+        *error_message = "Use /api/cooling/mode for runtime Test ON";
+        return false;
+    }
+
+    const cJSON *polarity = cJSON_GetObjectItem(root, "cooling_relay_polarity");
+    if (!api_cooling_parse_polarity(polarity, &settings->relay_polarity)) {
+        *error_code = polarity ? "invalid_relay_polarity" : "missing_field";
+        *error_message = "cooling_relay_polarity";
         return false;
     }
 
@@ -1690,6 +2040,146 @@ static esp_err_t handle_api_cooling_status(httpd_req_t *req)
     return result;
 }
 
+/* GET /api/cooling/config - protected, return persisted cooling config plus status */
+static esp_err_t handle_api_cooling_config_get(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    nvs_store_cooling_settings_t settings;
+    nvs_store_cooling_settings_load_status_t status = nvs_store_load_cooling_settings(&settings);
+    if (status == NVS_STORE_COOLING_SETTINGS_DEFAULTS_ERROR ||
+        status == NVS_STORE_COOLING_SETTINGS_DEFAULTS_INVALID) {
+        return send_api_error(req, "settings_load_failed",
+                              "Could not load cooling settings",
+                              "500 Internal Server Error");
+    }
+
+    return api_cooling_send_config(req, &settings, status, true);
+}
+
+/* POST /api/cooling/config - protected, save and apply cooling config */
+static esp_err_t handle_api_cooling_config_post(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req, false)) {
+        return send_api_error(req, "forbidden", "Cross-origin cooling config save blocked",
+                              "403 Forbidden");
+    }
+
+    char body[512] = {0};
+    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
+    if (ret <= 0) {
+        return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
+    }
+    body[ret] = '\0';
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root || !cJSON_IsObject(root)) {
+        if (root) {
+            cJSON_Delete(root);
+        }
+        return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
+    }
+
+    nvs_store_cooling_settings_t settings;
+    nvs_store_cooling_settings_defaults(&settings);
+    nvs_store_load_cooling_settings(&settings);
+    const char *error_code = NULL;
+    const char *error_message = NULL;
+    bool valid = api_cooling_parse_config_payload(root, &settings, &error_code, &error_message);
+    cJSON_Delete(root);
+    if (!valid) {
+        return send_api_error(req, error_code, error_message, "400 Bad Request");
+    }
+
+    if (!nvs_store_save_cooling_settings(&settings)) {
+        return send_api_error(req, "settings_save_failed", "Could not save cooling settings",
+                              "500 Internal Server Error");
+    }
+
+    cooling_control_config_t config;
+    api_cooling_settings_to_runtime_config(&settings, &config);
+    if (!cooling_control_init(&config)) {
+        cooling_control_stop();
+        return api_cooling_send_apply_error(req, "runtime_apply_failed",
+                                            "Saved settings but could not apply cooling runtime config",
+                                            &settings);
+    }
+
+    return api_cooling_send_config(req, &settings, NVS_STORE_COOLING_SETTINGS_LOADED, true);
+}
+
+/* POST /api/cooling/mode - protected, change runtime cooling mode */
+static esp_err_t handle_api_cooling_mode_post(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req, false)) {
+        return send_api_error(req, "forbidden", "Cross-origin cooling mode change blocked",
+                              "403 Forbidden");
+    }
+
+    char body[128] = {0};
+    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
+    if (ret <= 0) {
+        return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
+    }
+    body[ret] = '\0';
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root || !cJSON_IsObject(root)) {
+        if (root) {
+            cJSON_Delete(root);
+        }
+        return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
+    }
+
+    hardware_cooling_mode_t mode = HARDWARE_COOLING_MODE_FORCE_OFF;
+    const cJSON *mode_item = cJSON_GetObjectItem(root, "mode");
+    bool mode_present = mode_item != NULL;
+    bool valid = api_cooling_parse_mode(mode_item, &mode);
+    cJSON_Delete(root);
+    if (!valid) {
+        return send_api_error(req, mode_present ? "invalid_cooling_mode" : "missing_field",
+                              "mode", "400 Bad Request");
+    }
+
+    bool mode_ok = false;
+    if (mode == HARDWARE_COOLING_MODE_TEST_ON) {
+        mode_ok = cooling_control_start_test();
+    } else {
+        mode_ok = cooling_control_set_mode(api_cooling_mode_from_hardware(mode));
+        if (mode_ok) {
+            nvs_store_cooling_settings_t settings;
+            nvs_store_cooling_settings_defaults(&settings);
+            nvs_store_load_cooling_settings(&settings);
+            settings.mode = mode;
+            if (!nvs_store_save_cooling_settings(&settings)) {
+                return send_api_error(req, "settings_save_failed",
+                                      "Cooling mode changed but could not be saved",
+                                      "500 Internal Server Error");
+            }
+        }
+    }
+    if (!mode_ok) {
+        return send_api_error(req, "mode_change_failed",
+                              "Cooling mode could not be changed",
+                              "409 Conflict");
+    }
+
+    nvs_store_cooling_settings_t settings;
+    nvs_store_cooling_settings_defaults(&settings);
+    nvs_store_cooling_settings_load_status_t status = nvs_store_load_cooling_settings(&settings);
+    return api_cooling_send_config(req, &settings, status, true);
+}
+
 /* POST /api/pump/start - protected, idempotently start pump control */
 static esp_err_t handle_api_pump_start(httpd_req_t *req)
 {
@@ -1921,6 +2411,9 @@ bool web_server_start(void)
         { .uri = "/api/pump/config", .method = HTTP_POST, .handler = handle_api_pump_config_post, .user_ctx = NULL },
         { .uri = "/api/pump/status", .method = HTTP_GET,  .handler = handle_api_pump_status, .user_ctx = NULL },
         { .uri = "/api/cooling/status", .method = HTTP_GET, .handler = handle_api_cooling_status, .user_ctx = NULL },
+        { .uri = "/api/cooling/config", .method = HTTP_GET, .handler = handle_api_cooling_config_get, .user_ctx = NULL },
+        { .uri = "/api/cooling/config", .method = HTTP_POST, .handler = handle_api_cooling_config_post, .user_ctx = NULL },
+        { .uri = "/api/cooling/mode", .method = HTTP_POST, .handler = handle_api_cooling_mode_post, .user_ctx = NULL },
         { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start,  .user_ctx = NULL },
         { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop,   .user_ctx = NULL },
     };
