@@ -51,3 +51,13 @@ Repos and frameworks studied for best-practice adaptation into this project.
   - `cJSON_CreateObject()`, `cJSON_AddStringToObject()`, `cJSON_AddNumberToObject()`
   - `cJSON_Parse()`, `cJSON_Print()`, `cJSON_PrintUnformatted()`, `cJSON_Delete()`
   - Eliminates manual JSON string construction bugs (SSID escaping, etc.)
+
+## ESP-IDF Managed Components
+
+- **espressif/onewire_bus** — https://components.espressif.com/components/espressif/onewire_bus
+  - ESP-IDF-native Dallas 1-Wire bus driver with RMT/UART backends, device enumeration, byte/bit operations, and CRC8 support.
+  - Adopted for Phase 8 planning as the 1-Wire bus layer for DS18B20 instead of hand-rolled timing or Arduino libraries.
+
+- **espressif/ds18b20** — https://components.espressif.com/components/espressif/ds18b20/
+  - ESP-IDF-native DS18B20 sensor driver built on `onewire_bus`; supports device enumeration, temperature conversion trigger, and temperature read APIs.
+  - Adopted for Phase 8 planning as the DS18B20 device driver; invalid/uninitialized readings should feed the project's safe-off sensor fault behavior.
