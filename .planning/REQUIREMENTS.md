@@ -25,13 +25,13 @@
 
 ### Cooling Control
 
-- [ ] **COOL-01**: User can enable a DS18B20-based cooling channel that controls a dedicated cooling relay separate from pump relays.
-- [ ] **COOL-02**: User can configure cooling threshold and hysteresis with defaults of 30 C threshold and 1 C hysteresis.
-- [ ] **COOL-03**: Firmware turns the cooling relay ON at or above the threshold and OFF after temperature falls below threshold minus hysteresis.
-- [ ] **COOL-04**: If the DS18B20 is missing, disconnected, or unreadable, firmware forces the cooling relay OFF and exposes sensor fault status.
-- [ ] **COOL-05**: User can choose whether cooling auto-enables on boot, defaulting auto-enable to OFF.
-- [ ] **COOL-06**: User can use cooling modes `Auto`, `Force OFF`, and `Test ON`, where `Test ON` defaults to 10 seconds, does not persist across reboot, and returns to the previous mode after timeout.
-- [ ] **COOL-07**: Firmware enforces compressor-protection minimum off-time for cooling relay operation by default, including override/test behavior.
+- [x] **COOL-01**: User can enable a DS18B20-based cooling channel that controls a dedicated cooling relay separate from pump relays.
+- [x] **COOL-02**: User can configure cooling threshold and hysteresis with defaults of 30 C threshold and 1 C hysteresis.
+- [x] **COOL-03**: Firmware turns the cooling relay ON at or above the threshold and OFF after temperature falls below threshold minus hysteresis.
+- [x] **COOL-04**: If the DS18B20 is missing, disconnected, or unreadable, firmware forces the cooling relay OFF and exposes sensor fault status.
+- [x] **COOL-05**: User can choose whether cooling auto-enables on boot, defaulting auto-enable to OFF.
+- [x] **COOL-06**: User can use cooling modes `Auto`, `Force OFF`, and `Test ON`, where `Test ON` defaults to 10 seconds, does not persist across reboot, and returns to the previous mode after timeout.
+- [x] **COOL-07**: Firmware enforces compressor-protection minimum off-time for cooling relay operation by default, including override/test behavior.
 
 ### Web UI And API
 
@@ -81,13 +81,13 @@
 | PUMP-04 | Phase 7 | Complete |
 | PUMP-05 | Phase 7 | Complete |
 | PUMP-06 | Phase 7 | Complete |
-| COOL-01 | Phase 8 | Pending |
-| COOL-02 | Phase 8 | Pending |
-| COOL-03 | Phase 8 | Pending |
-| COOL-04 | Phase 8 | Pending |
-| COOL-05 | Phase 8 | Pending |
-| COOL-06 | Phase 8 | Pending |
-| COOL-07 | Phase 8 | Pending |
+| COOL-01 | Phase 8 | Complete |
+| COOL-02 | Phase 8 | Complete |
+| COOL-03 | Phase 8 | Complete |
+| COOL-04 | Phase 8 | Complete |
+| COOL-05 | Phase 8 | Complete |
+| COOL-06 | Phase 8 | Complete |
+| COOL-07 | Phase 8 | Complete |
 | UI-01 | Phase 10 | Pending |
 | UI-02 | Phase 10 | Pending |
 | UI-03 | Phase 9 | Pending |
