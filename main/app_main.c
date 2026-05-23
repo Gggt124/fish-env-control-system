@@ -62,6 +62,18 @@ static const char *cooling_settings_load_status_name(nvs_store_cooling_settings_
     }
 }
 
+static pump_control_relay_polarity_t pump_relay_polarity_from_bool(bool active_low)
+{
+    return active_low ? PUMP_CONTROL_RELAY_ACTIVE_LOW : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
+}
+
+static pump_control_start_phase_t pump_start_phase_from_hardware(hardware_timer_start_phase_t phase)
+{
+    return phase == HARDWARE_TIMER_START_PHASE_OFF
+        ? PUMP_CONTROL_START_PHASE_OFF
+        : PUMP_CONTROL_START_PHASE_ON;
+}
+
 static void apply_pump_settings_to_config(pump_control_config_t *config,
                                           const nvs_store_pump_settings_t *settings,
                                           const hardware_map_t *hardware_map)
@@ -72,13 +84,17 @@ static void apply_pump_settings_to_config(pump_control_config_t *config,
 
     config->float_gpio = hardware_map->float_input_gpio;
     config->relay_gpio = hardware_map->pump_relay1_gpio;
+    config->relay1_gpio = hardware_map->pump_relay1_gpio;
+    config->relay2_gpio = hardware_map->pump_relay2_gpio;
     config->timer1.on_sec = settings->timer1_on_sec;
     config->timer1.off_sec = settings->timer1_off_sec;
     config->timer2.on_sec = settings->timer2_on_sec;
     config->timer2.off_sec = settings->timer2_off_sec;
-    config->relay_polarity = settings->relay1_active_low
-        ? PUMP_CONTROL_RELAY_ACTIVE_LOW
-        : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
+    config->relay_polarity = pump_relay_polarity_from_bool(settings->relay1_active_low);
+    config->relay1_polarity = pump_relay_polarity_from_bool(settings->relay1_active_low);
+    config->relay2_polarity = pump_relay_polarity_from_bool(settings->relay2_active_low);
+    config->timer1_start_phase = pump_start_phase_from_hardware(settings->timer1_start_phase);
+    config->timer2_start_phase = pump_start_phase_from_hardware(settings->timer2_start_phase);
 }
 
 void app_main(void)
@@ -144,7 +160,7 @@ void app_main(void)
         ESP_LOGW(TAG, "Pending hardware map status invalid; reboot-required state unavailable");
     }
     ESP_LOGI(TAG,
-             "Cooling settings (%s): mode=%s, threshold_x10=%ld, hysteresis_x10=%ld, auto_enable=%s, min_off=%lu sec (runtime inactive in Phase 6)",
+             "Cooling settings (%s): mode=%s, threshold_x10=%ld, hysteresis_x10=%ld, auto_enable=%s, min_off=%lu sec (runtime inactive in Phase 7)",
              cooling_settings_load_status_name(cooling_settings_status),
              hardware_map_cooling_mode_name(cooling_settings.mode),
              (long)cooling_settings.threshold_c_x10,
@@ -153,8 +169,8 @@ void app_main(void)
              (unsigned long)cooling_settings.compressor_min_off_sec);
 
     if (pump_control_init(&pump_config)) {
-        ESP_LOGI(TAG, "Pump control initialized: relay1 GPIO=%d, float GPIO=%d, relay2/cooling unused, auto_start=%s",
-                 pump_config.relay_gpio, pump_config.float_gpio,
+        ESP_LOGI(TAG, "Pump control initialized: float GPIO=%d, relay1 GPIO=%d, relay2 GPIO=%d, auto_start=%s",
+                 pump_config.float_gpio, pump_config.relay1_gpio, pump_config.relay2_gpio,
                  allow_auto_start ? "enabled" : "disabled");
         if (allow_auto_start) {
             if (pump_control_start()) {
@@ -164,7 +180,7 @@ void app_main(void)
                 ESP_LOGE(TAG, "Pump control auto-start failed; continuing with Wi-Fi/web setup");
             }
         } else {
-            ESP_LOGI(TAG, "Pump control initialized stopped with relay inactive");
+            ESP_LOGI(TAG, "Pump control initialized stopped with both pump relays inactive");
         }
     } else {
         ESP_LOGE(TAG, "Pump control init failed; continuing with Wi-Fi/web setup");

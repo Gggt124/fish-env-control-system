@@ -323,6 +323,34 @@ static bool api_pump_parse_relay_polarity(const cJSON *item, bool *relay_active_
     return false;
 }
 
+static pump_control_relay_polarity_t api_pump_relay_polarity_from_bool(bool active_low)
+{
+    return active_low ? PUMP_CONTROL_RELAY_ACTIVE_LOW : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
+}
+
+static pump_control_start_phase_t api_pump_start_phase_from_hardware(hardware_timer_start_phase_t phase)
+{
+    return phase == HARDWARE_TIMER_START_PHASE_OFF
+        ? PUMP_CONTROL_START_PHASE_OFF
+        : PUMP_CONTROL_START_PHASE_ON;
+}
+
+static bool api_pump_parse_start_phase(const cJSON *item, hardware_timer_start_phase_t *phase)
+{
+    if (!item || !cJSON_IsString(item) || !phase) {
+        return false;
+    }
+    if (strcmp(item->valuestring, "on") == 0) {
+        *phase = HARDWARE_TIMER_START_PHASE_ON;
+        return true;
+    }
+    if (strcmp(item->valuestring, "off") == 0) {
+        *phase = HARDWARE_TIMER_START_PHASE_OFF;
+        return true;
+    }
+    return false;
+}
+
 static bool api_pump_load_active_hardware_map(hardware_map_t *map,
                                               nvs_store_hardware_map_load_status_t *status)
 {
@@ -347,13 +375,19 @@ static void api_pump_settings_to_runtime_config(const nvs_store_pump_settings_t 
     api_pump_load_active_hardware_map(&active_map, &map_status);
     config->float_gpio = active_map.float_input_gpio;
     config->relay_gpio = active_map.pump_relay1_gpio;
+    config->relay1_gpio = active_map.pump_relay1_gpio;
+    config->relay2_gpio = active_map.pump_relay2_gpio;
     config->timer1.on_sec = settings->timer1_on_sec;
     config->timer1.off_sec = settings->timer1_off_sec;
     config->timer2.on_sec = settings->timer2_on_sec;
     config->timer2.off_sec = settings->timer2_off_sec;
-    config->relay_polarity = settings->relay1_active_low
-        ? PUMP_CONTROL_RELAY_ACTIVE_LOW
-        : PUMP_CONTROL_RELAY_ACTIVE_HIGH;
+    config->relay_polarity = api_pump_relay_polarity_from_bool(settings->relay1_active_low);
+    config->relay1_polarity = api_pump_relay_polarity_from_bool(settings->relay1_active_low);
+    config->relay2_polarity = api_pump_relay_polarity_from_bool(settings->relay2_active_low);
+    config->timer1_start_phase =
+        api_pump_start_phase_from_hardware(settings->timer1_start_phase);
+    config->timer2_start_phase =
+        api_pump_start_phase_from_hardware(settings->timer2_start_phase);
 }
 
 static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_settings_t *settings,
@@ -430,6 +464,19 @@ static const char *api_pump_active_timer_name(pump_control_active_timer_t timer)
     }
 }
 
+static const char *api_pump_active_relay_name(pump_control_active_relay_t relay)
+{
+    switch (relay) {
+    case PUMP_CONTROL_RELAY_1:
+        return "relay1";
+    case PUMP_CONTROL_RELAY_2:
+        return "relay2";
+    case PUMP_CONTROL_RELAY_NONE:
+    default:
+        return "none";
+    }
+}
+
 static const char *api_pump_timer_phase_name(pump_control_timer_phase_t phase)
 {
     switch (phase) {
@@ -469,13 +516,18 @@ static bool api_pump_add_status_fields(cJSON *root)
     cJSON_AddBoolToObject(root, "initialized", status.initialized);
     cJSON_AddBoolToObject(root, "config_valid", status.config_valid);
     cJSON_AddBoolToObject(root, "initial_stabilizing", status.initial_stabilizing);
+    cJSON_AddBoolToObject(root, "fault", status.fault);
     cJSON_AddStringToObject(root, "float_state", api_pump_float_state_name(status.float_state));
     cJSON_AddStringToObject(root, "active_timer", api_pump_active_timer_name(status.active_timer));
+    cJSON_AddStringToObject(root, "active_relay", api_pump_active_relay_name(status.active_relay));
     cJSON_AddStringToObject(root, "phase", api_pump_timer_phase_name(status.phase));
     cJSON_AddNumberToObject(root, "countdown_sec", status.countdown_sec);
     cJSON_AddBoolToObject(root, "relay_energized", status.relay_energized);
+    cJSON_AddBoolToObject(root, "relay1_energized", status.relay1_energized);
+    cJSON_AddBoolToObject(root, "relay2_energized", status.relay2_energized);
     cJSON_AddNumberToObject(root, "float_gpio", status.float_gpio);
-    cJSON_AddNumberToObject(root, "relay_gpio", status.relay_gpio);
+    cJSON_AddNumberToObject(root, "relay_gpio", active_map.pump_relay1_gpio);
+    cJSON_AddNumberToObject(root, "active_relay_gpio", status.relay_gpio);
     cJSON_AddNumberToObject(root, "pump_relay1_gpio", active_map.pump_relay1_gpio);
     cJSON_AddNumberToObject(root, "pump_relay2_gpio", active_map.pump_relay2_gpio);
     cJSON_AddNumberToObject(root, "ds18b20_gpio", active_map.ds18b20_data_gpio);
@@ -585,8 +637,6 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         "relay1_polarity",
         "relay2_polarity",
         "cooling_relay_polarity",
-        "timer1_start_phase",
-        "timer2_start_phase",
         "hardware_reboot_required"
     };
     for (size_t i = 0; i < sizeof(readonly_fields) / sizeof(readonly_fields[0]); i++) {
@@ -622,6 +672,32 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         return false;
     }
     settings->relay1_active_low = settings->relay_active_low;
+
+    const cJSON *timer1_start = cJSON_GetObjectItem(root, "timer1_start_phase");
+    if (!timer1_start) {
+        *error_code = "missing_field";
+        *error_message = "timer1_start_phase";
+        return false;
+    }
+    if (!api_pump_parse_start_phase(timer1_start, &settings->timer1_start_phase) ||
+        !hardware_map_timer_start_phase_valid(settings->timer1_start_phase)) {
+        *error_code = "invalid_start_phase";
+        *error_message = "timer1_start_phase";
+        return false;
+    }
+
+    const cJSON *timer2_start = cJSON_GetObjectItem(root, "timer2_start_phase");
+    if (!timer2_start) {
+        *error_code = "missing_field";
+        *error_message = "timer2_start_phase";
+        return false;
+    }
+    if (!api_pump_parse_start_phase(timer2_start, &settings->timer2_start_phase) ||
+        !hardware_map_timer_start_phase_valid(settings->timer2_start_phase)) {
+        *error_code = "invalid_start_phase";
+        *error_message = "timer2_start_phase";
+        return false;
+    }
 
     return true;
 }
