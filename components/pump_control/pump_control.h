@@ -26,10 +26,21 @@ typedef enum {
 } pump_control_active_timer_t;
 
 typedef enum {
+    PUMP_CONTROL_RELAY_NONE = 0,
+    PUMP_CONTROL_RELAY_1,
+    PUMP_CONTROL_RELAY_2,
+} pump_control_active_relay_t;
+
+typedef enum {
     PUMP_CONTROL_PHASE_IDLE = 0,
     PUMP_CONTROL_PHASE_ON,
     PUMP_CONTROL_PHASE_OFF,
 } pump_control_timer_phase_t;
+
+typedef enum {
+    PUMP_CONTROL_START_PHASE_ON = 0,
+    PUMP_CONTROL_START_PHASE_OFF,
+} pump_control_start_phase_t;
 
 typedef struct {
     uint32_t on_sec;
@@ -41,9 +52,15 @@ typedef struct {
     bool float_active_low;
     gpio_num_t relay_gpio;
     pump_control_relay_polarity_t relay_polarity;
+    gpio_num_t relay1_gpio;
+    gpio_num_t relay2_gpio;
+    pump_control_relay_polarity_t relay1_polarity;
+    pump_control_relay_polarity_t relay2_polarity;
     uint32_t debounce_ms;
     pump_control_timer_config_t timer1;
     pump_control_timer_config_t timer2;
+    pump_control_start_phase_t timer1_start_phase;
+    pump_control_start_phase_t timer2_start_phase;
 } pump_control_config_t;
 
 typedef struct {
@@ -51,11 +68,17 @@ typedef struct {
     bool config_valid;
     bool running;
     bool initial_stabilizing;
+    bool fault;
     bool relay_energized;
+    bool relay1_energized;
+    bool relay2_energized;
     gpio_num_t float_gpio;
     gpio_num_t relay_gpio;
+    gpio_num_t relay1_gpio;
+    gpio_num_t relay2_gpio;
     pump_control_float_state_t float_state;
     pump_control_active_timer_t active_timer;
+    pump_control_active_relay_t active_relay;
     pump_control_timer_phase_t phase;
     uint32_t countdown_sec;
 } pump_control_status_t;
