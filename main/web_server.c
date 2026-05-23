@@ -303,6 +303,172 @@ static const char *api_hardware_map_status_name(nvs_store_hardware_map_load_stat
     }
 }
 
+static const char *api_pending_hardware_map_status_name(nvs_store_pending_hardware_map_load_status_t status)
+{
+    switch (status) {
+    case NVS_STORE_PENDING_HARDWARE_MAP_LOADED:
+        return "loaded";
+    case NVS_STORE_PENDING_HARDWARE_MAP_NOT_FOUND:
+        return "not_found";
+    case NVS_STORE_PENDING_HARDWARE_MAP_INVALID:
+        return "invalid";
+    case NVS_STORE_PENDING_HARDWARE_MAP_ERROR:
+    default:
+        return "error";
+    }
+}
+
+static const char *api_hardware_map_field_for_role(hardware_role_t role)
+{
+    switch (role) {
+    case HARDWARE_ROLE_FLOAT_INPUT:
+        return "float_input_gpio";
+    case HARDWARE_ROLE_PUMP_RELAY_1:
+        return "pump_relay1_gpio";
+    case HARDWARE_ROLE_PUMP_RELAY_2:
+        return "pump_relay2_gpio";
+    case HARDWARE_ROLE_DS18B20_DATA:
+        return "ds18b20_gpio";
+    case HARDWARE_ROLE_COOLING_RELAY:
+        return "cooling_relay_gpio";
+    default:
+        return "unknown";
+    }
+}
+
+static bool api_hardware_map_add_json(cJSON *root, const char *name, const hardware_map_t *map)
+{
+    if (!root || !name || !map) {
+        return false;
+    }
+
+    cJSON *obj = cJSON_AddObjectToObject(root, name);
+    if (!obj) {
+        return false;
+    }
+
+    cJSON_AddNumberToObject(obj, "float_input_gpio", map->float_input_gpio);
+    cJSON_AddNumberToObject(obj, "pump_relay1_gpio", map->pump_relay1_gpio);
+    cJSON_AddNumberToObject(obj, "pump_relay2_gpio", map->pump_relay2_gpio);
+    cJSON_AddNumberToObject(obj, "ds18b20_gpio", map->ds18b20_data_gpio);
+    cJSON_AddNumberToObject(obj, "cooling_relay_gpio", map->cooling_relay_gpio);
+    return true;
+}
+
+static bool api_hardware_options_add_role(cJSON *options_root, hardware_role_t role)
+{
+    if (!options_root || !hardware_map_role_valid(role)) {
+        return false;
+    }
+
+    size_t option_count = 0;
+    const hardware_gpio_option_t *options = hardware_map_options_for_role(role, &option_count);
+    if (!options) {
+        return false;
+    }
+
+    cJSON *arr = cJSON_AddArrayToObject(options_root, api_hardware_map_field_for_role(role));
+    if (!arr) {
+        return false;
+    }
+
+    for (size_t i = 0; i < option_count; i++) {
+        cJSON *item = cJSON_CreateObject();
+        if (!item) {
+            return false;
+        }
+        cJSON_AddNumberToObject(item, "gpio", options[i].gpio);
+        cJSON_AddStringToObject(item, "label", options[i].label);
+        cJSON_AddStringToObject(item, "role", hardware_map_role_name(options[i].role));
+        cJSON_AddBoolToObject(item, "input_capable", options[i].input_capable);
+        cJSON_AddBoolToObject(item, "output_capable", options[i].output_capable);
+        cJSON_AddBoolToObject(item, "internal_pull_capable", options[i].internal_pull_capable);
+        cJSON_AddBoolToObject(item, "is_default", options[i].is_default);
+        if (!cJSON_AddItemToArray(arr, item)) {
+            cJSON_Delete(item);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool api_hardware_map_add_options(cJSON *root)
+{
+    if (!root) {
+        return false;
+    }
+
+    cJSON *options = cJSON_AddObjectToObject(root, "options");
+    if (!options) {
+        return false;
+    }
+
+    for (hardware_role_t role = HARDWARE_ROLE_FLOAT_INPUT;
+         role < HARDWARE_ROLE_COUNT;
+         role = (hardware_role_t)(role + 1)) {
+        if (!api_hardware_options_add_role(options, role)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static esp_err_t api_hardware_map_send(httpd_req_t *req)
+{
+    hardware_map_t active = hardware_map_defaults();
+    hardware_map_t pending = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t active_status = nvs_store_load_hardware_map(&active);
+    nvs_store_pending_hardware_map_load_status_t pending_status =
+        nvs_store_load_pending_hardware_map(&pending);
+
+    bool pending_valid = pending_status == NVS_STORE_PENDING_HARDWARE_MAP_LOADED;
+    bool reboot_required = false;
+    bool reboot_status_ok = nvs_store_hardware_reboot_required(&reboot_required);
+    if (!pending_valid) {
+        reboot_required = false;
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddStringToObject(root, "active_status", api_hardware_map_status_name(active_status));
+    cJSON_AddStringToObject(root, "pending_status",
+                            api_pending_hardware_map_status_name(pending_status));
+    cJSON_AddBoolToObject(root, "pending_valid", pending_valid);
+    cJSON_AddBoolToObject(root, "reboot_required", reboot_status_ok && reboot_required);
+    if (!api_hardware_map_add_json(root, "active", &active)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+    if (pending_valid) {
+        if (!api_hardware_map_add_json(root, "pending", &pending)) {
+            cJSON_Delete(root);
+            return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+        }
+    } else {
+        cJSON_AddNullToObject(root, "pending");
+    }
+    if (!api_hardware_map_add_options(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
 static const char *api_pump_relay_polarity_name(bool relay_active_low)
 {
     return relay_active_low ? "active_low" : "active_high";
@@ -707,6 +873,89 @@ static bool api_pump_required_bool(const cJSON *root, const char *name, bool *ou
     }
 
     *out = cJSON_IsTrue(item);
+    return true;
+}
+
+static bool api_hardware_required_gpio(const cJSON *root, const char *name,
+                                       hardware_role_t role, gpio_num_t *out,
+                                       const char **error_code, const char **error_message)
+{
+    const cJSON *item = cJSON_GetObjectItem(root, name);
+    if (!item) {
+        *error_code = "missing_field";
+        *error_message = name;
+        return false;
+    }
+    if (!cJSON_IsNumber(item) || item->valuedouble < 0.0) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+
+    int gpio = item->valueint;
+    if ((double)gpio != item->valuedouble) {
+        *error_code = "invalid_type";
+        *error_message = name;
+        return false;
+    }
+    if (!hardware_map_gpio_allowed_for_role(role, (gpio_num_t)gpio)) {
+        *error_code = "gpio_not_allowed";
+        *error_message = name;
+        return false;
+    }
+
+    *out = (gpio_num_t)gpio;
+    return true;
+}
+
+static bool api_hardware_parse_map_payload(const cJSON *root, hardware_map_t *map,
+                                           const char **error_code,
+                                           const char **error_message)
+{
+    if (!root || !map) {
+        *error_code = "invalid_json";
+        *error_message = "Expected a JSON object";
+        return false;
+    }
+
+    const cJSON *map_obj = cJSON_GetObjectItem(root, "map");
+    if (!map_obj || !cJSON_IsObject(map_obj)) {
+        *error_code = "missing_field";
+        *error_message = "map";
+        return false;
+    }
+
+    const cJSON *confirm = cJSON_GetObjectItem(root, "confirm_reboot_required");
+    if (!confirm || !cJSON_IsBool(confirm) || !cJSON_IsTrue(confirm)) {
+        *error_code = "confirmation_required";
+        *error_message = "confirm_reboot_required";
+        return false;
+    }
+
+    if (!api_hardware_required_gpio(map_obj, "float_input_gpio",
+                                    HARDWARE_ROLE_FLOAT_INPUT,
+                                    &map->float_input_gpio, error_code, error_message) ||
+        !api_hardware_required_gpio(map_obj, "pump_relay1_gpio",
+                                    HARDWARE_ROLE_PUMP_RELAY_1,
+                                    &map->pump_relay1_gpio, error_code, error_message) ||
+        !api_hardware_required_gpio(map_obj, "pump_relay2_gpio",
+                                    HARDWARE_ROLE_PUMP_RELAY_2,
+                                    &map->pump_relay2_gpio, error_code, error_message) ||
+        !api_hardware_required_gpio(map_obj, "ds18b20_gpio",
+                                    HARDWARE_ROLE_DS18B20_DATA,
+                                    &map->ds18b20_data_gpio, error_code, error_message) ||
+        !api_hardware_required_gpio(map_obj, "cooling_relay_gpio",
+                                    HARDWARE_ROLE_COOLING_RELAY,
+                                    &map->cooling_relay_gpio, error_code, error_message)) {
+        return false;
+    }
+
+    if (!hardware_map_validate(map)) {
+        *error_code = "invalid_hardware_map";
+        *error_message = "map";
+        return false;
+    }
+
     return true;
 }
 
@@ -1227,6 +1476,72 @@ static esp_err_t handle_get_status(httpd_req_t *req)
         "text/html; charset=utf-8");
 }
 
+/* GET /api/hardware/map - protected, return active/pending GPIO maps and safe options */
+static esp_err_t handle_api_hardware_map_get(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    return api_hardware_map_send(req);
+}
+
+/* POST /api/hardware/map - protected, save pending hardware map for reboot */
+static esp_err_t handle_api_hardware_map_post(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req, false)) {
+        return send_api_error(req, "forbidden", "Cross-origin hardware map save blocked",
+                              "403 Forbidden");
+    }
+
+    char body[512] = {0};
+    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
+    if (ret <= 0) {
+        return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
+    }
+    body[ret] = '\0';
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root || !cJSON_IsObject(root)) {
+        if (root) {
+            cJSON_Delete(root);
+        }
+        return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
+    }
+
+    hardware_map_t submitted = hardware_map_defaults();
+    const char *error_code = NULL;
+    const char *error_message = NULL;
+    bool valid = api_hardware_parse_map_payload(root, &submitted, &error_code, &error_message);
+    cJSON_Delete(root);
+    if (!valid) {
+        return send_api_error(req, error_code, error_message, "400 Bad Request");
+    }
+
+    hardware_map_t active = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t active_status = nvs_store_load_hardware_map(&active);
+    if (active_status == NVS_STORE_HARDWARE_MAP_DEFAULTS_ERROR) {
+        return send_api_error(req, "hardware_map_load_failed",
+                              "Could not load active hardware map",
+                              "500 Internal Server Error");
+    }
+
+    bool saved = hardware_map_equal(&active, &submitted)
+        ? nvs_store_clear_pending_hardware_map()
+        : nvs_store_save_pending_hardware_map(&submitted);
+    if (!saved) {
+        return send_api_error(req, "pending_save_failed",
+                              "Could not save pending hardware map",
+                              "500 Internal Server Error");
+    }
+
+    return api_hardware_map_send(req);
+}
+
 /* GET /api/pump/config - protected, return persisted pump config plus read-only hardware defaults */
 static esp_err_t handle_api_pump_config_get(httpd_req_t *req)
 {
@@ -1600,6 +1915,8 @@ bool web_server_start(void)
         { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect, .user_ctx = NULL },
         { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect, .user_ctx = NULL },
         { .uri = "/api/status",    .method = HTTP_GET,  .handler = handle_api_status,     .user_ctx = NULL },
+        { .uri = "/api/hardware/map", .method = HTTP_GET, .handler = handle_api_hardware_map_get, .user_ctx = NULL },
+        { .uri = "/api/hardware/map", .method = HTTP_POST, .handler = handle_api_hardware_map_post, .user_ctx = NULL },
         { .uri = "/api/pump/config", .method = HTTP_GET,  .handler = handle_api_pump_config_get, .user_ctx = NULL },
         { .uri = "/api/pump/config", .method = HTTP_POST, .handler = handle_api_pump_config_post, .user_ctx = NULL },
         { .uri = "/api/pump/status", .method = HTTP_GET,  .handler = handle_api_pump_status, .user_ctx = NULL },
