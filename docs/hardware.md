@@ -1,8 +1,10 @@
 # Hardware Contract
 
 Phase 6 defined the firmware-owned hardware contract for the ESP32 DevKit V1
-30-pin target. Phase 8 now consumes the DS18B20 and cooling relay roles at
-runtime; installer mutation APIs remain future work.
+30-pin target. Runtime code now consumes the float input, pump Relay 1, pump
+Relay 2, DS18B20 data, and cooling relay roles. Phase 10 adds the protected
+Hardware/Install page at `/hardware` for owner-accessible wiring review and
+pending GPIO map edits.
 
 ## Board Assumptions
 
@@ -74,7 +76,24 @@ Namespace `hw_cfg` stores active and pending hardware maps:
 
 Pending GPIO values do not change runtime behavior immediately. Firmware reports
 reboot required when a valid pending map exists and differs from the active map.
-Phase 9 will expose authenticated mutation APIs for this schema.
+The Hardware/Install UI shows active and pending values separately, requires a
+reboot confirmation checkbox, and saves pending maps through `/api/hardware/map`
+with `confirm_reboot_required: true`.
+
+## Hardware/Install UI Flow
+
+The `/hardware` page is protected by the same local session as the dashboard.
+It is intended for setup and service work, not daily pump operation.
+
+1. Review the wiring summary first. It shows the currently active GPIO for each
+   role and a pending GPIO when one has been saved but not rebooted into use.
+2. Review the active and pending map summaries.
+3. Choose new role mappings from dropdowns populated by firmware safe option
+   arrays. Do not add freeform numeric GPIO entry.
+4. Check the reboot acknowledgement and save. The submitted map is pending only;
+   existing runtime GPIOs stay active until reboot.
+5. After reboot, verify active GPIOs and relay polarity before connecting a real
+   pump or compressor load.
 
 Namespace `pump_cfg` keeps v1.0 keys and adds v1.1 fields:
 

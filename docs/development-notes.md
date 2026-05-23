@@ -156,3 +156,26 @@
 - Don't put GPIO mutation fields in `/api/pump/config`.
 - Don't claim the owner dashboard or Hardware/Install UI is complete in Phase
   9. Phase 10 owns those frontend surfaces.
+
+---
+
+## Phase 10 Owner Dashboard And Hardware/Install UI
+
+### DO
+- Keep `/dashboard` focused on daily operation: pump state, float state, active
+  timer/relay, countdown, cooling temperature, cooling relay, threshold,
+  auto-enable, sensor fault, lockout, and bounded runtime mode actions.
+- Use `/api/cooling/config` for persistent threshold, hysteresis, auto-enable,
+  test timeout, min-off, and relay polarity. Use `/api/cooling/mode` for Auto,
+  Force OFF, and Test ON runtime changes.
+- Keep Test ON runtime-only. Do not save `mode: "test_on"` through
+  `/api/cooling/config`.
+- Keep `/hardware` wiring-first. Render active GPIOs separately from pending
+  GPIOs, and explain that pending values need reboot before becoming active.
+- Populate Hardware/Install dropdowns from `/api/hardware/map` option arrays
+  instead of duplicating safe GPIO lists in HTML or JavaScript.
+
+### DON'T
+- Don't add freeform numeric GPIO entry to the frontend.
+- Don't mix installer GPIO editing into the daily dashboard.
+- Don't claim hardware validation passed from source/build evidence alone.

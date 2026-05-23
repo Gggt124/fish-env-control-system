@@ -117,7 +117,7 @@ embedded static file symbols from `main/CMakeLists.txt`.
 Template-owned routes:
 
 - login/logout
-- dashboard/status/wifi static pages
+- dashboard/status/wifi/hardware static pages
 - Wi-Fi scan/connect/disconnect APIs
 - status JSON API
 
@@ -144,5 +144,16 @@ Phase 9 API notes:
   legacy `relay_polarity` field remains a Relay 1 compatibility alias.
 - GPIO pin changes are not accepted through `/api/pump/config`; they belong to
   `/api/hardware/map` and take effect only after reboot.
-- Phase 10 owns the owner dashboard and Hardware/Install UI that consume these
-  APIs.
+Phase 10 UI notes:
+
+- `/dashboard` is the daily operation surface. It shows pump enabled/running
+  state, float state, active timer/relay, countdown, cooling temperature,
+  cooling relay state, threshold, boot auto-enable, sensor fault state, lockout,
+  and bounded Test ON controls.
+- `/hardware` is the protected installer surface. It embeds `hardware.html`,
+  renders wiring first, then active/pending GPIO summaries, then technical
+  option metadata from `/api/hardware/map`.
+- The frontend populates GPIO dropdowns from firmware-provided safe option
+  arrays and POSTs pending changes only with `confirm_reboot_required: true`.
+  No hardcoded duplicate GPIO safety list or freeform GPIO input belongs in the
+  UI.

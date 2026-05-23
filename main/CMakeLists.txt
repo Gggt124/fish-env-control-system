@@ -10,6 +10,7 @@ idf_component_register(
         "static/dashboard.html"
         "static/status.html"
         "static/wifi.html"
+        "static/hardware.html"
         "static/style.css"
         "static/app.js"
     REQUIRES

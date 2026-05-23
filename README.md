@@ -1,13 +1,9 @@
 # Fish Pump Relay Timer Control
 
-ESP-IDF firmware for a fish pump relay timer controller, based on a reusable
-local Wi-Fi setup/web dashboard foundation. The current baseline includes
-SoftAP fallback, STA Wi-Fi configuration, login/session auth, status JSON, and
-embedded HTML/CSS/JS pages.
-
-This repository is intended to be cloned as a starting point for other ESP32
-projects. Keep project-specific features such as relays, sensors, MQTT, OTA, and
-cloud integrations in the downstream project, not in this template.
+ESP-IDF firmware for a local fish pump relay timer controller. The firmware
+keeps the original SoftAP fallback, STA Wi-Fi setup, login/session auth, and
+embedded HTML/CSS/JS web UI while adding dual pump relays, a DS18B20 cooling
+channel, and an installer-facing hardware map flow.
 
 ## Baseline
 
@@ -18,6 +14,7 @@ cloud integrations in the downstream project, not in this template.
 - Flash layout: 4 MB flash with custom dual-OTA `partitions.csv`
 - Hardware contract: safe ESP32 DevKit V1 defaults are documented in
   `docs/hardware.md`
+- GPIO changes: saved as pending values and applied only after reboot
 
 ## Features
 
@@ -27,8 +24,13 @@ cloud integrations in the downstream project, not in this template.
 - Login page with in-memory cookie sessions
 - Wi-Fi scan/connect/disconnect APIs
 - Optional static STA IP fields in the Wi-Fi page
+- Owner dashboard for pump timers, relay state, float state, cooling status,
+  cooling threshold, boot auto-enable, Force OFF, and runtime Test ON
+- Hardware/Install page with wiring-first GPIO summary, safe dropdown options,
+  pending map save, and reboot-required messaging
 - Device status page and `/api/status`
-- Reusable components for NVS, sessions, and Wi-Fi management
+- Reusable components for NVS, sessions, Wi-Fi, hardware map, pump runtime, and
+  cooling runtime
 
 ## First File To Edit
 
@@ -93,9 +95,13 @@ wrapper (`chcp 65001` and `PYTHONUTF8=1`) before exporting ESP-IDF.
 2. Connect phone or laptop to Wi-Fi `FishPump-Setup`.
 3. Open `http://192.168.4.1`.
 4. Login with the configured credentials.
-5. Open Wi-Fi Settings, scan networks, and connect STA.
-6. Reboot and confirm saved STA credentials load from NVS.
-7. Confirm AP fallback still works if STA connection fails.
+5. Confirm `/dashboard` loads pump runtime state, cooling runtime state, and
+   links to Wi-Fi, status, and Hardware/Install.
+6. Open `/hardware`, confirm active GPIOs are visible, and save a pending map
+   only if you are prepared to reboot and validate wiring.
+7. Open Wi-Fi Settings, scan networks, and connect STA.
+8. Reboot and confirm saved STA credentials load from NVS.
+9. Confirm AP fallback still works if STA connection fails.
 
 ## Project Structure
 
@@ -106,13 +112,17 @@ fish_pump_relay_timer_control/
 ├── partitions.csv
 ├── TEMPLATE.md
 ├── docs/
-│   └── components.md
+│   ├── components.md
+│   └── hardware.md
 ├── scripts/
 │   ├── build.ps1
 │   └── flash.ps1
 ├── components/
 │   ├── app_config/       # Template-level constants to customize first
-│   ├── nvs_store/        # NVS Wi-Fi credential and IP config storage
+│   ├── hardware_map/     # Safe role-based ESP32 GPIO map
+│   ├── nvs_store/        # NVS Wi-Fi, hardware, pump, and cooling storage
+│   ├── pump_control/     # Dual timer/relay pump runtime
+│   ├── cooling_control/  # DS18B20 cooling runtime and relay control
 │   ├── session/          # In-memory login sessions
 │   └── wifi_manager/     # AP+STA, scan, connect, fallback behavior
 └── main/
@@ -130,9 +140,10 @@ fish_pump_relay_timer_control/
 | GET | `/login` | No | Login page |
 | POST | `/api/login` | No | Login |
 | POST | `/api/logout` | No | Logout and clear session |
-| GET | `/dashboard` | Yes | Example dashboard |
+| GET | `/dashboard` | Yes | Owner pump and cooling dashboard |
 | GET | `/status` | Yes | Full status page |
 | GET | `/wifi` | Yes | Wi-Fi setup page |
+| GET | `/hardware` | Yes | Hardware/Install wiring and GPIO map page |
 | GET | `/api/wifi/scan` | Yes | Scan networks |
 | POST | `/api/wifi/connect` | Yes | Connect STA |
 | POST | `/api/wifi/disconnect` | Yes | Disconnect STA |
@@ -150,9 +161,10 @@ fish_pump_relay_timer_control/
 | POST | `/api/cooling/mode` | Yes | Runtime Auto, Force OFF, or Test ON; Test ON is not persisted |
 
 GPIO pin changes are saved as pending values and require reboot before they
-become active. The Hardware/Install UI and owner dashboard for these APIs are
-planned as the next phase; the backend API surface is available first so the UI
-can remain dropdown-driven and avoid freeform GPIO entry.
+become active. The Hardware/Install UI consumes `/api/hardware/map` dropdown
+options directly from firmware, so the frontend does not duplicate safe GPIO
+lists or allow freeform GPIO entry. Cooling Test ON is a runtime-only action via
+`/api/cooling/mode`; it is not saved as a boot mode.
 
 ## Template Boundaries
 

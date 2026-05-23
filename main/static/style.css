@@ -761,6 +761,247 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
     display: flex; gap: var(--sp-sm); flex-wrap: wrap;
 }
 
+/* === Cooling Dashboard === */
+.cooling-runtime {
+    display: flex; flex-direction: column; gap: var(--sp-lg);
+    border-left: 4px solid var(--secondary);
+}
+
+.cooling-runtime h3 {
+    margin-top: var(--sp-sm);
+}
+
+.cooling-runtime-grid,
+.cooling-detail-row,
+.cooling-config-grid {
+    display: grid; grid-template-columns: 1fr; gap: var(--sp-sm);
+}
+
+@media (min-width: 640px) {
+    .cooling-runtime-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cooling-detail-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cooling-config-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1180px) {
+    .cooling-runtime-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .cooling-config-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.cooling-actions {
+    padding-top: var(--sp-sm);
+    border-top: 1px solid var(--surface-container-high);
+}
+
+.cooling-config-form {
+    display: flex; flex-direction: column; gap: var(--sp-md);
+    padding-top: var(--sp-md);
+    border-top: 1px solid var(--surface-container-high);
+}
+
+.cooling-auto-toggle {
+    min-height: 72px;
+    align-items: center;
+    padding: var(--sp-sm);
+    border: 1px solid var(--surface-container-highest);
+    border-radius: var(--radius-md);
+    background: var(--surface-container-low);
+}
+
+/* === Hardware/Install Page === */
+.hardware-install,
+.hardware-map-panel,
+.hardware-technical-panel {
+    margin-bottom: var(--sp-lg);
+}
+
+.hardware-install {
+    border-left: 4px solid var(--tertiary);
+}
+
+.hardware-status-banner {
+    display: flex; gap: var(--sp-sm); align-items: center; flex-wrap: wrap;
+    padding: var(--sp-md); margin: var(--sp-md) 0;
+    border: 1px solid var(--tertiary);
+    border-radius: var(--radius-md);
+    background: rgba(125, 82, 96, 0.10);
+    color: var(--on-surface);
+}
+
+.hardware-status-banner strong {
+    color: var(--tertiary);
+}
+
+.hardware-wiring-grid,
+.hardware-summary-grid,
+.hardware-map-grid {
+    display: grid; grid-template-columns: 1fr; gap: var(--sp-sm);
+}
+
+@media (min-width: 640px) {
+    .hardware-wiring-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hardware-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hardware-map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1180px) {
+    .hardware-wiring-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .hardware-map-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+.hardware-wire-item,
+.hardware-summary-card,
+.hardware-role-field {
+    border: 1px solid var(--surface-container-highest);
+    border-radius: var(--radius-md);
+    background: var(--surface-container-low);
+}
+
+.hardware-wire-item {
+    display: flex; gap: var(--sp-sm); align-items: flex-start;
+    padding: var(--sp-md);
+    min-height: 112px;
+}
+
+.hardware-wire-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; flex: 0 0 36px;
+    border-radius: var(--radius-md);
+    background: var(--surface-container-high);
+    color: var(--primary);
+}
+
+.hardware-wire-item h4,
+.hardware-technical-group h4 {
+    margin: 0 0 4px; font-size: 15px; line-height: 22px;
+}
+
+.hardware-wire-item p {
+    margin: 0; color: var(--on-surface-variant);
+    font-size: 13px; line-height: 18px;
+}
+
+.hardware-summary-grid {
+    margin: var(--sp-md) 0;
+}
+
+.hardware-summary-card {
+    padding: var(--sp-md);
+}
+
+.hardware-summary-list {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 10px;
+}
+
+.hardware-summary-row {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--sp-sm);
+    font-size: 13px; color: var(--on-surface-variant);
+}
+
+.hardware-summary-row strong {
+    color: var(--on-surface);
+    white-space: nowrap;
+}
+
+.hardware-summary-empty {
+    color: var(--on-surface-variant);
+    font-size: 13px;
+}
+
+.hardware-map-form {
+    display: flex; flex-direction: column; gap: var(--sp-md);
+}
+
+.hardware-role-field {
+    padding: var(--sp-sm);
+}
+
+.hardware-role-field span {
+    font-size: 13px;
+}
+
+.hardware-role-field select {
+    margin-top: 6px;
+}
+
+.checkbox-label.hardware-reboot-confirm {
+    display: flex; gap: var(--sp-sm); align-items: flex-start;
+    padding: var(--sp-sm);
+    border: 1px solid var(--surface-container-highest);
+    border-radius: var(--radius-md);
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+    font-size: 13px;
+}
+
+.form-warning {
+    color: var(--tertiary);
+    font-size: 13px;
+}
+
+.form-error {
+    min-height: 20px;
+    color: var(--error);
+    font-size: 13px;
+}
+
+.hardware-technical-list {
+    display: grid; grid-template-columns: 1fr; gap: var(--sp-md);
+}
+
+@media (min-width: 900px) {
+    .hardware-technical-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.hardware-technical-group {
+    border: 1px solid var(--surface-container-highest);
+    border-radius: var(--radius-md);
+    padding: var(--sp-md);
+    background: var(--surface-container-low);
+}
+
+.hardware-technical-group p {
+    margin: 0;
+    color: var(--on-surface-variant);
+    font-size: 13px;
+}
+
+.hardware-option-row {
+    display: grid; grid-template-columns: 1fr; gap: 8px;
+    padding: 10px 0;
+    border-top: 1px solid var(--surface-container-high);
+}
+
+.hardware-option-row:first-of-type {
+    border-top: 0;
+}
+
+.hardware-option-row strong,
+.hardware-option-row span {
+    display: block;
+}
+
+.hardware-option-row span {
+    color: var(--on-surface-variant);
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.capability-tags {
+    display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.capability-tag {
+    display: inline-flex; align-items: center;
+    min-height: 22px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-container-high);
+    color: var(--on-surface-variant);
+    font-size: 11px;
+    line-height: 16px;
+}
+
 /* === Wi-Fi Page Specific === */
 
 /* Stepper */

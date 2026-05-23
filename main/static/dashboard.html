@@ -41,6 +41,9 @@
         <a href="/wifi" class="nav-item" id="nav-wifi">
             <span class="nav-icon">&#128246;</span> Wi-Fi Settings
         </a>
+        <a href="/hardware" class="nav-item" id="nav-hardware">
+            <span class="nav-icon">&#128295;</span> Hardware/Install
+        </a>
         <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
             <span class="nav-icon">&#128682;</span> ออกจากระบบ
         </a>
@@ -57,6 +60,7 @@
         </div>
         <div class="header-actions">
             <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)">&#8635; Sync</button>
+            <a href="/hardware" class="btn btn-outline btn-sm">&#128295; Hardware</a>
             <a href="/wifi" class="btn btn-primary btn-sm">&#128246; Wi-Fi Setup</a>
         </div>
     </div>
@@ -105,6 +109,104 @@
             <span class="runtime-action-state" id="pump-action-state"></span>
         </div>
         <div class="pump-alert hidden" id="pump-status-error"></div>
+    </section>
+
+    <!-- Cooling Runtime -->
+    <section class="section-card cooling-runtime" id="cooling-runtime-panel">
+        <div class="section-heading-row">
+            <div>
+                <div class="runtime-eyebrow" id="cooling-sync-state">รอข้อมูลชุดทำความเย็น</div>
+                <h3>Cooling Control</h3>
+                <p>DS18B20 temperature channel and cooling relay are separate from pump relays.</p>
+            </div>
+            <span class="settings-state" id="cooling-config-state">ยังไม่ได้โหลดค่า</span>
+        </div>
+
+        <div class="cooling-runtime-grid">
+            <div class="runtime-stat primary">
+                <span class="summary-label">Temperature</span>
+                <strong id="cooling-temperature">--</strong>
+            </div>
+            <div class="runtime-stat primary">
+                <span class="summary-label">Cooling Relay</span>
+                <strong id="cooling-relay-state">Relay: --</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Mode</span>
+                <strong id="cooling-mode-state">--</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Sensor</span>
+                <strong id="cooling-sensor-state">Sensor: --</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Fault</span>
+                <strong id="cooling-fault-state">Fault: --</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Threshold</span>
+                <strong id="cooling-threshold">--</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Hysteresis</span>
+                <strong id="cooling-hysteresis">--</strong>
+            </div>
+            <div class="runtime-stat">
+                <span class="summary-label">Boot Auto</span>
+                <strong id="cooling-auto-enable-state">Auto-enable: --</strong>
+            </div>
+        </div>
+
+        <div class="cooling-detail-row">
+            <div class="summary-item">
+                <span class="summary-label">Blocked Reason</span>
+                <span class="summary-value" id="cooling-blocked-reason">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Lockout</span>
+                <span class="summary-value" id="cooling-lockout">--</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Test Remaining</span>
+                <span class="summary-value" id="cooling-test-remaining">--</span>
+            </div>
+        </div>
+
+        <div class="pump-runtime-actions cooling-actions">
+            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>Auto</button>
+            <button class="btn btn-outline" id="cooling-mode-force-off" type="button" disabled>Force OFF</button>
+            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>Test ON</button>
+            <span class="runtime-action-state" id="cooling-mode-action-state"></span>
+        </div>
+
+        <form class="cooling-config-form" id="cooling-config-form" novalidate>
+            <div class="cooling-config-grid">
+                <div class="duration-field">
+                    <label for="cooling-threshold-input">Threshold C</label>
+                    <input id="cooling-threshold-input" type="number" min="-55" max="125" step="0.1" inputmode="decimal">
+                </div>
+                <div class="duration-field">
+                    <label for="cooling-hysteresis-input">Hysteresis C</label>
+                    <input id="cooling-hysteresis-input" type="number" min="0.1" max="50" step="0.1" inputmode="decimal">
+                </div>
+                <div class="duration-field">
+                    <label for="cooling-test-timeout">Test ON seconds</label>
+                    <input id="cooling-test-timeout" type="number" min="1" max="3600" step="1" inputmode="numeric">
+                </div>
+                <label class="toggle-row cooling-auto-toggle" for="cooling-auto-enable">
+                    <input id="cooling-auto-enable" type="checkbox">
+                    <span>
+                        <strong>Cooling auto-enable หลังบูต</strong>
+                        <small>บันทึกพฤติกรรมตอนเปิดเครื่อง ไม่ใช่คำสั่ง Test ON</small>
+                    </span>
+                </label>
+            </div>
+            <div class="settings-button-row">
+                <span class="unsaved-warning hidden" id="cooling-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
+                <button class="btn btn-primary" id="cooling-save-config" type="submit" disabled>บันทึก Cooling</button>
+            </div>
+            <div class="pump-alert hidden" id="cooling-config-error"></div>
+        </form>
     </section>
 
     <!-- Pump Settings -->
@@ -215,6 +317,7 @@
             <div class="quick-links">
                 <a href="/status" class="btn btn-outline btn-sm">&#9881; System Status</a>
                 <a href="/wifi" class="btn btn-outline btn-sm">&#128246; Wi-Fi Settings</a>
+                <a href="/hardware" class="btn btn-outline btn-sm">&#128295; Hardware/Install</a>
             </div>
         </div>
         <div class="summary-grid" style="margin-top:var(--sp-md);">

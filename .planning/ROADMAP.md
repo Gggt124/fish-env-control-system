@@ -123,13 +123,13 @@ Plans:
 
 **Wave 1**
 
-- [ ] 10-01: Owner dashboard cooling operation surface
+- [x] 10-01: Owner dashboard cooling operation surface
 
 **Wave 2 (blocked on Wave 1 completion)**
-- [ ] 10-02: Hardware/Install page, safe GPIO pending map flow, and protected route
+- [x] 10-02: Hardware/Install page, safe GPIO pending map flow, and protected route
 
 **Wave 3 (blocked on Waves 1-2 completion)**
-- [ ] 10-03: v1.1 validation, docs, and manual hardware closeout
+- [x] 10-03: v1.1 validation, docs, and manual hardware closeout
 
 ## Progress
 
@@ -144,8 +144,8 @@ Plans:
 | 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete   | 2026-05-23 |
-| 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Planned | — |
+| 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Executed | — |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-05-24 after Phase 10 planning*
+*Last updated: 2026-05-24 after Phase 10 execution*

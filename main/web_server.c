@@ -33,6 +33,8 @@ extern const uint8_t _binary_dashboard_html_start[] asm("_binary_dashboard_html_
 extern const uint8_t _binary_dashboard_html_end[]   asm("_binary_dashboard_html_end");
 extern const uint8_t _binary_wifi_html_start[] asm("_binary_wifi_html_start");
 extern const uint8_t _binary_wifi_html_end[]   asm("_binary_wifi_html_end");
+extern const uint8_t _binary_hardware_html_start[] asm("_binary_hardware_html_start");
+extern const uint8_t _binary_hardware_html_end[]   asm("_binary_hardware_html_end");
 extern const uint8_t _binary_style_css_start[] asm("_binary_style_css_start");
 extern const uint8_t _binary_style_css_end[]   asm("_binary_style_css_end");
 extern const uint8_t _binary_app_js_start[] asm("_binary_app_js_start");
@@ -1512,6 +1514,20 @@ static esp_err_t handle_get_wifi(httpd_req_t *req)
         "text/html; charset=utf-8");
 }
 
+/* GET /hardware - protected */
+static esp_err_t handle_get_hardware(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/login");
+        httpd_resp_send(req, NULL, 0);
+        return ESP_OK;
+    }
+    return serve_static(req,
+        _binary_hardware_html_start, _binary_hardware_html_end,
+        "text/html; charset=utf-8");
+}
+
 /* GET /style.css */
 static esp_err_t handle_style_css(httpd_req_t *req)
 {
@@ -2405,6 +2421,7 @@ bool web_server_start(void)
         { .uri = "/dashboard",     .method = HTTP_GET,  .handler = handle_get_dashboard,  .user_ctx = NULL },
         { .uri = "/status",        .method = HTTP_GET,  .handler = handle_get_status,     .user_ctx = NULL },
         { .uri = "/wifi",          .method = HTTP_GET,  .handler = handle_get_wifi,       .user_ctx = NULL },
+        { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware,   .user_ctx = NULL },
         { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css,      .user_ctx = NULL },
         { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js,         .user_ctx = NULL },
         { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login,      .user_ctx = NULL },

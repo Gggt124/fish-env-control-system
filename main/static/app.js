@@ -149,9 +149,30 @@ var PUMP_STATUS_POLL_MS = 750;
 var PUMP_COUNTDOWN_TICK_MS = 250;
 var PUMP_STALE_MS = 5000;
 var PUMP_DEADLINE_DRIFT_MS = 1500;
+var coolingConfig = null;
+var coolingConfigLoaded = false;
+var coolingDirty = false;
+var coolingPending = false;
+var coolingLastStatus = null;
+var coolingLastSyncMs = 0;
+var coolingStatusRequestInFlight = false;
+var coolingPollTimer = null;
+var COOLING_STATUS_POLL_MS = 2000;
+var COOLING_STALE_MS = 8000;
+var hardwareMapData = null;
+var hardwareDirty = false;
+var hardwarePending = false;
+var HARDWARE_FIELDS = [
+    { key: 'float_input_gpio', select: 'hardware-float-input-gpio', wire: 'wire-float-input', label: 'Float Input' },
+    { key: 'pump_relay1_gpio', select: 'hardware-pump-relay1-gpio', wire: 'wire-pump-relay1', label: 'Pump Relay 1' },
+    { key: 'pump_relay2_gpio', select: 'hardware-pump-relay2-gpio', wire: 'wire-pump-relay2', label: 'Pump Relay 2' },
+    { key: 'ds18b20_gpio', select: 'hardware-ds18b20-gpio', wire: 'wire-ds18b20', label: 'DS18B20 Sensor' },
+    { key: 'cooling_relay_gpio', select: 'hardware-cooling-relay-gpio', wire: 'wire-cooling-relay', label: 'Cooling Relay' }
+];
 
 function initDashboard() {
     initPumpDashboard();
+    initCoolingDashboard();
 }
 
 function initPumpDashboard() {
@@ -172,6 +193,17 @@ function pumpEl(id) {
     return document.getElementById(id);
 }
 
+function initCoolingDashboard() {
+    if (window.location.pathname !== '/dashboard') return;
+    wireCoolingForm();
+    wireCoolingActions();
+    updateCoolingButtons();
+    loadCoolingConfig();
+    syncCoolingStatus(true);
+    startCoolingStatusTimer();
+    document.addEventListener('visibilitychange', handleCoolingVisibilityChange);
+}
+
 function setPumpAlert(id, message) {
     var el = pumpEl(id);
     if (!el) return;
@@ -182,6 +214,10 @@ function setPumpAlert(id, message) {
         el.textContent = '';
         el.classList.add('hidden');
     }
+}
+
+function setCoolingAlert(message) {
+    setPumpAlert('cooling-config-error', message);
 }
 
 function wirePumpForm() {
@@ -727,6 +763,598 @@ function renderSettingsStatus(value, autoStart) {
     return label + ' • Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
+/* ======== Cooling Dashboard ======== */
+
+function wireCoolingForm() {
+    var form = pumpEl('cooling-config-form');
+    if (form) {
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            saveCoolingConfig();
+        };
+    }
+
+    var ids = [
+        'cooling-threshold-input',
+        'cooling-hysteresis-input',
+        'cooling-test-timeout',
+        'cooling-auto-enable'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        var input = pumpEl(ids[i]);
+        if (!input) continue;
+        input.oninput = markCoolingDirty;
+        input.onchange = markCoolingDirty;
+    }
+}
+
+function wireCoolingActions() {
+    var autoBtn = pumpEl('cooling-mode-auto');
+    var forceBtn = pumpEl('cooling-mode-force-off');
+    var testBtn = pumpEl('cooling-test-on');
+    if (autoBtn) autoBtn.onclick = function() { setCoolingMode('auto'); };
+    if (forceBtn) forceBtn.onclick = function() { setCoolingMode('force_off'); };
+    if (testBtn) testBtn.onclick = function() { setCoolingMode('test_on'); };
+}
+
+function markCoolingDirty() {
+    coolingDirty = true;
+    var warning = pumpEl('cooling-unsaved-warning');
+    if (warning) warning.classList.remove('hidden');
+    setText('cooling-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+    updateCoolingConfigSaveButton(true);
+}
+
+function setCoolingClean(label) {
+    coolingDirty = false;
+    var warning = pumpEl('cooling-unsaved-warning');
+    if (warning) warning.classList.add('hidden');
+    setText('cooling-config-state', label || 'บันทึกแล้ว');
+    updateCoolingConfigSaveButton(true);
+}
+
+function updateCoolingConfigSaveButton(enabled) {
+    var saveBtn = pumpEl('cooling-save-config');
+    if (saveBtn) saveBtn.disabled = !enabled || !coolingConfigLoaded || coolingPending;
+}
+
+function loadCoolingConfig() {
+    setText('cooling-config-state', 'กำลังโหลดค่า...');
+    setCoolingAlert('');
+    updateCoolingConfigSaveButton(false);
+    apiGet('/api/cooling/config', function(err, data) {
+        if (err || !data || !data.ok) {
+            coolingConfigLoaded = false;
+            setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
+            setCoolingAlert('โหลดค่า cooling ไม่สำเร็จ');
+            updateCoolingConfigSaveButton(false);
+            updateCoolingButtons();
+            return;
+        }
+        coolingConfig = data;
+        coolingConfigLoaded = true;
+        setCoolingConfigFields(data);
+        if (data.status) applyCoolingStatus(data.status, true);
+        setCoolingClean('โหลดค่า cooling แล้ว');
+    });
+}
+
+function setCoolingConfigFields(data) {
+    setNumericInput('cooling-threshold-input', x10ToInput(data.threshold_c_x10));
+    setNumericInput('cooling-hysteresis-input', x10ToInput(data.hysteresis_c_x10));
+    setNumericInput('cooling-test-timeout', data.test_timeout_sec);
+    var auto = pumpEl('cooling-auto-enable');
+    if (auto) auto.checked = !!data.auto_enable;
+}
+
+function setNumericInput(id, value) {
+    var el = pumpEl(id);
+    if (el && value !== null && value !== undefined) el.value = value;
+}
+
+function x10ToInput(value) {
+    if (value === null || value === undefined || isNaN(value)) return '';
+    return (Number(value) / 10).toFixed(1);
+}
+
+function readCoolingX10(id, label, minValue, maxValue) {
+    var el = pumpEl(id);
+    var raw = el ? el.value.trim() : '';
+    var value = Number(raw);
+    if (raw === '' || !isFinite(value)) {
+        return { ok: false, message: label + ': กรุณากรอกตัวเลข', value: 0 };
+    }
+    var x10 = Math.round(value * 10);
+    if (Math.abs((value * 10) - x10) > 0.0001 || x10 < minValue || x10 > maxValue) {
+        return { ok: false, message: label + ': ค่าอยู่นอกช่วงที่รองรับ', value: 0 };
+    }
+    return { ok: true, value: x10 };
+}
+
+function readCoolingU32(id, label, minValue, maxValue) {
+    var el = pumpEl(id);
+    var raw = el ? el.value.trim() : '';
+    if (!/^\d+$/.test(raw)) {
+        return { ok: false, message: label + ': ต้องเป็นจำนวนเต็ม', value: 0 };
+    }
+    var value = parseInt(raw, 10);
+    if (value < minValue || value > maxValue) {
+        return { ok: false, message: label + ': ค่าอยู่นอกช่วงที่รองรับ', value: 0 };
+    }
+    return { ok: true, value: value };
+}
+
+function buildCoolingConfigPayload() {
+    if (!coolingConfig) return null;
+    var threshold = readCoolingX10('cooling-threshold-input', 'Threshold', -550, 1250);
+    var hysteresis = readCoolingX10('cooling-hysteresis-input', 'Hysteresis', 1, 500);
+    var testTimeout = readCoolingU32('cooling-test-timeout', 'Test ON seconds', 1, 3600);
+    if (!threshold.ok) return threshold;
+    if (!hysteresis.ok) return hysteresis;
+    if (!testTimeout.ok) return testTimeout;
+
+    return {
+        ok: true,
+        payload: {
+            threshold_c_x10: threshold.value,
+            hysteresis_c_x10: hysteresis.value,
+            auto_enable: !!(pumpEl('cooling-auto-enable') && pumpEl('cooling-auto-enable').checked),
+            mode: coolingConfig.mode === 'auto' ? 'auto' : 'force_off',
+            test_timeout_sec: testTimeout.value,
+            compressor_min_off_sec: Number(coolingConfig.compressor_min_off_sec || 300),
+            cooling_relay_polarity: coolingConfig.cooling_relay_polarity || 'active_low'
+        }
+    };
+}
+
+function saveCoolingConfig() {
+    if (!coolingConfigLoaded || coolingPending) return;
+    var built = buildCoolingConfigPayload();
+    if (!built || !built.ok) {
+        setCoolingAlert((built && built.message) ? built.message : 'ตรวจสอบค่า cooling แล้วลองบันทึกอีกครั้ง');
+        return;
+    }
+
+    coolingPending = true;
+    setCoolingAlert('');
+    setText('cooling-config-state', 'กำลังบันทึก cooling...');
+    updateCoolingConfigSaveButton(false);
+    updateCoolingButtons();
+    apiPost('/api/cooling/config', built.payload, function(err, data) {
+        coolingPending = false;
+        if (err || !data || !data.ok) {
+            setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
+            setCoolingAlert((data && data.message) ? data.message : 'บันทึก cooling ไม่สำเร็จ');
+            updateCoolingConfigSaveButton(true);
+            updateCoolingButtons();
+            return;
+        }
+        coolingConfig = data;
+        coolingConfigLoaded = true;
+        setCoolingConfigFields(data);
+        if (data.status) applyCoolingStatus(data.status, true);
+        setCoolingClean('บันทึก cooling แล้ว');
+        showToast('บันทึกค่า cooling เรียบร้อย', 'success');
+    });
+}
+
+function setCoolingMode(mode) {
+    if (coolingPending) return;
+    coolingPending = true;
+    var label = mode === 'auto' ? 'Auto' : (mode === 'test_on' ? 'Test ON' : 'Force OFF');
+    setText('cooling-mode-action-state', 'กำลังสั่ง ' + label + '...');
+    updateCoolingButtons();
+    apiPost('/api/cooling/mode', { mode: mode }, function(err, data) {
+        coolingPending = false;
+        if (err || !data || !data.ok) {
+            setText('cooling-mode-action-state', '');
+            setCoolingAlert((data && data.message) ? data.message : 'สั่งงาน cooling ไม่สำเร็จ');
+            updateCoolingButtons();
+            showToast('สั่งงาน cooling ไม่สำเร็จ', 'error');
+            return;
+        }
+        coolingConfig = data;
+        coolingConfigLoaded = true;
+        if (data.status) applyCoolingStatus(data.status, true);
+        setText('cooling-mode-action-state', '');
+        setCoolingAlert('');
+        updateCoolingButtons();
+        showToast('สั่งงาน cooling เรียบร้อย', 'success');
+        syncCoolingStatus(true);
+    });
+}
+
+function syncCoolingStatus(force) {
+    if (window.location.pathname !== '/dashboard') return;
+    if (document.hidden && !force) return;
+    if (coolingStatusRequestInFlight) return;
+    coolingStatusRequestInFlight = true;
+    apiGet('/api/cooling/status', function(err, data) {
+        coolingStatusRequestInFlight = false;
+        if (err || !data || !data.ok) {
+            handleCoolingStatusFailure();
+            return;
+        }
+        applyCoolingStatus(data, true);
+    });
+}
+
+function applyCoolingStatus(status, authoritative) {
+    coolingLastStatus = status;
+    if (authoritative) coolingLastSyncMs = Date.now();
+
+    setText('cooling-temperature', renderCoolingTemperature(status));
+    setText('cooling-relay-state', 'Relay: ' + (status.relay_energized ? 'ON' : 'OFF'));
+    setText('cooling-mode-state', renderCoolingMode(status.mode));
+    setText('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
+    setText('cooling-fault-state', renderCoolingFault(status));
+    setText('cooling-threshold', renderCoolingCelsius(status.threshold_c));
+    setText('cooling-hysteresis', renderCoolingCelsius(status.hysteresis_c));
+    setText('cooling-auto-enable-state', 'Auto-enable: ' + (status.auto_enable ? 'ON' : 'OFF'));
+    setText('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
+    setText('cooling-lockout', status.lockout_active ? formatPumpCountdown(status.lockout_remaining_sec) : '--');
+    setText('cooling-test-remaining', status.test_remaining_sec ? formatPumpCountdown(status.test_remaining_sec) : '--');
+
+    var sync = pumpEl('cooling-sync-state');
+    if (sync) {
+        sync.className = status.fault || status.sensor_state === 'fault'
+            ? 'runtime-eyebrow error'
+            : (status.lockout_active || status.mode === 'test_on' ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
+        sync.textContent = status.fault || status.sensor_state === 'fault'
+            ? 'Sensor fault: cooling relay forced OFF'
+            : (status.lockout_active ? 'Compressor lockout active' : 'ซิงก์ล่าสุดจาก cooling runtime');
+    }
+    setCoolingAlert(status.fault ? 'พบ sensor fault ระบบบังคับปิด cooling relay แล้ว' : '');
+    updateCoolingButtons();
+}
+
+function handleCoolingStatusFailure() {
+    var stale = !coolingLastSyncMs || (Date.now() - coolingLastSyncMs > COOLING_STALE_MS);
+    var sync = pumpEl('cooling-sync-state');
+    if (sync) {
+        sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
+        sync.textContent = stale ? 'สถานะ cooling ขาดการซิงก์' : 'รอซิงก์ cooling';
+    }
+    if (stale) {
+        setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
+    }
+    updateCoolingButtons();
+}
+
+function updateCoolingButtons() {
+    var stale = !coolingLastSyncMs || (Date.now() - coolingLastSyncMs > COOLING_STALE_MS);
+    var disabled = coolingPending || stale || !coolingLastStatus || coolingLastStatus.config_valid === false;
+    var autoBtn = pumpEl('cooling-mode-auto');
+    var forceBtn = pumpEl('cooling-mode-force-off');
+    var testBtn = pumpEl('cooling-test-on');
+    if (autoBtn) autoBtn.disabled = disabled;
+    if (forceBtn) forceBtn.disabled = disabled;
+    if (testBtn) testBtn.disabled = disabled;
+    updateCoolingConfigSaveButton(coolingConfigLoaded);
+}
+
+function startCoolingStatusTimer() {
+    stopCoolingStatusTimer();
+    if (document.hidden) return;
+    coolingPollTimer = setInterval(function() { syncCoolingStatus(false); }, COOLING_STATUS_POLL_MS);
+}
+
+function stopCoolingStatusTimer() {
+    if (coolingPollTimer) clearInterval(coolingPollTimer);
+    coolingPollTimer = null;
+}
+
+function handleCoolingVisibilityChange() {
+    if (document.hidden) {
+        stopCoolingStatusTimer();
+    } else {
+        startCoolingStatusTimer();
+        syncCoolingStatus(true);
+    }
+}
+
+function renderCoolingTemperature(status) {
+    if (!status || !status.temperature_valid) return '--';
+    var value = Number(status.temperature_c);
+    return isFinite(value) ? value.toFixed(1) + ' C' : '--';
+}
+
+function renderCoolingCelsius(value) {
+    var num = Number(value);
+    return isFinite(num) ? num.toFixed(1) + ' C' : '--';
+}
+
+function renderCoolingMode(value) {
+    if (value === 'auto') return 'Auto';
+    if (value === 'test_on') return 'Test ON';
+    if (value === 'force_off') return 'Force OFF';
+    return '--';
+}
+
+function renderCoolingSensor(value) {
+    if (value === 'ok') return 'Sensor: OK';
+    if (value === 'fault') return 'Sensor: FAULT';
+    return 'Sensor: unknown';
+}
+
+function renderCoolingFault(status) {
+    if (!status) return 'Fault: --';
+    if (!status.fault) return 'Fault: none';
+    return 'Fault: ' + (status.fault_code || 'unknown');
+}
+
+function renderCoolingBlocked(value) {
+    if (!value || value === 'none') return '--';
+    if (value === 'compressor_lockout') return 'Compressor lockout';
+    if (value === 'sensor_fault') return 'Sensor fault';
+    if (value === 'force_off') return 'Force OFF';
+    if (value === 'config_invalid') return 'Config invalid';
+    return value;
+}
+
+/* ======== Hardware/Install Page ======== */
+
+function initHardwareInstall() {
+    if (window.location.pathname !== '/hardware') return;
+    wireHardwareForm();
+    updateHardwareSaveButton();
+    loadHardwareMap();
+}
+
+function hardwareEl(id) {
+    return document.getElementById(id);
+}
+
+function wireHardwareForm() {
+    var form = hardwareEl('hardware-map-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveHardwareMap();
+        });
+    }
+
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var select = hardwareEl(HARDWARE_FIELDS[i].select);
+        if (select) {
+            select.addEventListener('change', markHardwareDirty);
+        }
+    }
+
+    var confirm = hardwareEl('hardware-confirm-reboot');
+    if (confirm) {
+        confirm.addEventListener('change', updateHardwareSaveButton);
+    }
+}
+
+function setHardwareState(text) {
+    setText('hardware-map-state', text);
+}
+
+function setHardwareError(message) {
+    var el = hardwareEl('hardware-map-error');
+    if (!el) return;
+    el.textContent = message || '';
+}
+
+function markHardwareDirty() {
+    hardwareDirty = true;
+    var warn = hardwareEl('hardware-unsaved-warning');
+    if (warn) warn.classList.remove('hidden');
+    updateHardwareSaveButton();
+}
+
+function setHardwareClean() {
+    hardwareDirty = false;
+    hardwarePending = false;
+    var warn = hardwareEl('hardware-unsaved-warning');
+    if (warn) warn.classList.add('hidden');
+    var confirm = hardwareEl('hardware-confirm-reboot');
+    if (confirm) confirm.checked = false;
+    updateHardwareSaveButton();
+}
+
+function updateHardwareSaveButton() {
+    var btn = hardwareEl('hardware-save-map');
+    if (!btn) return;
+    var confirm = hardwareEl('hardware-confirm-reboot');
+    btn.disabled = hardwarePending || !hardwareDirty || !confirm || !confirm.checked;
+    btn.textContent = hardwarePending ? 'Saving...' : 'Save Pending Map';
+}
+
+function loadHardwareMap() {
+    setHardwareState('Loading hardware map');
+    setHardwareError('');
+    apiGet('/api/hardware/map', function(err, data) {
+        if (err) {
+            if (err.message === 'HTTP 401') {
+                window.location.href = '/login';
+                return;
+            }
+            setHardwareState('Load failed');
+            setHardwareError('Could not load hardware map: ' + err.message);
+            return;
+        }
+        if (!data || data.ok !== true) {
+            setHardwareState('Load failed');
+            setHardwareError('Hardware map API returned an invalid response.');
+            return;
+        }
+        applyHardwareMap(data);
+    });
+}
+
+function applyHardwareMap(data) {
+    hardwareMapData = data;
+    var effective = data.pending_valid && data.pending ? data.pending : data.active;
+
+    renderHardwareBanner(data);
+    renderHardwareSummary('hardware-active-summary', data.active, 'active');
+    renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending');
+    populateHardwareSelects(data.options || {}, effective || data.active || {});
+    renderHardwareWiring(data.active, data.pending_valid ? data.pending : null);
+    renderHardwareTechnical(data.options || {});
+
+    setHardwareClean();
+    setHardwareState(data.reboot_required ? 'Pending map saved - reboot required' : 'Active map loaded');
+}
+
+function renderHardwareBanner(data) {
+    var el = hardwareEl('hardware-reboot-banner');
+    if (!el) return;
+    if (!data || !data.reboot_required) {
+        el.classList.add('hidden');
+        el.textContent = '';
+        return;
+    }
+    el.classList.remove('hidden');
+    el.innerHTML = '<strong>Reboot required</strong><span> A pending GPIO map is saved. Reboot the ESP32 before wiring behavior changes.</span>';
+}
+
+function renderHardwareSummary(id, map, emptyLabel) {
+    var el = hardwareEl(id);
+    if (!el) return;
+    if (!map) {
+        el.innerHTML = '<div class="hardware-summary-empty">No ' + escHtml(emptyLabel) + ' changes</div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var field = HARDWARE_FIELDS[i];
+        html += '<div class="hardware-summary-row">'
+            + '<span>' + escHtml(field.label) + '</span>'
+            + '<strong>GPIO ' + escHtml(String(map[field.key])) + '</strong>'
+            + '</div>';
+    }
+    el.innerHTML = html;
+}
+
+function populateHardwareSelects(options, map) {
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var field = HARDWARE_FIELDS[i];
+        var select = hardwareEl(field.select);
+        if (!select) continue;
+
+        var current = map && map[field.key] !== undefined ? String(map[field.key]) : '';
+        var roleOptions = options[field.key] || [];
+        var html = '';
+        for (var j = 0; j < roleOptions.length; j++) {
+            var opt = roleOptions[j];
+            var value = String(opt.gpio);
+            var label = opt.label || ('GPIO ' + value);
+            if (opt.is_default) label += ' (default)';
+            html += '<option value="' + escHtml(value) + '"'
+                + (value === current ? ' selected' : '')
+                + '>' + escHtml(label) + '</option>';
+        }
+        select.innerHTML = html;
+        if (current) select.value = current;
+    }
+}
+
+function renderHardwareWiring(active, pending) {
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var field = HARDWARE_FIELDS[i];
+        var activeValue = active && active[field.key] !== undefined ? active[field.key] : '--';
+        var text = 'Active GPIO ' + activeValue;
+        if (pending && pending[field.key] !== undefined && String(pending[field.key]) !== String(activeValue)) {
+            text += ' / pending GPIO ' + pending[field.key];
+        }
+        setText(field.wire, text);
+    }
+}
+
+function renderHardwareTechnical(options) {
+    var el = hardwareEl('hardware-technical-list');
+    if (!el) return;
+
+    var html = '';
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var field = HARDWARE_FIELDS[i];
+        var roleOptions = options[field.key] || [];
+        html += '<div class="hardware-technical-group">'
+            + '<h4>' + escHtml(field.label) + '</h4>';
+        if (!roleOptions.length) {
+            html += '<p>No options reported by firmware.</p>';
+        }
+        for (var j = 0; j < roleOptions.length; j++) {
+            html += renderHardwareOption(roleOptions[j]);
+        }
+        html += '</div>';
+    }
+    el.innerHTML = html;
+}
+
+function renderHardwareOption(opt) {
+    var tags = [];
+    if (opt.input_capable) tags.push('Input');
+    if (opt.output_capable) tags.push('Output');
+    if (opt.internal_pull_capable) tags.push('Internal pull');
+    if (opt.is_default) tags.push('Default');
+
+    var tagHtml = '';
+    for (var i = 0; i < tags.length; i++) {
+        tagHtml += '<span class="capability-tag">' + escHtml(tags[i]) + '</span>';
+    }
+
+    return '<div class="hardware-option-row">'
+        + '<div><strong>GPIO ' + escHtml(String(opt.gpio)) + '</strong><span>' + escHtml(opt.label || '') + '</span></div>'
+        + '<div class="capability-tags">' + tagHtml + '</div>'
+        + '</div>';
+}
+
+function readHardwareMapForm() {
+    var map = {};
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var field = HARDWARE_FIELDS[i];
+        var select = hardwareEl(field.select);
+        if (!select || select.value === '') return null;
+        map[field.key] = parseInt(select.value, 10);
+    }
+    return map;
+}
+
+function saveHardwareMap() {
+    var confirm = hardwareEl('hardware-confirm-reboot');
+    if (!confirm || !confirm.checked) {
+        setHardwareError('Confirm that a reboot is required before saving.');
+        updateHardwareSaveButton();
+        return;
+    }
+
+    var map = readHardwareMapForm();
+    if (!map) {
+        setHardwareError('Choose a GPIO for every hardware role.');
+        return;
+    }
+
+    hardwarePending = true;
+    updateHardwareSaveButton();
+    setHardwareError('');
+    setHardwareState('Saving pending map');
+
+    apiPost('/api/hardware/map', {
+        map: map,
+        confirm_reboot_required: true
+    }, function(err, data) {
+        hardwarePending = false;
+        updateHardwareSaveButton();
+        if (err) {
+            setHardwareState('Save failed');
+            setHardwareError('Could not save hardware map: ' + err.message);
+            return;
+        }
+        if (!data || data.ok !== true) {
+            setHardwareState('Save failed');
+            setHardwareError('Save rejected: ' + ((data && (data.message || data.error)) || 'invalid hardware map'));
+            return;
+        }
+        applyHardwareMap(data);
+        showToast('Pending hardware map saved', 'success');
+    });
+}
+
 /* ======== Status Page ======== */
 
 function initStatus() {
@@ -1187,5 +1815,7 @@ function escJs(str) {
         initStatus();
     } else if (path === '/wifi') {
         initWifi();
+    } else if (path === '/hardware') {
+        initHardwareInstall();
     }
 })();
