@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dual Relay Cooling And Install UI
 status: planning
-last_updated: "2026-05-23T14:20:19.944Z"
-last_activity: 2026-05-23
+last_updated: "2026-05-24T00:00:00.000Z"
+last_activity: 2026-05-24
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 9
+  total_plans: 12
   completed_plans: 9
   percent: 60
 ---
@@ -20,7 +20,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-22)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 9 — authenticated hardware and cooling apis
+**Current focus:** Phase 9 -- authenticated hardware and cooling APIs
 
 ## Workflow
 
@@ -43,13 +43,15 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 
 ## Current Phase
 
-### Phase 8: DS18B20 Cooling Runtime
+### Phase 9: Authenticated Hardware And Cooling APIs
 
-**Goal:** Add a separate temperature cooling channel with safe fault behavior and compressor-aware relay control.
+**Goal:** Expose the new pump, cooling, and hardware-map contracts through authenticated local APIs.
 
-**Requirements:** COOL-01, COOL-02, COOL-03, COOL-04, COOL-05, COOL-06, COOL-07
+**Requirements:** UI-03, UI-04, UI-05, UI-06, UI-07
 
-**Status:** Ready to plan
+**Status:** Ready to execute
+
+**Plans:** 3
 
 ### Quick Tasks Completed
 
@@ -69,7 +71,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 - v1.1 planning preserves v1.0 phase directories and continues phase numbering from Phase 6.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 
-Last activity: 2026-05-23
+Last activity: 2026-05-24
 
 ---
 *State initialized: 2026-05-18*
@@ -79,4 +81,4 @@ Last activity: 2026-05-23
 Phase: 9
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-05-23 -- Phase 8 planning complete
+Last activity: 2026-05-24 -- Phase 9 planning complete
