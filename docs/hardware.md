@@ -57,11 +57,11 @@ The storage defaults are defined before runtime enforcement:
 | Cooling auto-enable | false |
 | Cooling mode | force off |
 | Test-on timeout | 10 seconds |
-| Compressor minimum off-time | 300 seconds |
+| Compressor minimum off-time | 10 seconds |
 
-The 300 second minimum off-time is enforced by Phase 8 before Auto or Test ON
-can energize the cooling relay. If the downstream hardware is only a fan, later
-UI/API phases can expose it as a setting while preserving the safe default.
+The minimum off-time is enforced before Auto or Test ON can energize the cooling
+relay. Phase 10 exposes it as `Lockout seconds` on the dashboard so local
+installations can tune it without reflashing.
 
 ## NVS Schema
 

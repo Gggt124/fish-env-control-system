@@ -778,6 +778,7 @@ function wireCoolingForm() {
         'cooling-threshold-input',
         'cooling-hysteresis-input',
         'cooling-test-timeout',
+        'cooling-min-off',
         'cooling-auto-enable'
     ];
     for (var i = 0; i < ids.length; i++) {
@@ -843,6 +844,7 @@ function setCoolingConfigFields(data) {
     setNumericInput('cooling-threshold-input', x10ToInput(data.threshold_c_x10));
     setNumericInput('cooling-hysteresis-input', x10ToInput(data.hysteresis_c_x10));
     setNumericInput('cooling-test-timeout', data.test_timeout_sec);
+    setNumericInput('cooling-min-off', data.compressor_min_off_sec);
     var auto = pumpEl('cooling-auto-enable');
     if (auto) auto.checked = !!data.auto_enable;
 }
@@ -889,9 +891,11 @@ function buildCoolingConfigPayload() {
     var threshold = readCoolingX10('cooling-threshold-input', 'Threshold', -550, 1250);
     var hysteresis = readCoolingX10('cooling-hysteresis-input', 'Hysteresis', 1, 500);
     var testTimeout = readCoolingU32('cooling-test-timeout', 'Test ON seconds', 1, 3600);
+    var minOff = readCoolingU32('cooling-min-off', 'Lockout seconds', 0, 86400);
     if (!threshold.ok) return threshold;
     if (!hysteresis.ok) return hysteresis;
     if (!testTimeout.ok) return testTimeout;
+    if (!minOff.ok) return minOff;
 
     return {
         ok: true,
@@ -901,7 +905,7 @@ function buildCoolingConfigPayload() {
             auto_enable: !!(pumpEl('cooling-auto-enable') && pumpEl('cooling-auto-enable').checked),
             mode: coolingConfig.mode === 'auto' ? 'auto' : 'force_off',
             test_timeout_sec: testTimeout.value,
-            compressor_min_off_sec: Number(coolingConfig.compressor_min_off_sec || 300),
+            compressor_min_off_sec: minOff.value,
             cooling_relay_polarity: coolingConfig.cooling_relay_polarity || 'active_low'
         }
     };
