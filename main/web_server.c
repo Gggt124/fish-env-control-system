@@ -2128,7 +2128,7 @@ static esp_err_t handle_api_cooling_config_post(httpd_req_t *req)
 
     cooling_control_config_t config;
     api_cooling_settings_to_runtime_config(&settings, &config);
-    if (!cooling_control_init(&config)) {
+    if (!cooling_control_apply_config(&config) && !cooling_control_init(&config)) {
         cooling_control_stop();
         return api_cooling_send_apply_error(req, "runtime_apply_failed",
                                             "Saved settings but could not apply cooling runtime config",

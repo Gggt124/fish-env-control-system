@@ -168,6 +168,9 @@
 - Use `/api/cooling/config` for persistent threshold, hysteresis, auto-enable,
   test timeout, min-off, and relay polarity. Use `/api/cooling/mode` for Auto,
   Force OFF, and Test ON runtime changes.
+- Apply ordinary cooling config saves in place so saving settings does not
+  restart the current lockout countdown. Only a real relay OFF transition or a
+  full hardware reinit should start a fresh lockout window.
 - Keep Test ON runtime-only. Do not save `mode: "test_on"` through
   `/api/cooling/config`.
 - Keep `/hardware` wiring-first. Render active GPIOs separately from pending

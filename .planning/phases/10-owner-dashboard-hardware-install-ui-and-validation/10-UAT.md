@@ -30,13 +30,13 @@ result: pass
 
 ### 3. Cooling Runtime Status Is Owner-Readable
 expected: The dashboard shows temperature or `--` when invalid, cooling relay state, mode, sensor state, fault state, threshold, hysteresis, boot auto-enable, blocked reason, lockout countdown, and Test ON remaining time when applicable.
-result: issue
-reported: "lockout นานเกินไป ต้องแก้ให้ตั้งค่าได้ และ default แค่ 10 วิพอ"
-severity: major
+result: pass
 
 ### 4. Cooling Config And Runtime Mode Controls Work
 expected: Saving threshold, hysteresis, boot auto-enable, and Test ON timeout updates the dashboard from the device. Auto and Force OFF change runtime mode. Test ON starts as a bounded runtime action and is not saved as a boot mode.
-result: [pending]
+result: issue
+reported: "เวลา บันทึก cooling ไม่ควร รี lockout time ใหม่"
+severity: major
 
 ### 5. Hardware/Install Page Is Wiring-First
 expected: `/hardware` opens after login and shows wiring summary first, active GPIO summary next, editable safe GPIO dropdowns, and technical pinout metadata after the primary install information.
@@ -65,23 +65,23 @@ result: [pending]
 ## Summary
 
 total: 10
-passed: 2
+passed: 3
 issues: 1
-pending: 7
+pending: 6
 skipped: 0
 blocked: 0
 
 ## Gaps
 
-- truth: "Cooling lockout duration is acceptable for the local install and can be configured from the UI."
+- truth: "Saving cooling configuration updates settings without restarting the current lockout countdown."
   status: failed
-  reason: "User reported: lockout นานเกินไป ต้องแก้ให้ตั้งค่าได้ และ default แค่ 10 วิพอ"
+  reason: "User reported: เวลา บันทึก cooling ไม่ควร รี lockout time ใหม่"
   severity: major
-  test: 3
-  root_cause: "The backend already supported compressor_min_off_sec, but the dashboard did not expose it and the default was still APP_TEMPLATE_COOLING_MIN_OFF_SEC=300."
+  test: 4
+  root_cause: "/api/cooling/config reapplied settings with cooling_control_init(), which reset runtime state and called restart_lockout_locked() even when only ordinary cooling settings were saved."
   artifacts: []
   missing:
-    - "Change APP_TEMPLATE_COOLING_MIN_OFF_SEC default to 10 seconds."
-    - "Expose compressor_min_off_sec as a dashboard Lockout seconds field."
-    - "Save compressor_min_off_sec from the dashboard payload instead of preserving a hidden 300 second value."
+    - "Add an in-place cooling_control_apply_config() path for ordinary cooling setting saves."
+    - "Use the in-place apply path from POST /api/cooling/config before falling back to full init."
+    - "Preserve the existing lockout deadline, only capping it when the new min-off setting is shorter."
   debug_session: ""

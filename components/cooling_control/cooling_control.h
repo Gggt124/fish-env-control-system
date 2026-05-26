@@ -76,6 +76,7 @@ typedef struct {
 
 cooling_control_config_t cooling_control_default_config(void);
 bool cooling_control_init(const cooling_control_config_t *config);
+bool cooling_control_apply_config(const cooling_control_config_t *config);
 bool cooling_control_stop(void);
 bool cooling_control_get_status(cooling_control_status_t *out);
 bool cooling_control_set_mode(cooling_control_mode_t mode);

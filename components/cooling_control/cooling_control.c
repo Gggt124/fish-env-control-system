@@ -512,6 +512,41 @@ bool cooling_control_init(const cooling_control_config_t *config)
     return true;
 }
 
+bool cooling_control_apply_config(const cooling_control_config_t *config)
+{
+    if (!config || !ensure_mutex() || !config_valid(config)) {
+        return false;
+    }
+
+    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (!s_initialized || !s_config_valid ||
+        config->ds18b20_gpio != s_config.ds18b20_gpio ||
+        config->cooling_relay_gpio != s_config.cooling_relay_gpio ||
+        config->relay_polarity != s_config.relay_polarity) {
+        xSemaphoreGive(s_cooling_mutex);
+        return false;
+    }
+
+    int64_t now_ms = esp_timer_get_time() / 1000;
+    uint32_t lockout_remaining_sec = seconds_until_deadline(now_ms, s_next_allowed_on_ms);
+    s_config = *config;
+
+    if (s_config.compressor_min_off_sec == 0) {
+        s_next_allowed_on_ms = 0;
+    } else if (lockout_remaining_sec > s_config.compressor_min_off_sec) {
+        s_next_allowed_on_ms = now_ms + ((int64_t)s_config.compressor_min_off_sec * MS_PER_SEC);
+    }
+
+    s_mode = s_config.mode;
+    s_previous_mode = s_mode == COOLING_CONTROL_MODE_TEST_ON
+        ? COOLING_CONTROL_MODE_FORCE_OFF
+        : s_mode;
+    s_test_deadline_ms = 0;
+    update_control_locked(now_ms);
+    xSemaphoreGive(s_cooling_mutex);
+    return true;
+}
+
 bool cooling_control_stop(void)
 {
     if (!ensure_mutex()) {
