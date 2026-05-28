@@ -12,10 +12,10 @@ updated: 2026-05-28T00:00:00.000Z
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-number: 6
-name: Hardware Map Save Uses Pending Reboot Guardrails
+number: 8
+name: Pump Relay Hardware Behavior Matches Float State
 expected: |
-  GPIO fields are dropdowns only. Save is disabled until the reboot acknowledgement is checked. Saving a changed map shows pending GPIO values and a reboot-required message while active runtime GPIOs remain unchanged before reboot.
+  With safe relay polarity confirmed, Float ON selects Timer 1 / Relay 1 and Float OFF selects Timer 2 / Relay 2. Relay 1 and Relay 2 are never energized together, and Stop forces both pump relays OFF.
 awaiting: user response
 
 ## Tests
@@ -42,7 +42,7 @@ result: pass
 
 ### 6. Hardware Map Save Uses Pending Reboot Guardrails
 expected: GPIO fields are dropdowns only. Save is disabled until the reboot acknowledgement is checked. Saving a changed map shows pending GPIO values and a reboot-required message while active runtime GPIOs remain unchanged before reboot.
-result: [pending]
+result: pass
 
 ### 7. Pending Hardware Map Applies Only After Reboot
 expected: After rebooting with a saved pending map, the active GPIO summary reflects the new map and the reboot-required state clears. Runtime pump/cooling GPIO behavior follows the active map, not the old pending display.
@@ -63,9 +63,9 @@ result: [pending]
 ## Summary
 
 total: 10
-passed: 6
+passed: 7
 issues: 0
-pending: 4
+pending: 3
 skipped: 0
 blocked: 0
 
