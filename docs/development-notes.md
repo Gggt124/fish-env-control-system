@@ -171,6 +171,10 @@
 - Apply ordinary cooling config saves in place so saving settings does not
   restart the current lockout countdown. Only a real relay OFF transition or a
   full hardware reinit should start a fresh lockout window.
+- Promote a valid pending hardware map during boot before pump and cooling
+  runtime initialization, then clear pending state. Runtime GPIOs should never
+  continue using the old active map after a successful reboot with pending
+  installer changes.
 - Keep Test ON runtime-only. Do not save `mode: "test_on"` through
   `/api/cooling/config`.
 - Keep `/hardware` wiring-first. Render active GPIOs separately from pending

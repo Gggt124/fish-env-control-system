@@ -76,9 +76,11 @@ Namespace `hw_cfg` stores active and pending hardware maps:
 
 Pending GPIO values do not change runtime behavior immediately. Firmware reports
 reboot required when a valid pending map exists and differs from the active map.
-The Hardware/Install UI shows active and pending values separately, requires a
-reboot confirmation checkbox, and saves pending maps through `/api/hardware/map`
-with `confirm_reboot_required: true`.
+On boot, firmware promotes a valid pending map to the active map before pump and
+cooling runtime initialization, then clears pending state. The Hardware/Install
+UI shows active and pending values separately, requires a reboot confirmation
+checkbox, and saves pending maps through `/api/hardware/map` with
+`confirm_reboot_required: true`.
 
 ## Hardware/Install UI Flow
 
@@ -92,7 +94,9 @@ It is intended for setup and service work, not daily pump operation.
    arrays. Do not add freeform numeric GPIO entry.
 4. Check the reboot acknowledgement and save. The submitted map is pending only;
    existing runtime GPIOs stay active until reboot.
-5. After reboot, verify active GPIOs and relay polarity before connecting a real
+5. Reboot. The firmware promotes the pending map to active before initializing
+   pump and cooling GPIOs, then clears the pending state.
+6. After reboot, verify active GPIOs and relay polarity before connecting a real
    pump or compressor load.
 
 Namespace `pump_cfg` keeps v1.0 keys and adds v1.1 fields:

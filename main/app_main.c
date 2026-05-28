@@ -48,6 +48,21 @@ static const char *hardware_map_load_status_name(nvs_store_hardware_map_load_sta
     }
 }
 
+static const char *pending_hardware_map_load_status_name(nvs_store_pending_hardware_map_load_status_t status)
+{
+    switch (status) {
+    case NVS_STORE_PENDING_HARDWARE_MAP_LOADED:
+        return "saved";
+    case NVS_STORE_PENDING_HARDWARE_MAP_NOT_FOUND:
+        return "not-found";
+    case NVS_STORE_PENDING_HARDWARE_MAP_INVALID:
+        return "invalid";
+    case NVS_STORE_PENDING_HARDWARE_MAP_ERROR:
+    default:
+        return "error";
+    }
+}
+
 static const char *cooling_settings_load_status_name(nvs_store_cooling_settings_load_status_t status)
 {
     switch (status) {
@@ -94,6 +109,60 @@ static pump_control_start_phase_t pump_start_phase_from_hardware(hardware_timer_
     return phase == HARDWARE_TIMER_START_PHASE_OFF
         ? PUMP_CONTROL_START_PHASE_OFF
         : PUMP_CONTROL_START_PHASE_ON;
+}
+
+static bool promote_pending_hardware_map_on_boot(
+    hardware_map_t *active_hardware_map,
+    nvs_store_hardware_map_load_status_t *hardware_map_status,
+    bool *promoted)
+{
+    if (promoted) {
+        *promoted = false;
+    }
+    if (!active_hardware_map || !hardware_map_status) {
+        return false;
+    }
+
+    hardware_map_t pending_hardware_map;
+    nvs_store_pending_hardware_map_load_status_t pending_status =
+        nvs_store_load_pending_hardware_map(&pending_hardware_map);
+    if (pending_status == NVS_STORE_PENDING_HARDWARE_MAP_NOT_FOUND) {
+        return true;
+    }
+    if (pending_status != NVS_STORE_PENDING_HARDWARE_MAP_LOADED) {
+        ESP_LOGW(TAG, "Pending hardware map %s; keeping active map",
+                 pending_hardware_map_load_status_name(pending_status));
+        return false;
+    }
+    if (hardware_map_equal(active_hardware_map, &pending_hardware_map)) {
+        if (!nvs_store_clear_pending_hardware_map()) {
+            ESP_LOGE(TAG, "Pending hardware map already active, but clear failed");
+            return false;
+        }
+        ESP_LOGI(TAG, "Pending hardware map already active; cleared pending state");
+        return true;
+    }
+    if (!nvs_store_save_hardware_map(&pending_hardware_map)) {
+        ESP_LOGE(TAG, "Failed to promote pending hardware map to active map");
+        return false;
+    }
+    if (!nvs_store_clear_pending_hardware_map()) {
+        *active_hardware_map = pending_hardware_map;
+        *hardware_map_status = NVS_STORE_HARDWARE_MAP_LOADED;
+        if (promoted) {
+            *promoted = true;
+        }
+        ESP_LOGE(TAG, "Pending hardware map promoted, but pending clear failed");
+        return false;
+    }
+
+    *active_hardware_map = pending_hardware_map;
+    *hardware_map_status = NVS_STORE_HARDWARE_MAP_LOADED;
+    if (promoted) {
+        *promoted = true;
+    }
+    ESP_LOGI(TAG, "Pending hardware map promoted to active map on boot");
+    return true;
 }
 
 static void apply_pump_settings_to_config(pump_control_config_t *config,
@@ -155,6 +224,11 @@ void app_main(void)
     hardware_map_t active_hardware_map;
     nvs_store_hardware_map_load_status_t hardware_map_status =
         nvs_store_load_hardware_map(&active_hardware_map);
+    bool hardware_map_promoted = false;
+    bool hardware_map_promotion_ok =
+        promote_pending_hardware_map_on_boot(&active_hardware_map,
+                                             &hardware_map_status,
+                                             &hardware_map_promoted);
     bool hardware_reboot_required = false;
     bool hardware_reboot_status_ok = nvs_store_hardware_reboot_required(&hardware_reboot_required);
 
@@ -187,6 +261,10 @@ void app_main(void)
         ESP_LOGW(TAG, "Hardware map %s; using defaults and suppressing auto-start for this boot",
                  hardware_map_load_status_name(hardware_map_status));
     }
+    if (!hardware_map_promotion_ok) {
+        allow_auto_start = false;
+        ESP_LOGW(TAG, "Pending hardware map promotion incomplete; suppressing auto-start for this boot");
+    }
 
     ESP_LOGI(TAG,
              "Active hardware map (%s): float GPIO=%d, relay1 GPIO=%d, relay2 GPIO=%d, ds18b20 GPIO=%d, cooling GPIO=%d",
@@ -196,6 +274,9 @@ void app_main(void)
              active_hardware_map.pump_relay2_gpio,
              active_hardware_map.ds18b20_data_gpio,
              active_hardware_map.cooling_relay_gpio);
+    if (hardware_map_promoted) {
+        ESP_LOGI(TAG, "Active hardware map was updated from pending values during this boot");
+    }
     if (hardware_reboot_status_ok) {
         ESP_LOGI(TAG, "Pending hardware map reboot_required=%s",
                  hardware_reboot_required ? "true" : "false");
