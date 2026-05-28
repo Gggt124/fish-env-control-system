@@ -12,10 +12,10 @@ updated: 2026-05-28T00:00:00.000Z
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-number: 7
-name: Pending Hardware Map Applies Only After Reboot
+number: 5
+name: Hardware/Install Page Is Wiring-First
 expected: |
-  After rebooting with a saved pending map, the active GPIO summary reflects the new map and the reboot-required state clears. Runtime pump/cooling GPIO behavior follows the active map, not the old pending display.
+  `/hardware` opens after login and shows wiring summary first, active GPIO summary next, editable safe GPIO dropdowns, and technical pinout metadata after the primary install information.
 awaiting: user response
 
 ## Tests
@@ -46,9 +46,7 @@ result: [pending]
 
 ### 7. Pending Hardware Map Applies Only After Reboot
 expected: After rebooting with a saved pending map, the active GPIO summary reflects the new map and the reboot-required state clears. Runtime pump/cooling GPIO behavior follows the active map, not the old pending display.
-result: issue
-reported: "ตืดปัญหาเวลาเปลี่ยน gpio ที่ ถึงแม้ boot ใหม่มันก็ยังไม่เปลี่ยน pin ให้ติด pending เหมือนเดิม"
-severity: major
+result: pass
 
 ### 8. Pump Relay Hardware Behavior Matches Float State
 expected: With safe relay polarity confirmed, Float ON selects Timer 1 / Relay 1 and Float OFF selects Timer 2 / Relay 2. Relay 1 and Relay 2 are never energized together, and Stop forces both pump relays OFF.
@@ -65,24 +63,12 @@ result: [pending]
 ## Summary
 
 total: 10
-passed: 4
-issues: 1
+passed: 5
+issues: 0
 pending: 5
 skipped: 0
 blocked: 0
 
 ## Gaps
 
-- truth: "Pending hardware map is promoted to active on reboot and pending state clears."
-  status: failed
-  reason: "User reported: ตืดปัญหาเวลาเปลี่ยน gpio ที่ ถึงแม้ boot ใหม่มันก็ยังไม่เปลี่ยน pin ให้ติด pending เหมือนเดิม"
-  severity: major
-  test: 7
-  root_cause: "Boot loaded the active hardware map and reported pending/reboot-required status, but never promoted a valid pending map into the active NVS keys before initializing pump/cooling GPIO runtime."
-  artifacts:
-    - main/app_main.c
-    - docs/hardware.md
-    - docs/development-notes.md
-  missing:
-    - "Verify on hardware that a saved pending GPIO map becomes active after reboot and the pending state clears."
-  debug_session: "Added boot-time pending hardware map promotion before runtime GPIO init. If promotion or pending clear fails, pump auto-start is suppressed for that boot."
+None.
