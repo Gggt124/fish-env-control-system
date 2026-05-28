@@ -12,10 +12,10 @@ updated: 2026-05-28T00:00:00.000Z
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-number: 8
-name: Pump Relay Hardware Behavior Matches Float State
+number: 9
+name: Cooling Hardware Behavior Is Safe
 expected: |
-  With safe relay polarity confirmed, Float ON selects Timer 1 / Relay 1 and Float OFF selects Timer 2 / Relay 2. Relay 1 and Relay 2 are never energized together, and Stop forces both pump relays OFF.
+  A missing or unreadable DS18B20 forces the cooling relay OFF and shows sensor fault. A valid sensor reading follows threshold/hysteresis behavior. Force OFF keeps the relay OFF, and Test ON is bounded and lockout-aware.
 awaiting: user response
 
 ## Tests
@@ -50,7 +50,7 @@ result: pass
 
 ### 8. Pump Relay Hardware Behavior Matches Float State
 expected: With safe relay polarity confirmed, Float ON selects Timer 1 / Relay 1 and Float OFF selects Timer 2 / Relay 2. Relay 1 and Relay 2 are never energized together, and Stop forces both pump relays OFF.
-result: [pending]
+result: pass
 
 ### 9. Cooling Hardware Behavior Is Safe
 expected: A missing or unreadable DS18B20 forces the cooling relay OFF and shows sensor fault. A valid sensor reading follows threshold/hysteresis behavior. Force OFF keeps the relay OFF, and Test ON is bounded and lockout-aware.
@@ -63,9 +63,9 @@ result: [pending]
 ## Summary
 
 total: 10
-passed: 7
+passed: 8
 issues: 0
-pending: 3
+pending: 2
 skipped: 0
 blocked: 0
 
