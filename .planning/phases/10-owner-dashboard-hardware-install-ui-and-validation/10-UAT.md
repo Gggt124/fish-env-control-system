@@ -12,10 +12,10 @@ updated: 2026-05-28T00:00:00.000Z
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
-number: 5
-name: Hardware/Install Page Is Wiring-First
+number: 6
+name: Hardware Map Save Uses Pending Reboot Guardrails
 expected: |
-  `/hardware` opens after login and shows wiring summary first, active GPIO summary next, editable safe GPIO dropdowns, and technical pinout metadata after the primary install information.
+  GPIO fields are dropdowns only. Save is disabled until the reboot acknowledgement is checked. Saving a changed map shows pending GPIO values and a reboot-required message while active runtime GPIOs remain unchanged before reboot.
 awaiting: user response
 
 ## Tests
@@ -38,7 +38,7 @@ result: pass
 
 ### 5. Hardware/Install Page Is Wiring-First
 expected: `/hardware` opens after login and shows wiring summary first, active GPIO summary next, editable safe GPIO dropdowns, and technical pinout metadata after the primary install information.
-result: [pending]
+result: pass
 
 ### 6. Hardware Map Save Uses Pending Reboot Guardrails
 expected: GPIO fields are dropdowns only. Save is disabled until the reboot acknowledgement is checked. Saving a changed map shows pending GPIO values and a reboot-required message while active runtime GPIOs remain unchanged before reboot.
@@ -63,9 +63,9 @@ result: [pending]
 ## Summary
 
 total: 10
-passed: 5
+passed: 6
 issues: 0
-pending: 5
+pending: 4
 skipped: 0
 blocked: 0
 
