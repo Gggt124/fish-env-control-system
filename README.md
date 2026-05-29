@@ -9,7 +9,7 @@ channel, and an installer-facing hardware map flow.
 
 - Target: classic ESP32 / ESP32 DevKit V1
 - Framework: ESP-IDF only, no Arduino or PlatformIO
-- ESP-IDF path: set `IDF_PATH` to your ESP-IDF install path (for example `C:\esp-idf`)
+- ESP-IDF path: set `IDF_PATH` to your ESP-IDF install path (for example `C:\esp\v6.0.1\esp-idf`)
 - Static frontend: embedded files, no CDN, no internet dependency
 - Flash layout: 4 MB flash with custom dual-OTA `partitions.csv`
 - Hardware contract: safe ESP32 DevKit V1 defaults are documented in
@@ -63,6 +63,12 @@ From PowerShell:
 .\scripts\build.ps1
 ```
 
+Clean old build output and rebuild:
+
+```powershell
+.\scripts\build.ps1 -FullClean
+```
+
 If ESP-IDF is installed elsewhere:
 
 ```powershell
@@ -73,7 +79,7 @@ Manual equivalent:
 
 ```powershell
 chcp 65001 > $null
-$env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
+$env:IDF_PATH = "C:\esp\v6.0.1\esp-idf"  # example; skip this if IDF_PATH is already set
 & "$env:IDF_PATH\export.ps1"
 idf.py build
 ```
@@ -82,6 +88,12 @@ Flash:
 
 ```powershell
 .\scripts\flash.ps1 -Port COMx
+```
+
+Flash and keep serial monitor open:
+
+```powershell
+.\scripts\flash.ps1 -Port COMx -Monitor
 ```
 
 Replace `COMx` with the ESP32 serial port.

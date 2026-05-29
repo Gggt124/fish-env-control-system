@@ -13,7 +13,7 @@ ESP-IDF must be installed and exported before every `idf.py` command. Prefer
 setting `IDF_PATH` to the local ESP-IDF install path:
 
 ```powershell
-$env:IDF_PATH = "C:\esp-idf"  # example; skip this if IDF_PATH is already set
+$env:IDF_PATH = "C:\esp\v6.0.1\esp-idf"  # example; skip this if IDF_PATH is already set
 & "$env:IDF_PATH\export.ps1"
 ```
 

@@ -1,6 +1,7 @@
 param(
     [string]$Port = "COM5",
-    [string]$IdfPath = $env:IDF_PATH
+    [string]$IdfPath = $env:IDF_PATH,
+    [switch]$Monitor
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,16 +9,43 @@ $ErrorActionPreference = "Stop"
 chcp 65001 > $null
 $env:PYTHONUTF8 = "1"
 
-if (-not $IdfPath) {
-    $defaultIdfPath = "C:\esp-idf"
-    if (Test-Path (Join-Path $defaultIdfPath "export.ps1")) {
-        $IdfPath = $defaultIdfPath
-    } else {
-        throw "ESP-IDF path not set. Set IDF_PATH or pass -IdfPath `"C:\path\to\esp-idf`"."
+function Resolve-IdfPath {
+    param(
+        [string]$Path
+    )
+
+    $candidates = @()
+
+    if ($Path) {
+        $candidates += $Path
+        $candidates += (Join-Path $Path "esp-idf")
     }
+
+    $candidates += "C:\esp\v6.0.1\esp-idf"
+    $candidates += "C:\esp\esp-idf"
+
+    if (Test-Path "C:\esp") {
+        $candidates += Get-ChildItem -LiteralPath "C:\esp" -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending |
+            ForEach-Object { Join-Path $_.FullName "esp-idf" }
+    }
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path (Join-Path $candidate "export.ps1"))) {
+            return (Resolve-Path $candidate).Path
+        }
+    }
+
+    return $null
 }
 
-$exportScript = Join-Path $IdfPath "export.ps1"
+$resolvedIdfPath = Resolve-IdfPath -Path $IdfPath
+if (-not $resolvedIdfPath) {
+    throw "ESP-IDF path not found. Set IDF_PATH or pass -IdfPath `"C:\esp`" or `"C:\path\to\esp-idf`"."
+}
+
+$env:IDF_PATH = $resolvedIdfPath
+$exportScript = Join-Path $env:IDF_PATH "export.ps1"
 if (-not (Test-Path $exportScript)) {
     throw "ESP-IDF export script not found: $exportScript"
 }
@@ -25,4 +53,8 @@ if (-not (Test-Path $exportScript)) {
 & $exportScript
 
 idf.py --version
-idf.py -p $Port flash
+if ($Monitor) {
+    idf.py -p $Port flash monitor
+} else {
+    idf.py -p $Port flash
+}
