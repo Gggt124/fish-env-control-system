@@ -54,7 +54,9 @@ result: pass
 
 ### 9. Cooling Hardware Behavior Is Safe
 expected: A missing or unreadable DS18B20 forces the cooling relay OFF and shows sensor fault. A valid sensor reading follows threshold/hysteresis behavior. Force OFF keeps the relay OFF, and Test ON is bounded and lockout-aware.
-result: [pending]
+result: issue
+reported: "บางที sensor นานผิดปกติ แม้จะต่อใหม่ เหมือนมันไม่รับค่าแล้ว ต้อง reboot ใหม่ถึงจะติด"
+severity: major
 
 ### 10. Wi-Fi And Status Pages Still Work
 expected: `/status` still reports system/Wi-Fi/device state. `/wifi` still scans networks, can connect STA with saved credentials, and AP fallback remains available if STA fails.
@@ -64,11 +66,23 @@ result: [pending]
 
 total: 10
 passed: 8
-issues: 0
-pending: 2
+issues: 1
+pending: 1
 skipped: 0
 blocked: 0
 
 ## Gaps
 
-None.
+- truth: "DS18B20 missing/reconnect recovery works without reboot."
+  status: failed
+  reason: "User reported: บางที sensor นานผิดปกติ แม้จะต่อใหม่ เหมือนมันไม่รับค่าแล้ว ต้อง reboot ใหม่ถึงจะติด"
+  severity: major
+  test: 9
+  root_cause: "Cooling runtime only discovered DS18B20 during init. If discovery failed at boot or the one-wire/device handle became stale after disconnect, the polling task kept reading the missing/stale handle and never rediscovered the bus."
+  artifacts:
+    - components/cooling_control/cooling_control.c
+    - docs/components.md
+    - docs/development-notes.md
+  missing:
+    - "Verify on hardware that unplugging/replugging DS18B20 recovers temperature readings and clears fault without reboot."
+  debug_session: "Added periodic DS18B20 rediscovery after read failures and ensured failed discovery cleans up one-wire bus handles before retry."

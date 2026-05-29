@@ -16,6 +16,7 @@
 #define COOLING_CONTROL_TASK_PRIORITY 4
 #define COOLING_CONTROL_POLL_MS 2000
 #define COOLING_CONTROL_CONVERSION_MS 750
+#define COOLING_CONTROL_SENSOR_REDISCOVERY_MS 5000
 #define COOLING_CONTROL_FAILED_READS_TO_FAULT 3
 #define COOLING_CONTROL_SUCCESSES_TO_CLEAR_FAULT 2
 #define MS_PER_SEC 1000LL
@@ -45,9 +46,12 @@ static uint32_t s_failed_reads;
 static uint32_t s_successful_reads;
 static int64_t s_next_allowed_on_ms;
 static int64_t s_test_deadline_ms;
+static int64_t s_next_sensor_discovery_ms;
 
 static onewire_bus_handle_t s_bus;
 static ds18b20_device_handle_t s_sensor;
+
+static void deinit_sensor(void);
 
 static bool ensure_mutex(void)
 {
@@ -175,6 +179,7 @@ static void reset_runtime_state_locked(void)
     s_successful_reads = 0;
     s_next_allowed_on_ms = 0;
     s_test_deadline_ms = 0;
+    s_next_sensor_discovery_ms = 0;
 }
 
 static void mark_config_invalid_locked(void)
@@ -349,6 +354,8 @@ static void record_read_success_locked(float temperature_c)
 
 static esp_err_t discover_sensor(void)
 {
+    deinit_sensor();
+
     onewire_bus_config_t bus_config = {
         .bus_gpio_num = s_config.ds18b20_gpio,
     };
@@ -357,12 +364,14 @@ static esp_err_t discover_sensor(void)
     };
     esp_err_t ret = onewire_new_bus_rmt(&bus_config, &rmt_config, &s_bus);
     if (ret != ESP_OK) {
+        deinit_sensor();
         return ret;
     }
 
     onewire_device_iter_handle_t iter = NULL;
     ret = onewire_new_device_iter(s_bus, &iter);
     if (ret != ESP_OK) {
+        deinit_sensor();
         return ret;
     }
 
@@ -377,6 +386,9 @@ static esp_err_t discover_sensor(void)
         }
     }
     onewire_del_device_iter(iter);
+    if (ret != ESP_OK) {
+        deinit_sensor();
+    }
     return ret;
 }
 
@@ -405,12 +417,39 @@ static esp_err_t read_temperature_once(float *temperature_c)
     return ds18b20_get_temperature(s_sensor, temperature_c);
 }
 
+static esp_err_t read_temperature_with_recovery(float *temperature_c)
+{
+    esp_err_t ret = read_temperature_once(temperature_c);
+    if (ret == ESP_OK) {
+        s_next_sensor_discovery_ms = 0;
+        return ret;
+    }
+
+    int64_t now_ms = esp_timer_get_time() / 1000;
+    if (s_next_sensor_discovery_ms > now_ms) {
+        return ret;
+    }
+
+    s_next_sensor_discovery_ms = now_ms + COOLING_CONTROL_SENSOR_REDISCOVERY_MS;
+    ESP_LOGW(TAG, "DS18B20 read failed on GPIO %d: %s; rediscovering",
+             s_config.ds18b20_gpio, esp_err_to_name(ret));
+    esp_err_t discover_ret = discover_sensor();
+    if (discover_ret != ESP_OK) {
+        ESP_LOGW(TAG, "DS18B20 rediscovery failed on GPIO %d: %s",
+                 s_config.ds18b20_gpio, esp_err_to_name(discover_ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "DS18B20 rediscovered on GPIO %d", s_config.ds18b20_gpio);
+    return read_temperature_once(temperature_c);
+}
+
 static void cooling_task(void *arg)
 {
     (void)arg;
     while (!s_task_stop) {
         float temperature_c = 0.0f;
-        esp_err_t ret = read_temperature_once(&temperature_c);
+        esp_err_t ret = read_temperature_with_recovery(&temperature_c);
 
         xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
         int64_t now_ms = esp_timer_get_time() / 1000;

@@ -65,6 +65,8 @@ Component-owned DS18B20 cooling runtime.
 - Keeps startup temperature as `unknown` until the first valid reading.
 - Declares sensor fault after 3 consecutive read failures and clears it after
   2 consecutive successful readings.
+- Rediscovers the one-wire bus after read failures so a missing or reconnected
+  DS18B20 can recover without reboot.
 - Controls the dedicated cooling relay separately from pump relays.
 - In Auto mode, turns cooling ON at or above threshold and OFF below threshold
   minus hysteresis.

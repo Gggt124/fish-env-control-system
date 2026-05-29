@@ -114,6 +114,9 @@
   blocked reason, lockout countdown, and test countdown.
 - Treat missing/unreadable DS18B20 as safe-off: fault after 3 consecutive failed
   reads, recovery after 2 consecutive successful reads.
+- Rediscover the one-wire bus after DS18B20 read failures. A sensor that was
+  missing at boot or reconnected later must recover without reboot once reads
+  succeed again.
 - Preserve boot/reinit compressor protection. The cooling relay is treated as
   just turned OFF on runtime init, so Auto and Test ON wait for min-off.
 - Keep Test ON runtime-only. It may be added to future mutation APIs, but it
