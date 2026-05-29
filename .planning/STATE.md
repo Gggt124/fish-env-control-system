@@ -4,7 +4,7 @@ milestone: v1.1
 milestone_name: Dual Relay Cooling And Install UI
 status: ready_to_verify
 last_updated: 2026-05-24T00:00:00.000Z
-last_activity: 2026-05-24
+last_activity: 2026-05-29
 progress:
   total_phases: 5
   completed_phases: 4
@@ -60,6 +60,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 |---|-------------|------|--------|-----------|
 | 260520-s4a | Smooth pump countdown UI and update safe defaults | 2026-05-20 | c56ad65 | [260520-s4a-smooth-pump-countdown-ui-and-update-safe](./quick/260520-s4a-smooth-pump-countdown-ui-and-update-safe/) |
 | 260520-siy | Switch to dual OTA partition layout | 2026-05-20 | b7e88c7 | [260520-siy-switch-to-dual-ota-partition-layout](./quick/260520-siy-switch-to-dual-ota-partition-layout/) |
+| 260529-kso | Use ESP-IDF from C:\esp\v6.0.1\esp-idf, remove old C:\esp-idf install, build/flash/monitor firmware | 2026-05-29 | dd640c6 | [260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re](./quick/260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re/) |
 
 ## Notes
 
@@ -72,7 +73,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 - v1.1 planning preserves v1.0 phase directories and continues phase numbering from Phase 6.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 
-Last activity: 2026-05-24
+Last activity: 2026-05-29 - Completed quick task 260529-kso: Use ESP-IDF from C:\esp\v6.0.1\esp-idf, remove old C:\esp-idf install, build/flash/monitor firmware
 
 ---
 *State initialized: 2026-05-18*
@@ -82,4 +83,4 @@ Last activity: 2026-05-24
 Phase: 10
 Plan: 10-03
 Status: Executed - ready to verify
-Last activity: 2026-05-24
+Last activity: 2026-05-29 - Completed quick task 260529-kso: Use ESP-IDF from C:\esp\v6.0.1\esp-idf, remove old C:\esp-idf install, build/flash/monitor firmware
