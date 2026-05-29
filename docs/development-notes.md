@@ -184,6 +184,11 @@
   GPIOs, and explain that pending values need reboot before becoming active.
 - Populate Hardware/Install dropdowns from `/api/hardware/map` option arrays
   instead of duplicating safe GPIO lists in HTML or JavaScript.
+- Keep frontend polling bounded. XHR requests need timeouts and in-flight
+  guards so a weak Wi-Fi/browser connection cannot accumulate stale HTTP
+  sockets over hours of dashboard use.
+- Leave socket headroom for non-HTTP services. The HTTP server must not consume
+  all LwIP sockets because captive DNS also owns a UDP socket.
 
 ### DON'T
 - Don't add freeform numeric GPIO entry to the frontend.

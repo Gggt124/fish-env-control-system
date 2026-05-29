@@ -57,6 +57,13 @@ static bool api_pump_add_status_object(cJSON *root);
 
 /* --------------- Helpers --------------- */
 
+static void set_common_response_headers(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Connection", "close");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    httpd_resp_set_hdr(req, "X-Content-Type-Options", "nosniff");
+}
+
 static void url_decode(char *dst, const char *src)
 {
     while (*src) {
@@ -145,6 +152,35 @@ static const char* chip_model_to_string(esp_chip_model_t model)
     }
 }
 
+static const char *reset_reason_to_string(esp_reset_reason_t reason)
+{
+    switch (reason) {
+    case ESP_RST_POWERON:
+        return "power_on";
+    case ESP_RST_EXT:
+        return "external_reset";
+    case ESP_RST_SW:
+        return "software_reset";
+    case ESP_RST_PANIC:
+        return "panic";
+    case ESP_RST_INT_WDT:
+        return "interrupt_watchdog";
+    case ESP_RST_TASK_WDT:
+        return "task_watchdog";
+    case ESP_RST_WDT:
+        return "other_watchdog";
+    case ESP_RST_DEEPSLEEP:
+        return "deep_sleep";
+    case ESP_RST_BROWNOUT:
+        return "brownout";
+    case ESP_RST_SDIO:
+        return "sdio";
+    case ESP_RST_UNKNOWN:
+    default:
+        return "unknown";
+    }
+}
+
 /* Format MAC address bytes to XX:XX:XX:XX:XX:XX string */
 static void format_mac(const uint8_t *mac, char *out)
 {
@@ -220,10 +256,14 @@ static bool is_same_origin(httpd_req_t *req, bool allow_missing_header)
 /* Send JSON response */
 static esp_err_t send_json(httpd_req_t *req, const char *json, const char *status)
 {
+    set_common_response_headers(req);
     httpd_resp_set_type(req, "application/json");
     httpd_resp_set_status(req, status);
-    httpd_resp_send(req, json, strlen(json));
-    return ESP_OK;
+    esp_err_t ret = httpd_resp_send(req, json, strlen(json));
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "JSON response send failed: %s", esp_err_to_name(ret));
+    }
+    return ret;
 }
 
 static esp_err_t send_api_error(httpd_req_t *req, const char *code, const char *message,
@@ -1455,9 +1495,13 @@ static esp_err_t serve_static(httpd_req_t *req, const uint8_t *start, const uint
                               const char *mime_type)
 {
     size_t len = (size_t)(end - start);
+    set_common_response_headers(req);
     httpd_resp_set_type(req, mime_type);
-    httpd_resp_send(req, (const char *)start, len);
-    return ESP_OK;
+    esp_err_t ret = httpd_resp_send(req, (const char *)start, len);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "Static response send failed: %s", esp_err_to_name(ret));
+    }
+    return ret;
 }
 
 /* --------------- Route Handlers --------------- */
@@ -1467,10 +1511,12 @@ static esp_err_t handle_root(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
     if (get_session_from_request(req, token, sizeof(token)) && session_validate(token)) {
+        set_common_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/dashboard");
         httpd_resp_send(req, NULL, 0);
     } else {
+        set_common_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
         httpd_resp_send(req, NULL, 0);
@@ -1490,6 +1536,7 @@ static esp_err_t handle_get_login(httpd_req_t *req)
 static esp_err_t handle_get_dashboard(httpd_req_t *req)
 {
     if (!require_auth(req)) {
+        set_common_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
         httpd_resp_send(req, NULL, 0);
@@ -1504,6 +1551,7 @@ static esp_err_t handle_get_dashboard(httpd_req_t *req)
 static esp_err_t handle_get_wifi(httpd_req_t *req)
 {
     if (!require_auth(req)) {
+        set_common_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
         httpd_resp_send(req, NULL, 0);
@@ -1518,6 +1566,7 @@ static esp_err_t handle_get_wifi(httpd_req_t *req)
 static esp_err_t handle_get_hardware(httpd_req_t *req)
 {
     if (!require_auth(req)) {
+        set_common_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
         httpd_resp_send(req, NULL, 0);
@@ -1542,6 +1591,14 @@ static esp_err_t handle_app_js(httpd_req_t *req)
     return serve_static(req,
         _binary_app_js_start, _binary_app_js_end,
         "application/javascript; charset=utf-8");
+}
+
+/* GET /favicon.ico - browsers request this automatically; avoid repeated 404 sockets. */
+static esp_err_t handle_favicon(httpd_req_t *req)
+{
+    set_common_response_headers(req);
+    httpd_resp_set_status(req, "204 No Content");
+    return httpd_resp_send(req, NULL, 0);
 }
 
 /* POST /api/login */
@@ -1711,11 +1768,13 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, json_str, strlen(json_str));
+    if (!json_str) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+    }
+    esp_err_t result = send_json(req, json_str, "200 OK");
     free(json_str);
 
-    return ESP_OK;
+    return result;
 }
 
 /* POST /api/wifi/connect - protected, connect to given SSID */
@@ -1840,6 +1899,7 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
 static esp_err_t handle_get_status(httpd_req_t *req)
 {
     if (!require_auth(req)) {
+        set_common_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
         httpd_resp_send(req, NULL, 0);
@@ -2322,6 +2382,9 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     bool ap_up = wifi_manager_is_ap_enabled();
 
     cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+    }
     cJSON_AddBoolToObject(root, "ok", true);
 
     /* ---------- System ---------- */
@@ -2334,6 +2397,7 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     cJSON_AddStringToObject(root, "idf_version", esp_get_idf_version());
     cJSON_AddStringToObject(root, "project_name", APP_TEMPLATE_NAME);
     cJSON_AddStringToObject(root, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
+    cJSON_AddStringToObject(root, "reset_reason", reset_reason_to_string(esp_reset_reason()));
 
     /* ---------- MAC addresses ---------- */
     uint8_t mac[6];
@@ -2396,6 +2460,9 @@ static esp_err_t handle_api_status(httpd_req_t *req)
 
     char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
+    if (!json_str) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+    }
     esp_err_t result = send_json(req, json_str, "200 OK");
     free(json_str);
     return result;
@@ -2408,7 +2475,11 @@ bool web_server_start(void)
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = APP_TEMPLATE_HTTP_MAX_URI_HANDLERS;
+    config.max_open_sockets = APP_TEMPLATE_HTTP_MAX_OPEN_SOCKETS;
+    config.recv_wait_timeout = APP_TEMPLATE_HTTP_RECV_TIMEOUT_SEC;
+    config.send_wait_timeout = APP_TEMPLATE_HTTP_SEND_TIMEOUT_SEC;
     config.lru_purge_enable = true;
+    config.keep_alive_enable = false;
 
     if (httpd_start(&server, &config) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start HTTP server");
@@ -2424,6 +2495,7 @@ bool web_server_start(void)
         { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware,   .user_ctx = NULL },
         { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css,      .user_ctx = NULL },
         { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js,         .user_ctx = NULL },
+        { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon,        .user_ctx = NULL },
         { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login,      .user_ctx = NULL },
         { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout,     .user_ctx = NULL },
         { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan,  .user_ctx = NULL },
@@ -2450,6 +2522,10 @@ bool web_server_start(void)
         }
     }
 
-    ESP_LOGI(TAG, "HTTP server started on port %d", config.server_port);
+    ESP_LOGI(TAG, "HTTP server started on port %d (max_sockets=%d, recv_timeout=%d, send_timeout=%d)",
+             config.server_port,
+             config.max_open_sockets,
+             config.recv_wait_timeout,
+             config.send_wait_timeout);
     return true;
 }

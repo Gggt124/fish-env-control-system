@@ -115,6 +115,9 @@ Public API is declared in `components/wifi_manager/wifi_manager.h`.
 
 `main/web_server.c` is intentionally project-level glue because it references
 embedded static file symbols from `main/CMakeLists.txt`.
+The HTTP server keeps a small open-socket limit, enables LRU purge, sends
+`Connection: close`, and uses short send/receive timeouts so browser polling
+cannot exhaust the ESP32/LwIP socket table during long-running dashboard use.
 
 Template-owned routes:
 

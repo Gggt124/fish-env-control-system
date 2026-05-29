@@ -24,38 +24,58 @@ function checkAuth() {
 
 /* ======== API Helpers ======== */
 
+var API_TIMEOUT_MS = 8000;
+
 function apiGet(url, cb) {
     var xhr = new XMLHttpRequest();
+    var done = false;
+    function finish(err, data) {
+        if (done) return;
+        done = true;
+        cb(err, data);
+    }
     xhr.open('GET', url, true);
+    xhr.timeout = API_TIMEOUT_MS;
     xhr.onload = function() {
         if (xhr.status === 200) {
-            try { cb(null, JSON.parse(xhr.responseText)); }
-            catch(e) { cb(e, null); }
+            try { finish(null, JSON.parse(xhr.responseText)); }
+            catch(e) { finish(e, null); }
         } else {
-            cb(new Error('HTTP ' + xhr.status), null);
+            finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function() { cb(new Error('Network error'), null); };
+    xhr.onerror = function() { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
 function apiPost(url, body, cb) {
     var xhr = new XMLHttpRequest();
+    var done = false;
+    function finish(err, data) {
+        if (done) return;
+        done = true;
+        cb(err, data);
+    }
     xhr.open('POST', url, true);
+    xhr.timeout = API_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function() {
         try {
             var parsed = JSON.parse(xhr.responseText);
-            cb(null, parsed);
+            finish(null, parsed);
         } catch(e) {
             if (xhr.status === 200) {
-                cb(e, null);
+                finish(e, null);
             } else {
-                cb(new Error('HTTP ' + xhr.status), null);
+                finish(new Error('HTTP ' + xhr.status), null);
             }
         }
     };
-    xhr.onerror = function() { cb(new Error('Network error'), null); };
+    xhr.onerror = function() { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
     xhr.send(JSON.stringify(body));
 }
 
@@ -159,6 +179,8 @@ var coolingStatusRequestInFlight = false;
 var coolingPollTimer = null;
 var COOLING_STATUS_POLL_MS = 2000;
 var COOLING_STALE_MS = 8000;
+var statusSummaryRequestInFlight = false;
+var statusFullRequestInFlight = false;
 var hardwareMapData = null;
 var hardwareDirty = false;
 var hardwarePending = false;
@@ -1363,13 +1385,16 @@ function saveHardwareMap() {
 
 function initStatus() {
     if (window.location.pathname !== '/status') return;
-    refreshStatus();
     refreshFullStatus();
     setInterval(refreshFullStatus, 30000);
 }
 
 function refreshFullStatus() {
+    if (document.hidden) return;
+    if (statusFullRequestInFlight) return;
+    statusFullRequestInFlight = true;
     apiGet('/api/status', function(err, data) {
+        statusFullRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { window.location.href = '/login'; }
             return;
@@ -1382,6 +1407,7 @@ function refreshFullStatus() {
         setText('st-cpu-freq', data.cpu_freq_mhz + ' MHz');
         setText('st-idf-version', data.idf_version);
         setText('st-project-version', data.project_version);
+        setText('st-reset-reason', data.reset_reason || '--');
 
         /* Memory */
         var freeKb = (data.free_heap / 1024).toFixed(0);
@@ -1441,7 +1467,11 @@ function setText(id, val) {
 }
 
 function refreshStatus() {
+    if (document.hidden) return;
+    if (statusSummaryRequestInFlight) return;
+    statusSummaryRequestInFlight = true;
     apiGet('/api/status', function(err, data) {
+        statusSummaryRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { window.location.href = '/login'; }
             return;

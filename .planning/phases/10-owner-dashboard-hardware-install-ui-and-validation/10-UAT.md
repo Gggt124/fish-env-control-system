@@ -58,17 +58,34 @@ result: pass
 
 ### 10. Wi-Fi And Status Pages Still Work
 expected: `/status` still reports system/Wi-Fi/device state. `/wifi` still scans networks, can connect STA with saved credentials, and AP fallback remains available if STA fails.
-result: [pending]
+result: issue
+reported: "พอเปิดนานๆแล้ว webapp จะมีปัญหา เหมือน error หรือ crash; logs show httpd_accept_conn error 23, send error 11, and POWERON_RESET after long run"
+severity: major
 
 ## Summary
 
 total: 10
 passed: 9
-issues: 0
-pending: 1
+issues: 1
+pending: 0
 skipped: 0
 blocked: 0
 
 ## Gaps
 
-None.
+- truth: "Long-running web dashboard/status polling remains responsive without exhausting ESP32 HTTP/LwIP sockets."
+  status: failed
+  reason: "User reported long-running webapp errors/crash. Logs include httpd_accept_conn accept error 23, httpd send error 11, and later POWERON_RESET."
+  severity: major
+  test: 10
+  root_cause: "HTTP server allowed the default 7 open sockets while captive DNS also uses a socket, leaving little or no LwIP descriptor headroom. Frontend /api/status polling also had no timeout or in-flight guard, so weak or stale browser connections could accumulate over hours."
+  artifacts:
+    - components/app_config/app_config.h
+    - main/web_server.c
+    - main/static/app.js
+    - docs/components.md
+    - docs/development-notes.md
+  missing:
+    - "Verify on hardware that dashboard/status pages remain responsive during a long-running browser session."
+    - "Confirm whether POWERON_RESET was caused by real power interruption/brownout separately from web socket exhaustion."
+  debug_session: "Reduced HTTP open sockets to leave LwIP headroom for DNS, enabled short HTTP timeouts, sends Connection: close/no-store headers, added /favicon.ico 204 response, and added frontend XHR timeouts plus /api/status in-flight guards."
