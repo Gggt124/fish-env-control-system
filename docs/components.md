@@ -115,9 +115,10 @@ Public API is declared in `components/wifi_manager/wifi_manager.h`.
 
 `main/web_server.c` is intentionally project-level glue because it references
 embedded static file symbols from `main/CMakeLists.txt`.
-The HTTP server keeps a small open-socket limit, enables LRU purge, sends
-`Connection: close`, and uses short send/receive timeouts so browser polling
-cannot exhaust the ESP32/LwIP socket table during long-running dashboard use.
+The HTTP server uses ESP-IDF's default 7-client concurrency with a larger LwIP
+socket budget, enables LRU purge, sends `Connection: close`, and uses bounded
+send/receive timeouts so browser polling cannot exhaust the ESP32/LwIP socket
+table during long-running dashboard use.
 Common captive-portal probe paths such as `/connecttest.txt` and
 `/generate_204` are routed explicitly to the login page instead of falling
 through to the server's default 404 error path.

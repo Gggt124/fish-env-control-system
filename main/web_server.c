@@ -262,6 +262,7 @@ static esp_err_t send_json(httpd_req_t *req, const char *json, const char *statu
     esp_err_t ret = httpd_resp_send(req, json, strlen(json));
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "JSON response send failed: %s", esp_err_to_name(ret));
+        return ESP_OK;
     }
     return ret;
 }
@@ -1500,6 +1501,7 @@ static esp_err_t serve_static(httpd_req_t *req, const uint8_t *start, const uint
     esp_err_t ret = httpd_resp_send(req, (const char *)start, len);
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "Static response send failed: %s", esp_err_to_name(ret));
+        return ESP_OK;
     }
     return ret;
 }

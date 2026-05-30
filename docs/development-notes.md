@@ -187,8 +187,10 @@
 - Keep frontend polling bounded. XHR requests need timeouts and in-flight
   guards so a weak Wi-Fi/browser connection cannot accumulate stale HTTP
   sockets over hours of dashboard use.
-- Leave socket headroom for non-HTTP services. The HTTP server must not consume
-  all LwIP sockets because captive DNS also owns a UDP socket.
+- Leave socket headroom for non-HTTP services by increasing the LwIP socket
+  budget rather than starving browser concurrency. ESP-IDF's HTTP default of 7
+  client sockets is useful for page refreshes because browsers fetch HTML, CSS,
+  JavaScript, and API JSON concurrently.
 - Handle common captive-portal probe paths explicitly. Windows/macOS/Android
   may request `/connecttest.txt`, `/ncsi.txt`, `/hotspot-detect.html`, or
   `/generate_204` after joining the SoftAP; routing them avoids noisy default
