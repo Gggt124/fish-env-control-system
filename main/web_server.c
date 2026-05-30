@@ -1601,6 +1601,19 @@ static esp_err_t handle_favicon(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
+/*
+ * Captive-portal connectivity probes. Windows and mobile clients request these
+ * automatically after joining the SoftAP; redirect them explicitly instead of
+ * letting esp_http_server's default 404 path create noisy socket errors.
+ */
+static esp_err_t handle_captive_probe(httpd_req_t *req)
+{
+    set_common_response_headers(req);
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/login");
+    return httpd_resp_send(req, NULL, 0);
+}
+
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
@@ -2496,6 +2509,10 @@ bool web_server_start(void)
         { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css,      .user_ctx = NULL },
         { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js,         .user_ctx = NULL },
         { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon,        .user_ctx = NULL },
+        { .uri = "/connecttest.txt", .method = HTTP_GET, .handler = handle_captive_probe,  .user_ctx = NULL },
+        { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe,  .user_ctx = NULL },
+        { .uri = "/hotspot-detect.html", .method = HTTP_GET, .handler = handle_captive_probe, .user_ctx = NULL },
+        { .uri = "/ncsi.txt",       .method = HTTP_GET,  .handler = handle_captive_probe,  .user_ctx = NULL },
         { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login,      .user_ctx = NULL },
         { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout,     .user_ctx = NULL },
         { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan,  .user_ctx = NULL },

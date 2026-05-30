@@ -88,4 +88,4 @@ blocked: 0
   missing:
     - "Verify on hardware that dashboard/status pages remain responsive during a long-running browser session."
     - "Confirm whether POWERON_RESET was caused by real power interruption/brownout separately from web socket exhaustion."
-  debug_session: "Reduced HTTP open sockets to leave LwIP headroom for DNS, enabled short HTTP timeouts, sends Connection: close/no-store headers, added /favicon.ico 204 response, and added frontend XHR timeouts plus /api/status in-flight guards."
+  debug_session: "Reduced HTTP open sockets to leave LwIP headroom for DNS, enabled short HTTP timeouts, sends Connection: close/no-store headers, added /favicon.ico 204 response, added frontend XHR timeouts plus /api/status in-flight guards, and routed captive probe paths like /connecttest.txt to /login instead of default 404."

@@ -189,6 +189,10 @@
   sockets over hours of dashboard use.
 - Leave socket headroom for non-HTTP services. The HTTP server must not consume
   all LwIP sockets because captive DNS also owns a UDP socket.
+- Handle common captive-portal probe paths explicitly. Windows/macOS/Android
+  may request `/connecttest.txt`, `/ncsi.txt`, `/hotspot-detect.html`, or
+  `/generate_204` after joining the SoftAP; routing them avoids noisy default
+  404 responses and keeps clients pointed at the local login page.
 
 ### DON'T
 - Don't add freeform numeric GPIO entry to the frontend.
