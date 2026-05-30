@@ -195,6 +195,9 @@
   may request `/connecttest.txt`, `/ncsi.txt`, `/hotspot-detect.html`, or
   `/generate_204` after joining the SoftAP; routing them avoids noisy default
   404 responses and keeps clients pointed at the local login page.
+- For `/api/wifi/disconnect`, respond before changing STA state. If the request
+  arrives over the STA interface, disconnecting first tears down the TCP path
+  and the browser reports failure even though the device did disconnect.
 
 ### DON'T
 - Don't add freeform numeric GPIO entry to the frontend.

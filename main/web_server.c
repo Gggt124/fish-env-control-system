@@ -52,6 +52,8 @@ extern const uint8_t _binary_status_html_end[]   asm("_binary_status_html_end");
 
 #define RATE_LIMIT_MAX     APP_TEMPLATE_LOGIN_RATE_LIMIT_MAX
 #define RATE_LIMIT_WINDOW  APP_TEMPLATE_LOGIN_RATE_LIMIT_SEC
+#define WIFI_DISCONNECT_TASK_STACK_BYTES 2048
+#define WIFI_DISCONNECT_DELAY_MS 500
 
 static bool api_pump_add_status_object(cJSON *root);
 
@@ -1892,6 +1894,16 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
     return result;
 }
 
+static void wifi_disconnect_after_response_task(void *arg)
+{
+    (void)arg;
+    vTaskDelay(pdMS_TO_TICKS(WIFI_DISCONNECT_DELAY_MS));
+    if (!wifi_manager_disconnect_sta()) {
+        ESP_LOGW(TAG, "Deferred STA disconnect reported failure");
+    }
+    vTaskDelete(NULL);
+}
+
 /* POST /api/wifi/disconnect - protected, disconnect STA */
 static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
 {
@@ -1903,11 +1915,16 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
-    if (!wifi_manager_disconnect_sta()) {
-        return send_json(req, "{\"ok\":false,\"error\":\"disconnect_failed\"}", "200 OK");
+    if (xTaskCreate(wifi_disconnect_after_response_task,
+                    "wifi_disconnect",
+                    WIFI_DISCONNECT_TASK_STACK_BYTES,
+                    NULL,
+                    tskIDLE_PRIORITY + 1,
+                    NULL) != pdPASS) {
+        return send_json(req, "{\"ok\":false,\"error\":\"disconnect_task_failed\"}", "500 Internal Server Error");
     }
 
-    return send_json(req, "{\"ok\":true}", "200 OK");
+    return send_json(req, "{\"ok\":true,\"disconnect_pending\":true}", "200 OK");
 }
 
 /* GET /status - protected, serves full status page */

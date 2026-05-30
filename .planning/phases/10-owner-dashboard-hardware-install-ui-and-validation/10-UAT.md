@@ -88,4 +88,4 @@ blocked: 0
   missing:
     - "Verify on hardware that dashboard/status pages remain responsive during a long-running browser session."
     - "Confirm whether POWERON_RESET was caused by real power interruption/brownout separately from web socket exhaustion."
-  debug_session: "Added frontend XHR timeouts plus /api/status in-flight guards, sends Connection: close/no-store headers, added /favicon.ico 204 response, routed captive probe paths like /connecttest.txt to /login instead of default 404, increased LwIP socket budget to 16, restored HTTP concurrency to 7 sockets, and extended send timeout for larger static assets."
+  debug_session: "Added frontend XHR timeouts plus /api/status in-flight guards, sends Connection: close/no-store headers, added /favicon.ico 204 response, routed captive probe paths like /connecttest.txt to /login instead of default 404, increased LwIP socket budget to 16, restored HTTP concurrency to 7 sockets, extended send timeout for larger static assets, and changed /api/wifi/disconnect to respond before deferred STA disconnect so the UI does not report false failure."
