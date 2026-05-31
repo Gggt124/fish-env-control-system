@@ -62,6 +62,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 | 260520-siy | Switch to dual OTA partition layout | 2026-05-20 | b7e88c7 | [260520-siy-switch-to-dual-ota-partition-layout](./quick/260520-siy-switch-to-dual-ota-partition-layout/) |
 | 260529-kso | Use ESP-IDF from C:\esp\v6.0.1\esp-idf, remove old C:\esp-idf install, build/flash/monitor firmware | 2026-05-29 | dd640c6 | [260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re](./quick/260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re/) |
 | 260531-lvf | Mark the currently connected Wi-Fi network as connected and disable redundant password reconnect selection in the scan list | 2026-05-31 | 5c210d7 | [260531-lvf-mark-the-currently-connected-wi-fi-netwo](./quick/260531-lvf-mark-the-currently-connected-wi-fi-netwo/) |
+| 260531-nag | Add a mobile-friendly show password checkbox to the Wi-Fi connect form | 2026-05-31 | a4aa645 | [260531-nag-add-a-mobile-friendly-show-password-chec](./quick/260531-nag-add-a-mobile-friendly-show-password-chec/) |
 
 ## Notes
 
@@ -74,7 +75,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 - v1.1 planning preserves v1.0 phase directories and continues phase numbering from Phase 6.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 
-Last activity: 2026-05-31 - Completed quick task 260531-lvf: Mark the active STA network in Wi-Fi scan results and prevent redundant reconnect selection
+Last activity: 2026-05-31 - Completed quick task 260531-nag: Add an explicit show-password checkbox to the Wi-Fi connect form
 
 ---
 *State initialized: 2026-05-18*
@@ -84,4 +85,4 @@ Last activity: 2026-05-31 - Completed quick task 260531-lvf: Mark the active STA
 Phase: 10
 Plan: 10-03
 Status: Executed - ready to verify
-Last activity: 2026-05-31 - Completed quick task 260531-lvf: Mark the active STA network in Wi-Fi scan results and prevent redundant reconnect selection
+Last activity: 2026-05-31 - Completed quick task 260531-nag: Add an explicit show-password checkbox to the Wi-Fi connect form
