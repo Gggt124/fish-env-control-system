@@ -210,6 +210,8 @@
 - Mark the active STA SSID in `/api/wifi/scan` and render it as a disabled
   status row. Re-selecting the network that is already connected needlessly
   asks for a password and can restart APSTA radio transitions.
+- Provide an explicit show-password checkbox in the Wi-Fi form. Mobile
+  browsers do not consistently expose the desktop password reveal affordance.
 
 ### DON'T
 - Don't add freeform numeric GPIO entry to the frontend.

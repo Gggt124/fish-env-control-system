@@ -1712,6 +1712,14 @@ function toggleStaticIp() {
     if (nmInput) nmInput.disabled = !checked;
 }
 
+function toggleWifiPasswordVisibility() {
+    var pwInput = document.getElementById('wifi-password');
+    var showToggle = document.getElementById('show-wifi-password');
+    if (pwInput && showToggle) {
+        pwInput.type = showToggle.checked ? 'text' : 'password';
+    }
+}
+
 function selectNetwork(ssid) {
     var items = document.querySelectorAll('.network-item');
     for (var i = 0; i < items.length; i++) {
@@ -1730,6 +1738,7 @@ function selectNetwork(ssid) {
     var panel = document.getElementById('input-panel');
     var overlay = document.getElementById('overlay-hint');
     var pwInput = document.getElementById('wifi-password');
+    var showPwToggle = document.getElementById('show-wifi-password');
     var connectBtn = document.getElementById('connect-btn');
     var cancelBtn = document.getElementById('cancel-btn');
 
@@ -1738,6 +1747,7 @@ function selectNetwork(ssid) {
     if (panel) panel.classList.remove('disabled');
     if (overlay) overlay.style.display = 'none';
     if (pwInput) pwInput.disabled = false;
+    if (showPwToggle) showPwToggle.disabled = false;
     if (connectBtn) connectBtn.disabled = false;
     if (cancelBtn) cancelBtn.disabled = false;
 
@@ -1761,6 +1771,7 @@ function clearSelection() {
     var panel = document.getElementById('input-panel');
     var overlay = document.getElementById('overlay-hint');
     var pwInput = document.getElementById('wifi-password');
+    var showPwToggle = document.getElementById('show-wifi-password');
     var connectBtn = document.getElementById('connect-btn');
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
@@ -1771,7 +1782,8 @@ function clearSelection() {
     if (display) display.textContent = '---';
     if (panel) panel.classList.add('disabled');
     if (overlay) overlay.style.display = '';
-    if (pwInput) { pwInput.disabled = true; pwInput.value = ''; }
+    if (pwInput) { pwInput.disabled = true; pwInput.value = ''; pwInput.type = 'password'; }
+    if (showPwToggle) { showPwToggle.disabled = true; showPwToggle.checked = false; }
     if (connectBtn) connectBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
     if (statusEl) statusEl.textContent = '';

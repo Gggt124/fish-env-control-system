@@ -1144,6 +1144,11 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
     border-radius: var(--radius-md); font-size: 16px; color: var(--outline);
 }
 
+.password-visibility-toggle {
+    display: flex; align-items: center; gap: var(--sp-sm);
+    width: fit-content; min-height: 40px; margin-top: var(--sp-xs);
+}
+
 .btn-row { display: flex; gap: 12px; margin-top: auto; }
 .btn-row .btn { flex: 1; }
 
