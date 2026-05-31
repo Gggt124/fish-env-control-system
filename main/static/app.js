@@ -1656,6 +1656,13 @@ function doScan() {
         /* Sort by RSSI (strongest first) */
         nets.sort(function(a, b) { return b.rssi - a.rssi; });
 
+        for (var j = 0; j < nets.length; j++) {
+            if (nets[j].connected && selectedSsid === nets[j].ssid) {
+                clearSelection();
+                break;
+            }
+        }
+
         var html = '';
         for (var i = 0; i < nets.length; i++) {
             var sigClass = 'weak';
@@ -1664,9 +1671,10 @@ function doScan() {
             if (nets[i].rssi >= -50) { sigClass = 'strong'; sigLabel = '\u0e14\u0e35\u0e21\u0e32\u0e01'; sigIcon = '&#9643;'; }
             else if (nets[i].rssi >= -70) { sigClass = 'good'; sigLabel = '\u0e14\u0e35'; sigIcon = '&#9642;'; }
 
-            html += '<li class=\"network-item' + (selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
+            var isConnected = nets[i].connected === true;
+            html += '<li class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
                     'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                    'onclick=\"selectNetwork(\'' + escJs(nets[i].ssid) + '\')\">' +
+                    (isConnected ? 'aria-disabled=\"true\">' : 'onclick=\"selectNetwork(\'' + escJs(nets[i].ssid) + '\')\">') +
                 '<div class=\"network-item-left\">' +
                     '<div class=\"network-icon\">' + sigIcon + '</div>' +
                     '<div class=\"network-info\">' +
@@ -1682,7 +1690,9 @@ function doScan() {
                         '<div class=\"sig-label ' + sigClass + '\">' + sigLabel + '</div>' +
                         '<div class=\"sig-dbm\">' + nets[i].rssi + ' dBm</div>' +
                     '</div>' +
-                    '<button class=\"btn btn-outline btn-sm\">\u0e40\u0e25\u0e37\u0e2d\u0e01</button>' +
+                    (isConnected
+                        ? '<span class=\"network-connected-label\">&#10003; \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</span>'
+                        : '<button type=\"button\" class=\"btn btn-outline btn-sm\">\u0e40\u0e25\u0e37\u0e2d\u0e01</button>') +
                 '</div>' +
             '</li>';
         }
@@ -1703,6 +1713,13 @@ function toggleStaticIp() {
 }
 
 function selectNetwork(ssid) {
+    var items = document.querySelectorAll('.network-item');
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].getAttribute('data-ssid') === ssid && items[i].classList.contains('connected')) {
+            return;
+        }
+    }
+
     selectedSsid = ssid;
 
     /* Update display */
@@ -1728,7 +1745,7 @@ function selectNetwork(ssid) {
     updateStepper(2);
 
     /* Highlight in list */
-    var items = document.querySelectorAll('.network-item');
+    items = document.querySelectorAll('.network-item');
     for (var i = 0; i < items.length; i++) {
         if (items[i].getAttribute('data-ssid') === ssid) {
             items[i].classList.add('selected');

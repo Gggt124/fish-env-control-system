@@ -1771,6 +1771,12 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
     }
     vSemaphoreDelete(ctx.sem);
 
+    bool sta_connected = wifi_manager_is_sta_connected();
+    char connected_ssid[33] = {0};
+    if (sta_connected) {
+        strncpy(connected_ssid, wifi_manager_get_sta_ssid(), sizeof(connected_ssid) - 1);
+    }
+
     cJSON *root = cJSON_CreateObject();
     cJSON_AddBoolToObject(root, "ok", true);
     cJSON *arr = cJSON_AddArrayToObject(root, "networks");
@@ -1780,6 +1786,8 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
         cJSON_AddNumberToObject(item, "rssi", ctx.entries[i].rssi);
         cJSON_AddStringToObject(item, "auth", ctx.entries[i].auth);
         cJSON_AddNumberToObject(item, "channel", ctx.entries[i].channel);
+        cJSON_AddBoolToObject(item, "connected",
+                              sta_connected && strcmp(ctx.entries[i].ssid, connected_ssid) == 0);
         cJSON_AddItemToArray(arr, item);
     }
 
@@ -1869,6 +1877,25 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
 
     if (has_static_ip && !ip_cfg.gateway[0]) {
         return send_json(req, "{\"ok\":false,\"error\":\"missing_gateway\"}", "400 Bad Request");
+    }
+
+    if (wifi_manager_is_sta_connected() && strcmp(wifi_manager_get_sta_ssid(), ssid) == 0) {
+        cJSON *resp = cJSON_CreateObject();
+        if (!resp) {
+            return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+        }
+        cJSON_AddBoolToObject(resp, "ok", true);
+        cJSON_AddBoolToObject(resp, "already_connected", true);
+        cJSON_AddStringToObject(resp, "ssid", wifi_manager_get_sta_ssid());
+        cJSON_AddStringToObject(resp, "ip", wifi_manager_get_sta_ip());
+        char *json_str = cJSON_PrintUnformatted(resp);
+        cJSON_Delete(resp);
+        if (!json_str) {
+            return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+        }
+        esp_err_t result = send_json(req, json_str, "200 OK");
+        free(json_str);
+        return result;
     }
 
     if (!wifi_manager_connect_sta(ssid, password, has_static_ip ? &ip_cfg : NULL)) {

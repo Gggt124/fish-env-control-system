@@ -1079,6 +1079,8 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 .network-item:hover { background: var(--surface-container-low); }
 .network-item:last-child { border-bottom: none; }
 .network-item.selected { background: var(--surface-container-low); }
+.network-item.connected { cursor: default; background: var(--surface-container-low); }
+.network-item.connected .network-icon { color: var(--secondary); }
 
 .network-item-left { display: flex; align-items: center; gap: var(--sp-md); }
 
@@ -1096,6 +1098,10 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 }
 
 .network-item-right { display: flex; align-items: center; gap: var(--sp-md); }
+.network-connected-label {
+    color: var(--secondary); font-size: 12px; font-weight: 700;
+    white-space: nowrap;
+}
 .net-signal { text-align: right; }
 .net-signal .sig-label { font-size: 12px; font-weight: 600; }
 .net-signal .sig-label.strong { color: var(--secondary); }
