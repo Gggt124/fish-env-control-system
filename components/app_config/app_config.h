@@ -22,6 +22,7 @@ extern "C" {
 #define APP_TEMPLATE_AP_CHANNEL            1
 #define APP_TEMPLATE_AP_MAX_CONN           4
 #define APP_TEMPLATE_WIFI_SCAN_MAX         20
+#define APP_TEMPLATE_WIFI_MAX_TX_POWER_QDBM 80
 
 #define APP_TEMPLATE_MDNS_HOSTNAME         "fish-pump"
 #define APP_TEMPLATE_MDNS_INSTANCE_NAME    "Fish Pump Dashboard"

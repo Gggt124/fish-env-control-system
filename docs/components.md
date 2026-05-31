@@ -108,6 +108,10 @@ Owns Wi-Fi init and runtime state.
 - Saves new STA credentials on connect
 - Restores AP fallback after STA failures
 - Optionally stops AP after STA gets IP
+- Serializes STA reconnect attempts through one deferred timer so an
+  asynchronous disconnect event cannot start overlapping connections.
+- Uses HT20 bandwidth and explicit maximum TX power for stable SoftAP setup
+  behavior while AP and STA share the classic ESP32 radio.
 
 Public API is declared in `components/wifi_manager/wifi_manager.h`.
 

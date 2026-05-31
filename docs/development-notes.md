@@ -62,9 +62,18 @@
 ### ✅ DO
 - When implementing `disconnect_sta()`, always check if the AP was auto-stopped and restore it — otherwise the ESP32 can end up in STA-only mode with no fallback AP
 - `wifi_manager_forget_sta()` already had the AP restore pattern; use it as a reference when fixing `disconnect_sta()`
+- Serialize STA connect attempts. `esp_wifi_disconnect()` completes
+  asynchronously, and `WIFI_EVENT_STA_DISCONNECTED` can race with a direct
+  `esp_wifi_connect()` call if both paths start a reconnect.
+- Prefer HT20 for the local setup AP and set maximum TX power explicitly.
+  Classic ESP32 APSTA uses one shared radio, so repeated STA channel/auth
+  churn can make the SoftAP appear weak or unstable to the installer.
 
 ### ❌ DON'T
 - Don't assume `wifi_manager_disconnect_sta()` is enough by itself — if AP auto-stop timer already fired (`WIFI_MODE_STA` + `s_ap_enabled=false`), the disconnect leaves the device unreachable via AP
+- Don't call `esp_wifi_connect()` directly from multiple event/API paths.
+  Route retries through one deferred scheduler so the Wi-Fi driver cannot
+  remain busy until reboot.
 
 ---
 

@@ -1,5 +1,6 @@
 #include "wifi_manager.h"
 #include "nvs_store.h"
+#include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -9,15 +10,19 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include <stdlib.h>
 #include <string.h>
 
 static const char *TAG = "wifi_mgr";
 
 #define STA_MAX_RETRY 1
+#define STA_CONNECT_DELAY_MS 400
 
 static bool s_ap_enabled = false;
 static bool s_sta_connected = false;
 static bool s_sta_configured = false;
+static bool s_sta_connecting = false;
+static bool s_sta_manual_connect_pending = false;
 static bool s_scan_in_progress = false;
 static char s_sta_ssid[33] = {0};
 static char s_ap_ip[16] = "192.168.4.1";
@@ -37,6 +42,7 @@ static wifi_scan_entry_t s_scan_results[WIFI_SCAN_MAX];
 static int s_scan_count = 0;
 
 static esp_timer_handle_t s_ap_stop_timer = NULL;
+static esp_timer_handle_t s_sta_connect_timer = NULL;
 
 static SemaphoreHandle_t s_wifi_mutex;
 
@@ -119,6 +125,80 @@ static bool apply_static_ip(const wifi_sta_ip_config_t *cfg)
     return true;
 }
 
+static void schedule_sta_connect(void);
+
+static void sta_connect_timer_cb(void *arg)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool should_connect = s_sta_configured &&
+                          !s_sta_connected &&
+                          !s_sta_connecting &&
+                          !s_scan_in_progress;
+    if (should_connect) {
+        s_sta_connecting = true;
+    }
+    xSemaphoreGive(s_wifi_mutex);
+
+    if (!should_connect) {
+        return;
+    }
+
+    esp_err_t err = esp_wifi_connect();
+    if (err == ESP_OK) {
+        return;
+    }
+
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    s_sta_connecting = false;
+    bool should_recover = s_sta_configured && !s_scan_in_progress;
+    xSemaphoreGive(s_wifi_mutex);
+
+    ESP_LOGW(TAG, "Deferred STA connect start failed: %s", esp_err_to_name(err));
+    if (should_recover && err == ESP_ERR_WIFI_CONN) {
+        ESP_LOGI(TAG, "Resetting busy STA state before retry");
+        esp_wifi_disconnect();
+        schedule_sta_connect();
+    }
+}
+
+static void schedule_sta_connect(void)
+{
+    if (!s_sta_connect_timer) {
+        ESP_LOGW(TAG, "STA connect timer unavailable");
+        return;
+    }
+
+    esp_timer_stop(s_sta_connect_timer);
+    esp_err_t err = esp_timer_start_once(s_sta_connect_timer, STA_CONNECT_DELAY_MS * 1000);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to schedule STA connect: %s", esp_err_to_name(err));
+    }
+}
+
+static void configure_radio_stability(void)
+{
+    esp_err_t sta_bw_err = esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW20);
+    if (sta_bw_err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to set STA bandwidth HT20: %s", esp_err_to_name(sta_bw_err));
+    }
+
+    esp_err_t ap_bw_err = esp_wifi_set_bandwidth(WIFI_IF_AP, WIFI_BW20);
+    if (ap_bw_err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to set AP bandwidth HT20: %s", esp_err_to_name(ap_bw_err));
+    }
+
+    esp_err_t power_err = esp_wifi_set_max_tx_power(APP_TEMPLATE_WIFI_MAX_TX_POWER_QDBM);
+    if (power_err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to set max TX power: %s", esp_err_to_name(power_err));
+        return;
+    }
+
+    int8_t tx_power = 0;
+    if (esp_wifi_get_max_tx_power(&tx_power) == ESP_OK) {
+        ESP_LOGI(TAG, "Radio stability: APSTA HT20, max TX power=%d qdBm", tx_power);
+    }
+}
+
 /* --------------- AP Auto-Stop Timer --------------- */
 
 static void ap_stop_timer_cb(void *arg)
@@ -139,11 +219,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         switch (event_id) {
         case WIFI_EVENT_STA_START:
             xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
-            if (s_sta_configured) {
-                xSemaphoreGive(s_wifi_mutex);
-                esp_wifi_connect();
-            } else {
-                xSemaphoreGive(s_wifi_mutex);
+            bool sta_configured = s_sta_configured;
+            xSemaphoreGive(s_wifi_mutex);
+            if (sta_configured) {
+                schedule_sta_connect();
             }
             break;
         case WIFI_EVENT_STA_DISCONNECTED: {
@@ -151,6 +230,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             ESP_LOGW(TAG, "STA disconnected, reason=%d", ev->reason);
             xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
             s_sta_connected = false;
+            s_sta_connecting = false;
             s_sta_ip[0] = '\0';
             s_sta_ssid[0] = '\0';
 
@@ -158,7 +238,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 esp_timer_stop(s_ap_stop_timer);
             }
 
-            if (!s_scan_in_progress) {
+            bool manual_connect_pending = s_sta_manual_connect_pending;
+            if (manual_connect_pending) {
+                s_sta_manual_connect_pending = false;
+                s_sta_retry_count = 0;
+            } else if (s_sta_configured && !s_scan_in_progress) {
                 s_sta_retry_count++;
             }
             bool retry_limit_reached = s_sta_retry_count > STA_MAX_RETRY;
@@ -167,13 +251,16 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             bool ap_enabled = s_ap_enabled;
             xSemaphoreGive(s_wifi_mutex);
 
-            if (retry_limit_reached) {
+            if (manual_connect_pending && sta_configured && !scan_in_progress) {
+                ESP_LOGI(TAG, "Scheduling requested STA connect after disconnect");
+                schedule_sta_connect();
+            } else if (retry_limit_reached) {
                 ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
                 if (!ap_enabled) {
                     wifi_manager_start_ap();
                 }
             } else if (sta_configured && !scan_in_progress) {
-                esp_wifi_connect();
+                schedule_sta_connect();
             }
             break;
         }
@@ -224,6 +311,8 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
             snprintf(s_sta_ip, sizeof(s_sta_ip), IPSTR, IP2STR(&ev->ip_info.ip));
             s_sta_connected = true;
+            s_sta_connecting = false;
+            s_sta_manual_connect_pending = false;
             s_sta_retry_count = 0;
             ESP_LOGI(TAG, "STA got IP: %s", s_sta_ip);
 
@@ -276,6 +365,20 @@ bool wifi_manager_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
 
     s_wifi_mutex = xSemaphoreCreateMutex();
+    if (!s_wifi_mutex) {
+        ESP_LOGE(TAG, "Failed to create Wi-Fi mutex");
+        return false;
+    }
+
+    esp_timer_create_args_t sta_connect_timer_args = {
+        .callback = &sta_connect_timer_cb,
+        .arg = NULL,
+        .name = "sta_connect_timer"
+    };
+    if (esp_timer_create(&sta_connect_timer_args, &s_sta_connect_timer) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create STA connect timer");
+        return false;
+    }
 
     /* Load AP config from NVS */
     nvs_store_load_ap_config(&s_ap_stop_timeout_ms, &s_ap_auto_stop);
@@ -315,6 +418,7 @@ bool wifi_manager_init(void)
     }
 
     ESP_ERROR_CHECK(esp_wifi_start());
+    configure_radio_stability();
 
     /* Create AP auto-stop timer */
     esp_timer_create_args_t timer_args = {
@@ -388,10 +492,6 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         return false;
     }
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
-    s_sta_retry_count = 0;
-    xSemaphoreGive(s_wifi_mutex);
-
     nvs_store_save_wifi(ssid, password);
 
     /* Save and apply static IP config if provided, otherwise clear it */
@@ -406,7 +506,20 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         restore_sta_dhcp();
     }
 
-    esp_wifi_disconnect();
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    s_sta_retry_count = 0;
+    s_sta_connected = false;
+    s_sta_configured = false;
+    s_sta_connecting = false;
+    s_sta_manual_connect_pending = true;
+    s_sta_ip[0] = '\0';
+    s_sta_ssid[0] = '\0';
+    xSemaphoreGive(s_wifi_mutex);
+
+    esp_err_t disconnect_err = esp_wifi_disconnect();
+    if (disconnect_err != ESP_OK && disconnect_err != ESP_ERR_WIFI_NOT_CONNECT) {
+        ESP_LOGW(TAG, "STA disconnect before connect returned: %s", esp_err_to_name(disconnect_err));
+    }
 
     wifi_config_t sta_cfg = {0};
     strncpy((char *)sta_cfg.sta.ssid, ssid, 32);
@@ -417,6 +530,9 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 
     if (esp_wifi_set_config(WIFI_IF_STA, &sta_cfg) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set STA config");
+        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+        s_sta_manual_connect_pending = false;
+        xSemaphoreGive(s_wifi_mutex);
         return false;
     }
 
@@ -424,12 +540,8 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
     s_sta_configured = true;
     xSemaphoreGive(s_wifi_mutex);
 
-    if (esp_wifi_connect() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start STA connect");
-        return false;
-    }
-
-    ESP_LOGI(TAG, "Connecting to STA SSID: %s", ssid);
+    schedule_sta_connect();
+    ESP_LOGI(TAG, "Queued STA connect for SSID: %s", ssid);
     return true;
 }
 
@@ -439,15 +551,20 @@ bool wifi_manager_disconnect_sta(void)
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
-    esp_err_t ret = esp_wifi_disconnect();
+    if (s_sta_connect_timer) {
+        esp_timer_stop(s_sta_connect_timer);
+    }
     s_sta_connected = false;
     s_sta_configured = false;
+    s_sta_connecting = false;
+    s_sta_manual_connect_pending = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     s_sta_retry_count = 0;
     bool ap_enabled = s_ap_enabled;
     xSemaphoreGive(s_wifi_mutex);
 
+    esp_err_t ret = esp_wifi_disconnect();
     if (!ap_enabled) {
         ESP_LOGI(TAG, "Restoring AP after STA disconnect");
         wifi_manager_start_ap();
@@ -462,15 +579,20 @@ bool wifi_manager_forget_sta(void)
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
-    esp_wifi_disconnect();
+    if (s_sta_connect_timer) {
+        esp_timer_stop(s_sta_connect_timer);
+    }
     s_sta_connected = false;
     s_sta_configured = false;
+    s_sta_connecting = false;
+    s_sta_manual_connect_pending = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     s_sta_retry_count = 0;
     bool ap_enabled = s_ap_enabled;
     xSemaphoreGive(s_wifi_mutex);
 
+    esp_wifi_disconnect();
     nvs_store_clear_wifi();
     nvs_store_clear_sta_ip();
     restore_sta_dhcp();
@@ -517,6 +639,10 @@ void wifi_manager_sta_disconnect_for_scan(void)
 {
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_scan_in_progress = true;
+    s_sta_connecting = false;
+    if (s_sta_connect_timer) {
+        esp_timer_stop(s_sta_connect_timer);
+    }
     xSemaphoreGive(s_wifi_mutex);
     esp_wifi_disconnect();
     vTaskDelay(pdMS_TO_TICKS(200));
@@ -536,7 +662,7 @@ void wifi_manager_sta_reconnect_after_scan(void)
         esp_timer_stop(s_ap_stop_timer);
     }
     if (sta_configured) {
-        esp_wifi_connect();
+        schedule_sta_connect();
     }
 }
 

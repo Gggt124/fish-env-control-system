@@ -78,7 +78,7 @@ blocked: 0
   reason: "User reported long-running webapp errors/crash. Logs include httpd_accept_conn accept error 23, httpd send error 11, and later POWERON_RESET."
   severity: major
   test: 10
-  root_cause: "HTTP server allowed the default 7 open sockets while captive DNS also uses a socket, leaving little or no LwIP descriptor headroom. Frontend /api/status polling also had no timeout or in-flight guard, so weak or stale browser connections could accumulate over hours."
+  root_cause: "HTTP server allowed the default 7 open sockets while captive DNS also uses a socket, leaving little or no LwIP descriptor headroom. Frontend /api/status polling also had no timeout or in-flight guard, so weak or stale browser connections could accumulate over hours. A separate APSTA issue allowed the API connect path and WIFI_EVENT_STA_DISCONNECTED handler to call esp_wifi_connect concurrently after an asynchronous disconnect, leaving STA busy until reboot and causing SoftAP radio churn."
   artifacts:
     - components/app_config/app_config.h
     - main/web_server.c
@@ -88,4 +88,5 @@ blocked: 0
   missing:
     - "Verify on hardware that dashboard/status pages remain responsive during a long-running browser session."
     - "Confirm whether POWERON_RESET was caused by real power interruption/brownout separately from web socket exhaustion."
-  debug_session: "Added frontend XHR timeouts plus /api/status in-flight guards, sends Connection: close/no-store headers, added /favicon.ico 204 response, routed captive probe paths like /connecttest.txt to /login instead of default 404, increased LwIP socket budget to 16, restored HTTP concurrency to 7 sockets, extended send timeout for larger static assets, and changed /api/wifi/disconnect to respond before deferred STA disconnect so the UI does not report false failure."
+    - "Verify SoftAP signal remains usable over time and repeated STA disconnect/connect cycles recover without reboot."
+  debug_session: "Added frontend XHR timeouts plus /api/status in-flight guards, sends Connection: close/no-store headers, added /favicon.ico 204 response, routed captive probe paths like /connecttest.txt to /login instead of default 404, increased LwIP socket budget to 16, restored HTTP concurrency to 7 sockets, extended send timeout for larger static assets, and changed /api/wifi/disconnect to respond before deferred STA disconnect so the UI does not report false failure. Long-uptime AP instability and STA reconnect requiring reboot were traced to overlapping esp_wifi_connect calls from the API and disconnect event paths. STA connect/retry now goes through one deferred timer, pending attempts are canceled by explicit disconnect/forget, APSTA bandwidth is fixed to HT20, and maximum TX power is set explicitly."
