@@ -13,14 +13,24 @@ backend did not advertise viewport override support, so retained images use
 the honest `chrome-default` viewport label rather than claiming `1440px` or
 `375px`.
 
+On `2026-06-03`, the in-app browser route became available and captured the
+same four protected-page baselines at a `375x812` mobile viewport. Full-page
+screenshots are `371px` wide after scrollbar accounting. Sticky mobile headers
+may repeat during full-page stitching on long pages; treat these as responsive
+layout evidence rather than pixel-perfect visual references.
+
 ## Retained Simulated Evidence
 
 | Surface | File | Notes |
 | --- | --- | --- |
 | Dashboard | `dashboard--default--chrome-default--simulated.jpg` | Static default layout and desktop sidebar. |
+| Dashboard mobile | `dashboard--default--375--simulated.jpg` | Static mobile layout at `375x812`. |
 | Hardware/Install | `hardware--default--chrome-default--simulated.jpg` | Static loading/default installer layout. |
+| Hardware/Install mobile | `hardware--default--375--simulated.jpg` | Static mobile installer layout at `375x812`. |
 | Status | `status--default--chrome-default--simulated.jpg` | Placeholder diagnostic layout. |
+| Status mobile | `status--default--375--simulated.jpg` | Placeholder mobile diagnostics at `375x812`. |
 | Wi-Fi | `wifi--default--chrome-default--simulated.jpg` | Static disconnected setup layout with deliberate example AP IP `192.168.4.1`. |
+| Wi-Fi mobile | `wifi--default--375--simulated.jpg` | Static disconnected mobile setup layout at `375x812`. |
 
 A Login default screenshot was captured and reviewed but not retained because
 the static form displayed credential-like placeholders. These screenshots are
@@ -41,7 +51,8 @@ Phase 14 should capture privacy-reviewed evidence for:
 - Wi-Fi disconnected, scanning, empty, scan error, selected, connecting,
   success, connect error, and disconnect feedback states.
 
-Capture each reachable state at desktop `1440px` and mobile `375px` widths.
+Capture each remaining reachable state at desktop `1440px` and mobile `375px`
+widths.
 Use the filename convention documented in `../README.md`.
 
 ## Privacy Gate
@@ -53,4 +64,4 @@ Before committing any screenshot:
 - Remove or redact STA and AP MAC addresses.
 - Keep local IP details only when they are deliberate example values.
 
-Post-repair privacy result: `pass` for the four retained screenshots.
+Post-repair privacy result: `pass` for the eight retained screenshots.

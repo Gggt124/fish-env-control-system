@@ -39,6 +39,8 @@ Get-ChildItem -File -LiteralPath "main\static" | Measure-Object -Property Length
 - Post-repair Browser result: four privacy-reviewed `simulated` protected-page
   screenshots captured through the available Chrome extension backend at its
   default desktop viewport. See `../11-SCREENSHOT-SUPPLEMENT.md`.
+- Mobile follow-up result: four privacy-reviewed `simulated` protected-page
+  screenshots captured through the in-app browser at a `375x812` viewport.
 - ESP32 device-backed run: `not-run`, no reachable test-device URL was
   available in this execution context.
 
@@ -67,11 +69,11 @@ remaining capture backlog.
 | Surface | Desktop `1440px` | Mobile `375px` | Runtime state coverage | Reason when not run |
 | --- | --- | --- | --- | --- |
 | Login | Captured then excluded | `not-run` | Default captured but excluded; loading and auth error `not-run` | Default image exposed credential-like placeholders, so the privacy gate excluded it. |
-| App Shell | `simulated` Chrome default | `not-run` | Desktop sidebar captured on protected pages; mobile topbar `not-run` | Chrome fallback does not advertise viewport override support. |
-| Dashboard | `simulated` Chrome default | `not-run` | Static default captured; loading, disabled, pump state, cooling state, sensor fault `not-run` | Dynamic states require API-backed fixtures or a device. |
-| Hardware/Install | `simulated` Chrome default | `not-run` | Static default captured; active map, pending map, pending reboot, save error `not-run` | Dynamic states require API-backed fixtures or a device. |
-| Status | `simulated` Chrome default | `not-run` | Static placeholder diagnostics captured; representative long values `not-run` | Long values require API-backed fixtures or a device. |
-| Wi-Fi | `simulated` Chrome default | `not-run` | Static disconnected baseline captured; loading, empty, scan error, selected, connect feedback, disconnect feedback `not-run` | Dynamic states require API-backed fixtures or a device. |
+| App Shell | `simulated` Chrome default | `simulated` `375x812` | Desktop sidebar and mobile topbar captured on protected pages. | Dynamic interaction remains unverified. |
+| Dashboard | `simulated` Chrome default | `simulated` `375x812` | Static default captured; loading, disabled, pump state, cooling state, sensor fault `not-run` | Dynamic states require API-backed fixtures or a device. |
+| Hardware/Install | `simulated` Chrome default | `simulated` `375x812` | Static default captured; active map, pending map, pending reboot, save error `not-run` | Dynamic states require API-backed fixtures or a device. |
+| Status | `simulated` Chrome default | `simulated` `375x812` | Static placeholder diagnostics captured; representative long values `not-run` | Long values require API-backed fixtures or a device. |
+| Wi-Fi | `simulated` Chrome default | `simulated` `375x812` | Static disconnected baseline captured; loading, empty, scan error, selected, connect feedback, disconnect feedback `not-run` | Dynamic states require API-backed fixtures or a device. |
 
 Every shipped page remains covered by source inspection in
 `11-BASELINE-UI-AUDIT.md`.
@@ -86,15 +88,15 @@ Screenshots must be reviewed before commit. Exclude or redact:
 - Local IP details beyond deliberate example values.
 - Any device identifier that is not required to explain the finding.
 
-Privacy result for the post-repair supplement: `pass` for the four committed
+Privacy result for the post-repair supplement: `pass` for the eight committed
 protected-page screenshots. The Login screenshot was reviewed and excluded
 because it displayed credential-like placeholders.
 
 ## Current Limitations
 
-- Responsive appearance at explicit `1440px` and `375px` viewports remains a
-  Phase 14 screenshot validation item because the available Chrome extension
-  backend did not advertise viewport override support.
+- Responsive appearance at explicit `1440px` remains a Phase 14 screenshot
+  validation item. Static mobile baselines are now captured at `375x812`;
+  dynamic mobile states remain deferred.
 - Runtime interaction states remain `not-run`; source inspection identifies
   their code paths without claiming visual or hardware validation.
 - The detector output is reproducible and committed as

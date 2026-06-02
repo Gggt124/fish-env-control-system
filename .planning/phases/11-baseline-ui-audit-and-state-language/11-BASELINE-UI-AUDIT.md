@@ -11,7 +11,8 @@ checks are therefore labeled `not-run`, not passed.
 A post-repair supplement later captured four privacy-reviewed protected-page
 desktop baselines through the available Chrome extension backend. These are
 explicitly labeled `simulated` and `chrome-default`; they do not replace the
-deferred `1440px`, `375px`, API-backed, or device-backed checks. See
+deferred `1440px`, API-backed, or device-backed checks. A later in-app browser
+pass captured four static protected-page mobile baselines at `375x812`. See
 `11-SCREENSHOT-SUPPLEMENT.md`.
 
 Evidence inventory: `evidence/README.md`  
@@ -96,16 +97,16 @@ deliberate than the underlying firmware deserves.
 | F-12 | `Enhancement` | Wi-Fi typography | Closely spaced type sizes may flatten hierarchy. | Impeccable detector output for `wifi.html:59`. | Scan results and recovery guidance may take longer to parse. | Validate visually and adjust only if scanability is weak. | Phase 13 |
 | F-13 | `Enhancement` | Progress motion | Progress fill animates `width`. | Impeccable detector output for `style.css:470`. | On a constrained device this can cause avoidable layout work. | Keep only if later capture remains smooth; otherwise replace with a transform-based fill. | Phase 13 |
 
-## Page-By-Page Not-Run Checks
+## Page-By-Page Runtime Checks
 
 | Surface | Check | Status | Reason |
 | --- | --- | --- | --- |
 | Login | Default, loading, and auth-error screenshots at `1440px` and `375px` | `not-run` | Browser setup failed twice before navigation. |
-| App Shell | Desktop sidebar and mobile navigation screenshots | `not-run` | Browser setup failed twice before navigation. |
-| Dashboard | Pump loading, unavailable, running, stopped, and cooling sensor-fault screenshots | `not-run` | Requires browser capture and API-backed state. |
-| Hardware/Install | Active map, pending map, pending reboot, save-success, and save-error screenshots | `not-run` | Requires browser capture and API-backed state. |
-| Status | Desktop and narrow diagnostics with long technical values | `not-run` | Browser setup failed twice before navigation. |
-| Wi-Fi | Disconnected, scanning, empty, scan-error, selected, connecting, success, connect-error, and disconnect screenshots | `not-run` | Requires browser capture and API-backed or controlled fixtures. |
+| App Shell | Desktop sidebar and mobile navigation screenshots | `simulated` static baseline | Chrome-default desktop sidebar and `375x812` mobile topbars are captured on protected pages. |
+| Dashboard | Pump loading, unavailable, running, stopped, and cooling sensor-fault screenshots | `simulated` static baseline; dynamic states `not-run` | Chrome-default desktop and `375x812` mobile static layouts are captured. Dynamic states require API-backed fixtures or a device. |
+| Hardware/Install | Active map, pending map, pending reboot, save-success, and save-error screenshots | `simulated` static baseline; dynamic states `not-run` | Chrome-default desktop and `375x812` mobile static layouts are captured. Dynamic states require API-backed fixtures or a device. |
+| Status | Desktop and narrow diagnostics with long technical values | `simulated` static baseline; long values `not-run` | Chrome-default desktop and `375x812` mobile placeholder layouts are captured. Representative long values require API-backed fixtures or a device. |
+| Wi-Fi | Disconnected, scanning, empty, scan-error, selected, connecting, success, connect-error, and disconnect screenshots | `simulated` static baseline; dynamic states `not-run` | Chrome-default desktop and `375x812` mobile disconnected layouts are captured. Remaining states require API-backed or controlled fixtures. |
 
 ## Positive Findings To Preserve
 
