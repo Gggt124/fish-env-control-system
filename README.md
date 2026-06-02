@@ -10,6 +10,7 @@ channel, and an installer-facing hardware map flow.
 - Target: classic ESP32 / ESP32 DevKit V1
 - Framework: ESP-IDF only, no Arduino or PlatformIO
 - ESP-IDF path: set `IDF_PATH` to your ESP-IDF install path (for example `C:\esp\v6.0.1\esp-idf`)
+- ESP-IDF tools path: wrappers auto-detect `IDF_TOOLS_PATH`, `C:\Espressif`, or `$HOME\.espressif`
 - Static frontend: embedded files, no CDN, no internet dependency
 - Flash layout: 4 MB flash with custom dual-OTA `partitions.csv`
 - Hardware contract: safe ESP32 DevKit V1 defaults are documented in
@@ -72,7 +73,7 @@ Clean old build output and rebuild:
 If ESP-IDF is installed elsewhere:
 
 ```powershell
-.\scripts\build.ps1 -IdfPath "D:\esp-idf"
+.\scripts\build.ps1 -IdfPath "D:\esp-idf" -IdfToolsPath "D:\Espressif"
 ```
 
 Manual equivalent:
@@ -80,6 +81,7 @@ Manual equivalent:
 ```powershell
 chcp 65001 > $null
 $env:IDF_PATH = "C:\esp\v6.0.1\esp-idf"  # example; skip this if IDF_PATH is already set
+$env:IDF_TOOLS_PATH = "C:\Espressif"      # example; needed when tools are outside $HOME\.espressif
 & "$env:IDF_PATH\export.ps1"
 idf.py build
 ```
@@ -158,7 +160,7 @@ fish_pump_relay_timer_control/
 | GET | `/hardware` | Yes | Hardware/Install wiring and GPIO map page |
 | GET | `/api/wifi/scan` | Yes | Scan networks |
 | POST | `/api/wifi/connect` | Yes | Connect STA |
-| POST | `/api/wifi/disconnect` | Yes | Disconnect STA |
+| POST | `/api/wifi/disconnect` | Yes | Disconnect STA, clear saved STA settings, and restore SoftAP fallback |
 | GET | `/api/status` | Yes | Device status JSON |
 | GET | `/api/pump/config` | Yes | Pump timers, auto-start, relay polarity, start phases, read-only active hardware fields |
 | POST | `/api/pump/config` | Yes | Save pump timers, auto-start, Relay 1/Relay 2 polarity, and Timer 1/Timer 2 start phases |

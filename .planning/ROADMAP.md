@@ -7,7 +7,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-05-20) — `.planning/milestones/v1.0-ROADMAP.md`
-- 🔄 **v1.1 Dual Relay Cooling And Install UI** — Phases 6-10 (planned 2026-05-22)
+- 🔄 **v1.1 Dual Relay Cooling And Install UI** — Phases 6-10 (verified 2026-06-02, ready to archive)
 
 ## Phases
 
@@ -144,8 +144,8 @@ Plans:
 | 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete   | 2026-05-23 |
-| 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Executed | — |
+| 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Complete | 2026-06-02 |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-05-24 after Phase 10 execution*
+*Last updated: 2026-06-02 after Phase 10 hardware UAT and long-uptime soak verification*

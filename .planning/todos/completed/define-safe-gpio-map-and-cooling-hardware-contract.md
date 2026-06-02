@@ -3,6 +3,7 @@ title: "Define safe GPIO map and cooling hardware contract"
 date: "2026-05-22"
 priority: "high"
 resolves_phase: 6
+completed: "2026-06-02"
 ---
 
 # Define Safe GPIO Map And Cooling Hardware Contract
@@ -25,3 +26,10 @@ Before implementing the dual timer relays, DS18B20 cooling channel, or editable 
 - Firmware-safe GPIO options are documented.
 - UI dropdown options can be derived from the same role-based enum.
 - Implementation can proceed without inventing pin assignments inside code.
+
+## Resolution
+
+Completed in Phase 6. The firmware-safe GPIO options, conservative defaults,
+independent relay polarity settings, DS18B20 wiring contract, cooling
+protection defaults, NVS schema, API fields, and dual-relay mapping are
+implemented and documented.

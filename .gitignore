@@ -15,3 +15,4 @@ AGENTS.local.md
 .dependencies
 managed_components/
 dependencies.lock
+logs/

@@ -20,3 +20,7 @@ CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 # HTTP server plus captive DNS need socket headroom during browser refreshes.
 CONFIG_LWIP_MAX_SOCKETS=16
 
+# Soak diagnostics: collect per-core idle runtime deltas using the 1 MHz ESP timer.
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
+

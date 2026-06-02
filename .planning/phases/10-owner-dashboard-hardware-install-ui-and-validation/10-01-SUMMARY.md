@@ -28,6 +28,7 @@ key-decisions:
   - "Cooling Test ON is routed only through /api/cooling/mode and is not persisted through /api/cooling/config."
   - "Cooling config save sends a full backend-required payload while preserving loaded min-off and relay polarity fields."
 requirements-implemented: [UI-01]
+requirements-completed: [UI-01]
 duration: same-session
 completed: 2026-05-24
 ---

@@ -68,12 +68,25 @@
 - Prefer HT20 for the local setup AP and set maximum TX power explicitly.
   Classic ESP32 APSTA uses one shared radio, so repeated STA channel/auth
   churn can make the SoftAP appear weak or unstable to the installer.
+- Reconcile AP fallback against `esp_wifi_get_mode()` instead of trusting only
+  `s_ap_enabled`. Ignore stale `IP_EVENT_STA_GOT_IP` after an explicit
+  disconnect, and skip AP auto-stop unless STA is still connected.
+- Make AP restore idempotent. Disconnect APIs and asynchronous Wi-Fi events can
+  both request fallback restoration; only one path should reconfigure APSTA
+  mode and AP settings.
+- Make the owner Wi-Fi Disconnect action persistent by clearing saved STA
+  credentials and static IP. Otherwise reboot reconnects a network the owner
+  explicitly disconnected.
 
 ### ❌ DON'T
-- Don't assume `wifi_manager_disconnect_sta()` is enough by itself — if AP auto-stop timer already fired (`WIFI_MODE_STA` + `s_ap_enabled=false`), the disconnect leaves the device unreachable via AP
+- Don't expose a temporary runtime-only STA disconnect as the owner action.
+  Explicit owner disconnect must also clear saved credentials and restore AP
+  fallback against the actual Wi-Fi mode.
 - Don't call `esp_wifi_connect()` directly from multiple event/API paths.
   Route retries through one deferred scheduler so the Wi-Fi driver cannot
   remain busy until reboot.
+- Don't allow multiple deferred disconnect tasks to overlap. An older delayed
+  task can otherwise tear down a newer STA connection.
 
 ---
 
@@ -200,6 +213,12 @@
   budget rather than starving browser concurrency. ESP-IDF's HTTP default of 7
   client sockets is useful for page refreshes because browsers fetch HTML, CSS,
   JavaScript, and API JSON concurrently.
+- Stream large embedded HTML/CSS/JavaScript responses in bounded chunks and
+  yield between chunks. Sending a 75 KB JavaScript asset as one uninterrupted
+  response can amplify weak-link socket pressure during repeated refreshes.
+- Log minimum heap and largest free block separately. Stable free heap with
+  temporary dips during refreshes is different from a monotonic memory leak;
+  largest-block decline helps identify fragmentation.
 - Handle common captive-portal probe paths explicitly. Windows/macOS/Android
   may request `/connecttest.txt`, `/ncsi.txt`, `/hotspot-detect.html`, or
   `/generate_204` after joining the SoftAP; routing them avoids noisy default
@@ -212,6 +231,15 @@
   asks for a password and can restart APSTA radio transitions.
 - Provide an explicit show-password checkbox in the Wi-Fi form. Mobile
   browsers do not consistently expose the desktop password reveal affordance.
+- Treat asynchronous scan callback context as request-scoped memory. If an
+  HTTP scan request times out, cancel and serialize the Wi-Fi callback before
+  deleting its semaphore or returning from the handler.
+- After `esp_wifi_scan_stop()`, wait until the canceled scan's
+  `WIFI_EVENT_SCAN_DONE` cleanup event has been consumed before accepting a new
+  scan. Otherwise the old event can clear the new scan's state.
+- Return failed JSON, static-file, and redirect sends to ESP-IDF. Returning
+  `ESP_OK` after a socket send failure keeps a broken HTTP session alive longer
+  than necessary.
 
 ### DON'T
 - Don't add freeform numeric GPIO entry to the frontend.

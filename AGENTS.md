@@ -14,6 +14,7 @@ setting `IDF_PATH` to the local ESP-IDF install path:
 
 ```powershell
 $env:IDF_PATH = "C:\esp\v6.0.1\esp-idf"  # example; skip this if IDF_PATH is already set
+$env:IDF_TOOLS_PATH = "C:\Espressif"      # example; set this when tools are outside $HOME\.espressif
 & "$env:IDF_PATH\export.ps1"
 ```
 

@@ -17,6 +17,9 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "cJSON.h"
+#include "lwip/sockets.h"
+#include <errno.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,15 +58,147 @@ extern const uint8_t _binary_status_html_end[]   asm("_binary_status_html_end");
 #define WIFI_DISCONNECT_TASK_STACK_BYTES 2048
 #define WIFI_DISCONNECT_DELAY_MS 500
 
+static bool s_wifi_disconnect_task_pending = false;
+static portMUX_TYPE s_wifi_disconnect_task_lock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE s_web_diag_lock = portMUX_INITIALIZER_UNLOCKED;
+static httpd_handle_t s_server = NULL;
+static uint32_t s_json_send_failures = 0;
+static uint32_t s_static_send_failures = 0;
+static uint32_t s_static_cache_hits = 0;
+static uint32_t s_static_deadline_aborts = 0;
+
+typedef esp_err_t (*web_route_handler_t)(httpd_req_t *req);
+
+typedef struct {
+    const char *uri;
+    httpd_method_t method;
+    web_route_handler_t handler;
+    uint32_t requests;
+    uint32_t failures;
+    uint32_t slow_requests;
+    uint32_t max_duration_ms;
+    uint32_t reported_requests;
+} web_route_diag_t;
+
+typedef struct {
+    uint32_t server_start_attempts;
+    uint32_t server_start_failures;
+    uint32_t route_registration_failures;
+    uint32_t sessions_opened;
+    uint32_t sessions_closed;
+    uint32_t active_sessions;
+    uint32_t peak_active_sessions;
+    uint32_t requests_started;
+    uint32_t requests_completed;
+    uint32_t requests_failed;
+    uint32_t slow_requests;
+    uint32_t active_handlers;
+    uint32_t peak_active_handlers;
+    uint32_t handler_stack_hwm_min;
+} web_server_diag_t;
+
+static web_server_diag_t s_web_diag = {0};
+
 static bool api_pump_add_status_object(cJSON *root);
 
 /* --------------- Helpers --------------- */
 
+static const char *http_method_name(httpd_method_t method)
+{
+    switch (method) {
+    case HTTP_GET:
+        return "GET";
+    case HTTP_POST:
+        return "POST";
+    default:
+        return "OTHER";
+    }
+}
+
+static uint32_t increment_json_send_failures(void)
+{
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    uint32_t count = ++s_json_send_failures;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+    return count;
+}
+
+static uint32_t increment_static_send_failures(void)
+{
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    uint32_t count = ++s_static_send_failures;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+    return count;
+}
+
+static uint32_t increment_static_cache_hits(void)
+{
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    uint32_t count = ++s_static_cache_hits;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+    return count;
+}
+
+static uint32_t increment_static_deadline_aborts(void)
+{
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    uint32_t count = ++s_static_deadline_aborts;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+    return count;
+}
+
+static esp_err_t diagnostics_socket_open(httpd_handle_t server, int sockfd)
+{
+    (void)server;
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    s_web_diag.sessions_opened++;
+    s_web_diag.active_sessions++;
+    if (s_web_diag.active_sessions > s_web_diag.peak_active_sessions) {
+        s_web_diag.peak_active_sessions = s_web_diag.active_sessions;
+    }
+    uint32_t active_sessions = s_web_diag.active_sessions;
+    uint32_t sessions_opened = s_web_diag.sessions_opened;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    ESP_LOGD(TAG, "[HTTP_SOCKET] event=open fd=%d active=%lu opened=%lu",
+             sockfd, (unsigned long)active_sessions, (unsigned long)sessions_opened);
+    return ESP_OK;
+}
+
+static void diagnostics_socket_close(httpd_handle_t server, int sockfd)
+{
+    (void)server;
+    int close_result = close(sockfd);
+    int close_errno = errno;
+
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    s_web_diag.sessions_closed++;
+    if (s_web_diag.active_sessions > 0) {
+        s_web_diag.active_sessions--;
+    }
+    uint32_t active_sessions = s_web_diag.active_sessions;
+    uint32_t sessions_closed = s_web_diag.sessions_closed;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    if (close_result != 0 && close_errno != EBADF) {
+        ESP_LOGW(TAG, "[HTTP_SOCKET] event=close_failed fd=%d errno=%d active=%lu closed=%lu",
+                 sockfd, close_errno, (unsigned long)active_sessions,
+                 (unsigned long)sessions_closed);
+    } else {
+        ESP_LOGD(TAG, "[HTTP_SOCKET] event=close fd=%d active=%lu closed=%lu",
+                 sockfd, (unsigned long)active_sessions, (unsigned long)sessions_closed);
+    }
+}
+
 static void set_common_response_headers(httpd_req_t *req)
 {
-    httpd_resp_set_hdr(req, "Connection", "close");
-    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
     httpd_resp_set_hdr(req, "X-Content-Type-Options", "nosniff");
+}
+
+static void set_no_store_response_headers(httpd_req_t *req)
+{
+    set_common_response_headers(req);
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
 }
 
 static void url_decode(char *dst, const char *src)
@@ -258,13 +393,16 @@ static bool is_same_origin(httpd_req_t *req, bool allow_missing_header)
 /* Send JSON response */
 static esp_err_t send_json(httpd_req_t *req, const char *json, const char *status)
 {
-    set_common_response_headers(req);
+    set_no_store_response_headers(req);
     httpd_resp_set_type(req, "application/json");
     httpd_resp_set_status(req, status);
     esp_err_t ret = httpd_resp_send(req, json, strlen(json));
     if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "JSON response send failed: %s", esp_err_to_name(ret));
-        return ESP_OK;
+        uint32_t failure_count = increment_json_send_failures();
+        ESP_LOGW(TAG, "JSON response send failed: uri=%s fd=%d err=%s count=%lu",
+                 req->uri, httpd_req_to_sockfd(req), esp_err_to_name(ret),
+                 (unsigned long)failure_count);
+        return ret;
     }
     return ret;
 }
@@ -1493,6 +1631,33 @@ static void scan_complete_cb(void *user_ctx, wifi_scan_entry_t *entries, int cou
     xSemaphoreGive(ctx->sem);
 }
 
+static bool static_asset_cacheable(const char *mime_type)
+{
+    return strncmp(mime_type, "text/css", strlen("text/css")) == 0 ||
+           strncmp(mime_type, "application/javascript", strlen("application/javascript")) == 0;
+}
+
+static uint32_t static_asset_hash(const uint8_t *start, size_t len)
+{
+    uint32_t hash = 2166136261U;
+    for (size_t i = 0; i < len; i++) {
+        hash ^= start[i];
+        hash *= 16777619U;
+    }
+    return hash;
+}
+
+static bool request_header_equals(httpd_req_t *req, const char *name, const char *expected)
+{
+    char value[48] = {0};
+    size_t len = httpd_req_get_hdr_value_len(req, name);
+    if (len == 0 || len >= sizeof(value)) {
+        return false;
+    }
+    return httpd_req_get_hdr_value_str(req, name, value, sizeof(value)) == ESP_OK &&
+           strcmp(value, expected) == 0;
+}
+
 /* Send a static embedded file */
 static esp_err_t serve_static(httpd_req_t *req, const uint8_t *start, const uint8_t *end,
                               const char *mime_type)
@@ -1500,10 +1665,74 @@ static esp_err_t serve_static(httpd_req_t *req, const uint8_t *start, const uint
     size_t len = (size_t)(end - start);
     set_common_response_headers(req);
     httpd_resp_set_type(req, mime_type);
-    esp_err_t ret = httpd_resp_send(req, (const char *)start, len);
+
+    char etag[32] = {0};
+    if (static_asset_cacheable(mime_type)) {
+        snprintf(etag, sizeof(etag), "\"%08lx-%lu\"",
+                 (unsigned long)static_asset_hash(start, len),
+                 (unsigned long)len);
+        bool not_modified = request_header_equals(req, "If-None-Match", etag);
+        httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
+        httpd_resp_set_hdr(req, "ETag", etag);
+        if (not_modified) {
+            uint32_t hits = increment_static_cache_hits();
+            ESP_LOGD(TAG, "[HTTP_CACHE] uri=%s etag=%s hits=%lu",
+                     req->uri, etag, (unsigned long)hits);
+            httpd_resp_set_status(req, "304 Not Modified");
+            return httpd_resp_send(req, NULL, 0);
+        }
+    } else {
+        httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    }
+
+    int64_t start_ms = esp_timer_get_time() / 1000;
+    size_t offset = 0;
+    while (offset < len) {
+        uint32_t duration_ms = (uint32_t)((esp_timer_get_time() / 1000) - start_ms);
+        if (duration_ms >= APP_TEMPLATE_HTTP_STATIC_MAX_DURATION_MS) {
+            uint32_t failure_count = increment_static_send_failures();
+            uint32_t abort_count = increment_static_deadline_aborts();
+            ESP_LOGW(TAG,
+                     "Static response deadline exceeded: uri=%s fd=%d offset=%lu/%lu duration_ms=%lu failures=%lu aborts=%lu",
+                     req->uri,
+                     httpd_req_to_sockfd(req),
+                     (unsigned long)offset,
+                     (unsigned long)len,
+                     (unsigned long)duration_ms,
+                     (unsigned long)failure_count,
+                     (unsigned long)abort_count);
+            return ESP_ERR_TIMEOUT;
+        }
+
+        size_t remaining = len - offset;
+        size_t chunk_len = remaining > APP_TEMPLATE_HTTP_STATIC_CHUNK_BYTES
+            ? APP_TEMPLATE_HTTP_STATIC_CHUNK_BYTES
+            : remaining;
+        esp_err_t ret = httpd_resp_send_chunk(req, (const char *)(start + offset), chunk_len);
+        if (ret != ESP_OK) {
+            uint32_t failure_count = increment_static_send_failures();
+            ESP_LOGW(TAG, "Static response send failed: uri=%s fd=%d offset=%lu/%lu err=%s count=%lu",
+                     req->uri,
+                     httpd_req_to_sockfd(req),
+                     (unsigned long)offset,
+                     (unsigned long)len,
+                     esp_err_to_name(ret),
+                     (unsigned long)failure_count);
+            return ret;
+        }
+        offset += chunk_len;
+        if (offset < len) {
+            vTaskDelay(1);
+        }
+    }
+
+    esp_err_t ret = httpd_resp_send_chunk(req, NULL, 0);
     if (ret != ESP_OK) {
-        ESP_LOGW(TAG, "Static response send failed: %s", esp_err_to_name(ret));
-        return ESP_OK;
+        uint32_t failure_count = increment_static_send_failures();
+        ESP_LOGW(TAG, "Static response final chunk failed: uri=%s fd=%d err=%s count=%lu",
+                 req->uri, httpd_req_to_sockfd(req), esp_err_to_name(ret),
+                 (unsigned long)failure_count);
+        return ret;
     }
     return ret;
 }
@@ -1515,17 +1744,15 @@ static esp_err_t handle_root(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
     if (get_session_from_request(req, token, sizeof(token)) && session_validate(token)) {
-        set_common_response_headers(req);
+        set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/dashboard");
-        httpd_resp_send(req, NULL, 0);
     } else {
-        set_common_response_headers(req);
+        set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
-        httpd_resp_send(req, NULL, 0);
     }
-    return ESP_OK;
+    return httpd_resp_send(req, NULL, 0);
 }
 
 /* GET /login */
@@ -1540,11 +1767,10 @@ static esp_err_t handle_get_login(httpd_req_t *req)
 static esp_err_t handle_get_dashboard(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        set_common_response_headers(req);
+        set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
-        httpd_resp_send(req, NULL, 0);
-        return ESP_OK;
+        return httpd_resp_send(req, NULL, 0);
     }
     return serve_static(req,
         _binary_dashboard_html_start, _binary_dashboard_html_end,
@@ -1555,11 +1781,10 @@ static esp_err_t handle_get_dashboard(httpd_req_t *req)
 static esp_err_t handle_get_wifi(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        set_common_response_headers(req);
+        set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
-        httpd_resp_send(req, NULL, 0);
-        return ESP_OK;
+        return httpd_resp_send(req, NULL, 0);
     }
     return serve_static(req,
         _binary_wifi_html_start, _binary_wifi_html_end,
@@ -1570,11 +1795,10 @@ static esp_err_t handle_get_wifi(httpd_req_t *req)
 static esp_err_t handle_get_hardware(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        set_common_response_headers(req);
+        set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
-        httpd_resp_send(req, NULL, 0);
-        return ESP_OK;
+        return httpd_resp_send(req, NULL, 0);
     }
     return serve_static(req,
         _binary_hardware_html_start, _binary_hardware_html_end,
@@ -1600,7 +1824,7 @@ static esp_err_t handle_app_js(httpd_req_t *req)
 /* GET /favicon.ico - browsers request this automatically; avoid repeated 404 sockets. */
 static esp_err_t handle_favicon(httpd_req_t *req)
 {
-    set_common_response_headers(req);
+    set_no_store_response_headers(req);
     httpd_resp_set_status(req, "204 No Content");
     return httpd_resp_send(req, NULL, 0);
 }
@@ -1612,7 +1836,7 @@ static esp_err_t handle_favicon(httpd_req_t *req)
  */
 static esp_err_t handle_captive_probe(httpd_req_t *req)
 {
-    set_common_response_headers(req);
+    set_no_store_response_headers(req);
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", "/login");
     return httpd_resp_send(req, NULL, 0);
@@ -1766,6 +1990,7 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
     }
 
     if (xSemaphoreTake(ctx.sem, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        wifi_manager_cancel_scan();
         vSemaphoreDelete(ctx.sem);
         return send_json(req, "{\"ok\":false,\"error\":\"scan_timeout\"}", "200 OK");
     }
@@ -1902,20 +2127,18 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"connect_error\"}", "200 OK");
     }
 
-    vTaskDelay(pdMS_TO_TICKS(5000));
-
     cJSON *resp = cJSON_CreateObject();
-    if (wifi_manager_is_sta_connected()) {
-        cJSON_AddBoolToObject(resp, "ok", true);
-        cJSON_AddStringToObject(resp, "ssid", wifi_manager_get_sta_ssid());
-        cJSON_AddStringToObject(resp, "ip", wifi_manager_get_sta_ip());
-    } else {
-        cJSON_AddBoolToObject(resp, "ok", false);
-        cJSON_AddStringToObject(resp, "error", "connection_failed");
-        cJSON_AddStringToObject(resp, "ssid", ssid);
+    if (!resp) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
+    cJSON_AddBoolToObject(resp, "ok", true);
+    cJSON_AddBoolToObject(resp, "connecting", true);
+    cJSON_AddStringToObject(resp, "ssid", ssid);
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);
+    if (!json_str) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+    }
     esp_err_t result = send_json(req, json_str, "200 OK");
     free(json_str);
     return result;
@@ -1925,9 +2148,13 @@ static void wifi_disconnect_after_response_task(void *arg)
 {
     (void)arg;
     vTaskDelay(pdMS_TO_TICKS(WIFI_DISCONNECT_DELAY_MS));
-    if (!wifi_manager_disconnect_sta()) {
-        ESP_LOGW(TAG, "Deferred STA disconnect reported failure");
+    if (!wifi_manager_forget_sta()) {
+        ESP_LOGW(TAG, "Deferred STA disconnect/forget reported failure");
     }
+
+    taskENTER_CRITICAL(&s_wifi_disconnect_task_lock);
+    s_wifi_disconnect_task_pending = false;
+    taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
     vTaskDelete(NULL);
 }
 
@@ -1942,12 +2169,26 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
+    taskENTER_CRITICAL(&s_wifi_disconnect_task_lock);
+    bool already_pending = s_wifi_disconnect_task_pending;
+    if (!already_pending) {
+        s_wifi_disconnect_task_pending = true;
+    }
+    taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
+
+    if (already_pending) {
+        return send_json(req, "{\"ok\":true,\"disconnect_pending\":true}", "200 OK");
+    }
+
     if (xTaskCreate(wifi_disconnect_after_response_task,
                     "wifi_disconnect",
                     WIFI_DISCONNECT_TASK_STACK_BYTES,
                     NULL,
                     tskIDLE_PRIORITY + 1,
                     NULL) != pdPASS) {
+        taskENTER_CRITICAL(&s_wifi_disconnect_task_lock);
+        s_wifi_disconnect_task_pending = false;
+        taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
         return send_json(req, "{\"ok\":false,\"error\":\"disconnect_task_failed\"}", "500 Internal Server Error");
     }
 
@@ -1958,11 +2199,10 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
 static esp_err_t handle_get_status(httpd_req_t *req)
 {
     if (!require_auth(req)) {
-        set_common_response_headers(req);
+        set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/login");
-        httpd_resp_send(req, NULL, 0);
-        return ESP_OK;
+        return httpd_resp_send(req, NULL, 0);
     }
     return serve_static(req,
         _binary_status_html_start, _binary_status_html_end,
@@ -2472,9 +2712,11 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     uint32_t free_heap = wifi_manager_get_free_heap();
     uint32_t min_free_heap = esp_get_minimum_free_heap_size();
     uint32_t total_heap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+    uint32_t largest_free_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
     cJSON_AddNumberToObject(root, "free_heap", (double)free_heap);
     cJSON_AddNumberToObject(root, "min_free_heap", (double)min_free_heap);
     cJSON_AddNumberToObject(root, "total_heap", (double)total_heap);
+    cJSON_AddNumberToObject(root, "largest_free_block", (double)largest_free_block);
 
     /* ---------- Uptime ---------- */
     cJSON_AddNumberToObject(root, "uptime_ms", (double)wifi_manager_get_uptime_ms());
@@ -2496,6 +2738,15 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     wifi_sta_list_t sta_list;
     if (ap_up && esp_wifi_ap_get_sta_list(&sta_list) == ESP_OK) {
         cJSON_AddNumberToObject(root, "ap_clients", sta_list.num);
+        if (sta_list.num > 0) {
+            int8_t weakest_rssi = sta_list.sta[0].rssi;
+            for (int i = 1; i < sta_list.num; i++) {
+                if (sta_list.sta[i].rssi < weakest_rssi) {
+                    weakest_rssi = sta_list.sta[i].rssi;
+                }
+            }
+            cJSON_AddNumberToObject(root, "ap_client_weakest_rssi", weakest_rssi);
+        }
     } else {
         cJSON_AddNumberToObject(root, "ap_clients", 0);
     }
@@ -2516,6 +2767,10 @@ static esp_err_t handle_api_status(httpd_req_t *req)
 
     /* ---------- Services ---------- */
     cJSON_AddBoolToObject(root, "dns_server", dns_server_is_running());
+    cJSON_AddNumberToObject(root, "http_json_send_failures", s_json_send_failures);
+    cJSON_AddNumberToObject(root, "http_static_send_failures", s_static_send_failures);
+    cJSON_AddNumberToObject(root, "http_static_cache_hits", s_static_cache_hits);
+    cJSON_AddNumberToObject(root, "http_static_deadline_aborts", s_static_deadline_aborts);
 
     char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
@@ -2529,66 +2784,223 @@ static esp_err_t handle_api_status(httpd_req_t *req)
 
 /* --------------- Server Start --------------- */
 
+static web_route_diag_t s_routes[] = {
+    { .uri = "/",              .method = HTTP_GET,  .handler = handle_root },
+    { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login },
+    { .uri = "/dashboard",     .method = HTTP_GET,  .handler = handle_get_dashboard },
+    { .uri = "/status",        .method = HTTP_GET,  .handler = handle_get_status },
+    { .uri = "/wifi",          .method = HTTP_GET,  .handler = handle_get_wifi },
+    { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware },
+    { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css },
+    { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js },
+    { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon },
+    { .uri = "/connecttest.txt", .method = HTTP_GET, .handler = handle_captive_probe },
+    { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe },
+    { .uri = "/hotspot-detect.html", .method = HTTP_GET, .handler = handle_captive_probe },
+    { .uri = "/ncsi.txt",       .method = HTTP_GET,  .handler = handle_captive_probe },
+    { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login },
+    { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout },
+    { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan },
+    { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect },
+    { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect },
+    { .uri = "/api/status",    .method = HTTP_GET,  .handler = handle_api_status },
+    { .uri = "/api/hardware/map", .method = HTTP_GET,  .handler = handle_api_hardware_map_get },
+    { .uri = "/api/hardware/map", .method = HTTP_POST, .handler = handle_api_hardware_map_post },
+    { .uri = "/api/pump/config", .method = HTTP_GET,  .handler = handle_api_pump_config_get },
+    { .uri = "/api/pump/config", .method = HTTP_POST, .handler = handle_api_pump_config_post },
+    { .uri = "/api/pump/status", .method = HTTP_GET,  .handler = handle_api_pump_status },
+    { .uri = "/api/cooling/status", .method = HTTP_GET, .handler = handle_api_cooling_status },
+    { .uri = "/api/cooling/config", .method = HTTP_GET,  .handler = handle_api_cooling_config_get },
+    { .uri = "/api/cooling/config", .method = HTTP_POST, .handler = handle_api_cooling_config_post },
+    { .uri = "/api/cooling/mode", .method = HTTP_POST, .handler = handle_api_cooling_mode_post },
+    { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start },
+    { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop },
+};
+
+static esp_err_t handle_instrumented_route(httpd_req_t *req)
+{
+    web_route_diag_t *route = (web_route_diag_t *)req->user_ctx;
+    if (!route || !route->handler) {
+        ESP_LOGE(TAG, "[HTTP_REQ] missing route context uri=%s fd=%d",
+                 req->uri, httpd_req_to_sockfd(req));
+        return ESP_FAIL;
+    }
+
+    int64_t start_ms = esp_timer_get_time() / 1000;
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    s_web_diag.requests_started++;
+    s_web_diag.active_handlers++;
+    if (s_web_diag.active_handlers > s_web_diag.peak_active_handlers) {
+        s_web_diag.peak_active_handlers = s_web_diag.active_handlers;
+    }
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    esp_err_t result = route->handler(req);
+    uint32_t duration_ms = (uint32_t)((esp_timer_get_time() / 1000) - start_ms);
+    UBaseType_t stack_hwm = uxTaskGetStackHighWaterMark(NULL);
+    bool failed = result != ESP_OK;
+    bool slow = duration_ms >= APP_TEMPLATE_HTTP_SLOW_REQUEST_MS;
+
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    route->requests++;
+    if (failed) {
+        route->failures++;
+    }
+    if (slow) {
+        route->slow_requests++;
+    }
+    if (duration_ms > route->max_duration_ms) {
+        route->max_duration_ms = duration_ms;
+    }
+    s_web_diag.requests_completed++;
+    if (failed) {
+        s_web_diag.requests_failed++;
+    }
+    if (slow) {
+        s_web_diag.slow_requests++;
+    }
+    if (s_web_diag.active_handlers > 0) {
+        s_web_diag.active_handlers--;
+    }
+    if (s_web_diag.handler_stack_hwm_min == 0 || stack_hwm < s_web_diag.handler_stack_hwm_min) {
+        s_web_diag.handler_stack_hwm_min = stack_hwm;
+    }
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    if (failed || slow) {
+        ESP_LOGW(TAG,
+                 "[HTTP_REQ] method=%s uri=%s fd=%d duration_ms=%lu result=%s heap=%lu stack_hwm=%lu",
+                 http_method_name(route->method),
+                 route->uri,
+                 httpd_req_to_sockfd(req),
+                 (unsigned long)duration_ms,
+                 esp_err_to_name(result),
+                 (unsigned long)esp_get_free_heap_size(),
+                 (unsigned long)stack_hwm);
+    }
+    return result;
+}
+
+void web_server_log_diagnostics(void)
+{
+    web_server_diag_t diag;
+    uint32_t json_send_failures;
+    uint32_t static_send_failures;
+    uint32_t static_cache_hits;
+    uint32_t static_deadline_aborts;
+
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    diag = s_web_diag;
+    json_send_failures = s_json_send_failures;
+    static_send_failures = s_static_send_failures;
+    static_cache_hits = s_static_cache_hits;
+    static_deadline_aborts = s_static_deadline_aborts;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    ESP_LOGI(TAG,
+             "[HTTP_DIAG] server=%s starts=%lu failures=%lu route_reg_fail=%lu sockets_active=%lu opened=%lu closed=%lu peak=%lu requests_started=%lu completed=%lu failed=%lu slow=%lu handlers_active=%lu peak=%lu stack_hwm_min=%lu json_send_fail=%lu static_send_fail=%lu static_cache_hits=%lu static_deadline_aborts=%lu heap=%lu heap_min=%lu largest=%lu",
+             s_server ? "up" : "down",
+             (unsigned long)diag.server_start_attempts,
+             (unsigned long)diag.server_start_failures,
+             (unsigned long)diag.route_registration_failures,
+             (unsigned long)diag.active_sessions,
+             (unsigned long)diag.sessions_opened,
+             (unsigned long)diag.sessions_closed,
+             (unsigned long)diag.peak_active_sessions,
+             (unsigned long)diag.requests_started,
+             (unsigned long)diag.requests_completed,
+             (unsigned long)diag.requests_failed,
+             (unsigned long)diag.slow_requests,
+             (unsigned long)diag.active_handlers,
+             (unsigned long)diag.peak_active_handlers,
+             (unsigned long)diag.handler_stack_hwm_min,
+             (unsigned long)json_send_failures,
+             (unsigned long)static_send_failures,
+             (unsigned long)static_cache_hits,
+             (unsigned long)static_deadline_aborts,
+             (unsigned long)esp_get_free_heap_size(),
+             (unsigned long)esp_get_minimum_free_heap_size(),
+             (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+
+    for (size_t i = 0; i < sizeof(s_routes) / sizeof(s_routes[0]); i++) {
+        taskENTER_CRITICAL(&s_web_diag_lock);
+        uint32_t delta_requests = s_routes[i].requests - s_routes[i].reported_requests;
+        uint32_t requests = s_routes[i].requests;
+        uint32_t failures = s_routes[i].failures;
+        uint32_t slow_requests = s_routes[i].slow_requests;
+        uint32_t max_duration_ms = s_routes[i].max_duration_ms;
+        s_routes[i].reported_requests = s_routes[i].requests;
+        taskEXIT_CRITICAL(&s_web_diag_lock);
+
+        if (delta_requests > 0) {
+            ESP_LOGI(TAG,
+                     "[HTTP_ROUTE] method=%s uri=%s delta=%lu total=%lu failed=%lu slow=%lu max_ms=%lu",
+                     http_method_name(s_routes[i].method),
+                     s_routes[i].uri,
+                     (unsigned long)delta_requests,
+                     (unsigned long)requests,
+                     (unsigned long)failures,
+                     (unsigned long)slow_requests,
+                     (unsigned long)max_duration_ms);
+        }
+    }
+}
+
 bool web_server_start(void)
 {
-    httpd_handle_t server = NULL;
+    if (s_server) {
+        return true;
+    }
+
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    s_web_diag.server_start_attempts++;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
+
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = APP_TEMPLATE_HTTP_MAX_URI_HANDLERS;
     config.max_open_sockets = APP_TEMPLATE_HTTP_MAX_OPEN_SOCKETS;
     config.recv_wait_timeout = APP_TEMPLATE_HTTP_RECV_TIMEOUT_SEC;
     config.send_wait_timeout = APP_TEMPLATE_HTTP_SEND_TIMEOUT_SEC;
     config.lru_purge_enable = true;
-    config.keep_alive_enable = false;
+    config.keep_alive_enable = true;
+    config.keep_alive_idle = APP_TEMPLATE_HTTP_KEEP_ALIVE_IDLE_SEC;
+    config.keep_alive_interval = APP_TEMPLATE_HTTP_KEEP_ALIVE_INTERVAL_SEC;
+    config.keep_alive_count = APP_TEMPLATE_HTTP_KEEP_ALIVE_COUNT;
+    config.open_fn = diagnostics_socket_open;
+    config.close_fn = diagnostics_socket_close;
 
-    if (httpd_start(&server, &config) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start HTTP server");
+    esp_err_t start_err = httpd_start(&s_server, &config);
+    if (start_err != ESP_OK) {
+        taskENTER_CRITICAL(&s_web_diag_lock);
+        s_web_diag.server_start_failures++;
+        taskEXIT_CRITICAL(&s_web_diag_lock);
+        ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(start_err));
+        s_server = NULL;
         return false;
     }
 
-    const httpd_uri_t routes[] = {
-        { .uri = "/",              .method = HTTP_GET,  .handler = handle_root,           .user_ctx = NULL },
-        { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login,      .user_ctx = NULL },
-        { .uri = "/dashboard",     .method = HTTP_GET,  .handler = handle_get_dashboard,  .user_ctx = NULL },
-        { .uri = "/status",        .method = HTTP_GET,  .handler = handle_get_status,     .user_ctx = NULL },
-        { .uri = "/wifi",          .method = HTTP_GET,  .handler = handle_get_wifi,       .user_ctx = NULL },
-        { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware,   .user_ctx = NULL },
-        { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css,      .user_ctx = NULL },
-        { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js,         .user_ctx = NULL },
-        { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon,        .user_ctx = NULL },
-        { .uri = "/connecttest.txt", .method = HTTP_GET, .handler = handle_captive_probe,  .user_ctx = NULL },
-        { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe,  .user_ctx = NULL },
-        { .uri = "/hotspot-detect.html", .method = HTTP_GET, .handler = handle_captive_probe, .user_ctx = NULL },
-        { .uri = "/ncsi.txt",       .method = HTTP_GET,  .handler = handle_captive_probe,  .user_ctx = NULL },
-        { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login,      .user_ctx = NULL },
-        { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout,     .user_ctx = NULL },
-        { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan,  .user_ctx = NULL },
-        { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect, .user_ctx = NULL },
-        { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect, .user_ctx = NULL },
-        { .uri = "/api/status",    .method = HTTP_GET,  .handler = handle_api_status,     .user_ctx = NULL },
-        { .uri = "/api/hardware/map", .method = HTTP_GET, .handler = handle_api_hardware_map_get, .user_ctx = NULL },
-        { .uri = "/api/hardware/map", .method = HTTP_POST, .handler = handle_api_hardware_map_post, .user_ctx = NULL },
-        { .uri = "/api/pump/config", .method = HTTP_GET,  .handler = handle_api_pump_config_get, .user_ctx = NULL },
-        { .uri = "/api/pump/config", .method = HTTP_POST, .handler = handle_api_pump_config_post, .user_ctx = NULL },
-        { .uri = "/api/pump/status", .method = HTTP_GET,  .handler = handle_api_pump_status, .user_ctx = NULL },
-        { .uri = "/api/cooling/status", .method = HTTP_GET, .handler = handle_api_cooling_status, .user_ctx = NULL },
-        { .uri = "/api/cooling/config", .method = HTTP_GET, .handler = handle_api_cooling_config_get, .user_ctx = NULL },
-        { .uri = "/api/cooling/config", .method = HTTP_POST, .handler = handle_api_cooling_config_post, .user_ctx = NULL },
-        { .uri = "/api/cooling/mode", .method = HTTP_POST, .handler = handle_api_cooling_mode_post, .user_ctx = NULL },
-        { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start,  .user_ctx = NULL },
-        { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop,   .user_ctx = NULL },
-    };
-
-    for (int i = 0; i < sizeof(routes) / sizeof(routes[0]); i++) {
-        esp_err_t err = httpd_register_uri_handler(server, &routes[i]);
+    for (size_t i = 0; i < sizeof(s_routes) / sizeof(s_routes[0]); i++) {
+        const httpd_uri_t route = {
+            .uri = s_routes[i].uri,
+            .method = s_routes[i].method,
+            .handler = handle_instrumented_route,
+            .user_ctx = &s_routes[i],
+        };
+        esp_err_t err = httpd_register_uri_handler(s_server, &route);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to register route %s: %d", routes[i].uri, err);
+            taskENTER_CRITICAL(&s_web_diag_lock);
+            s_web_diag.route_registration_failures++;
+            taskEXIT_CRITICAL(&s_web_diag_lock);
+            ESP_LOGE(TAG, "Failed to register route %s: %s",
+                     s_routes[i].uri, esp_err_to_name(err));
         }
     }
 
-    ESP_LOGI(TAG, "HTTP server started on port %d (max_sockets=%d, recv_timeout=%d, send_timeout=%d)",
+    ESP_LOGI(TAG, "HTTP server started on port %d (max_sockets=%d, recv_timeout=%d, send_timeout=%d, tcp_keepalive=%s)",
              config.server_port,
              config.max_open_sockets,
              config.recv_wait_timeout,
-             config.send_wait_timeout);
+             config.send_wait_timeout,
+             config.keep_alive_enable ? "true" : "false");
     return true;
 }

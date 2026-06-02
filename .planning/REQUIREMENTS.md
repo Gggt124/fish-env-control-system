@@ -35,8 +35,8 @@
 
 ### Web UI And API
 
-- [ ] **UI-01**: Owner dashboard remains focused on daily operation and shows pump enabled state, float state, active timer/relay, countdown, temperature, cooling relay state, threshold, auto-enable setting, and sensor fault state.
-- [ ] **UI-02**: Owner-accessible Hardware/Install page shows wiring-oriented visualization, GPIO summary table, and a secondary technical pinout view.
+- [x] **UI-01**: Owner dashboard remains focused on daily operation and shows pump enabled state, float state, active timer/relay, countdown, temperature, cooling relay state, threshold, auto-enable setting, and sensor fault state.
+- [x] **UI-02**: Owner-accessible Hardware/Install page shows wiring-oriented visualization, GPIO summary table, and a secondary technical pinout view.
 - [x] **UI-03**: User can change GPIO mapping only through safe dropdown enum options, not freeform numeric input.
 - [x] **UI-04**: User can save GPIO changes as pending persistent values that do not become active until reboot.
 - [x] **UI-05**: User sees active GPIO values, pending GPIO values, and reboot-required status when pending values differ from active values.
@@ -88,8 +88,8 @@
 | COOL-05 | Phase 8 | Complete |
 | COOL-06 | Phase 8 | Complete |
 | COOL-07 | Phase 8 | Complete |
-| UI-01 | Phase 10 | Implemented - Pending Verification |
-| UI-02 | Phase 10 | Implemented - Pending Verification |
+| UI-01 | Phase 10 | Complete |
+| UI-02 | Phase 10 | Complete |
 | UI-03 | Phase 9 | Complete |
 | UI-04 | Phase 9 | Complete |
 | UI-05 | Phase 9 | Complete |

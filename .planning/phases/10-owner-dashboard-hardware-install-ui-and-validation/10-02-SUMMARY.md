@@ -33,6 +33,7 @@ key-decisions:
   - "GPIO editors are select dropdowns populated from firmware safe option arrays; there is no manual numeric GPIO entry."
   - "Pending GPIOs are selected for editing when present, while active GPIOs stay separately visible."
 requirements-implemented: [UI-02]
+requirements-completed: [UI-02]
 duration: same-session
 completed: 2026-05-24
 ---

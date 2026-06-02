@@ -36,9 +36,7 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 bool wifi_manager_disconnect_sta(void);
 bool wifi_manager_forget_sta(void);
 bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback);
-
-void wifi_manager_sta_disconnect_for_scan(void);
-void wifi_manager_sta_reconnect_after_scan(void);
+void wifi_manager_cancel_scan(void);
 
 bool wifi_manager_is_ap_enabled(void);
 bool wifi_manager_is_sta_connected(void);
@@ -47,6 +45,7 @@ char* wifi_manager_get_sta_ip(void);
 char* wifi_manager_get_sta_ssid(void);
 int64_t wifi_manager_get_uptime_ms(void);
 uint32_t wifi_manager_get_free_heap(void);
+void wifi_manager_log_diagnostics(void);
 
 const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode);
 

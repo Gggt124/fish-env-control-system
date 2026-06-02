@@ -112,6 +112,14 @@ Owns Wi-Fi init and runtime state.
   asynchronous disconnect event cannot start overlapping connections.
 - Uses HT20 bandwidth and explicit maximum TX power for stable SoftAP setup
   behavior while AP and STA share the classic ESP32 radio.
+- Treats the Wi-Fi page disconnect action as disconnect-and-forget: clears
+  saved STA credentials/static IP, restores SoftAP using the actual Wi-Fi
+  mode, and ignores stale STA IP events that arrive after disconnect.
+- Makes SoftAP restore idempotent so overlapping disconnect/event paths cannot
+  restart AP mode and DHCP repeatedly.
+- Owns asynchronous scan state inside the component, rejects overlapping scans,
+  cancels callbacks before an HTTP scan timeout can release request memory, and
+  rejects new scans until the canceled scan's completion event is consumed.
 
 Public API is declared in `components/wifi_manager/wifi_manager.h`.
 
@@ -123,6 +131,11 @@ The HTTP server uses ESP-IDF's default 7-client concurrency with a larger LwIP
 socket budget, enables LRU purge, sends `Connection: close`, and uses bounded
 send/receive timeouts so browser polling cannot exhaust the ESP32/LwIP socket
 table during long-running dashboard use.
+Large embedded frontend assets are streamed in 2 KB chunks with a scheduler
+delay between chunks so weak links and repeated refreshes do not monopolize
+the HTTP/network path.
+Failed JSON, static-file, and redirect sends are returned to ESP-IDF so the
+HTTP server closes the broken client session immediately.
 Common captive-portal probe paths such as `/connecttest.txt` and
 `/generate_204` are routed explicitly to the login page instead of falling
 through to the server's default 404 error path.

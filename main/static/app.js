@@ -165,7 +165,7 @@ var pumpStatusRequestInFlight = false;
 var pumpAwaitingRolloverSync = false;
 var pumpPollTimer = null;
 var pumpTickTimer = null;
-var PUMP_STATUS_POLL_MS = 750;
+var PUMP_STATUS_POLL_MS = 1500;
 var PUMP_COUNTDOWN_TICK_MS = 250;
 var PUMP_STALE_MS = 5000;
 var PUMP_DEADLINE_DRIFT_MS = 1500;
@@ -177,8 +177,8 @@ var coolingLastStatus = null;
 var coolingLastSyncMs = 0;
 var coolingStatusRequestInFlight = false;
 var coolingPollTimer = null;
-var COOLING_STATUS_POLL_MS = 2000;
-var COOLING_STALE_MS = 8000;
+var COOLING_STATUS_POLL_MS = 4000;
+var COOLING_STALE_MS = 12000;
 var statusSummaryRequestInFlight = false;
 var statusFullRequestInFlight = false;
 var hardwareMapData = null;
@@ -1412,9 +1412,11 @@ function refreshFullStatus() {
         /* Memory */
         var freeKb = (data.free_heap / 1024).toFixed(0);
         var minKb = (data.min_free_heap / 1024).toFixed(0);
+        var largestKb = (data.largest_free_block / 1024).toFixed(0);
         var totalKb = (data.total_heap / 1024).toFixed(0);
         setText('st-free-heap', freeKb + ' KB');
         setText('st-min-free-heap', minKb + ' KB');
+        setText('st-largest-free-block', largestKb + ' KB');
         setText('st-total-heap', totalKb + ' KB');
 
         var pct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100) : 0;
@@ -1453,11 +1455,16 @@ function refreshFullStatus() {
         setText('st-ap-ssid', data.ap_enabled ? data.ap_ssid : '--');
         setText('st-ap-ip', data.ap_enabled ? data.ap_ip : '--');
         setText('st-ap-clients', data.ap_enabled ? '' + data.ap_clients : '--');
+        setText('st-ap-client-rssi', data.ap_enabled && data.ap_client_weakest_rssi !== undefined
+            ? data.ap_client_weakest_rssi + ' dBm'
+            : '--');
         setText('st-mac-ap', data.mac_ap || '--');
 
         /* Services */
         setText('st-wifi-mode', data.wifi_mode || '--');
         setText('st-dns-status', data.dns_server ? 'Running' : 'Stopped');
+        setText('st-http-static-errors', '' + (data.http_static_send_failures || 0));
+        setText('st-http-json-errors', '' + (data.http_json_send_failures || 0));
     });
 }
 
@@ -1571,6 +1578,7 @@ function refreshStatus() {
 /* ======== Wi-Fi Page ======== */
 
 var selectedSsid = null;
+var wifiConnectPollTimer = null;
 
 function initWifi() {
     if (window.location.pathname !== '/wifi') return;
@@ -1608,13 +1616,21 @@ function doDisconnect() {
     if (btn) { btn.disabled = true; btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21...'; }
 
     apiPost('/api/wifi/disconnect', {}, function(err, data) {
-        if (btn) { btn.disabled = false; btn.textContent = '\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21'; }
-
         if ((data && data.ok) || (err && !data)) {
-            showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21 Wi-Fi \u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22', 'success');
+            showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e41\u0e25\u0e30\u0e25\u0e37\u0e21 Wi-Fi \u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22', 'success');
             clearSelection();
-            setTimeout(updateConnectionStatus, 1200);
+            setTimeout(function() {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e41\u0e25\u0e30\u0e25\u0e37\u0e21\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22';
+                }
+                updateConnectionStatus();
+            }, 1200);
         } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e41\u0e25\u0e30\u0e25\u0e37\u0e21\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22';
+            }
             showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
         }
     });
@@ -1818,27 +1834,60 @@ function doConnect() {
     }
 
     apiPost('/api/wifi/connect', body, function(err, data) {
-        if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
-
         if (err) {
+            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
             if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14'; statusEl.style.color = 'var(--error)'; }
             updateStepper(2);
             return;
         }
 
-        if (data && data.ok) {
+        if (data && data.ok && data.connecting) {
+            if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
+            if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
+            wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 1000);
+        } else if (data && data.ok) {
+            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
             /* Mark step 3 as done */
             updateStepper(3, true);
             /* Update AP pill */
             updateApPill();
         } else {
+            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
             if (statusEl) {
                 statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: ' + (data && data.error ? data.error : '\u0e25\u0e2d\u0e07\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07');
                 statusEl.style.color = 'var(--error)';
             }
             updateStepper(2);
         }
+    });
+}
+
+function pollWifiConnection(attempt) {
+    apiGet('/api/status', function(err, data) {
+        var connectBtn = document.getElementById('connect-btn');
+        var statusEl = document.getElementById('connect-status');
+
+        if (!err && data && data.ok && data.sta_connected) {
+            wifiConnectPollTimer = null;
+            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
+            updateStepper(3, true);
+            updateConnectionStatus();
+            updateApPill();
+            return;
+        }
+
+        if (attempt >= 12) {
+            wifiConnectPollTimer = null;
+            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: \u0e25\u0e2d\u0e07\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e41\u0e25\u0e49\u0e27\u0e25\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48'; statusEl.style.color = 'var(--error)'; }
+            updateStepper(2);
+            updateConnectionStatus();
+            return;
+        }
+
+        wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(attempt + 1); }, 1000);
     });
 }
 

@@ -1,6 +1,7 @@
 param(
     [string]$Port = "COM5",
     [string]$IdfPath = $env:IDF_PATH,
+    [string]$IdfToolsPath = $env:IDF_TOOLS_PATH,
     [switch]$Monitor
 )
 
@@ -39,12 +40,43 @@ function Resolve-IdfPath {
     return $null
 }
 
+function Resolve-IdfToolsPath {
+    param(
+        [string]$Path
+    )
+
+    $candidates = @()
+
+    if ($Path) {
+        $candidates += $Path
+    }
+
+    $candidates += "C:\Espressif"
+    $candidates += (Join-Path $HOME ".espressif")
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and
+            (Test-Path (Join-Path $candidate "tools")) -and
+            (Test-Path (Join-Path $candidate "python_env"))) {
+            return (Resolve-Path $candidate).Path
+        }
+    }
+
+    return $null
+}
+
 $resolvedIdfPath = Resolve-IdfPath -Path $IdfPath
 if (-not $resolvedIdfPath) {
     throw "ESP-IDF path not found. Set IDF_PATH or pass -IdfPath `"C:\esp`" or `"C:\path\to\esp-idf`"."
 }
 
+$resolvedIdfToolsPath = Resolve-IdfToolsPath -Path $IdfToolsPath
+if (-not $resolvedIdfToolsPath) {
+    throw "ESP-IDF tools path not found. Set IDF_TOOLS_PATH or pass -IdfToolsPath `"C:\Espressif`"."
+}
+
 $env:IDF_PATH = $resolvedIdfPath
+$env:IDF_TOOLS_PATH = $resolvedIdfToolsPath
 $exportScript = Join-Path $env:IDF_PATH "export.ps1"
 if (-not (Test-Path $exportScript)) {
     throw "ESP-IDF export script not found: $exportScript"

@@ -10,13 +10,43 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_err.h"
+#include "esp_heap_caps.h"
+#include "esp_system.h"
+#include "esp_timer.h"
 #include "mdns.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "esp_task_wdt.h"
 
 static const char *TAG = "app_main";
 static bool s_http_server_retry = false;
+static int64_t s_last_board_diag_us = 0;
+static uint32_t s_last_idle_runtime[portNUM_PROCESSORS] = {0};
+
+static const char *reset_reason_name(esp_reset_reason_t reason)
+{
+    switch (reason) {
+    case ESP_RST_POWERON:
+        return "power_on";
+    case ESP_RST_EXT:
+        return "external_reset";
+    case ESP_RST_SW:
+        return "software_reset";
+    case ESP_RST_PANIC:
+        return "panic";
+    case ESP_RST_INT_WDT:
+        return "interrupt_watchdog";
+    case ESP_RST_TASK_WDT:
+        return "task_watchdog";
+    case ESP_RST_WDT:
+        return "other_watchdog";
+    case ESP_RST_BROWNOUT:
+        return "brownout";
+    default:
+        return "other";
+    }
+}
 
 static const char *pump_settings_load_status_name(nvs_store_pump_settings_load_status_t status)
 {
@@ -75,6 +105,229 @@ static const char *cooling_settings_load_status_name(nvs_store_cooling_settings_
     case NVS_STORE_COOLING_SETTINGS_DEFAULTS_ERROR:
     default:
         return "defaults-error";
+    }
+}
+
+static const char *pump_float_state_name(pump_control_float_state_t state)
+{
+    switch (state) {
+    case PUMP_CONTROL_FLOAT_OFF:
+        return "off";
+    case PUMP_CONTROL_FLOAT_ON:
+        return "on";
+    case PUMP_CONTROL_FLOAT_UNKNOWN:
+    default:
+        return "unknown";
+    }
+}
+
+static const char *pump_active_timer_name(pump_control_active_timer_t timer)
+{
+    switch (timer) {
+    case PUMP_CONTROL_TIMER_1:
+        return "timer1";
+    case PUMP_CONTROL_TIMER_2:
+        return "timer2";
+    case PUMP_CONTROL_TIMER_NONE:
+    default:
+        return "none";
+    }
+}
+
+static const char *pump_active_relay_name(pump_control_active_relay_t relay)
+{
+    switch (relay) {
+    case PUMP_CONTROL_RELAY_1:
+        return "relay1";
+    case PUMP_CONTROL_RELAY_2:
+        return "relay2";
+    case PUMP_CONTROL_RELAY_NONE:
+    default:
+        return "none";
+    }
+}
+
+static const char *pump_phase_name(pump_control_timer_phase_t phase)
+{
+    switch (phase) {
+    case PUMP_CONTROL_PHASE_ON:
+        return "on";
+    case PUMP_CONTROL_PHASE_OFF:
+        return "off";
+    case PUMP_CONTROL_PHASE_IDLE:
+    default:
+        return "idle";
+    }
+}
+
+static const char *cooling_mode_name(cooling_control_mode_t mode)
+{
+    switch (mode) {
+    case COOLING_CONTROL_MODE_AUTO:
+        return "auto";
+    case COOLING_CONTROL_MODE_TEST_ON:
+        return "test_on";
+    case COOLING_CONTROL_MODE_FORCE_OFF:
+    default:
+        return "force_off";
+    }
+}
+
+static const char *cooling_sensor_state_name(cooling_control_sensor_state_t state)
+{
+    switch (state) {
+    case COOLING_CONTROL_SENSOR_OK:
+        return "ok";
+    case COOLING_CONTROL_SENSOR_FAULT:
+        return "fault";
+    case COOLING_CONTROL_SENSOR_UNKNOWN:
+    default:
+        return "unknown";
+    }
+}
+
+static const char *cooling_fault_name(cooling_control_fault_code_t fault)
+{
+    switch (fault) {
+    case COOLING_CONTROL_FAULT_READ_FAILED:
+        return "read_failed";
+    case COOLING_CONTROL_FAULT_OUT_OF_RANGE:
+        return "out_of_range";
+    case COOLING_CONTROL_FAULT_CONFIG_INVALID:
+        return "config_invalid";
+    case COOLING_CONTROL_FAULT_NONE:
+    default:
+        return "none";
+    }
+}
+
+static const char *cooling_blocked_reason_name(cooling_control_blocked_reason_t reason)
+{
+    switch (reason) {
+    case COOLING_CONTROL_BLOCKED_COMPRESSOR_LOCKOUT:
+        return "compressor_lockout";
+    case COOLING_CONTROL_BLOCKED_SENSOR_FAULT:
+        return "sensor_fault";
+    case COOLING_CONTROL_BLOCKED_FORCE_OFF:
+        return "force_off";
+    case COOLING_CONTROL_BLOCKED_CONFIG_INVALID:
+        return "config_invalid";
+    case COOLING_CONTROL_BLOCKED_NONE:
+    default:
+        return "none";
+    }
+}
+
+static uint32_t cpu_load_x10(uint32_t idle_delta, uint32_t elapsed_us)
+{
+    if (elapsed_us == 0 || idle_delta >= elapsed_us) {
+        return 0;
+    }
+    return 1000U - (uint32_t)(((uint64_t)idle_delta * 1000U) / elapsed_us);
+}
+
+static void log_board_and_hardware_diagnostics(void)
+{
+    int64_t now_us = esp_timer_get_time();
+    uint32_t idle_runtime[portNUM_PROCESSORS] = {0};
+    uint32_t core_load_x10[portNUM_PROCESSORS] = {0};
+    uint32_t elapsed_us = 0;
+    bool cpu_sample_valid = s_last_board_diag_us != 0;
+    uint32_t total_load_x10 = 0;
+
+    for (int core = 0; core < portNUM_PROCESSORS; core++) {
+        idle_runtime[core] = (uint32_t)ulTaskGetIdleRunTimeCounterForCore(core);
+    }
+
+    if (cpu_sample_valid) {
+        elapsed_us = (uint32_t)(now_us - s_last_board_diag_us);
+        for (int core = 0; core < portNUM_PROCESSORS; core++) {
+            uint32_t idle_delta = idle_runtime[core] - s_last_idle_runtime[core];
+            core_load_x10[core] = cpu_load_x10(idle_delta, elapsed_us);
+            total_load_x10 += core_load_x10[core];
+        }
+        total_load_x10 /= portNUM_PROCESSORS;
+    }
+
+    s_last_board_diag_us = now_us;
+    for (int core = 0; core < portNUM_PROCESSORS; core++) {
+        s_last_idle_runtime[core] = idle_runtime[core];
+    }
+
+    multi_heap_info_t heap_info = {0};
+    heap_caps_get_info(&heap_info, MALLOC_CAP_INTERNAL);
+    esp_err_t twdt_status = esp_task_wdt_status(NULL);
+
+    ESP_LOGI(TAG,
+             "[BOARD_DIAG] uptime_ms=%llu cpu_mhz=%d cpu_sample=%s cpu_window_ms=%lu cpu_load_pct=%lu.%lu core0_pct=%lu.%lu core1_pct=%lu.%lu tasks=%lu twdt_main=%s reset=%s heap_free=%lu heap_min=%lu heap_largest=%lu heap_alloc_blocks=%lu heap_free_blocks=%lu main_stack_hwm=%lu die_temp=unsupported external_temp_source=ds18b20",
+             (unsigned long long)(now_us / 1000),
+             CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+             cpu_sample_valid ? "valid" : "warming_up",
+             (unsigned long)(elapsed_us / 1000),
+             (unsigned long)(total_load_x10 / 10),
+             (unsigned long)(total_load_x10 % 10),
+             (unsigned long)(core_load_x10[0] / 10),
+             (unsigned long)(core_load_x10[0] % 10),
+             (unsigned long)(core_load_x10[1] / 10),
+             (unsigned long)(core_load_x10[1] % 10),
+             (unsigned long)uxTaskGetNumberOfTasks(),
+             esp_err_to_name(twdt_status),
+             reset_reason_name(esp_reset_reason()),
+             (unsigned long)heap_info.total_free_bytes,
+             (unsigned long)heap_info.minimum_free_bytes,
+             (unsigned long)heap_info.largest_free_block,
+             (unsigned long)heap_info.allocated_blocks,
+             (unsigned long)heap_info.free_blocks,
+             (unsigned long)uxTaskGetStackHighWaterMark(NULL));
+
+    pump_control_status_t pump = {0};
+    if (pump_control_get_status(&pump)) {
+        ESP_LOGI(TAG,
+                 "[PUMP_DIAG] init=%s config=%s running=%s stabilizing=%s fault=%s float_gpio=%d float=%s active_timer=%s active_relay=%s phase=%s countdown_sec=%lu relay1_gpio=%d relay1=%s relay2_gpio=%d relay2=%s",
+                 pump.initialized ? "true" : "false",
+                 pump.config_valid ? "true" : "false",
+                 pump.running ? "true" : "false",
+                 pump.initial_stabilizing ? "true" : "false",
+                 pump.fault ? "true" : "false",
+                 pump.float_gpio,
+                 pump_float_state_name(pump.float_state),
+                 pump_active_timer_name(pump.active_timer),
+                 pump_active_relay_name(pump.active_relay),
+                 pump_phase_name(pump.phase),
+                 (unsigned long)pump.countdown_sec,
+                 pump.relay1_gpio,
+                 pump.relay1_energized ? "on" : "off",
+                 pump.relay2_gpio,
+                 pump.relay2_energized ? "on" : "off");
+    } else {
+        ESP_LOGW(TAG, "[PUMP_DIAG] status=unavailable");
+    }
+
+    cooling_control_status_t cooling = {0};
+    if (cooling_control_get_status(&cooling)) {
+        ESP_LOGI(TAG,
+                 "[COOLING_DIAG] init=%s config=%s fault=%s sensor=%s fault_code=%s temp_valid=%s temp_c=%.2f ds18b20_gpio=%d mode=%s auto=%s demand=%s relay_gpio=%d relay=%s blocked=%s lockout=%s lockout_sec=%lu test_sec=%lu threshold_x10=%ld hysteresis_x10=%ld",
+                 cooling.initialized ? "true" : "false",
+                 cooling.config_valid ? "true" : "false",
+                 cooling.fault ? "true" : "false",
+                 cooling_sensor_state_name(cooling.sensor_state),
+                 cooling_fault_name(cooling.fault_code),
+                 cooling.temperature_valid ? "true" : "false",
+                 cooling.temperature_c,
+                 cooling.ds18b20_gpio,
+                 cooling_mode_name(cooling.mode),
+                 cooling.auto_enable ? "true" : "false",
+                 cooling.cooling_demand ? "true" : "false",
+                 cooling.cooling_relay_gpio,
+                 cooling.relay_energized ? "on" : "off",
+                 cooling_blocked_reason_name(cooling.blocked_reason),
+                 cooling.lockout_active ? "true" : "false",
+                 (unsigned long)cooling.lockout_remaining_sec,
+                 (unsigned long)cooling.test_remaining_sec,
+                 (long)cooling.threshold_c_x10,
+                 (long)cooling.hysteresis_c_x10);
+    } else {
+        ESP_LOGW(TAG, "[COOLING_DIAG] status=unavailable");
     }
 }
 
@@ -213,6 +466,8 @@ void app_main(void)
     ESP_LOGI(TAG, "  %s %s", APP_TEMPLATE_NAME, APP_TEMPLATE_FIRMWARE_VERSION);
     ESP_LOGI(TAG, "  %s", APP_TEMPLATE_PHASE_LABEL);
     ESP_LOGI(TAG, "========================================");
+    ESP_LOGI(TAG, "Last reset reason: %s (%d)",
+             reset_reason_name(esp_reset_reason()), esp_reset_reason());
 
     /* 1. Initialize NVS storage */
     if (!nvs_store_init()) {
@@ -409,11 +664,17 @@ void app_main(void)
 
         loop_counter++;
         if (loop_counter >= APP_TEMPLATE_STATUS_LOG_INTERVALS) {
-            ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu",
+            ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu, HeapMin=%lu, Largest=%lu, MainStackHWM=%lu",
                 wifi_manager_is_ap_enabled() ? "ON" : "OFF",
                 wifi_manager_get_ap_ip(),
                 wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "disconnected",
-                (unsigned long)wifi_manager_get_free_heap());
+                (unsigned long)wifi_manager_get_free_heap(),
+                (unsigned long)esp_get_minimum_free_heap_size(),
+                (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+                (unsigned long)uxTaskGetStackHighWaterMark(NULL));
+            log_board_and_hardware_diagnostics();
+            wifi_manager_log_diagnostics();
+            web_server_log_diagnostics();
             loop_counter = 0;
         }
 

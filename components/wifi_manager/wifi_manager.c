@@ -6,6 +6,8 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_timer.h"
+#include "esp_heap_caps.h"
+#include "esp_system.h"
 #include "lwip/ip4_addr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -23,8 +25,12 @@ static bool s_sta_connected = false;
 static bool s_sta_configured = false;
 static bool s_sta_connecting = false;
 static bool s_sta_manual_connect_pending = false;
+static bool s_sta_retry_blocked = false;
 static bool s_scan_in_progress = false;
+static bool s_scan_cancel_pending = false;
+static bool s_ap_configured = false;
 static char s_sta_ssid[33] = {0};
+static char s_sta_target_ssid[33] = {0};
 static char s_ap_ip[16] = "192.168.4.1";
 static char s_sta_ip[16] = {0};
 static int64_t s_boot_time_ms = 0;
@@ -45,8 +51,41 @@ static esp_timer_handle_t s_ap_stop_timer = NULL;
 static esp_timer_handle_t s_sta_connect_timer = NULL;
 
 static SemaphoreHandle_t s_wifi_mutex;
+static portMUX_TYPE s_wifi_diag_lock = portMUX_INITIALIZER_UNLOCKED;
+
+typedef struct {
+    uint32_t sta_connect_requests;
+    uint32_t sta_connect_scheduled;
+    uint32_t sta_connect_attempts;
+    uint32_t sta_connect_start_failures;
+    uint32_t sta_disconnect_requests;
+    uint32_t sta_forget_requests;
+    uint32_t sta_disconnected_events;
+    uint32_t sta_got_ip_events;
+    uint32_t ap_restore_attempts;
+    uint32_t ap_restore_failures;
+    uint32_t ap_client_connected_events;
+    uint32_t ap_client_disconnected_events;
+    uint32_t ap_ip_assigned_events;
+    uint32_t scan_started;
+    uint32_t scan_completed;
+    uint32_t scan_cancel_requests;
+    uint32_t scan_failures;
+    uint32_t scan_cleanup_events;
+    int last_disconnect_reason;
+} wifi_manager_diag_t;
+
+static wifi_manager_diag_t s_wifi_diag = {0};
 
 /* --------------- Helpers --------------- */
+
+static uint32_t diag_increment(uint32_t *counter)
+{
+    taskENTER_CRITICAL(&s_wifi_diag_lock);
+    uint32_t count = ++(*counter);
+    taskEXIT_CRITICAL(&s_wifi_diag_lock);
+    return count;
+}
 
 const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode)
 {
@@ -127,15 +166,29 @@ static bool apply_static_ip(const wifi_sta_ip_config_t *cfg)
 
 static void schedule_sta_connect(void);
 
+static const char *wifi_disconnect_reason_to_string(uint8_t reason)
+{
+    switch (reason) {
+    case WIFI_REASON_AUTH_EXPIRE:       return "auth_expire";
+    case WIFI_REASON_ASSOC_LEAVE:       return "assoc_leave";
+    case WIFI_REASON_NO_AP_FOUND:       return "no_ap_found";
+    case WIFI_REASON_ASSOC_FAIL:        return "assoc_fail";
+    case WIFI_REASON_CONNECTION_FAIL:   return "connection_fail";
+    default:                            return "other";
+    }
+}
+
 static void sta_connect_timer_cb(void *arg)
 {
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     bool should_connect = s_sta_configured &&
                           !s_sta_connected &&
                           !s_sta_connecting &&
+                          !s_sta_retry_blocked &&
                           !s_scan_in_progress;
     if (should_connect) {
         s_sta_connecting = true;
+        s_sta_manual_connect_pending = false;
     }
     xSemaphoreGive(s_wifi_mutex);
 
@@ -143,6 +196,8 @@ static void sta_connect_timer_cb(void *arg)
         return;
     }
 
+    uint32_t attempt = diag_increment(&s_wifi_diag.sta_connect_attempts);
+    ESP_LOGI(TAG, "[WIFI_EVENT] sta_connect_attempt=%lu", (unsigned long)attempt);
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_OK) {
         return;
@@ -150,10 +205,12 @@ static void sta_connect_timer_cb(void *arg)
 
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     s_sta_connecting = false;
-    bool should_recover = s_sta_configured && !s_scan_in_progress;
+    bool should_recover = s_sta_configured && !s_sta_retry_blocked && !s_scan_in_progress;
     xSemaphoreGive(s_wifi_mutex);
 
-    ESP_LOGW(TAG, "Deferred STA connect start failed: %s", esp_err_to_name(err));
+    uint32_t failures = diag_increment(&s_wifi_diag.sta_connect_start_failures);
+    ESP_LOGW(TAG, "Deferred STA connect start failed: err=%s failures=%lu",
+             esp_err_to_name(err), (unsigned long)failures);
     if (should_recover && err == ESP_ERR_WIFI_CONN) {
         ESP_LOGI(TAG, "Resetting busy STA state before retry");
         esp_wifi_disconnect();
@@ -172,10 +229,17 @@ static void schedule_sta_connect(void)
     esp_err_t err = esp_timer_start_once(s_sta_connect_timer, STA_CONNECT_DELAY_MS * 1000);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to schedule STA connect: %s", esp_err_to_name(err));
+    } else {
+        diag_increment(&s_wifi_diag.sta_connect_scheduled);
     }
 }
 
-static void configure_radio_stability(void)
+static bool ensure_ap_started(void)
+{
+    return wifi_manager_start_ap();
+}
+
+static void configure_radio_stability(const char *reason)
 {
     esp_err_t sta_bw_err = esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW20);
     if (sta_bw_err != ESP_OK) {
@@ -194,19 +258,66 @@ static void configure_radio_stability(void)
     }
 
     int8_t tx_power = 0;
-    if (esp_wifi_get_max_tx_power(&tx_power) == ESP_OK) {
-        ESP_LOGI(TAG, "Radio stability: APSTA HT20, max TX power=%d qdBm", tx_power);
+    esp_err_t tx_power_err = esp_wifi_get_max_tx_power(&tx_power);
+    wifi_country_t country = {0};
+    esp_err_t country_err = esp_wifi_get_country(&country);
+    int country_last_channel = country.nchan > 0 ? country.schan + country.nchan - 1 : 0;
+    ESP_LOGI(TAG,
+             "[WIFI_RADIO] reason=%s APSTA_HT20=true requested_tx_power_qdbm=%d tx_power_qdbm=%d tx_power_err=%s country=%c%c country_err=%s country_max_tx_power_dbm=%d channels=%u-%u policy=%d",
+             reason,
+             APP_TEMPLATE_WIFI_MAX_TX_POWER_QDBM,
+             tx_power,
+             esp_err_to_name(tx_power_err),
+             country.cc[0],
+             country.cc[1],
+             esp_err_to_name(country_err),
+             country.max_tx_power,
+             country.schan,
+             country_last_channel,
+             country.policy);
+}
+
+static bool configure_ap(void)
+{
+    wifi_config_t ap_cfg = {
+        .ap = {
+            .ssid = AP_SSID,
+            .password = "",
+            .ssid_len = strlen(AP_SSID),
+            .channel = APP_TEMPLATE_AP_CHANNEL,
+            .authmode = WIFI_AUTH_OPEN,
+            .max_connection = AP_MAX_CONN,
+        },
+    };
+
+    esp_err_t err = esp_wifi_set_config(WIFI_IF_AP, &ap_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set AP config: %s", esp_err_to_name(err));
+        return false;
     }
+
+    s_ap_configured = true;
+    return true;
 }
 
 /* --------------- AP Auto-Stop Timer --------------- */
 
 static void ap_stop_timer_cb(void *arg)
 {
-    ESP_LOGI(TAG, "AP auto-stop timer expired, stopping AP");
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
-    esp_wifi_set_mode(WIFI_MODE_STA);
-    s_ap_enabled = false;
+    if (!s_sta_connected) {
+        ESP_LOGI(TAG, "Skipping AP auto-stop because STA is disconnected");
+        xSemaphoreGive(s_wifi_mutex);
+        return;
+    }
+
+    ESP_LOGI(TAG, "AP auto-stop timer expired, stopping AP");
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err == ESP_OK) {
+        s_ap_enabled = false;
+    } else {
+        ESP_LOGW(TAG, "Failed to stop AP after timeout: %s", esp_err_to_name(err));
+    }
     xSemaphoreGive(s_wifi_mutex);
 }
 
@@ -227,7 +338,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             break;
         case WIFI_EVENT_STA_DISCONNECTED: {
             wifi_event_sta_disconnected_t *ev = (wifi_event_sta_disconnected_t *)event_data;
-            ESP_LOGW(TAG, "STA disconnected, reason=%d", ev->reason);
+            taskENTER_CRITICAL(&s_wifi_diag_lock);
+            s_wifi_diag.sta_disconnected_events++;
+            s_wifi_diag.last_disconnect_reason = ev->reason;
+            uint32_t disconnected_events = s_wifi_diag.sta_disconnected_events;
+            taskEXIT_CRITICAL(&s_wifi_diag_lock);
             xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
             s_sta_connected = false;
             s_sta_connecting = false;
@@ -246,39 +361,88 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 s_sta_retry_count++;
             }
             bool retry_limit_reached = s_sta_retry_count > STA_MAX_RETRY;
+            if (retry_limit_reached) {
+                s_sta_retry_blocked = true;
+            }
             bool sta_configured = s_sta_configured;
             bool scan_in_progress = s_scan_in_progress;
-            bool ap_enabled = s_ap_enabled;
+            bool retry_blocked = s_sta_retry_blocked;
+            int retry_count = s_sta_retry_count;
             xSemaphoreGive(s_wifi_mutex);
+            ESP_LOGW(TAG,
+                     "[WIFI_EVENT] sta_disconnected reason=%d(%s) events=%lu retry=%d blocked=%s configured=%s scan=%s",
+                     ev->reason,
+                     wifi_disconnect_reason_to_string(ev->reason),
+                     (unsigned long)disconnected_events,
+                     retry_count,
+                     retry_blocked ? "true" : "false",
+                     sta_configured ? "true" : "false",
+                     scan_in_progress ? "true" : "false");
 
             if (manual_connect_pending && sta_configured && !scan_in_progress) {
                 ESP_LOGI(TAG, "Scheduling requested STA connect after disconnect");
                 schedule_sta_connect();
             } else if (retry_limit_reached) {
                 ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
-                if (!ap_enabled) {
-                    wifi_manager_start_ap();
-                }
+                ensure_ap_started();
             } else if (sta_configured && !scan_in_progress) {
                 schedule_sta_connect();
+            } else if (!scan_in_progress) {
+                ensure_ap_started();
             }
             break;
         }
-        case WIFI_EVENT_AP_STACONNECTED:
-            ESP_LOGI(TAG, "Client connected to AP");
+        case WIFI_EVENT_AP_STACONNECTED: {
+            uint32_t events = diag_increment(&s_wifi_diag.ap_client_connected_events);
+            ESP_LOGI(TAG, "[WIFI_EVENT] ap_client_connected events=%lu", (unsigned long)events);
             break;
-        case WIFI_EVENT_AP_STADISCONNECTED:
-            ESP_LOGI(TAG, "Client disconnected from AP");
+        }
+        case WIFI_EVENT_AP_STADISCONNECTED: {
+            uint32_t events = diag_increment(&s_wifi_diag.ap_client_disconnected_events);
+            ESP_LOGI(TAG, "[WIFI_EVENT] ap_client_disconnected events=%lu", (unsigned long)events);
             break;
+        }
         case WIFI_EVENT_SCAN_DONE: {
+            diag_increment(&s_wifi_diag.scan_completed);
             uint16_t num = 0;
-            esp_wifi_scan_get_ap_num(&num);
+            esp_err_t count_err = esp_wifi_scan_get_ap_num(&num);
+            if (count_err != ESP_OK) {
+                diag_increment(&s_wifi_diag.scan_failures);
+                ESP_LOGW(TAG, "Failed to get scan result count: %s", esp_err_to_name(count_err));
+                num = 0;
+            }
             if (num > WIFI_SCAN_MAX) num = WIFI_SCAN_MAX;
 
-            wifi_ap_record_t *ap_info = calloc(num, sizeof(wifi_ap_record_t));
+            wifi_ap_record_t *ap_info = num > 0 ? calloc(num, sizeof(wifi_ap_record_t)) : NULL;
+            if (num > 0 && !ap_info) {
+                diag_increment(&s_wifi_diag.scan_failures);
+                ESP_LOGW(TAG, "Failed to allocate scan result buffer");
+                esp_wifi_clear_ap_list();
+                num = 0;
+            } else if (ap_info) {
+                esp_err_t records_err = esp_wifi_scan_get_ap_records(&num, ap_info);
+                if (records_err != ESP_OK) {
+                    diag_increment(&s_wifi_diag.scan_failures);
+                    ESP_LOGW(TAG, "Failed to get scan results: %s", esp_err_to_name(records_err));
+                    esp_wifi_clear_ap_list();
+                    num = 0;
+                }
+            } else {
+                esp_wifi_clear_ap_list();
+            }
+
+            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (s_scan_cancel_pending) {
+                s_scan_cancel_pending = false;
+                xSemaphoreGive(s_wifi_mutex);
+                uint32_t cleanup_events = diag_increment(&s_wifi_diag.scan_cleanup_events);
+                ESP_LOGI(TAG, "[WIFI_EVENT] scan_cleanup_complete events=%lu",
+                         (unsigned long)cleanup_events);
+                free(ap_info);
+                break;
+            }
+
             if (ap_info) {
-                esp_wifi_scan_get_ap_records(&num, ap_info);
-                xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
                 for (int i = 0; i < num; i++) {
                     strncpy(s_scan_results[i].ssid, (char *)ap_info[i].ssid, 32);
                     s_scan_results[i].ssid[32] = '\0';
@@ -287,17 +451,36 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                             wifi_auth_mode_to_string(ap_info[i].authmode),
                             sizeof(s_scan_results[i].auth) - 1);
                     s_scan_results[i].channel = ap_info[i].primary;
+                    ESP_LOGI(TAG,
+                             "[WIFI_SCAN] index=%d ssid=%s rssi=%d auth=%s channel=%u",
+                             i,
+                             s_scan_results[i].ssid,
+                             s_scan_results[i].rssi,
+                             s_scan_results[i].auth,
+                             s_scan_results[i].channel);
                 }
-                s_scan_count = num;
-                wifi_scan_cb_t cb = s_scan_callback;
-                void *ctx = s_scan_user_ctx;
-                s_scan_callback = NULL;
-                s_scan_user_ctx = NULL;
-                xSemaphoreGive(s_wifi_mutex);
-                free(ap_info);
-                if (cb) {
-                    cb(ctx, s_scan_results, s_scan_count);
-                }
+            }
+            s_scan_count = num;
+            wifi_scan_cb_t cb = s_scan_callback;
+            void *ctx = s_scan_user_ctx;
+            s_scan_callback = NULL;
+            s_scan_user_ctx = NULL;
+            s_scan_in_progress = false;
+
+            /*
+             * Serialize callback completion with wifi_manager_cancel_scan().
+             * The current callback only copies results and releases a semaphore.
+             */
+            if (cb) {
+                cb(ctx, s_scan_results, s_scan_count);
+            }
+            bool reconnect_sta = s_sta_configured && !s_sta_connected && !s_sta_retry_blocked;
+            xSemaphoreGive(s_wifi_mutex);
+            free(ap_info);
+            ESP_LOGI(TAG, "[WIFI_EVENT] scan_complete results=%u", num);
+
+            if (reconnect_sta) {
+                schedule_sta_connect();
             }
             break;
         }
@@ -309,12 +492,23 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         case IP_EVENT_STA_GOT_IP: {
             ip_event_got_ip_t *ev = (ip_event_got_ip_t *)event_data;
             xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (!s_sta_configured) {
+                xSemaphoreGive(s_wifi_mutex);
+                ESP_LOGW(TAG, "Ignoring stale STA got IP after disconnect");
+                esp_wifi_disconnect();
+                ensure_ap_started();
+                break;
+            }
+
             snprintf(s_sta_ip, sizeof(s_sta_ip), IPSTR, IP2STR(&ev->ip_info.ip));
             s_sta_connected = true;
             s_sta_connecting = false;
             s_sta_manual_connect_pending = false;
+            s_sta_retry_blocked = false;
             s_sta_retry_count = 0;
-            ESP_LOGI(TAG, "STA got IP: %s", s_sta_ip);
+            uint32_t got_ip_events = diag_increment(&s_wifi_diag.sta_got_ip_events);
+            ESP_LOGI(TAG, "[WIFI_EVENT] sta_got_ip ip=%s events=%lu",
+                     s_sta_ip, (unsigned long)got_ip_events);
 
             wifi_ap_record_t ap_info;
             if (esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK) {
@@ -333,9 +527,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             }
             break;
         }
-        case IP_EVENT_ASSIGNED_IP_TO_CLIENT:
-            ESP_LOGI(TAG, "AP assigned IP to client");
+        case IP_EVENT_ASSIGNED_IP_TO_CLIENT: {
+            uint32_t events = diag_increment(&s_wifi_diag.ap_ip_assigned_events);
+            ESP_LOGI(TAG, "[WIFI_EVENT] ap_ip_assigned events=%lu", (unsigned long)events);
             break;
+        }
         default:
             break;
         }
@@ -417,8 +613,12 @@ bool wifi_manager_init(void)
         s_sta_configured = true;
     }
 
+    if (!configure_ap()) {
+        return false;
+    }
+
     ESP_ERROR_CHECK(esp_wifi_start());
-    configure_radio_stability();
+    configure_radio_stability("init");
 
     /* Create AP auto-stop timer */
     esp_timer_create_args_t timer_args = {
@@ -432,7 +632,10 @@ bool wifi_manager_init(void)
     }
 
     /* Start AP immediately */
-    wifi_manager_start_ap();
+    if (!wifi_manager_start_ap()) {
+        ESP_LOGE(TAG, "Failed to start SoftAP");
+        return false;
+    }
 
     return true;
 }
@@ -441,27 +644,43 @@ bool wifi_manager_init(void)
 
 bool wifi_manager_start_ap(void)
 {
+    diag_increment(&s_wifi_diag.ap_restore_attempts);
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
-    esp_wifi_set_mode(WIFI_MODE_APSTA);
+    wifi_mode_t mode = WIFI_MODE_NULL;
+    esp_err_t mode_err = esp_wifi_get_mode(&mode);
+    bool mode_changed = mode_err != ESP_OK || mode != WIFI_MODE_APSTA;
 
-    wifi_config_t ap_cfg = {
-        .ap = {
-            .ssid = AP_SSID,
-            .password = "",
-            .ssid_len = strlen(AP_SSID),
-            .channel = APP_TEMPLATE_AP_CHANNEL,
-            .authmode = WIFI_AUTH_OPEN,
-            .max_connection = AP_MAX_CONN,
-        },
-    };
+    if (mode_changed) {
+        if (mode_err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to read Wi-Fi mode before AP restore: %s",
+                     esp_err_to_name(mode_err));
+        } else {
+            ESP_LOGI(TAG, "Restoring SoftAP fallback from Wi-Fi mode=%d", mode);
+        }
 
-    if (esp_wifi_set_config(WIFI_IF_AP, &ap_cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set AP config");
-        xSemaphoreGive(s_wifi_mutex);
-        return false;
+        mode_err = esp_wifi_set_mode(WIFI_MODE_APSTA);
+        if (mode_err != ESP_OK) {
+            diag_increment(&s_wifi_diag.ap_restore_failures);
+            ESP_LOGE(TAG, "Failed to set APSTA mode: %s", esp_err_to_name(mode_err));
+            xSemaphoreGive(s_wifi_mutex);
+            return false;
+        }
+        configure_radio_stability("ap_restore");
     }
+
+    if (!s_ap_configured) {
+        if (!configure_ap()) {
+            diag_increment(&s_wifi_diag.ap_restore_failures);
+            xSemaphoreGive(s_wifi_mutex);
+            return false;
+        }
+    }
+
+    bool log_started = !s_ap_enabled || mode_changed;
     s_ap_enabled = true;
-    ESP_LOGI(TAG, "SoftAP started: SSID=%s, IP=%s", AP_SSID, s_ap_ip);
+    if (log_started) {
+        ESP_LOGI(TAG, "SoftAP started: SSID=%s, IP=%s", AP_SSID, s_ap_ip);
+    }
     xSemaphoreGive(s_wifi_mutex);
     return true;
 }
@@ -474,7 +693,9 @@ bool wifi_manager_stop_ap(void)
     }
     esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set STA mode: %d", err);
+        ESP_LOGE(TAG, "Failed to set STA mode: %s", esp_err_to_name(err));
+        xSemaphoreGive(s_wifi_mutex);
+        return false;
     }
     s_ap_enabled = false;
     ESP_LOGI(TAG, "SoftAP stopped");
@@ -487,9 +708,28 @@ bool wifi_manager_stop_ap(void)
 bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi_sta_ip_config_t *ip_config)
 {
     if (!ssid || !ssid[0]) return false;
+    uint32_t requests = diag_increment(&s_wifi_diag.sta_connect_requests);
+    ESP_LOGI(TAG, "[WIFI_EVENT] sta_connect_requested ssid=%s requests=%lu",
+             ssid, (unsigned long)requests);
     if (ip_config && ip_config->ip[0] && !ip_config->gateway[0]) {
         ESP_LOGW(TAG, "Static IP connect rejected: gateway is required");
         return false;
+    }
+
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool scan_busy = s_scan_in_progress || s_scan_cancel_pending;
+    bool connect_busy = s_sta_connecting || s_sta_manual_connect_pending;
+    bool same_target = strncmp(s_sta_target_ssid, ssid, sizeof(s_sta_target_ssid)) == 0;
+    xSemaphoreGive(s_wifi_mutex);
+
+    if (scan_busy) {
+        ESP_LOGW(TAG, "STA connect rejected while Wi-Fi scan is active");
+        return false;
+    }
+    if (connect_busy) {
+        ESP_LOGI(TAG, "[WIFI_EVENT] sta_connect_deduplicated ssid=%s same_target=%s",
+                 ssid, same_target ? "true" : "false");
+        return same_target;
     }
 
     nvs_store_save_wifi(ssid, password);
@@ -512,8 +752,10 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
     s_sta_configured = false;
     s_sta_connecting = false;
     s_sta_manual_connect_pending = true;
+    s_sta_retry_blocked = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
+    strlcpy(s_sta_target_ssid, ssid, sizeof(s_sta_target_ssid));
     xSemaphoreGive(s_wifi_mutex);
 
     esp_err_t disconnect_err = esp_wifi_disconnect();
@@ -547,6 +789,7 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 
 bool wifi_manager_disconnect_sta(void)
 {
+    diag_increment(&s_wifi_diag.sta_disconnect_requests);
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
@@ -558,23 +801,25 @@ bool wifi_manager_disconnect_sta(void)
     s_sta_configured = false;
     s_sta_connecting = false;
     s_sta_manual_connect_pending = false;
+    s_sta_retry_blocked = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
+    s_sta_target_ssid[0] = '\0';
     s_sta_retry_count = 0;
-    bool ap_enabled = s_ap_enabled;
     xSemaphoreGive(s_wifi_mutex);
 
     esp_err_t ret = esp_wifi_disconnect();
-    if (!ap_enabled) {
-        ESP_LOGI(TAG, "Restoring AP after STA disconnect");
-        wifi_manager_start_ap();
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "STA disconnect returned: %s", esp_err_to_name(ret));
     }
 
-    return ret == ESP_OK;
+    return ensure_ap_started();
 }
 
 bool wifi_manager_forget_sta(void)
 {
+    uint32_t requests = diag_increment(&s_wifi_diag.sta_forget_requests);
+    ESP_LOGI(TAG, "[WIFI_EVENT] sta_forget_requested requests=%lu", (unsigned long)requests);
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
@@ -586,20 +831,25 @@ bool wifi_manager_forget_sta(void)
     s_sta_configured = false;
     s_sta_connecting = false;
     s_sta_manual_connect_pending = false;
+    s_sta_retry_blocked = false;
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
+    s_sta_target_ssid[0] = '\0';
     s_sta_retry_count = 0;
-    bool ap_enabled = s_ap_enabled;
     xSemaphoreGive(s_wifi_mutex);
 
-    esp_wifi_disconnect();
-    nvs_store_clear_wifi();
-    nvs_store_clear_sta_ip();
-    restore_sta_dhcp();
-    if (!ap_enabled) {
-        wifi_manager_start_ap();
+    esp_err_t disconnect_err = esp_wifi_disconnect();
+    if (disconnect_err != ESP_OK) {
+        ESP_LOGW(TAG, "STA forget disconnect returned: %s", esp_err_to_name(disconnect_err));
     }
-    return true;
+    bool wifi_cleared = nvs_store_clear_wifi();
+    bool static_ip_cleared = nvs_store_clear_sta_ip();
+    restore_sta_dhcp();
+    bool ap_started = ensure_ap_started();
+    if (!wifi_cleared || !static_ip_cleared) {
+        ESP_LOGW(TAG, "Failed to clear one or more saved STA settings");
+    }
+    return wifi_cleared && static_ip_cleared && ap_started;
 }
 
 /* --------------- Scan --------------- */
@@ -609,9 +859,20 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
     if (!callback) return false;
 
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (s_scan_in_progress || s_scan_cancel_pending) {
+        xSemaphoreGive(s_wifi_mutex);
+        ESP_LOGW(TAG, "Wi-Fi scan already in progress or awaiting cleanup");
+        return false;
+    }
+    if (s_sta_connecting || s_sta_manual_connect_pending) {
+        xSemaphoreGive(s_wifi_mutex);
+        ESP_LOGW(TAG, "Wi-Fi scan rejected while STA connect is pending");
+        return false;
+    }
     s_scan_callback = callback;
     s_scan_user_ctx = user_ctx;
     s_scan_count = 0;
+    s_scan_in_progress = true;
     xSemaphoreGive(s_wifi_mutex);
 
     wifi_scan_config_t scan_cfg = {
@@ -620,48 +881,66 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
         .channel = 0,
         .show_hidden = false,
         .scan_type = WIFI_SCAN_TYPE_ACTIVE,
-        .scan_time.active.min = 100,
-        .scan_time.active.max = 300,
+        .scan_time.active.min = APP_TEMPLATE_WIFI_SCAN_ACTIVE_MIN_MS,
+        .scan_time.active.max = APP_TEMPLATE_WIFI_SCAN_ACTIVE_MAX_MS,
+        .home_chan_dwell_time = APP_TEMPLATE_WIFI_SCAN_HOME_DWELL_MS,
     };
 
     esp_err_t ret = esp_wifi_scan_start(&scan_cfg, false);
     if (ret != ESP_OK) {
+        diag_increment(&s_wifi_diag.scan_failures);
         xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
         s_scan_callback = NULL;
         s_scan_user_ctx = NULL;
+        s_scan_in_progress = false;
+        bool reconnect_sta = s_sta_configured && !s_sta_connected && !s_sta_retry_blocked;
         xSemaphoreGive(s_wifi_mutex);
+        ESP_LOGW(TAG, "Failed to start Wi-Fi scan: %s", esp_err_to_name(ret));
+        if (reconnect_sta) {
+            schedule_sta_connect();
+        }
         return false;
     }
+    uint32_t started = diag_increment(&s_wifi_diag.scan_started);
+    ESP_LOGI(TAG,
+             "[WIFI_EVENT] scan_started count=%lu active_min_ms=%d active_max_ms=%d home_dwell_ms=%d",
+             (unsigned long)started,
+             APP_TEMPLATE_WIFI_SCAN_ACTIVE_MIN_MS,
+             APP_TEMPLATE_WIFI_SCAN_ACTIVE_MAX_MS,
+             APP_TEMPLATE_WIFI_SCAN_HOME_DWELL_MS);
     return true;
 }
 
-void wifi_manager_sta_disconnect_for_scan(void)
+void wifi_manager_cancel_scan(void)
 {
+    uint32_t cancel_requests = diag_increment(&s_wifi_diag.scan_cancel_requests);
+    ESP_LOGW(TAG, "[WIFI_EVENT] scan_cancel_requested count=%lu",
+             (unsigned long)cancel_requests);
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
-    s_scan_in_progress = true;
-    s_sta_connecting = false;
-    if (s_sta_connect_timer) {
-        esp_timer_stop(s_sta_connect_timer);
-    }
-    xSemaphoreGive(s_wifi_mutex);
-    esp_wifi_disconnect();
-    vTaskDelay(pdMS_TO_TICKS(200));
-}
-
-void wifi_manager_sta_reconnect_after_scan(void)
-{
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool scan_in_progress = s_scan_in_progress;
+    s_scan_callback = NULL;
+    s_scan_user_ctx = NULL;
+    s_scan_count = 0;
     s_scan_in_progress = false;
-    s_sta_retry_count = 0;
-    bool ap_enabled = s_ap_enabled;
-    bool ap_auto_stop = s_ap_auto_stop;
-    bool sta_configured = s_sta_configured;
+    if (scan_in_progress) {
+        s_scan_cancel_pending = true;
+    }
+    bool reconnect_sta = s_sta_configured && !s_sta_connected && !s_sta_retry_blocked;
     xSemaphoreGive(s_wifi_mutex);
 
-    if (ap_enabled && ap_auto_stop && s_ap_stop_timer) {
-        esp_timer_stop(s_ap_stop_timer);
+    if (scan_in_progress) {
+        esp_err_t stop_err = esp_wifi_scan_stop();
+        if (stop_err != ESP_OK) {
+            diag_increment(&s_wifi_diag.scan_failures);
+            ESP_LOGW(TAG, "Failed to stop Wi-Fi scan: %s", esp_err_to_name(stop_err));
+            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            s_scan_cancel_pending = false;
+            xSemaphoreGive(s_wifi_mutex);
+        }
+        esp_wifi_clear_ap_list();
     }
-    if (sta_configured) {
+
+    if (reconnect_sta) {
         schedule_sta_connect();
     }
 }
@@ -711,4 +990,121 @@ int64_t wifi_manager_get_uptime_ms(void)
 uint32_t wifi_manager_get_free_heap(void)
 {
     return esp_get_free_heap_size();
+}
+
+void wifi_manager_log_diagnostics(void)
+{
+    if (!s_wifi_mutex) {
+        ESP_LOGW(TAG, "[WIFI_DIAG] mutex=unavailable");
+        return;
+    }
+
+    wifi_manager_diag_t diag;
+    taskENTER_CRITICAL(&s_wifi_diag_lock);
+    diag = s_wifi_diag;
+    taskEXIT_CRITICAL(&s_wifi_diag_lock);
+
+    bool ap_enabled;
+    bool sta_connected;
+    bool sta_configured;
+    bool sta_connecting;
+    bool manual_connect_pending;
+    bool retry_blocked;
+    bool scan_in_progress;
+    bool scan_cancel_pending;
+    int retry_count;
+    char sta_ip[sizeof(s_sta_ip)];
+    char sta_ssid[sizeof(s_sta_ssid)];
+    char sta_target_ssid[sizeof(s_sta_target_ssid)];
+
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    ap_enabled = s_ap_enabled;
+    sta_connected = s_sta_connected;
+    sta_configured = s_sta_configured;
+    sta_connecting = s_sta_connecting;
+    manual_connect_pending = s_sta_manual_connect_pending;
+    retry_blocked = s_sta_retry_blocked;
+    scan_in_progress = s_scan_in_progress;
+    scan_cancel_pending = s_scan_cancel_pending;
+    retry_count = s_sta_retry_count;
+    strlcpy(sta_ip, s_sta_ip, sizeof(sta_ip));
+    strlcpy(sta_ssid, s_sta_ssid, sizeof(sta_ssid));
+    strlcpy(sta_target_ssid, s_sta_target_ssid, sizeof(sta_target_ssid));
+    xSemaphoreGive(s_wifi_mutex);
+
+    wifi_mode_t mode = WIFI_MODE_NULL;
+    esp_err_t mode_err = esp_wifi_get_mode(&mode);
+    wifi_sta_list_t ap_clients = {0};
+    int weakest_ap_rssi = 0;
+    if (ap_enabled && esp_wifi_ap_get_sta_list(&ap_clients) == ESP_OK && ap_clients.num > 0) {
+        weakest_ap_rssi = ap_clients.sta[0].rssi;
+        for (int i = 1; i < ap_clients.num; i++) {
+            if (ap_clients.sta[i].rssi < weakest_ap_rssi) {
+                weakest_ap_rssi = ap_clients.sta[i].rssi;
+            }
+        }
+    }
+
+    int sta_rssi = 0;
+    wifi_ap_record_t sta_ap = {0};
+    if (sta_connected && esp_wifi_sta_get_ap_info(&sta_ap) == ESP_OK) {
+        sta_rssi = sta_ap.rssi;
+    }
+
+    int8_t tx_power = 0;
+    esp_err_t tx_power_err = esp_wifi_get_max_tx_power(&tx_power);
+    wifi_country_t country = {0};
+    esp_err_t country_err = esp_wifi_get_country(&country);
+    int country_last_channel = country.nchan > 0 ? country.schan + country.nchan - 1 : 0;
+
+    ESP_LOGI(TAG,
+             "[WIFI_DIAG] mode=%d mode_err=%s ap=%s ap_clients=%u ap_weakest_rssi=%d sta_connected=%s sta_configured=%s sta_connecting=%s manual_pending=%s retry_blocked=%s sta_target=%s sta_ssid=%s sta_ip=%s sta_rssi=%d tx_power_qdbm=%d tx_power_err=%s country=%c%c country_err=%s country_max_tx_power_dbm=%d country_channels=%u-%u country_policy=%d retry=%d scan=%s scan_cancel_pending=%s connect_req=%lu scheduled=%lu attempts=%lu start_fail=%lu disconnect_req=%lu forget_req=%lu disconnected=%lu got_ip=%lu last_reason=%d ap_restore=%lu ap_restore_fail=%lu ap_client_join=%lu ap_client_leave=%lu ap_ip=%lu scan_started=%lu scan_done=%lu scan_cancel=%lu scan_fail=%lu scan_cleanup=%lu heap=%lu heap_min=%lu largest=%lu",
+             mode,
+             esp_err_to_name(mode_err),
+             ap_enabled ? "true" : "false",
+             ap_clients.num,
+             weakest_ap_rssi,
+             sta_connected ? "true" : "false",
+             sta_configured ? "true" : "false",
+             sta_connecting ? "true" : "false",
+             manual_connect_pending ? "true" : "false",
+             retry_blocked ? "true" : "false",
+             sta_target_ssid,
+             sta_ssid,
+             sta_ip,
+             sta_rssi,
+             tx_power,
+             esp_err_to_name(tx_power_err),
+             country.cc[0],
+             country.cc[1],
+             esp_err_to_name(country_err),
+             country.max_tx_power,
+             country.schan,
+             country_last_channel,
+             country.policy,
+             retry_count,
+             scan_in_progress ? "true" : "false",
+             scan_cancel_pending ? "true" : "false",
+             (unsigned long)diag.sta_connect_requests,
+             (unsigned long)diag.sta_connect_scheduled,
+             (unsigned long)diag.sta_connect_attempts,
+             (unsigned long)diag.sta_connect_start_failures,
+             (unsigned long)diag.sta_disconnect_requests,
+             (unsigned long)diag.sta_forget_requests,
+             (unsigned long)diag.sta_disconnected_events,
+             (unsigned long)diag.sta_got_ip_events,
+             diag.last_disconnect_reason,
+             (unsigned long)diag.ap_restore_attempts,
+             (unsigned long)diag.ap_restore_failures,
+             (unsigned long)diag.ap_client_connected_events,
+             (unsigned long)diag.ap_client_disconnected_events,
+             (unsigned long)diag.ap_ip_assigned_events,
+             (unsigned long)diag.scan_started,
+             (unsigned long)diag.scan_completed,
+             (unsigned long)diag.scan_cancel_requests,
+             (unsigned long)diag.scan_failures,
+             (unsigned long)diag.scan_cleanup_events,
+             (unsigned long)esp_get_free_heap_size(),
+             (unsigned long)esp_get_minimum_free_heap_size(),
+             (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
 }

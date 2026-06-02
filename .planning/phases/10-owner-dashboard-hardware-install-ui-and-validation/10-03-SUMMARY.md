@@ -35,6 +35,7 @@ key-decisions:
   - "UI-01 and UI-02 are recorded as implemented pending verification until hardware/browser UAT runs."
   - "Manual hardware validation is explicitly not-run because no flashed-device session was performed."
 requirements-implemented: [UI-01, UI-02]
+requirements-completed: [UI-01, UI-02]
 duration: same-session
 completed: 2026-05-24
 ---
