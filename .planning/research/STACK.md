@@ -32,6 +32,8 @@ None. v1.2 is a focused UI/UX and documentation milestone. A frontend framework,
 | `idf.py build` | Firmware and embedded asset validation | Required release gate. |
 | In-app browser screenshots | Visual verification | Capture desktop and narrow mobile viewports plus loading/error/empty states where applicable. |
 | Browser keyboard pass | Accessibility verification | Verify focus visibility, logical order, and usable controls without a mouse. |
+| `ui-ux-pro-max` | Design-system and UI checklist gate | Apply product-dashboard, accessibility, touch, responsive, and interaction guidance within offline embedded constraints. |
+| `impeccable` | Product UI critique and polish gate | Use root `PRODUCT.md` and `DESIGN.md` to guide critique, audit, hardening, and final polish. |
 
 ## What Not To Add
 

@@ -24,6 +24,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - Improve responsive layout, accessibility, and loading/error/empty states.
 - Screenshot-verify UI changes while preserving ESP32 memory and performance safety.
 - Close hardware-readiness documentation for the external 4.7 kOhm DS18B20 DQ-to-3.3 V pull-up.
+- Use `frontend-ui-ux`, `ui-ux-pro-max`, and `impeccable` as design and review gates, adapted to the offline embedded ESP32 constraints.
 
 ## Requirements
 
@@ -126,6 +127,7 @@ Recommended hardware contract (validated):
 - **Stable baseline**: Treat v1.1 relay, timer, cooling, and APSTA behavior as stable; do not rewrite firmware logic unless a UI state bug requires it.
 - **Soak preservation**: Preserve the passed `13:38:10` Wi-Fi/APSTA hardware soak behavior.
 - **UI verification**: Screenshot-verify UI changes and keep the embedded frontend memory/performance safe for ESP32.
+- **UI workflow**: Use `frontend-ui-ux`, `ui-ux-pro-max`, and `impeccable` during UI design and review. Apply their product-dashboard guidance within this project's no-CDN, no-framework-migration, embedded-asset constraints.
 - **Bookkeeping debt**: The eight deferred scanner rows are bookkeeping debt only, not unfinished firmware work.
 
 ## Key Decisions

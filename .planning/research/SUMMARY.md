@@ -13,6 +13,8 @@ No stack additions are recommended. The existing HTML, CSS, JavaScript, ESP-IDF 
 
 The main risks are accidental firmware behavior changes during UI work, dense equal-weight presentation, incomplete edge states, desktop-only wiring flow, and failing to close the DS18B20 pull-up readiness gap. Prevent these with frontend-scoped phases, state-matrix design, screenshot verification at desktop and mobile widths, keyboard checks, and a final ESP-IDF build regression.
 
+Use `frontend-ui-ux`, `ui-ux-pro-max`, and `impeccable` as complementary gates. `ui-ux-pro-max` supplies design-system, accessibility, responsive, touch, and interaction checks. `impeccable` supplies the product-register critique, audit, hardening, and pre-ship polish passes. Recommendations must be adapted to the existing embedded UI: preserve local Unicode icons where they fit the offline design system, and do not introduce remote assets, a framework migration, or decorative motion.
+
 ## Key Findings
 
 ### Stack Additions
@@ -39,7 +41,7 @@ None. Keep plain embedded HTML/CSS/JS and existing APIs.
 
 ### Phase 11: UI Foundation And State Language
 
-Define shared hierarchy, responsive, accessibility, and state-presentation conventions before page-specific polish.
+Refresh the UI contract and run the requested skill-guided design pass. Define shared hierarchy, responsive, accessibility, and state-presentation conventions before page-specific polish.
 
 ### Phase 12: Owner Dashboard And Hardware Readiness
 
@@ -47,7 +49,7 @@ Polish daily operation and installer flows, including DS18B20 pull-up guidance.
 
 ### Phase 13: Setup Flow And Visual Regression Validation
 
-Polish Wi-Fi/status edge states and verify screenshots, keyboard use, embedded size, build validity, and stable-baseline constraints.
+Polish Wi-Fi/status edge states, run the requested skill-guided critique/audit/polish review, and verify screenshots, keyboard use, embedded size, build validity, and stable-baseline constraints.
 
 ## Confidence Assessment
 
