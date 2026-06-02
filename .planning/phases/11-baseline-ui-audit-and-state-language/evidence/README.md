@@ -54,8 +54,9 @@ wifi--empty--375--simulated.png
 hardware--pending-reboot--375--device-backed.png
 ```
 
-No screenshots are committed in this baseline pack because browser automation
-could not start. The absent `evidence/screenshots/` directory is intentional.
+No screenshot images are committed in this baseline pack because browser
+automation could not start. See `evidence/screenshots/README.md` for the
+capture backlog and privacy gate.
 
 ## Capture Index
 
