@@ -99,19 +99,25 @@
         </div>
     </div>
 
+    <!-- Reconnection Helper Banner -->
+    <div id="reconnect-banner" role="alert" style="display:none; padding:16px; margin-bottom:var(--sp-md); background:var(--tertiary-container); color:var(--on-surface); border-radius:var(--radius-md); border:1px solid var(--tertiary);">
+        <strong>กำลังเชื่อมต่อ...</strong> <span id="reconnect-countdown">15</span>s<br>
+        <span style="font-size:14px;">หากหลุด ให้ตรวจสอบ Wi-Fi มือถือว่าต่อกับ SoftAP IP <strong>192.168.4.1</strong> อีกครั้ง</span>
+    </div>
+
     <!-- Wi-Fi Grid -->
     <div class="wifi-grid">
         <!-- Network List -->
-        <div class="network-panel">
-            <div class="network-panel-header">
-                <h3>&#128269; เครือข่ายที่พบ</h3>
-                <button class="scan-btn" id="scan-btn" onclick="doScan()">&#8635; สแกนใหม่</button>
+        <div class="card network-card">
+            <div class="card-header">
+                <h3>เครือข่ายที่พบ</h3>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()">&#128260; ค้นหา</button>
             </div>
-            <ul class="network-list" id="network-list">
-                <li style="padding:32px;text-align:center;color:var(--outline);" id="scan-placeholder">
-                    กด "สแกนใหม่" เพื่อค้นหาเครือข่าย
-                </li>
-            </ul>
+            <div class="network-list" id="network-list">
+                <div class="network-item" style="justify-content:center; color:var(--on-surface-variant); cursor:default;">
+                    กด "ค้นหา" เพื่อสแกน Wi-Fi
+                </div>
+            </div>
         </div>
 
         <!-- Input Panel -->

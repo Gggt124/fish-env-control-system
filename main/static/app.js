@@ -94,6 +94,17 @@ function showToast(msg, type) {
     }, 3000);
 }
 
+/* ======== UI Helpers ======== */
+
+function toggleMobileNav() {
+    var sidebar = document.getElementById('app-sidebar');
+    var overlay = document.getElementById('drawer-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
+    }
+}
+
 /* ======== Login Page ======== */
 
 function initLogin() {
@@ -1688,9 +1699,9 @@ function doScan() {
             else if (nets[i].rssi >= -70) { sigClass = 'good'; sigLabel = '\u0e14\u0e35'; sigIcon = '&#9642;'; }
 
             var isConnected = nets[i].connected === true;
-            html += '<li class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
+            html += '<button type=\"button\" class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
                     'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                    (isConnected ? 'aria-disabled=\"true\">' : 'onclick=\"selectNetwork(\'' + escJs(nets[i].ssid) + '\')\">') +
+                    (isConnected ? 'disabled>' : 'onclick=\"selectNetwork(\'' + escJs(nets[i].ssid) + '\')\">') +
                 '<div class=\"network-item-left\">' +
                     '<div class=\"network-icon\">' + sigIcon + '</div>' +
                     '<div class=\"network-info\">' +
@@ -1708,9 +1719,9 @@ function doScan() {
                     '</div>' +
                     (isConnected
                         ? '<span class=\"network-connected-label\">&#10003; \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</span>'
-                        : '<button type=\"button\" class=\"btn btn-outline btn-sm\">\u0e40\u0e25\u0e37\u0e2d\u0e01</button>') +
+                        : '<div class=\"btn btn-outline btn-sm\">\u0e40\u0e25\u0e37\u0e2d\u0e01</div>') +
                 '</div>' +
-            '</li>';
+            '</button>';
         }
         if (list) list.innerHTML = html;
     });
@@ -1843,6 +1854,10 @@ function doConnect() {
 
         if (data && data.ok && data.connecting) {
             if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
+            
+            var banner = document.getElementById('reconnect-banner');
+            if (banner) banner.style.display = 'block';
+            
             if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
             wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 1000);
         } else if (data && data.ok) {
@@ -1872,20 +1887,31 @@ function pollWifiConnection(attempt) {
             wifiConnectPollTimer = null;
             if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
+            
+            var banner = document.getElementById('reconnect-banner');
+            if (banner) banner.style.display = 'none';
+            
             updateStepper(3, true);
             updateConnectionStatus();
             updateApPill();
             return;
         }
 
-        if (attempt >= 12) {
+        if (attempt >= 15) {
             wifiConnectPollTimer = null;
             if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: \u0e25\u0e2d\u0e07\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e41\u0e25\u0e49\u0e27\u0e25\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48'; statusEl.style.color = 'var(--error)'; }
+            
+            var banner = document.getElementById('reconnect-banner');
+            if (banner) banner.style.display = 'none';
+            
             updateStepper(2);
             updateConnectionStatus();
             return;
         }
+
+        var countdownEl = document.getElementById('reconnect-countdown');
+        if (countdownEl) countdownEl.textContent = (15 - attempt);
 
         wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(attempt + 1); }, 1000);
     });

@@ -6,42 +6,42 @@
 
 /* === CSS Variables (Design Tokens) === */
 :root {
-    --surface: #faf9fe;
-    --surface-dim: #dad9df;
-    --surface-bright: #faf9fe;
-    --surface-container-lowest: #ffffff;
-    --surface-container-low: #f4f3f8;
-    --surface-container: #eeedf3;
-    --surface-container-high: #e9e7ed;
-    --surface-container-highest: #e3e2e7;
-    --on-surface: #1a1b1f;
-    --on-surface-variant: #414755;
-    --inverse-surface: #2f3034;
-    --inverse-on-surface: #f1f0f5;
-    --outline: #717786;
-    --outline-variant: #c1c6d7;
-    --surface-tint: #005bc1;
+    --surface: #0a0b10;
+    --surface-dim: #12131a;
+    --surface-bright: #1c1d26;
+    --surface-container-lowest: rgba(15, 17, 26, 0.4);
+    --surface-container-low: rgba(255, 255, 255, 0.03);
+    --surface-container: rgba(255, 255, 255, 0.05);
+    --surface-container-high: rgba(255, 255, 255, 0.08);
+    --surface-container-highest: rgba(255, 255, 255, 0.12);
+    --on-surface: #ffffff;
+    --on-surface-variant: #9ca3af;
+    --inverse-surface: #f1f0f5;
+    --inverse-on-surface: #2f3034;
+    --outline: #4b5563;
+    --outline-variant: rgba(255, 255, 255, 0.1);
+    --surface-tint: #5856d6;
 
-    --primary: #0058bc;
+    --primary: #6366f1;
     --on-primary: #ffffff;
-    --primary-container: #0070eb;
-    --primary-fixed: #d8e2ff;
-    --primary-fixed-dim: #adc6ff;
+    --primary-container: rgba(99, 102, 241, 0.2);
+    --primary-fixed: rgba(99, 102, 241, 0.15);
+    --primary-fixed-dim: rgba(99, 102, 241, 0.3);
 
-    --secondary: #006e28;
+    --secondary: #10b981;
     --on-secondary: #ffffff;
-    --secondary-container: #6ffb85;
-    --secondary-fixed-dim: #53e16f;
+    --secondary-container: rgba(16, 185, 129, 0.2);
+    --secondary-fixed-dim: rgba(16, 185, 129, 0.3);
 
-    --tertiary: #9e3d00;
+    --tertiary: #f59e0b;
     --on-tertiary: #ffffff;
-    --tertiary-container: #c64f00;
+    --tertiary-container: rgba(245, 158, 11, 0.2);
 
-    --error: #ba1a1a;
+    --error: #ef4444;
     --on-error: #ffffff;
-    --error-container: #ffdad6;
+    --error-container: rgba(239, 68, 68, 0.2);
 
-    --bg-body: #F2F2F7;
+    --bg-body: #0a0b10;
 
     /* Spacing */
     --sp-xs: 4px;
@@ -58,9 +58,9 @@
     --radius-full: 9999px;
 
     /* Shadows */
-    --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.05);
-    --shadow-login: 0px 8px 24px rgba(0, 0, 0, 0.1);
-    --shadow-sm: 0px 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-card: 0px 8px 16px rgba(0, 0, 0, 0.4);
+    --shadow-login: 0px 12px 32px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.3);
 
     /* Fonts */
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -79,6 +79,14 @@ body {
     line-height: 1.5;
     min-height: 100vh;
 }
+
+.info-value {
+    color: var(--on-surface);
+    font-weight: 500;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
 
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -104,8 +112,8 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 /* === Layout: Login Page === */
 .login-bg {
-    background-color: #faf9fe;
-    background-image: radial-gradient(#c1c6d7 1px, transparent 1px);
+    background-color: var(--bg-body);
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
     background-size: 20px 20px;
 }
 
@@ -117,6 +125,7 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 .login-card {
     width: 100%; max-width: 400px;
     background: var(--surface-container-lowest);
+    backdrop-filter: blur(12px);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-login);
     padding: var(--sp-xl);
@@ -255,18 +264,17 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 /* === Layout: App Shell (Dashboard + Wi-Fi) === */
 .app-sidebar {
-    display: none;
+    display: flex;
     position: fixed; left: 0; top: 0; height: 100vh; width: 280px;
     background: var(--surface-container-lowest);
-    border-right: 1px solid rgba(193, 198, 215, 0.2);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--outline-variant);
     box-shadow: var(--shadow-card);
     padding: var(--sp-xl) 0;
     flex-direction: column;
-    z-index: 40; overflow-y: auto;
-}
-
-@media (min-width: 1024px) {
-    .app-sidebar { display: flex; }
+    z-index: 100; overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-brand { padding: 0 var(--sp-xl); margin-bottom: var(--sp-xl); }
@@ -326,7 +334,10 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 .mobile-topbar {
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; height: 64px; padding: 0 var(--sp-lg);
-    background: var(--surface); box-shadow: var(--shadow-sm);
+    background: var(--surface-container-lowest);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--outline-variant);
+    box-shadow: var(--shadow-sm);
     position: sticky; top: 0; z-index: 50;
 }
 
@@ -398,9 +409,10 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 /* Cards */
 .card {
     background: var(--surface-container-lowest);
+    backdrop-filter: blur(12px);
     padding: var(--sp-lg); border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--outline-variant);
 }
 
 .card-header {
@@ -472,17 +484,16 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 /* Grid layouts */
 .status-grid {
-    display: grid; grid-template-columns: 1fr; gap: var(--sp-md);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp-md);
 }
-
-@media (min-width: 640px) { .status-grid { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 1024px) { .status-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } }
 
 /* Section card */
 .section-card {
     background: var(--surface-container-lowest);
+    backdrop-filter: blur(12px);
     padding: var(--sp-lg); border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
+    border: 1px solid var(--outline-variant);
 }
 
 .section-card h3 {
@@ -492,11 +503,7 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 /* Summary grid for dashboard */
 .summary-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-md);
-}
-
-@media (min-width: 640px) {
-    .summary-grid { grid-template-columns: repeat(3, 1fr); }
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--sp-md);
 }
 
 .summary-item {
@@ -692,6 +699,14 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 }
 
 .duration-field select {
+   /* Accessibility Primitives */
+.btn, .nav-item, input, select {
+    min-height: 44px;
+}
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
     font-size: 15px;
 }
 
@@ -1206,6 +1221,15 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* === Utility === */

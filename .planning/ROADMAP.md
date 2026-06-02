@@ -63,18 +63,19 @@
 5. Cooling temperature, mode, relay state, and sensor fault appear as a separate operational channel from the pump relays.
 6. Daily operation controls are visually distinct from settings and secondary diagnostics.
 
-#### Phase 13: Install Setup And Status UX
+#### Phase 13: Install Setup, Status UX, and Professional UI Overhaul
 
-**Goal:** Improve installer, Wi-Fi setup, and system-status workflows across their full range of operational states.
+**Goal:** Improve installer, Wi-Fi setup, and system-status workflows, and perform a deep CSS overhaul to elevate the entire app shell to a professional, premium aesthetic (Bento Grid, modern typography, glassmorphism) without adding external asset footprint.
 
 **Requirements:** HW-06, UI-11, UI-12, SETUP-01, SETUP-02, UI-16
 
 **Success criteria:**
-1. Hardware/Install clearly distinguishes active GPIO, pending GPIO, and reboot-required state on desktop and narrow mobile layouts while preserving safe dropdown and confirmation behavior.
-2. Hardware/Install and hardware-readiness documentation explicitly show the external `4.7 kOhm` DS18B20 DQ-to-`3.3 V` pull-up requirement.
-3. Wi-Fi scan and connect flow clearly presents loading, error, empty, disconnected, and connected states without disturbing APSTA behavior.
-4. Dashboard and Hardware/Install operations intentionally present loading, success, error, disabled, and pending-reboot states.
-5. Status diagnostics for system, memory, uptime, Wi-Fi station, access point, and services remain scannable on desktop and narrow mobile layouts.
+1. `style.css` is completely overhauled with a professional HSL color palette, modern system font stacks, and subtle micro-animations/shadows to feel like a premium SaaS dashboard.
+2. Hardware/Install clearly distinguishes active GPIO, pending GPIO, and reboot-required state on desktop and narrow mobile layouts while preserving safe dropdown and confirmation behavior.
+3. Hardware/Install and hardware-readiness documentation explicitly show the external `4.7 kOhm` DS18B20 DQ-to-`3.3 V` pull-up requirement.
+4. Wi-Fi scan and connect flow clearly presents loading, error, empty, disconnected, and connected states without disturbing APSTA behavior.
+5. Dashboard and Hardware/Install operations intentionally present loading, success, error, disabled, and pending-reboot states.
+6. Status diagnostics for system, memory, uptime, Wi-Fi station, access point, and services remain scannable and visually cohesive with the new aesthetic.
 
 #### Phase 14: Full UI Visual Regression Validation
 
@@ -105,8 +106,8 @@
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete   | 2026-05-23 |
 | 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Complete | 2026-06-02 |
 | 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete    | 2026-06-02 |
-| 12. App Shell Login And Owner Dashboard | v1.2 | 0/TBD | Planned | — |
-| 13. Install Setup And Status UX | v1.2 | 0/TBD | Planned | — |
+| 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
+| 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 0/TBD | Planned | — |
 | 14. Full UI Visual Regression Validation | v1.2 | 0/TBD | Planned | — |
 
 ---

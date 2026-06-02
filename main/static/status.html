@@ -9,14 +9,15 @@
 <body>
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
-    <span class="brand">System Status</span>
-    <div class="topbar-icons">
-        <a href="/dashboard" style="color:var(--primary);text-decoration:none;">&#8592;</a>
-    </div>
+    <span class="brand">Fish Pump Control</span>
+    <button class="hamburger-btn" onclick="toggleMobileNav()" aria-label="Open Navigation">&#9776;</button>
 </header>
 
-<!-- Sidebar (Desktop) -->
-<aside class="app-sidebar">
+<!-- Mobile Drawer Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="toggleMobileNav()"></div>
+
+<!-- Sidebar (Desktop & Mobile) -->
+<aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">

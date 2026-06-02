@@ -9,14 +9,15 @@
 <body>
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
-    <span class="brand">Hardware/Install</span>
-    <div class="topbar-icons">
-        <a href="/dashboard" style="color:var(--primary);text-decoration:none;">&#8592;</a>
-    </div>
+    <span class="brand">Fish Pump Control</span>
+    <button class="hamburger-btn" onclick="toggleMobileNav()" aria-label="Open Navigation">&#9776;</button>
 </header>
 
-<!-- Sidebar (Desktop) -->
-<aside class="app-sidebar">
+<!-- Mobile Drawer Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="toggleMobileNav()"></div>
+
+<!-- Sidebar (Desktop & Mobile) -->
+<aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">
@@ -121,14 +122,14 @@
             </div>
         </div>
 
-        <div class="hardware-summary-grid">
-            <div class="hardware-summary-card">
-                <span class="summary-label">Active</span>
-                <div class="hardware-summary-list" id="hardware-active-summary">--</div>
+        <div class="hardware-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp-md); margin-bottom: var(--sp-xl);">
+            <div class="hardware-summary-card card" style="border-top: 4px solid var(--secondary);">
+                <span class="summary-label" style="color: var(--secondary); font-weight: bold; margin-bottom: 8px; display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Active GPIO Map</span>
+                <div class="hardware-summary-list" id="hardware-active-summary" style="font-family: var(--font-mono); font-size: 14px; line-height: 1.5;">--</div>
             </div>
-            <div class="hardware-summary-card">
-                <span class="summary-label">Pending Reboot</span>
-                <div class="hardware-summary-list" id="hardware-pending-summary">--</div>
+            <div class="hardware-summary-card card" style="border-top: 4px solid var(--tertiary);">
+                <span class="summary-label" style="color: var(--tertiary); font-weight: bold; margin-bottom: 8px; display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Pending Reboot Map</span>
+                <div class="hardware-summary-list" id="hardware-pending-summary" style="font-family: var(--font-mono); font-size: 14px; line-height: 1.5;">--</div>
             </div>
         </div>
 
@@ -147,7 +148,7 @@
                     <select id="hardware-pump-relay2-gpio" name="pump_relay2_gpio" required></select>
                 </label>
                 <label class="form-group hardware-role-field" for="hardware-ds18b20-gpio">
-                    <span>DS18B20 GPIO</span>
+                    <span>DS18B20 GPIO <small style="display:block; color:var(--tertiary); margin-top:2px; font-weight:normal;">*Requires 4.7k&Omega; pull-up resistor</small></span>
                     <select id="hardware-ds18b20-gpio" name="ds18b20_gpio" required></select>
                 </label>
                 <label class="form-group hardware-role-field" for="hardware-cooling-relay-gpio">

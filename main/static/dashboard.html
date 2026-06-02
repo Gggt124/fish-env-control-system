@@ -10,14 +10,14 @@
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Fish Pump Control</span>
-    <div class="topbar-icons">
-        <span>&#128246;</span>
-        <span>&#9881;</span>
-    </div>
+    <button class="hamburger-btn" onclick="toggleMobileNav()" aria-label="Open Navigation">&#9776;</button>
 </header>
 
-<!-- Sidebar (Desktop) -->
-<aside class="app-sidebar">
+<!-- Mobile Drawer Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="toggleMobileNav()"></div>
+
+<!-- Sidebar (Desktop & Mobile) -->
+<aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">
@@ -106,7 +106,7 @@
         <div class="pump-runtime-actions">
             <button class="btn btn-primary" id="pump-start-btn" type="button" disabled>Start</button>
             <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled>Stop</button>
-            <span class="runtime-action-state" id="pump-action-state"></span>
+            <span class="runtime-action-state" id="pump-action-state" aria-live="polite"></span>
         </div>
         <div class="pump-alert hidden" id="pump-status-error"></div>
     </section>
@@ -176,7 +176,7 @@
             <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>Auto</button>
             <button class="btn btn-outline" id="cooling-mode-force-off" type="button" disabled>Force OFF</button>
             <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>Test ON</button>
-            <span class="runtime-action-state" id="cooling-mode-action-state"></span>
+            <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
         </div>
 
         <form class="cooling-config-form" id="cooling-config-form" novalidate>
