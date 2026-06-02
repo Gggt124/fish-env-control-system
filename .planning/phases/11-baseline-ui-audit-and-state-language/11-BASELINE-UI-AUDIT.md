@@ -8,6 +8,12 @@ changing `main/static/`. Runtime screenshot capture was attempted with a local
 static server, but the browser connection failed twice during setup. Runtime
 checks are therefore labeled `not-run`, not passed.
 
+A post-repair supplement later captured four privacy-reviewed protected-page
+desktop baselines through the available Chrome extension backend. These are
+explicitly labeled `simulated` and `chrome-default`; they do not replace the
+deferred `1440px`, `375px`, API-backed, or device-backed checks. See
+`11-SCREENSHOT-SUPPLEMENT.md`.
+
 Evidence inventory: `evidence/README.md`  
 Detector output: `evidence/impeccable-detector.json`
 

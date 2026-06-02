@@ -11,7 +11,7 @@ validation:
   javascript_syntax: passed
   offline_dependencies: passed
   static_source_boundary: passed
-  browser_screenshots: not-run
+  browser_screenshots: simulated-chrome-default-supplement
   device_backed_states: not-run
   firmware_build: not-run
 ---
@@ -36,7 +36,7 @@ to the implementation and closing validation phases.
 | Must Have | Evidence | Result |
 | --- | --- | --- |
 | Existing surfaces audited before implementation | `11-BASELINE-UI-AUDIT.md` covers Login, App Shell, Dashboard, Hardware/Install, Wi-Fi, and Status. Source findings are prioritized and tied to evidence. | PASS |
-| Screenshot evidence where practical | Browser automation setup was attempted twice and failed before capture with `windows sandbox failed: spawn setup refresh`. `evidence/screenshots/README.md` and `11-HANDOFF-VALIDATION.md` record the explicit `not-run` reason. | PASS with recorded limitation |
+| Screenshot evidence where practical | The original attempt failed with `windows sandbox failed: spawn setup refresh`. After repair, `11-SCREENSHOT-SUPPLEMENT.md` records four privacy-reviewed `simulated` protected-page baselines captured through the available Chrome extension backend at its default desktop viewport. | PASS with recorded limitation |
 | Shared product-dashboard state language | `11-STATE-LANGUAGE.md` defines loading, success, error, empty, disabled, unavailable, pending reboot, and disconnected states with Thai-first patterns, actions, and assistive behavior. | PASS |
 | Offline ESP32 design-system adaptation | `11-ESP32-UI-CHECKLIST.md` records keep, adapt, and exclude decisions. Both downstream briefs retain plain local HTML, CSS, and JavaScript with no CDN, framework runtime, remote font, or remote icon dependency. | PASS |
 | Accessibility implementation requirements | State language, checklist, and briefs require visible `2-4px` focus treatment, understandable labels or instructions, `aria-live="polite"` informational regions, and `role="alert"` immediate errors. | PASS |
@@ -59,19 +59,14 @@ These warnings are planned implementation inputs, not untracked regressions.
 
 ## Codebase Drift Gate
 
-`gsd-sdk query verify.codebase-drift` returned a non-blocking `warn` directive:
-`164` structural elements have no recorded mapping baseline. The affected
-paths are `.gitignore`, `.graphify_detect.json`, `.planning`, and `PRODUCT.md`.
-
-Recommended follow-up:
-
-```text
-$gsd-map-codebase --paths .gitignore,.graphify_detect.json,.planning,PRODUCT.md
-```
+The earlier non-blocking codebase drift warning was resolved by the scoped
+map refresh committed as `495a524 docs: map existing codebase`.
 
 ## Deferred Validation
 
-- Browser screenshots at desktop `1440px` and mobile `375px`.
+- Browser screenshots at explicit desktop `1440px` and mobile `375px`
+  viewports. The supplement records only the available Chrome default desktop
+  viewport.
 - Device-backed loading, error, empty, disabled, disconnected, connected, and
   pending-reboot states.
 - Keyboard, touch-target, reduced-motion, live-region, and alert behavior after
@@ -89,4 +84,3 @@ gates after embedded asset edits.
 ## Result
 
 PASSED for the Phase 11 documentation scope.
-

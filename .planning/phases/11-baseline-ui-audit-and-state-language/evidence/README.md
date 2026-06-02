@@ -32,9 +32,13 @@ Get-ChildItem -File -LiteralPath "main\static" | Measure-Object -Property Length
 - Shipped UI source: `main/static/`
 - Static asset baseline: `159,436` bytes
 - Latest available firmware binary baseline: `1,111,616` bytes
-- Runtime capture attempt: local static server on `127.0.0.1:8123`
-- Browser plugin result: `not-run`, the browser connection failed twice during
-  setup with `windows sandbox failed: spawn setup refresh`.
+- Original runtime capture attempt: local static server on `127.0.0.1:8123`
+- Original Browser plugin result: `not-run`, the browser connection failed
+  twice during setup with `windows sandbox failed: spawn setup refresh`.
+- Post-repair supplement: local static server on `127.0.0.1:8765`
+- Post-repair Browser result: four privacy-reviewed `simulated` protected-page
+  screenshots captured through the available Chrome extension backend at its
+  default desktop viewport. See `../11-SCREENSHOT-SUPPLEMENT.md`.
 - ESP32 device-backed run: `not-run`, no reachable test-device URL was
   available in this execution context.
 
@@ -43,7 +47,7 @@ Get-ChildItem -File -LiteralPath "main\static" | Measure-Object -Property Length
 When capture is available, store files under `evidence/screenshots/` as:
 
 ```text
-<surface>--<state>--<viewport>--<source>.png
+<surface>--<state>--<viewport>--<source>.<image-extension>
 ```
 
 Examples:
@@ -54,20 +58,20 @@ wifi--empty--375--simulated.png
 hardware--pending-reboot--375--device-backed.png
 ```
 
-No screenshot images are committed in this baseline pack because browser
-automation could not start. See `evidence/screenshots/README.md` for the
-capture backlog and privacy gate.
+The post-repair supplement commits four JPEG screenshots. See
+`evidence/screenshots/README.md` for the retained images, privacy decision, and
+remaining capture backlog.
 
 ## Capture Index
 
 | Surface | Desktop `1440px` | Mobile `375px` | Runtime state coverage | Reason when not run |
 | --- | --- | --- | --- | --- |
-| Login | `not-run` | `not-run` | Default, loading, auth error `not-run` | Browser connection failed before navigation. |
-| App Shell | `not-run` | `not-run` | Desktop sidebar and mobile topbar `not-run` | Browser connection failed before navigation. |
-| Dashboard | `not-run` | `not-run` | Loading, disabled, pump state, cooling state, sensor fault `not-run` | Requires browser capture and API-backed state. |
-| Hardware/Install | `not-run` | `not-run` | Active map, pending map, pending reboot, save error `not-run` | Requires browser capture and API-backed state. |
-| Status | `not-run` | `not-run` | Default diagnostics and long-value wrapping `not-run` | Browser connection failed before navigation. |
-| Wi-Fi | `not-run` | `not-run` | Disconnected, loading, empty, scan error, selected, connect feedback, disconnect feedback `not-run` | Requires browser capture and API-backed or simulated fixtures. |
+| Login | Captured then excluded | `not-run` | Default captured but excluded; loading and auth error `not-run` | Default image exposed credential-like placeholders, so the privacy gate excluded it. |
+| App Shell | `simulated` Chrome default | `not-run` | Desktop sidebar captured on protected pages; mobile topbar `not-run` | Chrome fallback does not advertise viewport override support. |
+| Dashboard | `simulated` Chrome default | `not-run` | Static default captured; loading, disabled, pump state, cooling state, sensor fault `not-run` | Dynamic states require API-backed fixtures or a device. |
+| Hardware/Install | `simulated` Chrome default | `not-run` | Static default captured; active map, pending map, pending reboot, save error `not-run` | Dynamic states require API-backed fixtures or a device. |
+| Status | `simulated` Chrome default | `not-run` | Static placeholder diagnostics captured; representative long values `not-run` | Long values require API-backed fixtures or a device. |
+| Wi-Fi | `simulated` Chrome default | `not-run` | Static disconnected baseline captured; loading, empty, scan error, selected, connect feedback, disconnect feedback `not-run` | Dynamic states require API-backed fixtures or a device. |
 
 Every shipped page remains covered by source inspection in
 `11-BASELINE-UI-AUDIT.md`.
@@ -82,12 +86,15 @@ Screenshots must be reviewed before commit. Exclude or redact:
 - Local IP details beyond deliberate example values.
 - Any device identifier that is not required to explain the finding.
 
-Privacy result for this run: `pass`, no screenshots were produced or committed.
+Privacy result for the post-repair supplement: `pass` for the four committed
+protected-page screenshots. The Login screenshot was reviewed and excluded
+because it displayed credential-like placeholders.
 
 ## Current Limitations
 
-- Responsive appearance at `1440px` and `375px` remains a Phase 14 screenshot
-  validation item.
+- Responsive appearance at explicit `1440px` and `375px` viewports remains a
+  Phase 14 screenshot validation item because the available Chrome extension
+  backend did not advertise viewport override support.
 - Runtime interaction states remain `not-run`; source inspection identifies
   their code paths without claiming visual or hardware validation.
 - The detector output is reproducible and committed as

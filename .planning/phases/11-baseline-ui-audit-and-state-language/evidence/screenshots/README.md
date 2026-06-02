@@ -1,14 +1,30 @@
-# Screenshot Capture Backlog
+# Screenshot Evidence And Backlog
 
-No screenshot images were produced during Phase 11 execution. The in-app
+The original Phase 11 run produced no screenshot images because the in-app
 browser connection failed twice during setup with:
 
 ```text
 windows sandbox failed: spawn setup refresh
 ```
 
-The audit therefore labels all runtime capture rows `not-run`. Do not treat the
-absence of images as runtime validation.
+After the Browser startup repair, a supplemental capture ran against a local
+static server at `http://127.0.0.1:8765`. The available Chrome extension
+backend did not advertise viewport override support, so retained images use
+the honest `chrome-default` viewport label rather than claiming `1440px` or
+`375px`.
+
+## Retained Simulated Evidence
+
+| Surface | File | Notes |
+| --- | --- | --- |
+| Dashboard | `dashboard--default--chrome-default--simulated.jpg` | Static default layout and desktop sidebar. |
+| Hardware/Install | `hardware--default--chrome-default--simulated.jpg` | Static loading/default installer layout. |
+| Status | `status--default--chrome-default--simulated.jpg` | Placeholder diagnostic layout. |
+| Wi-Fi | `wifi--default--chrome-default--simulated.jpg` | Static disconnected setup layout with deliberate example AP IP `192.168.4.1`. |
+
+A Login default screenshot was captured and reviewed but not retained because
+the static form displayed credential-like placeholders. These screenshots are
+`simulated`; they do not prove API-backed or flashed-device behavior.
 
 ## Required Follow-Up
 
@@ -36,3 +52,5 @@ Before committing any screenshot:
 - Remove or redact private SSIDs and Wi-Fi passwords.
 - Remove or redact STA and AP MAC addresses.
 - Keep local IP details only when they are deliberate example values.
+
+Post-repair privacy result: `pass` for the four retained screenshots.

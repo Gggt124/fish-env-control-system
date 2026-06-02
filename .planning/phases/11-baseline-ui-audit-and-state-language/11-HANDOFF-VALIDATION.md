@@ -64,10 +64,16 @@ The captured JSON is stored at
 
 ## Screenshot And Runtime Limitations
 
-Browser screenshots are `not-run`. Browser automation setup was attempted
-twice and failed before page capture with `windows sandbox failed: spawn setup
-refresh`. The evidence directory records this limitation instead of using
-fabricated screenshots or claiming rendered-page success.
+The original Browser screenshot attempt was `not-run`. Browser automation
+setup failed twice before page capture with `windows sandbox failed: spawn
+setup refresh`.
+
+A post-repair supplement captured four privacy-reviewed `simulated`
+protected-page desktop baselines through the available Chrome extension
+backend. The backend did not advertise viewport override support, so these
+images use the honest `chrome-default` label. They do not claim explicit
+`1440px`, `375px`, API-backed, or device-backed validation. See
+`11-SCREENSHOT-SUPPLEMENT.md`.
 
 Device-backed UI states are also `not-run` because no reachable ESP32 URL was
 available. Phase 12 and Phase 13 must capture reachable page and state evidence
@@ -84,4 +90,3 @@ The following items remain deferred:
   pending-reboot state review.
 - Phase 14 Impeccable polish pass, UI screenshot review, ESP-IDF build,
   partition-footprint comparison, and stable v1.1 hardware regression.
-
