@@ -1,44 +1,53 @@
----
-generated: 2026-05-18
-type: project-research
-dimension: stack
----
+# Stack Research
 
-# Research: Stack
+**Domain:** Embedded offline ESP32 owner dashboard UI polish
+**Researched:** 2026-06-02
+**Confidence:** HIGH
 
 ## Recommendation
 
-Keep the implementation in ESP-IDF C using the existing component layout. Add a reusable pump-control component rather than putting timer/relay logic directly in `main/web_server.c`.
+Keep the existing embedded frontend stack unchanged:
+
+| Technology | Purpose | Recommendation |
+|------------|---------|----------------|
+| Embedded HTML | Page structure | Keep static pages under `main/static/`; improve semantic structure and state containers in place. |
+| Plain CSS | Visual hierarchy and responsive layout | Extend existing CSS variables, layout grids, focus states, and responsive breakpoints. |
+| Vanilla JavaScript | API polling and UI state rendering | Reuse existing `apiGet`, `apiPost`, polling, validation, and renderer functions. |
+| ESP-IDF `EMBED_FILES` | Offline asset delivery | Keep all assets local and embedded; do not add CDN or runtime network dependencies. |
+
+## New Dependencies
+
+None. v1.2 is a focused UI/UX and documentation milestone. A frontend framework, icon package, font package, or animation library would increase flash usage and maintenance cost without solving the operator problems.
 
 ## Existing Fit
 
-- The existing repo already has clean component boundaries under `components/`.
-- `nvs_store` already persists Wi-Fi settings and can be extended or mirrored with a pump settings namespace.
-- `web_server` already serves JSON APIs and embedded UI, so timer settings and status endpoints fit the current pattern.
-- The static UI has no external dependency, which is correct for SoftAP operation.
+- `main/static/style.css` already defines shared tokens, responsive breakpoints, buttons, cards, alerts, disabled states, dashboard runtime panels, and Hardware/Install layouts.
+- `main/static/app.js` already centralizes HTTP transport and owns status rendering for dashboard, cooling, hardware map, Wi-Fi setup, and diagnostics.
+- The embedded static assets are approximately 150 KB before firmware embedding, so focused edits remain appropriate for classic ESP32.
 
-## ESP-IDF APIs To Use
+## Development Tools
 
-- GPIO: use `gpio_config()` from `driver/gpio.h` for float input and relay output. Espressif documents `gpio_config()` as the API for I/O mode and pull-up/pull-down configuration: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html
-- Timer: use `esp_timer` or a FreeRTOS task loop for 1-second countdown behavior. Espressif documents `esp_timer_start_periodic()` for periodic callbacks and warns to keep callbacks short: https://docs.espressif.com/projects/esp-idf/en/v5.1/esp32/api-reference/system/esp_timer.html
-- Persistence: continue NVS pattern already used by `components/nvs_store/`.
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| `idf.py build` | Firmware and embedded asset validation | Required release gate. |
+| In-app browser screenshots | Visual verification | Capture desktop and narrow mobile viewports plus loading/error/empty states where applicable. |
+| Browser keyboard pass | Accessibility verification | Verify focus visibility, logical order, and usable controls without a mouse. |
 
-## Pin Guidance
+## What Not To Add
 
-- GPIO32 is a reasonable float input because it is an ESP32 I/O pin and supports pull configuration.
-- GPIO26 is a reasonable relay output because it is an ESP32 I/O pin and avoids common boot/programming pins.
-- Avoid GPIO34-39 for pull-up switch inputs because Espressif documents them as input-only without software-enabled pull-up/pull-down.
-- Avoid boot strapping pins for first hardware defaults: GPIO0, GPIO2, MTDI/GPIO12, MTDO/GPIO15, and GPIO5.
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| React, Vue, or a component bundle | Adds build complexity and flash cost for a small offline UI. | Existing static HTML, CSS variables, and JavaScript renderers. |
+| CDN fonts, icons, or CSS | SoftAP clients may have no internet access. | System fonts and local HTML entities already used by the project. |
+| Heavy animation | Can distract from operational state and add low-end rendering cost. | Static hierarchy and minimal state transitions. |
+| New firmware runtime APIs for cosmetic work | Risks the stable v1.1 baseline. | Re-present existing API state unless a verified UI state bug requires a firmware fix. |
 
-## Implementation Shape
+## Sources
 
-- New component: `components/pump_control/`
-- Public API examples:
-  - `pump_control_init()`
-  - `pump_control_start()`
-  - `pump_control_stop()`
-  - `pump_control_get_status()`
-  - `pump_control_save_config()`
-  - `pump_control_load_config()`
-- `main/web_server.c` should call the component API and remain HTTP glue.
+- Local frontend: `main/static/*.html`, `main/static/style.css`, `main/static/app.js`
+- W3C WCAG 2.2: https://www.w3.org/TR/WCAG22/
+- W3C WAI Understanding Reflow: https://www.w3.org/WAI/WCAG22/Understanding/reflow.html
 
+---
+*Stack research for: embedded offline ESP32 owner dashboard UI polish*
+*Researched: 2026-06-02*
