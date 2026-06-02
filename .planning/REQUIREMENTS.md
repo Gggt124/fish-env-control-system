@@ -35,8 +35,8 @@
 ### Accessibility
 
 - [ ] **A11Y-01**: User can use login, app shell, dashboard, Hardware/Install, Wi-Fi, and Status pages on a narrow mobile viewport without losing access to primary content or actions.
-- [ ] **A11Y-02**: Keyboard user can navigate interactive controls with visible focus treatment and understandable labels or instructions.
-- [ ] **A11Y-03**: Assistive-technology user can recognize dynamic status and error messages programmatically.
+- [x] **A11Y-02**: Keyboard user can navigate interactive controls with visible focus treatment and understandable labels or instructions.
+- [x] **A11Y-03**: Assistive-technology user can recognize dynamic status and error messages programmatically.
 
 ### Design System
 
@@ -93,8 +93,8 @@ Traceability is populated during roadmap creation.
 | SETUP-02 | Phase 13 | Pending |
 | UI-16 | Phase 13 | Pending |
 | A11Y-01 | Phase 14 | Pending |
-| A11Y-02 | Phase 11 | Pending |
-| A11Y-03 | Phase 11 | Pending |
+| A11Y-02 | Phase 11 | Complete |
+| A11Y-03 | Phase 11 | Complete |
 | UI-13 | Phase 11 | Complete |
 | VER-01 | Phase 14 | Pending |
 | VER-02 | Phase 14 | Pending |
