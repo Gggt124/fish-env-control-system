@@ -14,21 +14,26 @@ the honest `chrome-default` viewport label rather than claiming `1440px` or
 `375px`.
 
 On `2026-06-03`, the in-app browser route became available and captured the
-same four protected-page baselines at a `375x812` mobile viewport. Full-page
-screenshots are `371px` wide after scrollbar accounting. Sticky mobile headers
-may repeat during full-page stitching on long pages; treat these as responsive
-layout evidence rather than pixel-perfect visual references.
+same four protected-page baselines at `1440x1000` desktop and `375x812` mobile
+viewports. Full-page screenshots are narrower after scrollbar accounting.
+Sticky headers or sidebars may repeat during full-page stitching on long
+pages; treat these as responsive layout evidence rather than pixel-perfect
+visual references.
 
 ## Retained Simulated Evidence
 
 | Surface | File | Notes |
 | --- | --- | --- |
+| Dashboard desktop | `dashboard--default--1440--simulated.jpg` | Static desktop layout at `1440x1000`. |
 | Dashboard | `dashboard--default--chrome-default--simulated.jpg` | Static default layout and desktop sidebar. |
 | Dashboard mobile | `dashboard--default--375--simulated.jpg` | Static mobile layout at `375x812`. |
+| Hardware/Install desktop | `hardware--default--1440--simulated.jpg` | Static desktop installer layout at `1440x1000`. |
 | Hardware/Install | `hardware--default--chrome-default--simulated.jpg` | Static loading/default installer layout. |
 | Hardware/Install mobile | `hardware--default--375--simulated.jpg` | Static mobile installer layout at `375x812`. |
+| Status desktop | `status--default--1440--simulated.jpg` | Placeholder desktop diagnostics at `1440x1000`. |
 | Status | `status--default--chrome-default--simulated.jpg` | Placeholder diagnostic layout. |
 | Status mobile | `status--default--375--simulated.jpg` | Placeholder mobile diagnostics at `375x812`. |
+| Wi-Fi desktop | `wifi--default--1440--simulated.jpg` | Static disconnected desktop setup layout at `1440x1000`. |
 | Wi-Fi | `wifi--default--chrome-default--simulated.jpg` | Static disconnected setup layout with deliberate example AP IP `192.168.4.1`. |
 | Wi-Fi mobile | `wifi--default--375--simulated.jpg` | Static disconnected mobile setup layout at `375x812`. |
 
@@ -64,4 +69,4 @@ Before committing any screenshot:
 - Remove or redact STA and AP MAC addresses.
 - Keep local IP details only when they are deliberate example values.
 
-Post-repair privacy result: `pass` for the eight retained screenshots.
+Post-repair privacy result: `pass` for the twelve retained screenshots.

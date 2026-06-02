@@ -73,8 +73,8 @@ protected-page desktop baselines through the available Chrome extension
 backend. The backend did not advertise viewport override support, so these
 images use the honest `chrome-default` label. They do not claim explicit
 `1440px`, API-backed, or device-backed validation. A later in-app browser pass
-captured four static protected-page mobile baselines at `375x812`. See
-`11-SCREENSHOT-SUPPLEMENT.md`.
+captured four static protected-page responsive baselines at `1440x1000` and
+`375x812`. See `11-SCREENSHOT-SUPPLEMENT.md`.
 
 Device-backed UI states are also `not-run` because no reachable ESP32 URL was
 available. Phase 12 and Phase 13 must capture reachable page and state evidence
@@ -84,8 +84,8 @@ when browser automation or a test device is available.
 
 The following items remain deferred:
 
-- Desktop `1440px` screenshots and mobile `375px` dynamic-state screenshots
-  for affected surfaces.
+- Desktop `1440px` and mobile `375px` dynamic-state screenshots for affected
+  surfaces.
 - Keyboard, touch-target, reduced-motion, live-region, and alert behavior after
   Phase 12 and Phase 13 implementation.
 - Device-backed loading, error, empty, disabled, disconnected, connected, and

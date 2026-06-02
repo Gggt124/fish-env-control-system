@@ -12,8 +12,8 @@ A post-repair supplement later captured four privacy-reviewed protected-page
 desktop baselines through the available Chrome extension backend. These are
 explicitly labeled `simulated` and `chrome-default`; they do not replace the
 deferred `1440px`, API-backed, or device-backed checks. A later in-app browser
-pass captured four static protected-page mobile baselines at `375x812`. See
-`11-SCREENSHOT-SUPPLEMENT.md`.
+pass captured four static protected-page responsive baselines at `1440x1000`
+and `375x812`. See `11-SCREENSHOT-SUPPLEMENT.md`.
 
 Evidence inventory: `evidence/README.md`  
 Detector output: `evidence/impeccable-detector.json`
@@ -102,11 +102,11 @@ deliberate than the underlying firmware deserves.
 | Surface | Check | Status | Reason |
 | --- | --- | --- | --- |
 | Login | Default, loading, and auth-error screenshots at `1440px` and `375px` | `not-run` | Browser setup failed twice before navigation. |
-| App Shell | Desktop sidebar and mobile navigation screenshots | `simulated` static baseline | Chrome-default desktop sidebar and `375x812` mobile topbars are captured on protected pages. |
-| Dashboard | Pump loading, unavailable, running, stopped, and cooling sensor-fault screenshots | `simulated` static baseline; dynamic states `not-run` | Chrome-default desktop and `375x812` mobile static layouts are captured. Dynamic states require API-backed fixtures or a device. |
-| Hardware/Install | Active map, pending map, pending reboot, save-success, and save-error screenshots | `simulated` static baseline; dynamic states `not-run` | Chrome-default desktop and `375x812` mobile static layouts are captured. Dynamic states require API-backed fixtures or a device. |
-| Status | Desktop and narrow diagnostics with long technical values | `simulated` static baseline; long values `not-run` | Chrome-default desktop and `375x812` mobile placeholder layouts are captured. Representative long values require API-backed fixtures or a device. |
-| Wi-Fi | Disconnected, scanning, empty, scan-error, selected, connecting, success, connect-error, and disconnect screenshots | `simulated` static baseline; dynamic states `not-run` | Chrome-default desktop and `375x812` mobile disconnected layouts are captured. Remaining states require API-backed or controlled fixtures. |
+| App Shell | Desktop sidebar and mobile navigation screenshots | `simulated` static baseline | `1440x1000` desktop sidebar and `375x812` mobile topbars are captured on protected pages. |
+| Dashboard | Pump loading, unavailable, running, stopped, and cooling sensor-fault screenshots | `simulated` static baseline; dynamic states `not-run` | `1440x1000` desktop and `375x812` mobile static layouts are captured. Dynamic states require API-backed fixtures or a device. |
+| Hardware/Install | Active map, pending map, pending reboot, save-success, and save-error screenshots | `simulated` static baseline; dynamic states `not-run` | `1440x1000` desktop and `375x812` mobile static layouts are captured. Dynamic states require API-backed fixtures or a device. |
+| Status | Desktop and narrow diagnostics with long technical values | `simulated` static baseline; long values `not-run` | `1440x1000` desktop and `375x812` mobile placeholder layouts are captured. Representative long values require API-backed fixtures or a device. |
+| Wi-Fi | Disconnected, scanning, empty, scan-error, selected, connecting, success, connect-error, and disconnect screenshots | `simulated` static baseline; dynamic states `not-run` | `1440x1000` desktop and `375x812` mobile disconnected layouts are captured. Remaining states require API-backed or controlled fixtures. |
 
 ## Positive Findings To Preserve
 
