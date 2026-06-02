@@ -2,24 +2,19 @@
 
 ## What This Is
 
-Firmware for an ESP32 DevKit V1 30-pin board that controls a fish pump relay using two configurable timers and one binary float switch. The existing Wi-Fi setup and local web dashboard foundation will become the control surface for setting timer durations, starting/stopping the controller, saving boot behavior, and monitoring float/relay/timer state.
+Firmware for an ESP32 DevKit V1 30-pin board that controls two fish-pump relay channels from one binary float switch and a separate DS18B20 cooling relay. The local web dashboard is the offline control surface for timer settings, pump operation, cooling settings, guarded hardware mapping, Wi-Fi setup, and runtime diagnostics.
 
-The control logic is intentionally simple and hardware-real: the float switch is an ON/OFF contact, not a continuous water-level sensor. Float OFF selects Timer 1, Float ON selects Timer 2, and the relay follows the active timer's ON/OFF phase.
+The control logic is intentionally simple and hardware-real: the float switch is an ON/OFF contact, not a continuous water-level sensor. Float ON selects Timer 1/Relay 1, Float OFF selects Timer 2/Relay 2, and only the selected pump relay follows its timer's ON/OFF phase.
 
 ## Core Value
 
 The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
 
-## Current Milestone: v1.1 Dual Relay Cooling And Install UI
+## Milestone Status
 
-**Goal:** Extend the validated pump controller into a safer installable system with two timer/relay channels, a separate DS18B20 cooling channel, and guarded owner-accessible hardware configuration.
+**Latest shipped:** v1.1 Dual Relay Cooling And Install UI on 2026-06-02
 
-**Target features:**
-- Dual timer/relay pump control where Float ON selects Timer 1/Relay 1 and Float OFF selects Timer 2/Relay 2.
-- Float changes interrupt the active timer, force the old relay OFF, and restart the newly selected timer from its configured start phase.
-- DS18B20 cooling control on a dedicated relay with threshold, hysteresis, sensor fault safe-off, and compressor-protection-aware override modes.
-- Hardware/Install web flow with safe GPIO dropdown enums, active vs pending GPIO maps, confirmation guardrails, and reboot-required status.
-- Owner dashboard remains focused on daily operation while showing pump, cooling, temperature, relay, countdown, and sensor fault state.
+**Next milestone:** Not defined. Run `$gsd-new-milestone` when UI/UX scope is ready.
 
 ## Requirements
 
@@ -56,14 +51,15 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Relay 1, Relay 2, and cooling relay polarity are represented independently in persistent settings — Phase 6
 - ✓ DS18B20 powered-mode wiring assumptions are documented with 3.3 V rail and 4.7 kOhm pull-up — Phase 6
 - ✓ Active and pending GPIO maps, relay polarity, cooling settings, and timer start phases are stored through documented NVS schemas — Phase 6
+- ✓ Pump control uses two separate timer/relay channels selected by binary float state — v1.1
+- ✓ Float state changes restart the selected timer cycle and force the previously selected relay OFF — v1.1
+- ✓ Temperature cooling control uses DS18B20 and a dedicated relay separate from pump relays — v1.1
+- ✓ Cooling control provides explicit enable, auto-enable preference, safe override modes, and compressor protection — v1.1
+- ✓ Web Hardware/Install GPIO map exposes firmware-defined safe enum options and pending reboot behavior — v1.1
 
 ### Active
 
-- [ ] Pump control uses two separate timer/relay channels selected by binary float state.
-- [ ] Float state changes restart the selected timer cycle and force the previously selected relay OFF.
-- [ ] Temperature cooling control uses DS18B20 and a dedicated relay separate from pump relays.
-- [ ] Cooling control provides explicit enable, auto-enable preference, safe override modes, and compressor protection.
-- [ ] Web Hardware/Install GPIO map exposes firmware-defined safe enum options and pending reboot behavior.
+- None. Define the next UI/UX milestone before adding new implementation scope.
 
 ### Out of Scope
 
@@ -75,19 +71,19 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Current State
 
-**Shipped:** v1.0 MVP on 2026-05-20
-**Current milestone:** v1.1 Phase 6 complete on 2026-05-22
+**Shipped:** v1.1 Dual Relay Cooling And Install UI on 2026-06-02
+**Current milestone:** Awaiting next milestone definition
 
-The firmware is a complete ESP32 pump relay controller with:
-- Hardware-safe pump control core (GPIO32 float, GPIO26 relay, active-low defaults)
-- Two configurable timers with NVS persistence and reboot survival
-- Authenticated web API for config, status, start, and stop
-- Local Thai-language dashboard with live status polling and countdown
-- Manual hardware validation passed on real ESP32 DevKit V1
-- Firmware-owned hardware contract and persistent active/pending GPIO map foundation for v1.1
+The firmware is a complete local ESP32 pump and cooling controller with:
+- GPIO32 float input selecting GPIO26 Relay 1 or GPIO27 Relay 2 timer channels
+- Dedicated GPIO33 DS18B20 cooling input and GPIO25 cooling relay control
+- NVS-backed pump, cooling, polarity, and active/pending hardware-map settings
+- Authenticated Thai-language owner dashboard and Hardware/Install page
+- SoftAP fallback, STA configuration, captive DNS, and bounded long-uptime diagnostics
+- Real-board hardware UAT and a `13:38:10` soak with no reboot, watchdog trip, or monotonic heap loss
 
-**Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.1.
-**Partition usage:** 51% free in dual OTA app slots (`0x1F0000` each on 4MB flash) after Phase 6.
+**Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.0.1.
+**Partition usage:** 45% free in dual OTA app slots (`0x1F0000` each on 4MB flash).
 **Binary:** `build/fish_pump_relay_timer_control.bin` generates successfully.
 
 ## Context
@@ -99,9 +95,9 @@ Recommended hardware contract (validated):
 - Board: ESP32 DevKit V1 30-pin, classic ESP32.
 - Float switch input: GPIO32, internal pull-up enabled, float switch closes to GND when active.
 - Pump Relay 1 output: GPIO26, default inactive at boot, polarity configurable.
-- Pump Relay 2 output: GPIO27, stored but not driven until Phase 7.
+- Pump Relay 2 output: GPIO27, default inactive at boot, polarity configurable.
 - DS18B20 data: GPIO33, powered mode, external 4.7 kOhm pull-up to 3.3 V.
-- Cooling relay output: GPIO25, stored but not driven until Phase 8.
+- Cooling relay output: GPIO25, default inactive at boot, polarity configurable.
 - Avoid ESP32 flash pins, UART programming pins, input-only pins for relay output, and boot strapping pins for initial relay/float defaults.
 
 ## Constraints
@@ -131,7 +127,11 @@ Recommended hardware contract (validated):
 | Hardware validation on real ESP32 DevKit V1 with GPIO32/GPIO26 wiring | Confirmed float switching, relay phase behavior, Stop safety, and reboot persistence on actual device | Validated in Phase 5 |
 | Make `hardware_map` the single source for safe role options | Later UI/API phases need enum-backed GPIO choices instead of freeform numeric pins | Validated in Phase 6 |
 | Store pending hardware map separately from active map | GPIO changes need reboot and wiring confirmation before becoming runtime-active | Validated in Phase 6 |
-| Keep Relay 2, DS18B20, and cooling relay read-only/inactive in Phase 6 | Runtime behavior belongs to later scoped phases | Validated in Phase 6 |
+| Keep Relay 2, DS18B20, and cooling relay read-only/inactive in Phase 6 | Runtime behavior belongs to later scoped phases | Validated as Phase 6 staging; activated in Phases 7-8 |
+| Use separate pump relay channels selected by binary float state | Each timer now maps to a physical output and the previous channel must stop immediately on float change | Validated in Phase 7 and hardware UAT |
+| Keep cooling fail-safe OFF on missing or unreadable DS18B20 data | Sensor failure must not energize cooling indefinitely | Validated in Phase 8 and hardware UAT |
+| Keep GPIO edits pending until reboot confirmation | Runtime pin remapping during operation is unsafe for relay wiring | Validated in Phase 9 and Hardware/Install UAT |
+| Instrument bounded serial diagnostics instead of scheduled reboot | The final soak showed stable uptime; diagnostics preserve evidence for future regressions | Validated by the 13:38:10 soak |
 
 ## Evolution
 
@@ -151,4 +151,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-22 after Phase 6 completion*
+*Last updated: 2026-06-02 after v1.1 milestone completion*

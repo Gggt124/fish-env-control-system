@@ -1,5 +1,33 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.1 Dual Relay Cooling And Install UI (Shipped: 2026-06-02)
+
+**Phases completed:** 5 phases, 15 plans, 62 tasks
+
+**Git stats:** 52 commits, 107 files changed, +13,652 / -381 lines, 2026-05-22 to 2026-06-02
+
+**Known deferred items at close:** 8 scanner bookkeeping rows (see `.planning/STATE.md` Deferred Items) and one documented DS18B20 pull-up hardware follow-up
+
+**Key accomplishments:**
+
+- Typed ESP32 hardware role contract with safe GPIO defaults and DS18B20 powered-mode wiring documentation
+- Validated NVS schemas for active/pending GPIO maps, independent relay polarity, timer start phases, and cooling defaults
+- Boot and pump API integration for the hardware map foundation while preserving single-relay runtime behavior
+- Dual-relay ESP-IDF pump runtime with debounced float selection, start phases, stopped preview, and fail-safe relay writes
+- Boot and authenticated pump APIs now initialize, report, persist, and safely apply the dual-relay runtime contract
+- Embedded dashboard now configures timer start phases and clearly displays ready/running state for Relay 1 and Relay 2
+- ESP-IDF DS18B20 cooling sensor foundation with managed 1-Wire dependency and fail-safe fault thresholds
+- Cooling relay state machine with Auto hysteresis, Force OFF, Test ON timeout, and compressor lockout protection
+- Boot-started cooling runtime with authenticated `/api/cooling/status` and build-validated DS18B20 relay control
+- Authenticated hardware map APIs now expose active/pending GPIO state and safe dropdown options
+- Authenticated cooling config and runtime mode APIs now sit on top of the Phase 8 cooling runtime
+- Pump config compatibility, Phase 9 documentation, and final build validation are complete
+- Owner dashboard cooling operation surface is implemented
+- Protected Hardware/Install page and pending GPIO flow are implemented
+- Phase 10 source validation, docs, and build closeout are complete
+
+---
+
 ## v1.0 MVP — SHIPPED 2026-05-20
 
 **Phases:** 1-5 | **Plans:** 13 | **Tasks:** 44 | **Commits:** 68

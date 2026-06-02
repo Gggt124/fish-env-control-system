@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dual Relay Cooling And Install UI
-status: ready_to_complete
-last_updated: 2026-06-02T12:15:00.000+07:00
+status: completed
+last_updated: "2026-06-02T05:42:12.108Z"
 last_activity: 2026-06-02
 progress:
   total_phases: 5
@@ -11,17 +11,16 @@ progress:
   total_plans: 15
   completed_plans: 15
   percent: 100
-stopped_at: Phase 10 verified after hardware UAT and long-uptime soak — ready to complete v1.1
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-22)
+See: `.planning/PROJECT.md` (updated 2026-06-02)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 10 — owner dashboard, hardware install UI, and validation
+**Current focus:** Planning the next milestone after the shipped v1.1 controller
 
 ## Workflow
 
@@ -39,20 +38,14 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 - Project context: `.planning/PROJECT.md`
 - Config: `.planning/config.json`
 - Research: `.planning/research/`
-- Requirements: `.planning/REQUIREMENTS.md`
+- Latest archived requirements: `.planning/milestones/v1.1-REQUIREMENTS.md`
 - Roadmap: `.planning/ROADMAP.md`
 
 ## Current Phase
 
-### Phase 10: Owner Dashboard, Hardware Install UI, And Validation
+### No Active Phase
 
-**Goal:** Deliver the owner-facing operation surface and installer-friendly hardware flow, then validate the full v1.1 behavior.
-
-**Requirements:** UI-01, UI-02
-
-**Status:** Verified — ready to complete milestone
-
-**Plans:** 3
+**Status:** v1.1 shipped and archived. Awaiting next milestone definition.
 
 ### Quick Tasks Completed
 
@@ -63,16 +56,30 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 | 260529-kso | Use ESP-IDF from C:\esp\v6.0.1\esp-idf, remove old C:\esp-idf install, build/flash/monitor firmware | 2026-05-29 | dd640c6 | [260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re](./quick/260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re/) |
 | 260531-lvf | Mark the currently connected Wi-Fi network as connected and disable redundant password reconnect selection in the scan list | 2026-05-31 | 5c210d7 | [260531-lvf-mark-the-currently-connected-wi-fi-netwo](./quick/260531-lvf-mark-the-currently-connected-wi-fi-netwo/) |
 | 260531-nag | Add a mobile-friendly show password checkbox to the Wi-Fi connect form | 2026-05-31 | a4aa645 | [260531-nag-add-a-mobile-friendly-show-password-chec](./quick/260531-nag-add-a-mobile-friendly-show-password-chec/) |
-| 260601-g74 | Fix long-uptime Wi-Fi fallback, scan lifecycle, and stale HTTP client handling | 2026-06-01 | pending checkpoint | [260601-g74-investigate-and-fix-long-uptime-webapp-i](./quick/260601-g74-investigate-and-fix-long-uptime-webapp-i/) |
-| 260601-iqx | Add structured HTTP and Wi-Fi soak diagnostics | 2026-06-01 | pending checkpoint | [260601-iqx-add-structured-web-server-and-wifi-diagn](./quick/260601-iqx-add-structured-web-server-and-wifi-diagn/) |
-| 260601-jk6 | Add board CPU, watchdog, heap, pump, and cooling soak diagnostics | 2026-06-01 | pending checkpoint | [260601-jk6-add-pump-cooling-board-runtime-cpu-workl](./quick/260601-jk6-add-pump-cooling-board-runtime-cpu-workl/) |
+| 260601-g74 | Fix long-uptime Wi-Fi fallback, scan lifecycle, and stale HTTP client handling | 2026-06-01 | cc7576b | [260601-g74-investigate-and-fix-long-uptime-webapp-i](./quick/260601-g74-investigate-and-fix-long-uptime-webapp-i/) |
+| 260601-iqx | Add structured HTTP and Wi-Fi soak diagnostics | 2026-06-01 | cc7576b | [260601-iqx-add-structured-web-server-and-wifi-diagn](./quick/260601-iqx-add-structured-web-server-and-wifi-diagn/) |
+| 260601-jk6 | Add board CPU, watchdog, heap, pump, and cooling soak diagnostics | 2026-06-01 | cc7576b | [260601-jk6-add-pump-cooling-board-runtime-cpu-workl](./quick/260601-jk6-add-pump-cooling-board-runtime-cpu-workl/) |
 
 ## Deferred Items
 
-- `gsd-sdk query audit-open` reports all eight retained quick-task directories as
-  `status: missing` even when their summary frontmatter is `status: complete`.
-  This is scanner bookkeeping debt, not unfinished firmware work. The records
-  are intentionally retained for provenance and acknowledged at v1.1 close.
+Items acknowledged and deferred at milestone close on 2026-06-02:
+
+| Category | Item | Status |
+|----------|------|--------|
+| quick_task | `260520-s4a-smooth-pump-countdown-ui-and-update-safe` | `missing` |
+| quick_task | `260520-siy-switch-to-dual-ota-partition-layout` | `missing` |
+| quick_task | `260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re` | `missing` |
+| quick_task | `260531-lvf-mark-the-currently-connected-wi-fi-netwo` | `missing` |
+| quick_task | `260531-nag-add-a-mobile-friendly-show-password-chec` | `missing` |
+| quick_task | `260601-g74-investigate-and-fix-long-uptime-webapp-i` | `missing` |
+| quick_task | `260601-iqx-add-structured-web-server-and-wifi-diagn` | `missing` |
+| quick_task | `260601-jk6-add-pump-cooling-board-runtime-cpu-workl` | `missing` |
+
+The retained quick-task summaries contain completion frontmatter. The scanner
+rows are bookkeeping debt, not unfinished firmware work.
+
+### Hardware Follow-Up
+
 - Add the documented external `4.7 kOhm` DS18B20 DQ-to-3.3 V pull-up before the
   next hardware cycle.
 
@@ -88,14 +95,18 @@ See: `.planning/PROJECT.md` (updated 2026-05-22)
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 - The Phase 6 GPIO and cooling hardware contract TODO was moved to completed on 2026-06-02.
 
-Last activity: 2026-06-02 - Completed Phase 10 hardware UAT closeout and 13+ hour Wi-Fi/web soak verification
+Last activity: 2026-06-02
 
 ---
 *State initialized: 2026-05-18*
 
 ## Current Position
 
-Phase: 10
-Plan: 10-03
-Status: Verified - ready to complete v1.1
-Last activity: 2026-06-02 - Completed Phase 10 hardware UAT closeout and 13+ hour Wi-Fi/web soak verification
+Phase: Milestone v1.1 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-02 — Milestone v1.1 completed and archived
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
