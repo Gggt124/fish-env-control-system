@@ -20,26 +20,26 @@
     --inverse-on-surface: #2f3034;
     --outline: #4b5563;
     --outline-variant: rgba(255, 255, 255, 0.1);
-    --surface-tint: #5856d6;
+    --surface-tint: #818cf8;
 
-    --primary: #6366f1;
-    --on-primary: #ffffff;
-    --primary-container: rgba(99, 102, 241, 0.2);
-    --primary-fixed: rgba(99, 102, 241, 0.15);
-    --primary-fixed-dim: rgba(99, 102, 241, 0.3);
+    --primary: #818cf8;
+    --on-primary: #0a0b10;
+    --primary-container: rgba(129, 140, 248, 0.15);
+    --primary-fixed: rgba(129, 140, 248, 0.12);
+    --primary-fixed-dim: rgba(129, 140, 248, 0.25);
 
-    --secondary: #10b981;
-    --on-secondary: #ffffff;
-    --secondary-container: rgba(16, 185, 129, 0.2);
-    --secondary-fixed-dim: rgba(16, 185, 129, 0.3);
+    --secondary: #34d399;
+    --on-secondary: #0a0b10;
+    --secondary-container: rgba(52, 211, 153, 0.15);
+    --secondary-fixed-dim: rgba(52, 211, 153, 0.25);
 
-    --tertiary: #f59e0b;
-    --on-tertiary: #ffffff;
-    --tertiary-container: rgba(245, 158, 11, 0.2);
+    --tertiary: #fbbf24;
+    --on-tertiary: #0a0b10;
+    --tertiary-container: rgba(251, 191, 36, 0.15);
 
-    --error: #ef4444;
-    --on-error: #ffffff;
-    --error-container: rgba(239, 68, 68, 0.2);
+    --error: #f87171;
+    --on-error: #0a0b10;
+    --error-container: rgba(248, 113, 113, 0.15);
 
     --bg-body: #0a0b10;
 
@@ -322,8 +322,9 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 .nav-item:hover { background: var(--surface-container-low); text-decoration: none; }
 
 .nav-item.active {
-    color: var(--primary); background: var(--surface-container-low);
-    border-right: 4px solid var(--primary);
+    color: var(--primary);
+    background: var(--primary-fixed);
+    font-weight: 600;
 }
 
 .nav-item .nav-icon { font-size: 18px; width: 24px; text-align: center; }
@@ -479,7 +480,7 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 .progress-bar .fill {
     height: 100%; border-radius: var(--radius-full);
-    background: var(--primary); transition: width 0.3s;
+    background: var(--primary);
 }
 
 /* Grid layouts */
@@ -536,7 +537,6 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 
 .pump-runtime {
     display: flex; flex-direction: column; gap: var(--sp-lg);
-    border-left: 4px solid var(--primary);
 }
 
 .pump-runtime-main {
@@ -578,8 +578,10 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
     min-width: 180px;
     padding: var(--sp-md);
     border-radius: var(--radius-md);
-    background: var(--inverse-surface);
-    color: var(--inverse-on-surface);
+    background: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    color: var(--on-surface);
+    box-shadow: 0 0 16px rgba(129, 140, 248, 0.15);
 }
 
 .pump-countdown-wrap .summary-label { color: rgba(241, 240, 245, 0.74); }
@@ -779,7 +781,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* === Cooling Dashboard === */
 .cooling-runtime {
     display: flex; flex-direction: column; gap: var(--sp-lg);
-    border-left: 4px solid var(--secondary);
 }
 
 .cooling-runtime h3 {
@@ -830,9 +831,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     margin-bottom: var(--sp-lg);
 }
 
-.hardware-install {
-    border-left: 4px solid var(--tertiary);
-}
 
 .hardware-status-banner {
     display: flex; gap: var(--sp-sm); align-items: center; flex-wrap: wrap;
