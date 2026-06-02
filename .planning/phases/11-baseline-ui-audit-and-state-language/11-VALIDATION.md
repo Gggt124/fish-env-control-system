@@ -1,7 +1,7 @@
 ---
 phase: 11
 slug: baseline-ui-audit-and-state-language
-status: draft
+status: approved
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-06-02
@@ -20,7 +20,7 @@ created: 2026-06-02
 | **Framework** | Documentation completeness checks, source `rg` checks, `node --check`, impeccable detector, and manual screenshot review |
 | **Config file** | `PRODUCT.md`, `DESIGN.md`, `main/static/`, `C:\Users\Copter\.agents\skills\impeccable\scripts\detect.mjs` |
 | **Quick run command** | Requirement-specific `rg` checks from each plan task |
-| **Full suite command** | `node --check main/static/app.js`; impeccable detector; offline-dependency search; Phase 11 artifact completeness checks |
+| **Full suite command** | `node --check main/static/app.js`; impeccable detector; offline-dependency search; Phase 11 artifact completeness checks; `git diff --name-only -- main/static` |
 | **Estimated runtime** | <10 seconds for source checks, plus browser screenshot capture time |
 
 ---
@@ -39,10 +39,10 @@ created: 2026-06-02
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 11-01-01 | 01 | 1 | UI-13 | T-11-01 | Audit scope stays read-only and preserves stable v1.1 runtime. | source check | `rg "Login|App Shell|Dashboard|Hardware/Install|Wi-Fi|Status|1440|375|Must fix|Should fix|Enhancement" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
-| 11-01-02 | 01 | 1 | UI-13 | T-11-01 | Detector and screenshot limitations are recorded instead of silently passing. | source check | `rg "impeccable|detect.mjs|screenshot|not-run|simulated|device-backed|Browser" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
-| 11-02-01 | 02 | 2 | A11Y-02, A11Y-03, UI-13 | T-11-02 | Shared state language requires focus, labels, live regions, alerts, touch targets, and local assets. | source check | `rg "loading|success|error|empty|disabled|unavailable|pending reboot|disconnected|focus|aria-live|role=.alert|44x44|offline|footprint" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
-| 11-03-01 | 03 | 3 | UI-13, A11Y-02, A11Y-03 | T-11-02 | Downstream briefs preserve accessibility and offline constraints. | source check | `rg "Phase 12|Phase 13|problem|evidence|impact|acceptance|ui-ux-pro-max|ESP32|CDN|remote|framework" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
-| 11-03-02 | 03 | 3 | UI-13 | T-11-01 | Existing frontend JavaScript remains syntactically valid and embedded assets stay local. | source check | `node --check main/static/app.js`; `rg "http://|https://|cdn|Tailwind|Google Fonts|Material Symbols" main/static` returns no matches. | N/A command | pending |
+| 11-01-02 | 01 | 1 | UI-13 | T-11-01, T-11-02 | Detector and screenshot limitations are recorded instead of silently passing, and committed screenshots are privacy-reviewed. | source check | `rg "impeccable|detect.mjs|screenshot|not-run|simulated|device-backed|Browser|privacy" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
+| 11-02-01 | 02 | 2 | A11Y-02, A11Y-03, UI-13 | T-11-03 | Shared state language requires focus, labels, live regions, alerts, touch targets, and local assets. | source check | `rg "loading|success|error|empty|disabled|unavailable|pending reboot|disconnected|focus|aria-live|role=.alert|44x44|offline|footprint" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
+| 11-03-01 | 03 | 3 | UI-13, A11Y-02, A11Y-03 | T-11-04 | Downstream briefs preserve traceability, accessibility, and offline constraints. | source check | `rg "Phase 12|Phase 13|problem|evidence|impact|acceptance|ui-ux-pro-max|ESP32|CDN|remote|framework" .planning/phases/11-baseline-ui-audit-and-state-language` | N/A command | pending |
+| 11-03-02 | 03 | 3 | UI-13 | T-11-05 | Existing frontend JavaScript remains syntactically valid and embedded assets stay local. | source check | `node --check main/static/app.js`; `rg "http://|https://|cdn|Tailwind|Google Fonts|Material Symbols" main/static` returns no matches; `git diff --name-only -- main/static` returns no files. | N/A command | pending |
 
 ---
 
@@ -77,4 +77,4 @@ No generated test files or frontend packages are required because:
 - [x] Source-check feedback latency is <10 seconds.
 - [x] `nyquist_compliant: true` set in frontmatter.
 
-**Approval:** draft 2026-06-02, pending finalized PLAN.md task mapping
+**Approval:** approved 2026-06-02 after finalized PLAN.md task mapping
