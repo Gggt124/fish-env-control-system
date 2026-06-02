@@ -40,7 +40,7 @@
 
 ### Design System
 
-- [ ] **UI-13**: User experiences a consistent embedded product UI shaped by the existing `DESIGN.md` system and reviewed with `frontend-ui-ux`, `ui-ux-pro-max`, and `impeccable` guidance adapted to offline ESP32 constraints.
+- [x] **UI-13**: User experiences a consistent embedded product UI shaped by the existing `DESIGN.md` system and reviewed with `frontend-ui-ux`, `ui-ux-pro-max`, and `impeccable` guidance adapted to offline ESP32 constraints.
 
 ### Verification
 
@@ -95,7 +95,7 @@ Traceability is populated during roadmap creation.
 | A11Y-01 | Phase 14 | Pending |
 | A11Y-02 | Phase 11 | Pending |
 | A11Y-03 | Phase 11 | Pending |
-| UI-13 | Phase 11 | Pending |
+| UI-13 | Phase 11 | Complete |
 | VER-01 | Phase 14 | Pending |
 | VER-02 | Phase 14 | Pending |
 | VER-03 | Phase 14 | Pending |
