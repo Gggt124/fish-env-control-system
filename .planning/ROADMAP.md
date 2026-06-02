@@ -104,7 +104,7 @@
 | 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
 | 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete   | 2026-05-23 |
 | 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Complete | 2026-06-02 |
-| 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete   | 2026-06-02 |
+| 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete    | 2026-06-02 |
 | 12. App Shell Login And Owner Dashboard | v1.2 | 0/TBD | Planned | — |
 | 13. Install Setup And Status UX | v1.2 | 0/TBD | Planned | — |
 | 14. Full UI Visual Regression Validation | v1.2 | 0/TBD | Planned | — |

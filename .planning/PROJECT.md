@@ -66,6 +66,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Temperature cooling control uses DS18B20 and a dedicated relay separate from pump relays — v1.1
 - ✓ Cooling control provides explicit enable, auto-enable preference, safe override modes, and compressor protection — v1.1
 - ✓ Web Hardware/Install GPIO map exposes firmware-defined safe enum options and pending reboot behavior — v1.1
+- ✓ Baseline UI audit, Thai-first shared state language, offline ESP32 checklist, and scoped Phase 12/13 implementation briefs are established before frontend edits — Phase 11
 
 ### Active
 
@@ -95,6 +96,11 @@ The firmware is a complete local ESP32 pump and cooling controller with:
 - Authenticated Thai-language owner dashboard and Hardware/Install page
 - SoftAP fallback, STA configuration, captive DNS, and bounded long-uptime diagnostics
 - Real-board hardware UAT and a `13:38:10` soak with no reboot, watchdog trip, or monotonic heap loss
+
+Phase 11 established the no-edit UI baseline for v1.2. The source audit,
+state-language contract, ESP32 checklist, detector evidence, and Phase 12/13
+implementation briefs are complete. Embedded frontend implementation remains
+active work; Phase 11 changed no file under `main/static/`.
 
 **Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.0.1.
 **Partition usage:** 45% free in dual OTA app slots (`0x1F0000` each on 4MB flash).
@@ -151,6 +157,7 @@ Recommended hardware contract (validated):
 | Keep cooling fail-safe OFF on missing or unreadable DS18B20 data | Sensor failure must not energize cooling indefinitely | Validated in Phase 8 and hardware UAT |
 | Keep GPIO edits pending until reboot confirmation | Runtime pin remapping during operation is unsafe for relay wiring | Validated in Phase 9 and Hardware/Install UAT |
 | Instrument bounded serial diagnostics instead of scheduled reboot | The final soak showed stable uptime; diagnostics preserve evidence for future regressions | Validated by the 13:38:10 soak |
+| Audit and define shared UI state language before editing embedded assets | A no-edit baseline makes visual, accessibility, offline, and footprint changes traceable across the v1.2 implementation phases | Validated in Phase 11 |
 
 ## Evolution
 
