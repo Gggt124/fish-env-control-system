@@ -12,7 +12,7 @@ validation:
   offline_dependencies: passed
   static_source_boundary: passed
   browser_screenshots: simulated-responsive-1440-and-375-supplement
-  device_backed_states: not-run
+  device_backed_states: partial-running-and-active-map-captured
   firmware_build: not-run
 ---
 
@@ -36,7 +36,7 @@ to the implementation and closing validation phases.
 | Must Have | Evidence | Result |
 | --- | --- | --- |
 | Existing surfaces audited before implementation | `11-BASELINE-UI-AUDIT.md` covers Login, App Shell, Dashboard, Hardware/Install, Wi-Fi, and Status. Source findings are prioritized and tied to evidence. | PASS |
-| Screenshot evidence where practical | The original attempt failed with `windows sandbox failed: spawn setup refresh`. After repair, `11-SCREENSHOT-SUPPLEMENT.md` records four privacy-reviewed `simulated` protected-page baselines captured through the available Chrome extension backend at its default desktop viewport and eight static responsive baselines captured through the in-app browser at `1440x1000` and `375x812`. | PASS with recorded limitation |
+| Screenshot evidence where practical | The original attempt failed with `windows sandbox failed: spawn setup refresh`. After repair, `11-SCREENSHOT-SUPPLEMENT.md` records simulated static baselines plus privacy-reviewed device-backed Dashboard running and Hardware active-map screenshots at `1440x1000` and `375x812`. | PASS with recorded limitation |
 | Shared product-dashboard state language | `11-STATE-LANGUAGE.md` defines loading, success, error, empty, disabled, unavailable, pending reboot, and disconnected states with Thai-first patterns, actions, and assistive behavior. | PASS |
 | Offline ESP32 design-system adaptation | `11-ESP32-UI-CHECKLIST.md` records keep, adapt, and exclude decisions. Both downstream briefs retain plain local HTML, CSS, and JavaScript with no CDN, framework runtime, remote font, or remote icon dependency. | PASS |
 | Accessibility implementation requirements | State language, checklist, and briefs require visible `2-4px` focus treatment, understandable labels or instructions, `aria-live="polite"` informational regions, and `role="alert"` immediate errors. | PASS |
@@ -66,7 +66,8 @@ map refresh committed as `495a524 docs: map existing codebase`.
 
 - Browser dynamic-state screenshots at explicit desktop `1440px` and mobile
   `375px`. The supplement now records static responsive baselines at
-  `1440x1000` and `375x812`; dynamic states remain deferred.
+  `1440x1000` and `375x812`, plus device-backed Dashboard running and Hardware
+  active-map screenshots; remaining dynamic states remain deferred.
 - Device-backed loading, error, empty, disabled, disconnected, connected, and
   pending-reboot states.
 - Keyboard, touch-target, reduced-motion, live-region, and alert behavior after

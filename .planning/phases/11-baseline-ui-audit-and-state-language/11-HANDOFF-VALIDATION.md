@@ -76,6 +76,11 @@ images use the honest `chrome-default` label. They do not claim explicit
 captured four static protected-page responsive baselines at `1440x1000` and
 `375x812`. See `11-SCREENSHOT-SUPPLEMENT.md`.
 
+A reachable flashed ESP32 later provided privacy-reviewed device-backed
+Dashboard running and Hardware active-map screenshots at both responsive
+widths. Device-backed Status and Wi-Fi screenshots were excluded because the
+rendered pages contain private identifiers.
+
 Device-backed UI states are also `not-run` because no reachable ESP32 URL was
 available. Phase 12 and Phase 13 must capture reachable page and state evidence
 when browser automation or a test device is available.
@@ -88,7 +93,8 @@ The following items remain deferred:
   surfaces.
 - Keyboard, touch-target, reduced-motion, live-region, and alert behavior after
   Phase 12 and Phase 13 implementation.
-- Device-backed loading, error, empty, disabled, disconnected, connected, and
-  pending-reboot state review.
+- Device-backed loading, error, empty, disabled, disconnected, connected,
+  stopped, sensor-fault, and pending-reboot state review beyond the retained
+  Dashboard running and Hardware active-map screenshots.
 - Phase 14 Impeccable polish pass, UI screenshot review, ESP-IDF build,
   partition-footprint comparison, and stable v1.1 hardware regression.

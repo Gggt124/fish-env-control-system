@@ -37,6 +37,15 @@ visual references.
 | Wi-Fi | `wifi--default--chrome-default--simulated.jpg` | Static disconnected setup layout with deliberate example AP IP `192.168.4.1`. |
 | Wi-Fi mobile | `wifi--default--375--simulated.jpg` | Static disconnected mobile setup layout at `375x812`. |
 
+## Retained Device-Backed Evidence
+
+| Surface | File | Notes |
+| --- | --- | --- |
+| Dashboard running desktop | `dashboard--running--1440--device-backed.jpg` | Live ESP32 runtime at `1440x1000`. |
+| Dashboard running mobile | `dashboard--running--375--device-backed.jpg` | Live ESP32 runtime at `375x812`. |
+| Hardware active map desktop | `hardware--active-map--1440--device-backed.jpg` | Live active GPIO map at `1440x1000`. |
+| Hardware active map mobile | `hardware--active-map--375--device-backed.jpg` | Live active GPIO map at `375x812`. |
+
 A Login default screenshot was captured and reviewed but not retained because
 the static form displayed credential-like placeholders. These screenshots are
 `simulated`; they do not prove API-backed or flashed-device behavior.
@@ -69,4 +78,8 @@ Before committing any screenshot:
 - Remove or redact STA and AP MAC addresses.
 - Keep local IP details only when they are deliberate example values.
 
-Post-repair privacy result: `pass` for the twelve retained screenshots.
+Post-repair privacy result: `pass` for the sixteen retained screenshots.
+
+Live-device Status and Wi-Fi screenshots were reviewed but excluded. Status
+renders real SSID and MAC values. Wi-Fi renders a private SSID and STA IP
+address.

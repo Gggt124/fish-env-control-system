@@ -43,6 +43,9 @@ Get-ChildItem -File -LiteralPath "main\static" | Measure-Object -Property Length
   screenshots captured through the in-app browser at a `375x812` viewport.
 - Desktop follow-up result: four privacy-reviewed `simulated` protected-page
   screenshots captured through the in-app browser at a `1440x1000` viewport.
+- Device-backed follow-up result: four privacy-reviewed screenshots captured
+  from the reachable flashed ESP32 at `http://fish-pump.local`: Dashboard
+  running and Hardware active map at `1440x1000` and `375x812`.
 - ESP32 device-backed run: `not-run`, no reachable test-device URL was
   available in this execution context.
 
@@ -72,10 +75,10 @@ remaining capture backlog.
 | --- | --- | --- | --- | --- |
 | Login | Captured then excluded | `not-run` | Default captured but excluded; loading and auth error `not-run` | Default image exposed credential-like placeholders, so the privacy gate excluded it. |
 | App Shell | `simulated` `1440x1000` | `simulated` `375x812` | Desktop sidebar and mobile topbar captured on protected pages. | Dynamic interaction remains unverified. |
-| Dashboard | `simulated` `1440x1000` | `simulated` `375x812` | Static default captured; loading, disabled, pump state, cooling state, sensor fault `not-run` | Dynamic states require API-backed fixtures or a device. |
-| Hardware/Install | `simulated` `1440x1000` | `simulated` `375x812` | Static default captured; active map, pending map, pending reboot, save error `not-run` | Dynamic states require API-backed fixtures or a device. |
-| Status | `simulated` `1440x1000` | `simulated` `375x812` | Static placeholder diagnostics captured; representative long values `not-run` | Long values require API-backed fixtures or a device. |
-| Wi-Fi | `simulated` `1440x1000` | `simulated` `375x812` | Static disconnected baseline captured; loading, empty, scan error, selected, connect feedback, disconnect feedback `not-run` | Dynamic states require API-backed fixtures or a device. |
+| Dashboard | `device-backed` running `1440x1000` | `device-backed` running `375x812` | Static default plus live running pump and cooling runtime captured; loading, disabled, stopped, cooling sensor fault `not-run` | Remaining dynamic states require controlled conditions. |
+| Hardware/Install | `device-backed` active map `1440x1000` | `device-backed` active map `375x812` | Static default plus live active map captured; pending map, pending reboot, save error `not-run` | Remaining dynamic states require controlled conditions. |
+| Status | `simulated` `1440x1000` | `simulated` `375x812` | Live page reached but device-backed screenshot excluded; representative long values `not-run` | Live page contains real SSID and MAC values. |
+| Wi-Fi | `simulated` `1440x1000` | `simulated` `375x812` | Live connected page reached but device-backed screenshot excluded; loading, empty, scan error, selected, connect feedback, disconnect feedback `not-run` | Live page contains a private SSID and STA IP address. |
 
 Every shipped page remains covered by source inspection in
 `11-BASELINE-UI-AUDIT.md`.
@@ -90,7 +93,7 @@ Screenshots must be reviewed before commit. Exclude or redact:
 - Local IP details beyond deliberate example values.
 - Any device identifier that is not required to explain the finding.
 
-Privacy result for the post-repair supplement: `pass` for the twelve committed
+Privacy result for the post-repair supplement: `pass` for the sixteen committed
 protected-page screenshots. The Login screenshot was reviewed and excluded
 because it displayed credential-like placeholders.
 
