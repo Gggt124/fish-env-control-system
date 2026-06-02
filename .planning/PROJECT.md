@@ -14,7 +14,16 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 **Latest shipped:** v1.1 Dual Relay Cooling And Install UI on 2026-06-02
 
-**Next milestone:** Not defined. Run `$gsd-new-milestone` when UI/UX scope is ready.
+## Current Milestone: v1.2 Owner UI Polish And Hardware Readiness
+
+**Goal:** Improve operator confidence and setup usability without changing stable v1.1 firmware behavior.
+
+**Target features:**
+- Clarify owner dashboard hierarchy and runtime state presentation.
+- Improve Hardware/Install UI and setup flow guidance.
+- Improve responsive layout, accessibility, and loading/error/empty states.
+- Screenshot-verify UI changes while preserving ESP32 memory and performance safety.
+- Close hardware-readiness documentation for the external 4.7 kOhm DS18B20 DQ-to-3.3 V pull-up.
 
 ## Requirements
 
@@ -59,7 +68,11 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ### Active
 
-- None. Define the next UI/UX milestone before adding new implementation scope.
+- Improve owner dashboard clarity, visual hierarchy, and operator confidence without changing stable relay/timer/cooling behavior.
+- Improve Hardware/Install UI and setup flow guidance for the next hardware cycle.
+- Improve responsive layout, accessibility, and loading/error/empty states across the local UI.
+- Screenshot-verify UI changes and keep the embedded frontend memory/performance safe for ESP32.
+- Close documentation for the external 4.7 kOhm DS18B20 DQ-to-3.3 V pull-up requirement.
 
 ### Out of Scope
 
@@ -72,7 +85,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 ## Current State
 
 **Shipped:** v1.1 Dual Relay Cooling And Install UI on 2026-06-02
-**Current milestone:** Awaiting next milestone definition
+**Current milestone:** v1.2 Owner UI Polish And Hardware Readiness
 
 The firmware is a complete local ESP32 pump and cooling controller with:
 - GPIO32 float input selecting GPIO26 Relay 1 or GPIO27 Relay 2 timer channels
@@ -110,6 +123,10 @@ Recommended hardware contract (validated):
 - **Local operation**: UI must work without internet because SoftAP setup mode has no external connectivity.
 - **Existing foundation**: Preserve Wi-Fi setup, SoftAP fallback, login/session, captive DNS, and status routes while adding pump control.
 - **Validation**: `idf.py build` remains the main automated validation gate; hardware behavior needs manual flash/device testing.
+- **Stable baseline**: Treat v1.1 relay, timer, cooling, and APSTA behavior as stable; do not rewrite firmware logic unless a UI state bug requires it.
+- **Soak preservation**: Preserve the passed `13:38:10` Wi-Fi/APSTA hardware soak behavior.
+- **UI verification**: Screenshot-verify UI changes and keep the embedded frontend memory/performance safe for ESP32.
+- **Bookkeeping debt**: The eight deferred scanner rows are bookkeeping debt only, not unfinished firmware work.
 
 ## Key Decisions
 
@@ -151,4 +168,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-02 after v1.1 milestone completion*
+*Last updated: 2026-06-02 after starting v1.2 milestone planning*

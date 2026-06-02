@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Dual Relay Cooling And Install UI
-status: completed
-last_updated: "2026-06-02T05:42:12.108Z"
+milestone: v1.2
+milestone_name: Owner UI Polish And Hardware Readiness
+status: planning
+last_updated: "2026-06-02T08:12:13.062Z"
 last_activity: 2026-06-02
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -102,10 +102,10 @@ Last activity: 2026-06-02
 
 ## Current Position
 
-Phase: Milestone v1.1 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-02 — Milestone v1.1 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-02 — Milestone v1.2 started
 
 ## Operator Next Steps
 
