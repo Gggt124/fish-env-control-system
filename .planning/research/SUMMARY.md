@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-v1.2 should improve the existing embedded control surface without changing the stable v1.1 firmware contract. The product is a local appliance controller, not a generic admin dashboard: the owner should understand pump and cooling safety within seconds, while the installer should have a separate mobile-friendly Hardware/Install flow with explicit wiring and reboot guidance.
+v1.2 should improve the full embedded local web UI without changing the stable v1.1 firmware contract. The product is a local appliance controller, not a generic admin dashboard: login, navigation, daily operation, installation, Wi-Fi setup, and status diagnostics should form one coherent flow. The owner should understand pump and cooling safety within seconds, while the installer should have a separate mobile-friendly Hardware/Install flow with explicit wiring and reboot guidance.
 
 No stack additions are recommended. The existing HTML, CSS, JavaScript, ESP-IDF embedded assets, authenticated APIs, and bounded polling model are sufficient. The visual thesis is a calm operational control panel: current state first, primary actions obvious, advanced settings separated, and error states explicit.
 
@@ -39,17 +39,21 @@ None. Keep plain embedded HTML/CSS/JS and existing APIs.
 
 ## Suggested Roadmap Shape
 
-### Phase 11: UI Foundation And State Language
+### Phase 11: Baseline UI Audit And State Language
 
-Refresh the UI contract and run the requested skill-guided design pass. Define shared hierarchy, responsive, accessibility, and state-presentation conventions before page-specific polish.
+Run an `impeccable` critique and technical audit on the current UI before implementation. Capture baseline findings, refresh the UI contract, and define shared hierarchy, responsive, accessibility, and state-presentation conventions.
 
-### Phase 12: Owner Dashboard And Hardware Readiness
+### Phase 12: App Shell Login And Owner Dashboard
 
-Polish daily operation and installer flows, including DS18B20 pull-up guidance.
+Use `ui-ux-pro-max`, `frontend-ui-ux`, `PRODUCT.md`, and `DESIGN.md` to improve login, navigation, and the daily owner dashboard.
 
-### Phase 13: Setup Flow And Visual Regression Validation
+### Phase 13: Install Setup And Status UX
 
-Polish Wi-Fi/status edge states, run the requested skill-guided critique/audit/polish review, and verify screenshots, keyboard use, embedded size, build validity, and stable-baseline constraints.
+Improve Hardware/Install, DS18B20 pull-up guidance, Wi-Fi edge states, and status diagnostics.
+
+### Phase 14: Full UI Visual Regression Validation
+
+Repeat the `impeccable` critique/audit/polish review against every improved page and verify screenshots, keyboard use, embedded size, build validity, and stable-baseline constraints.
 
 ## Confidence Assessment
 

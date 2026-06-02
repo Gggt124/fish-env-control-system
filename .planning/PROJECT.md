@@ -19,9 +19,9 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 **Goal:** Improve operator confidence and setup usability without changing stable v1.1 firmware behavior.
 
 **Target features:**
-- Clarify owner dashboard hierarchy and runtime state presentation.
-- Improve Hardware/Install UI and setup flow guidance.
-- Improve responsive layout, accessibility, and loading/error/empty states.
+- Improve the full local web UI: login, app shell, owner dashboard, Hardware/Install, Wi-Fi setup, and system status.
+- Clarify owner dashboard hierarchy, runtime state presentation, and installer guidance.
+- Improve responsive layout, accessibility, navigation, copy, and loading/error/empty states across all pages.
 - Screenshot-verify UI changes while preserving ESP32 memory and performance safety.
 - Close hardware-readiness documentation for the external 4.7 kOhm DS18B20 DQ-to-3.3 V pull-up.
 - Use `frontend-ui-ux`, `ui-ux-pro-max`, and `impeccable` as design and review gates, adapted to the offline embedded ESP32 constraints.
@@ -69,9 +69,9 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ### Active
 
-- Improve owner dashboard clarity, visual hierarchy, and operator confidence without changing stable relay/timer/cooling behavior.
-- Improve Hardware/Install UI and setup flow guidance for the next hardware cycle.
-- Improve responsive layout, accessibility, and loading/error/empty states across the local UI.
+- Improve login, app shell, owner dashboard, Hardware/Install, Wi-Fi setup, and system status UI without changing stable relay/timer/cooling behavior.
+- Improve navigation, visual hierarchy, operator confidence, and setup guidance for daily and installer workflows.
+- Improve responsive layout, accessibility, copy, and loading/error/empty states across every local UI page.
 - Screenshot-verify UI changes and keep the embedded frontend memory/performance safe for ESP32.
 - Close documentation for the external 4.7 kOhm DS18B20 DQ-to-3.3 V pull-up requirement.
 

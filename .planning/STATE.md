@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-06-02T08:12:13.062Z"
 last_activity: 2026-06-02
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,7 +20,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-06-02)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Planning the next milestone after the shipped v1.1 controller
+**Current focus:** Planning v1.2 owner UI polish and hardware readiness after the shipped v1.1 controller
 
 ## Workflow
 
@@ -102,11 +102,11 @@ Last activity: 2026-06-02
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 11 of 14 (Baseline UI Audit And State Language)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-02 — Milestone v1.2 started
+Status: Roadmap drafted, awaiting approval
+Last activity: 2026-06-02 — Milestone v1.2 roadmap drafted
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Approve the v1.2 roadmap, then discuss or plan Phase 11.

@@ -12,6 +12,11 @@
 - [ ] **UI-09**: Owner can identify temperature, cooling mode, cooling relay state, and sensor fault state as a separate operational channel from the pump relays.
 - [ ] **UI-10**: Owner can distinguish daily operation controls from configuration settings and secondary diagnostics without scanning equal-weight panels.
 
+### App Shell And Login
+
+- [ ] **UI-14**: User can understand login purpose, credential entry, loading, and authentication error recovery clearly on desktop and narrow mobile screens.
+- [ ] **UI-15**: Authenticated user can navigate dashboard, Hardware/Install, Wi-Fi, Status, and logout consistently from the app shell on desktop and narrow mobile screens.
+
 ### Hardware Install
 
 - [ ] **HW-06**: Installer can see explicit guidance to add an external `4.7 kOhm` pull-up resistor between DS18B20 DQ and `3.3 V` before the next hardware cycle.
@@ -23,9 +28,13 @@
 - [ ] **SETUP-01**: User can identify loading, error, empty, disconnected, and connected states during Wi-Fi scan and connect flows.
 - [ ] **SETUP-02**: User can identify loading, success, error, disabled, and pending-reboot states on dashboard and Hardware/Install operations.
 
+### System Status
+
+- [ ] **UI-16**: User can scan system, memory, uptime, Wi-Fi station, access point, and service diagnostics clearly on desktop and narrow mobile screens.
+
 ### Accessibility
 
-- [ ] **A11Y-01**: User can use dashboard, Hardware/Install, Wi-Fi, and Status pages on a narrow mobile viewport without losing access to primary content or actions.
+- [ ] **A11Y-01**: User can use login, app shell, dashboard, Hardware/Install, Wi-Fi, and Status pages on a narrow mobile viewport without losing access to primary content or actions.
 - [ ] **A11Y-02**: Keyboard user can navigate interactive controls with visible focus treatment and understandable labels or instructions.
 - [ ] **A11Y-03**: Assistive-technology user can recognize dynamic status and error messages programmatically.
 
@@ -72,29 +81,32 @@ Traceability is populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-08 | TBD | Pending |
-| UI-09 | TBD | Pending |
-| UI-10 | TBD | Pending |
-| HW-06 | TBD | Pending |
-| UI-11 | TBD | Pending |
-| UI-12 | TBD | Pending |
-| SETUP-01 | TBD | Pending |
-| SETUP-02 | TBD | Pending |
-| A11Y-01 | TBD | Pending |
-| A11Y-02 | TBD | Pending |
-| A11Y-03 | TBD | Pending |
-| UI-13 | TBD | Pending |
-| VER-01 | TBD | Pending |
-| VER-02 | TBD | Pending |
-| VER-03 | TBD | Pending |
-| VER-04 | TBD | Pending |
-| REG-01 | TBD | Pending |
+| UI-08 | Phase 12 | Pending |
+| UI-09 | Phase 12 | Pending |
+| UI-10 | Phase 12 | Pending |
+| UI-14 | Phase 12 | Pending |
+| UI-15 | Phase 12 | Pending |
+| HW-06 | Phase 13 | Pending |
+| UI-11 | Phase 13 | Pending |
+| UI-12 | Phase 13 | Pending |
+| SETUP-01 | Phase 13 | Pending |
+| SETUP-02 | Phase 13 | Pending |
+| UI-16 | Phase 13 | Pending |
+| A11Y-01 | Phase 14 | Pending |
+| A11Y-02 | Phase 11 | Pending |
+| A11Y-03 | Phase 11 | Pending |
+| UI-13 | Phase 11 | Pending |
+| VER-01 | Phase 14 | Pending |
+| VER-02 | Phase 14 | Pending |
+| VER-03 | Phase 14 | Pending |
+| VER-04 | Phase 14 | Pending |
+| REG-01 | Phase 14 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17
+- v1.2 requirements: 20 total
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-02*
-*Last updated: 2026-06-02 after v1.2 requirement definition*
+*Last updated: 2026-06-02 after v1.2 roadmap creation*
