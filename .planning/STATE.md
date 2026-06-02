@@ -104,9 +104,9 @@ Last activity: 2026-06-02
 
 Phase: 11 of 14 (Baseline UI Audit And State Language)
 Plan: —
-Status: Roadmap drafted, awaiting approval
-Last activity: 2026-06-02 — Milestone v1.2 roadmap drafted
+Status: Roadmap approved, ready to discuss or plan Phase 11
+Last activity: 2026-06-02 — Milestone v1.2 roadmap approved
 
 ## Operator Next Steps
 
-- Approve the v1.2 roadmap, then discuss or plan Phase 11.
+- Discuss or plan Phase 11 baseline UI audit.
