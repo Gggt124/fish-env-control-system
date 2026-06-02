@@ -105,9 +105,9 @@ Last activity: 2026-06-02
 
 Phase: 12
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Ready to discuss or plan Phase 12
 Last activity: 2026-06-02
 
 ## Operator Next Steps
 
-- Discuss or plan Phase 11 baseline UI audit.
+- Discuss or plan Phase 12 app shell, login, and owner dashboard work.
