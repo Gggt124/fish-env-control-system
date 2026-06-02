@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: tech
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Technology Stack
@@ -73,3 +76,23 @@ The resolved dependency lock is stored in `dependencies.lock`.
 - Product names, AP SSID, mDNS host, credentials, limits, AP auto-stop settings, HTTP handler capacity, watchdog timeout, pump-control defaults, and hardware-map defaults live in `components/app_config/app_config.h`.
 - Wi-Fi, optional static IP, pump settings, active/pending hardware maps, and cooling settings persist in NVS through `components/nvs_store/nvs_store.c`.
 - `components/hardware_map/` defines firmware-owned hardware roles, safe GPIO option lists, relay polarity enums, timer start phase enums, cooling mode enums, and map validation helpers.
+
+## Incremental Refresh: Planning And Product Layer
+
+This section was refreshed from `.gitignore`, `.graphify_detect.json`,
+`.planning/`, and `PRODUCT.md` only. Firmware descriptions above are retained
+from the prior full-map scan and were not re-audited during this scoped pass.
+
+- `.planning/PROJECT.md` records ESP-IDF 6.0.1 as the validated local build
+  context and a dual-OTA layout with `0x1F0000` app slots.
+- `.planning/PROJECT.md` and `PRODUCT.md` lock the v1.2 UI stack to embedded
+  plain HTML, CSS, and JavaScript with no CDN, remote fonts, remote icon
+  packages, or framework migration.
+- `.planning/config.json` enables GSD research, plan checks, verifier,
+  Nyquist validation, UI phase handling, UI safety gate, and standard code
+  review while keeping `auto_advance` disabled.
+- `.gitignore` excludes generated build outputs, local SDK configuration,
+  managed dependencies, local logs, and machine-specific `AGENTS.local.md`.
+- `.graphify_detect.json` is a generated corpus inventory. It includes ignored
+  managed dependency files and reports a large corpus, so treat it as tooling
+  metadata rather than a curated dependency manifest.

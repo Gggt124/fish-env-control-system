@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: arch
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Structure
@@ -92,3 +95,37 @@ focus: arch
 - Product-specific routes and pages: `main/web_server.c` and `main/static/`.
 - Hardware/install UI and APIs should consume role options from `components/hardware_map/` and persistence helpers from `components/nvs_store/`.
 - Pump runtime persistence, APIs, and UI controls build on `components/pump_control/` without moving GPIO drive logic into `main/`.
+
+## Incremental Refresh: Planning Structure
+
+This section was refreshed from `.gitignore`, `.graphify_detect.json`,
+`.planning/`, and `PRODUCT.md` only. Source-tree descriptions above are
+retained from the prior full-map scan.
+
+### Scoped Root Files
+
+- `.gitignore`: local build, SDK, dependency, log, and machine-specific
+  exclusions.
+- `.graphify_detect.json`: generated graphify corpus inventory; do not treat as
+  hand-maintained source architecture.
+- `PRODUCT.md`: product register for calm, trustworthy, offline owner and
+  installer workflows.
+
+### Planning Layout
+
+- `.planning/PROJECT.md`: evolving product and technical context.
+- `.planning/STATE.md`: current milestone, workflow, progress, deferred items,
+  and operator next step.
+- `.planning/ROADMAP.md`: shipped milestones plus v1.2 Phases 11-14.
+- `.planning/REQUIREMENTS.md`: v1.2 requirements and phase traceability.
+- `.planning/MILESTONES.md`: milestone archive summary.
+- `.planning/codebase/`: seven mapped-reference documents.
+- `.planning/milestones/`: archived roadmap, requirement, and audit artifacts.
+- `.planning/phases/`: per-phase plans, summaries, verification, research, and
+  evidence.
+- `.planning/quick/`: retained quick-task plans and summaries.
+- `.planning/debug/`: resolved investigation artifacts, including
+  `wifi-ap-sta-longrun-stuck.md`.
+- `.planning/notes/`: product exploration notes.
+- `.planning/research/`: milestone research artifacts.
+- `.planning/todos/`: tracked and completed follow-up items.
