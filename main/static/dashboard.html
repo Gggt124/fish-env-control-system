@@ -10,11 +10,11 @@
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Fish Pump Control</span>
-    <button class="hamburger-btn" onclick="toggleMobileNav()" aria-label="Open Navigation">&#9776;</button>
+    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
 </header>
 
 <!-- Mobile Drawer Overlay -->
-<div class="drawer-overlay" id="drawer-overlay" onclick="toggleMobileNav()"></div>
+<div class="drawer-overlay" id="drawer-overlay" onclick="var s=document.getElementById('app-sidebar'),b=document.querySelector('.hamburger-btn');if(s){s.classList.remove('open');this.classList.remove('open');}if(b)b.setAttribute('aria-expanded','false');"></div>
 
 <!-- Sidebar (Desktop & Mobile) -->
 <aside class="app-sidebar" id="app-sidebar">
@@ -218,7 +218,7 @@
         <div class="section-heading-row">
             <div>
                 <h3>ตั้งค่า Timer</h3>
-                <p>Float ON -> Timer 1 / Relay 1, Float OFF -> Timer 2 / Relay 2</p>
+                <p>Float OFF -> Timer 1 / Relay 1, Float ON -> Timer 2 / Relay 2</p>
             </div>
             <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
         </div>
@@ -226,7 +226,7 @@
         <form id="pump-config-form" novalidate>
             <div class="timer-grid">
                 <fieldset class="timer-card">
-                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย ON</legend>
+                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย OFF</legend>
                     <div class="duration-row">
                         <div class="duration-field">
                             <label for="timer1-on-min">ช่วงเปิด นาที</label>
@@ -260,7 +260,7 @@
                 </fieldset>
 
                 <fieldset class="timer-card">
-                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย OFF</legend>
+                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย ON</legend>
                     <div class="duration-row">
                         <div class="duration-field">
                             <label for="timer2-on-min">ช่วงเปิด นาที</label>

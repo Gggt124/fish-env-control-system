@@ -357,11 +357,11 @@ static void set_phase_locked(pump_control_timer_phase_t phase, int64_t now_ms)
 
 static void set_selected_channel_for_float_locked(pump_control_float_state_t float_state)
 {
-    // v1.1 mapping: Float ON selects Timer 1 / Relay 1; Float OFF selects Timer 2 / Relay 2.
+    // v1.1 mapping: Float OFF selects Timer 1 / Relay 1; Float ON selects Timer 2 / Relay 2.
     if (float_state == PUMP_CONTROL_FLOAT_ON) {
-        s_active_timer = PUMP_CONTROL_TIMER_1;
-    } else if (float_state == PUMP_CONTROL_FLOAT_OFF) {
         s_active_timer = PUMP_CONTROL_TIMER_2;
+    } else if (float_state == PUMP_CONTROL_FLOAT_OFF) {
+        s_active_timer = PUMP_CONTROL_TIMER_1;
     } else {
         s_active_timer = PUMP_CONTROL_TIMER_NONE;
     }

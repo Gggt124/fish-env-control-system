@@ -15,22 +15,70 @@
 <details>
 <summary>✅ v1.0 MVP (Phases 1-5) — SHIPPED 2026-05-20</summary>
 
-- [x] Phase 1: Hardware-Safe Pump Control Core (3/3 plans) — completed 2026-05-19
-- [x] Phase 2: Pump Settings Persistence And Boot Behavior (3/3 plans) — completed 2026-05-19
-- [x] Phase 3: Authenticated Pump Control API (3/3 plans) — completed 2026-05-20
-- [x] Phase 4: Web Pump Control UI (3/3 plans) — completed 2026-05-20
-- [x] Phase 5: Hardware Validation And Regression Pass (1/1 plan) — completed 2026-05-20
+#### Phase 1: Hardware-Safe Pump Control Core
+
+**Goal:** Establish safe pump-control defaults and core relay/timer runtime behavior.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-19
+
+#### Phase 2: Pump Settings Persistence And Boot Behavior
+
+**Goal:** Persist pump settings and safe boot behavior.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-19
+
+#### Phase 3: Authenticated Pump Control API
+
+**Goal:** Add authenticated API control for pump runtime and configuration state.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-20
+
+#### Phase 4: Web Pump Control UI
+
+**Goal:** Add the initial embedded web UI for pump control.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-20
+
+#### Phase 5: Hardware Validation And Regression Pass
+
+**Goal:** Validate hardware behavior and regression safety for the v1.0 MVP.
+
+**Status:** Complete (1/1 plan) — completed 2026-05-20
 
 </details>
 
 <details>
 <summary>✅ v1.1 Dual Relay Cooling And Install UI (Phases 6-10) — SHIPPED 2026-06-02</summary>
 
-- [x] Phase 6: Hardware Contract And Persistent Map Foundation (3/3 plans) — completed 2026-05-22
-- [x] Phase 7: Dual Timer Relay Pump Runtime (3/3 plans) — completed 2026-05-23
-- [x] Phase 8: DS18B20 Cooling Runtime (3/3 plans) — completed 2026-05-23
-- [x] Phase 9: Authenticated Hardware And Cooling APIs (3/3 plans) — completed 2026-05-23
-- [x] Phase 10: Owner Dashboard, Hardware Install UI, And Validation (3/3 plans) — completed 2026-06-02
+#### Phase 6: Hardware Contract And Persistent Map Foundation
+
+**Goal:** Define and persist the hardware map contract for pump, float, cooling, and install flows.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-22
+
+#### Phase 7: Dual Timer Relay Pump Runtime
+
+**Goal:** Implement dual-timer relay pump runtime behavior.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-23
+
+#### Phase 8: DS18B20 Cooling Runtime
+
+**Goal:** Add DS18B20 cooling runtime support.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-23
+
+#### Phase 9: Authenticated Hardware And Cooling APIs
+
+**Goal:** Add authenticated APIs for hardware map and cooling runtime state.
+
+**Status:** Complete (3/3 plans) — completed 2026-05-23
+
+#### Phase 10: Owner Dashboard, Hardware Install UI, And Validation
+
+**Goal:** Add owner dashboard cooling visibility and Hardware/Install configuration UI with validation.
+
+**Status:** Complete (3/3 plans) — completed 2026-06-02
 
 </details>
 
@@ -107,9 +155,9 @@
 | 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Complete | 2026-06-02 |
 | 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete    | 2026-06-02 |
 | 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
-| 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 0/TBD | Planned | — |
+| 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 14. Full UI Visual Regression Validation | v1.2 | 0/TBD | Planned | — |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-06-02 after v1.2 roadmap creation*
+*Last updated: 2026-06-03 after GSD health reconciliation*

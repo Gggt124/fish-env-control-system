@@ -100,10 +100,26 @@ function toggleMobileNav() {
     var sidebar = document.getElementById('app-sidebar');
     var overlay = document.getElementById('drawer-overlay');
     if (sidebar && overlay) {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
+        var open = !sidebar.classList.contains('open');
+        sidebar.classList.toggle('open', open);
+        overlay.classList.toggle('open', open);
+        var btn = document.querySelector('.hamburger-btn');
+        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 }
+
+function closeMobileNav() {
+    var sidebar = document.getElementById('app-sidebar');
+    var overlay = document.getElementById('drawer-overlay');
+    if (!sidebar || !overlay) return;
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+    var btn = document.querySelector('.hamburger-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+window.toggleMobileNav = toggleMobileNav;
+window.closeMobileNav = closeMobileNav;
 
 /* ======== Login Page ======== */
 
@@ -754,8 +770,8 @@ function renderPumpPhase(timer, phase, running) {
 }
 
 function renderFloatState(value) {
-    if (value === 'on') return 'ลูกลอย: ON -> Timer 1 / Relay 1';
-    if (value === 'off') return 'ลูกลอย: OFF -> Timer 2 / Relay 2';
+    if (value === 'on') return 'ลูกลอย: ON -> Timer 2 / Relay 2';
+    if (value === 'off') return 'ลูกลอย: OFF -> Timer 1 / Relay 1';
     return 'ลูกลอย: ไม่ทราบสถานะ';
 }
 
@@ -1659,24 +1675,22 @@ function updateApPill() {
 }
 
 function doScan() {
-    var btn = document.getElementById('scan-btn');
+    var btn = document.getElementById('btn-scan');
     var list = document.getElementById('network-list');
-    var placeholder = document.getElementById('scan-placeholder');
 
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class=\"spinner\"></span> \u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e41\u0e01\u0e19...'; }
 
     apiGet('/api/wifi/scan', function(err, data) {
         if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; \u0e2a\u0e41\u0e01\u0e19\u0e43\u0e2b\u0e21\u0e48'; }
-        if (placeholder) placeholder.style.display = 'none';
 
         if (err || !data || !data.ok) {
-            if (list) list.innerHTML = '<li style=\"padding:32px;text-align:center;color:var(--error);\">\u0e2a\u0e41\u0e01\u0e19\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08</li>';
+            if (list) list.innerHTML = '<div class=\"network-empty error\">\u0e2a\u0e41\u0e01\u0e19\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08</div>';
             return;
         }
 
         var nets = data.networks || [];
         if (nets.length === 0) {
-            if (list) list.innerHTML = '<li style=\"padding:32px;text-align:center;color:var(--outline);\">\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22</li>';
+            if (list) list.innerHTML = '<div class=\"network-empty\">\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22</div>';
             return;
         }
 
@@ -1943,6 +1957,10 @@ function escJs(str) {
 /* ======== Init ======== */
 
 (function() {
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMobileNav();
+    });
+
     var path = window.location.pathname;
 
     if (path === '/login') {

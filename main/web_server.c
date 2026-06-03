@@ -390,6 +390,34 @@ static bool is_same_origin(httpd_req_t *req, bool allow_missing_header)
     return false;
 }
 
+static bool read_request_body(httpd_req_t *req, char *body, size_t body_size)
+{
+    if (!req || !body || body_size == 0 || req->content_len == 0 ||
+        req->content_len >= body_size) {
+        return false;
+    }
+
+    size_t received = 0;
+    int timeout_count = 0;
+    while (received < req->content_len) {
+        int ret = httpd_req_recv(req, body + received, req->content_len - received);
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            if (++timeout_count >= 3) {
+                return false;
+            }
+            continue;
+        }
+        if (ret <= 0) {
+            return false;
+        }
+        timeout_count = 0;
+        received += (size_t)ret;
+    }
+
+    body[received] = '\0';
+    return true;
+}
+
 /* Send JSON response */
 static esp_err_t send_json(httpd_req_t *req, const char *json, const char *status)
 {
@@ -1861,11 +1889,9 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     char body[256] = {0};
-    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
-    if (ret <= 0) {
+    if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "401 Unauthorized");
     }
-    body[ret] = '\0';
 
     char username[64] = {0};
     char password[64] = {0};
@@ -2039,11 +2065,9 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
     }
 
     char body[512] = {0};
-    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
-    if (ret <= 0) {
+    if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "200 OK");
     }
-    body[ret] = '\0';
 
     char ssid[64] = {0};
     char password[64] = {0};
@@ -2232,11 +2256,9 @@ static esp_err_t handle_api_hardware_map_post(httpd_req_t *req)
     }
 
     char body[512] = {0};
-    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
-    if (ret <= 0) {
+    if (!read_request_body(req, body, sizeof(body))) {
         return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
     }
-    body[ret] = '\0';
 
     cJSON *root = cJSON_Parse(body);
     if (!root || !cJSON_IsObject(root)) {
@@ -2305,11 +2327,9 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
     }
 
     char body[512] = {0};
-    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
-    if (ret <= 0) {
+    if (!read_request_body(req, body, sizeof(body))) {
         return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
     }
-    body[ret] = '\0';
 
     cJSON *root = cJSON_Parse(body);
     if (!root || !cJSON_IsObject(root)) {
@@ -2455,11 +2475,9 @@ static esp_err_t handle_api_cooling_config_post(httpd_req_t *req)
     }
 
     char body[512] = {0};
-    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
-    if (ret <= 0) {
+    if (!read_request_body(req, body, sizeof(body))) {
         return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
     }
-    body[ret] = '\0';
 
     cJSON *root = cJSON_Parse(body);
     if (!root || !cJSON_IsObject(root)) {
@@ -2510,11 +2528,9 @@ static esp_err_t handle_api_cooling_mode_post(httpd_req_t *req)
     }
 
     char body[128] = {0};
-    int ret = httpd_req_recv(req, body, sizeof(body) - 1);
-    if (ret <= 0) {
+    if (!read_request_body(req, body, sizeof(body))) {
         return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
     }
-    body[ret] = '\0';
 
     cJSON *root = cJSON_Parse(body);
     if (!root || !cJSON_IsObject(root)) {
@@ -2979,6 +2995,7 @@ bool web_server_start(void)
         return false;
     }
 
+    bool route_registration_failed = false;
     for (size_t i = 0; i < sizeof(s_routes) / sizeof(s_routes[0]); i++) {
         const httpd_uri_t route = {
             .uri = s_routes[i].uri,
@@ -2993,7 +3010,15 @@ bool web_server_start(void)
             taskEXIT_CRITICAL(&s_web_diag_lock);
             ESP_LOGE(TAG, "Failed to register route %s: %s",
                      s_routes[i].uri, esp_err_to_name(err));
+            route_registration_failed = true;
         }
+    }
+
+    if (route_registration_failed) {
+        ESP_LOGE(TAG, "HTTP server route registration incomplete; stopping server for retry");
+        httpd_stop(s_server);
+        s_server = NULL;
+        return false;
     }
 
     ESP_LOGI(TAG, "HTTP server started on port %d (max_sockets=%d, recv_timeout=%d, send_timeout=%d, tcp_keepalive=%s)",

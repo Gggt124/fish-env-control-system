@@ -28,6 +28,10 @@ bool session_init(void)
 
 bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN])
 {
+    if (!s_session_mutex || !username || !token_out) {
+        return false;
+    }
+
     uint8_t rand_bytes[8];
     for (int i = 0; i < 4; i++) {
         uint32_t r = esp_random();
@@ -71,7 +75,7 @@ bool session_create(const char *username, char token_out[SESSION_TOKEN_LEN])
 
 bool session_validate(const char *token)
 {
-    if (!token || !token[0]) return false;
+    if (!s_session_mutex || !token || !token[0]) return false;
 
     xSemaphoreTake(s_session_mutex, portMAX_DELAY);
 
@@ -93,7 +97,7 @@ bool session_validate(const char *token)
 
 void session_destroy(const char *token)
 {
-    if (!token) return;
+    if (!s_session_mutex || !token) return;
 
     xSemaphoreTake(s_session_mutex, portMAX_DELAY);
 

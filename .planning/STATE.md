@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Owner UI Polish And Hardware Readiness
 status: ready_to_plan
-last_updated: 2026-06-03T04:10:00.000Z
+last_updated: 2026-06-03T08:20:00.000Z
 last_activity: 2026-06-03
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
-  percent: 75
-stopped_at: Phase 13 complete — ready to discuss Phase 14 or complete milestone
+  total_plans: 9
+  completed_plans: 9
+  percent: 100
+stopped_at: Phase 13 complete — Phase 14 context created and ready to plan
 ---
 
 # Project State
@@ -21,7 +21,7 @@ stopped_at: Phase 13 complete — ready to discuss Phase 14 or complete mileston
 See: `.planning/PROJECT.md` (updated 2026-06-02)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 13 — Install Setup, Status UX, and Professional UI Overhaul
+**Current focus:** Phase 14 — Full UI Visual Regression Validation
 
 ## Workflow
 
@@ -60,6 +60,8 @@ See: `.planning/PROJECT.md` (updated 2026-06-02)
 | 260601-g74 | Fix long-uptime Wi-Fi fallback, scan lifecycle, and stale HTTP client handling | 2026-06-01 | cc7576b | [260601-g74-investigate-and-fix-long-uptime-webapp-i](./quick/260601-g74-investigate-and-fix-long-uptime-webapp-i/) |
 | 260601-iqx | Add structured HTTP and Wi-Fi soak diagnostics | 2026-06-01 | cc7576b | [260601-iqx-add-structured-web-server-and-wifi-diagn](./quick/260601-iqx-add-structured-web-server-and-wifi-diagn/) |
 | 260601-jk6 | Add board CPU, watchdog, heap, pump, and cooling soak diagnostics | 2026-06-01 | cc7576b | [260601-jk6-add-pump-cooling-board-runtime-cpu-workl](./quick/260601-jk6-add-pump-cooling-board-runtime-cpu-workl/) |
+| 260603-88n | Pre-phase-14 audit fixes for blockers and unusable UI | 2026-06-03 | pending | [260603-88n-pre-phase-14-audit-fixes-for-blockers-an](./quick/260603-88n-pre-phase-14-audit-fixes-for-blockers-an/) |
+| 260603-l43 | Repair GSD health warnings and reconcile phase artifacts | 2026-06-03 | pending | [260603-l43-repair-gsd-health-warnings-and-reconcile](./quick/260603-l43-repair-gsd-health-warnings-and-reconcile/) |
 
 ## Deferred Items
 
@@ -103,12 +105,12 @@ Last activity: 2026-06-03
 
 ## Current Position
 
-Phase: 13
-Plan: Complete
-Status: Executed and verified Phase 13
+Phase: 14
+Plan: Ready to plan
+Status: Phase 13 complete, preparing Phase 14 Validation
 Last activity: 2026-06-03
 
 ## Operator Next Steps
 
-- Request user to verify Phase 13 UI changes by flashing the firmware (`idf.py flash`).
-- Proceed to the next milestone or phase if any.
+- Formulate Phase 14 visual regression and validation plan.
+- Perform visual validation checklist and close milestone v1.2.
