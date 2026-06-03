@@ -131,6 +131,19 @@
 
 **Requirements:** A11Y-01, VER-01, VER-02, VER-03, VER-04, REG-01
 
+**Status:** Planned (4/4 plans) — ready to execute
+
+**Plans:**
+- **Wave 1:** `14-01` Browser/mock visual regression evidence; `14-03` offline dependency, build, and footprint gate.
+- **Wave 2** *(blocked on `14-01` evidence)*: `14-02` accessibility, `impeccable`, and `ui-ux-pro-max` closeout review.
+- **Wave 3** *(blocked on `14-01`, `14-02`, and `14-03`)*: `14-04` manual ESP32 stable-baseline regression and requirement traceability closeout.
+
+**Cross-cutting constraints:**
+- Evidence must be labeled `device-backed`, `simulated`, `source-inspected`, or `not-run`.
+- Do not claim relay, timer, cooling, Wi-Fi, or APSTA hardware behavior without real ESP32 evidence.
+- Keep the embedded frontend offline-capable: no CDN, web fonts, remote assets, or frontend package dependency.
+- Preserve stable v1.1 runtime behavior unless a validation blocker requires a narrow, separately verified fix.
+
 **Success criteria:**
 1. Login, app shell, dashboard, Hardware/Install, Wi-Fi, and Status pages remain usable on a narrow mobile viewport without hidden primary content or actions.
 2. Screenshot evidence covers every affected page at desktop and narrow mobile widths plus representative loading, error, empty, disabled, and pending-reboot states.
@@ -156,8 +169,8 @@
 | 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete    | 2026-06-02 |
 | 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 3/3 | Complete | 2026-06-03 |
-| 14. Full UI Visual Regression Validation | v1.2 | 0/TBD | Planned | — |
+| 14. Full UI Visual Regression Validation | v1.2 | 4/4 | Planned | — |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-06-03 after GSD health reconciliation*
+*Last updated: 2026-06-03 after Phase 14 planning*
