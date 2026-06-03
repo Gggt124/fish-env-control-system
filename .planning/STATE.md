@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Owner UI Polish And Hardware Readiness
-status: ready_to_execute
-last_updated: "2026-06-03T09:20:25.902Z"
+status: human_needed
+last_updated: "2026-06-03T09:29:42.126Z"
 last_activity: 2026-06-03
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 13
-  completed_plans: 9
-  percent: 69
+  completed_plans: 13
+  percent: 75
 ---
 
 # Project State
@@ -45,7 +45,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-02)
 
 ### No Active Phase
 
-**Status:** Ready to execute
+**Status:** Human verification needed for Phase 14
 
 ### Quick Tasks Completed
 
@@ -104,12 +104,13 @@ Last activity: 2026-06-03
 
 ## Current Position
 
-Phase: 14
-Plan: 4/4 planned
-Status: Ready to execute
-Last activity: 2026-06-03 -- Phase 14 planning complete
+Phase: 14 (Full UI Visual Regression Validation) — HUMAN_NEEDED
+Plan: 4 of 4 executed
+Status: Human verification needed
+Last activity: 2026-06-03 -- Phase 14 evidence recorded; current-firmware flash, screenshots, and hardware regression still pending
 
 ## Operator Next Steps
 
-- Execute Phase 14 visual regression and validation plan.
-- Perform browser, accessibility, build/footprint, and device-backed hardware regression evidence before closing milestone v1.2.
+- Flash or otherwise confirm the ESP32 is serving the current repository build.
+- Re-run 375px drawer validation and screenshot capture against current firmware.
+- Perform device-backed hardware regression for relay, timer, float, cooling, Wi-Fi, and APSTA flows before closing milestone v1.2.

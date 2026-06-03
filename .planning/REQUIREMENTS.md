@@ -45,8 +45,8 @@
 ### Verification
 
 - [ ] **VER-01**: Maintainer can review screenshots of affected UI pages at desktop and narrow mobile viewports before milestone close.
-- [ ] **VER-02**: Maintainer can build valid ESP-IDF firmware after embedded asset changes without introducing unsuitable frontend dependencies or unsafe ESP32 footprint growth.
-- [ ] **VER-03**: Maintainer can review the UI with an `impeccable` critique/audit/polish pass and the applicable `ui-ux-pro-max` checklist before milestone close.
+- [x] **VER-02**: Maintainer can build valid ESP-IDF firmware after embedded asset changes without introducing unsuitable frontend dependencies or unsafe ESP32 footprint growth.
+- [x] **VER-03**: Maintainer can review the UI with an `impeccable` critique/audit/polish pass and the applicable `ui-ux-pro-max` checklist before milestone close.
 - [ ] **VER-04**: Maintainer can review representative loading, error, empty, disabled, and pending-reboot screenshots before milestone close.
 - [ ] **REG-01**: Owner can continue using the stable v1.1 relay, timer, cooling, Wi-Fi, and APSTA flows without behavioral regression.
 
@@ -97,8 +97,8 @@ Traceability is populated during roadmap creation.
 | A11Y-03 | Phase 11 | Complete |
 | UI-13 | Phase 11 | Complete |
 | VER-01 | Phase 14 | Pending |
-| VER-02 | Phase 14 | Pending |
-| VER-03 | Phase 14 | Pending |
+| VER-02 | Phase 14 | Complete |
+| VER-03 | Phase 14 | Complete |
 | VER-04 | Phase 14 | Pending |
 | REG-01 | Phase 14 | Pending |
 

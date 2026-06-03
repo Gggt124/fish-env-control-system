@@ -131,7 +131,7 @@
 
 **Requirements:** A11Y-01, VER-01, VER-02, VER-03, VER-04, REG-01
 
-**Status:** Planned (4/4 plans) — ready to execute
+**Status:** Human verification needed (4/4 plans executed) — build/UI review evidence recorded; current-firmware screenshots and hardware regression still pending
 
 **Plans:**
 - **Wave 1:** `14-01` Browser/mock visual regression evidence; `14-03` offline dependency, build, and footprint gate.
@@ -169,8 +169,8 @@
 | 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete    | 2026-06-02 |
 | 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 3/3 | Complete | 2026-06-03 |
-| 14. Full UI Visual Regression Validation | v1.2 | 4/4 | Planned | — |
+| 14. Full UI Visual Regression Validation | v1.2 | 4/4 | Human Needed | — |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-06-03 after Phase 14 planning*
+*Last updated: 2026-06-03 after Phase 14 evidence execution; human UAT pending*
