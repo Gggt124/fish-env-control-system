@@ -377,6 +377,86 @@ Use these entry points:
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
 <!-- GSD:workflow-end -->
 
+## GSD Subagent Integration Protocol
+
+When a GSD workflow requests a specialist subagent, use the current agent
+runtime's native subagent mechanism if it is available. Do not silently replace a
+named GSD specialist with a generic agent.
+
+If the current runtime does not expose subagent tools, follow the active GSD
+skill adapter for that runtime. For Codex, this means using `spawn_agent` only
+when it is explicitly allowed; otherwise execute the GSD task inline while
+preserving the workflow gates, artifacts, validation, and user checkpoints.
+
+1. **Subagent Prompt Retrieval**:
+   Retrieve the prompt markdown file for the target GSD subagent from the local
+   config directory:
+   `C:\Users\Copter\.gemini\config\agents\gsd-<agent_name>.md`
+   Load the complete content with an available file-read tool. Do not summarize
+   or alter the prompt when registering a subagent.
+
+2. **Subagent Registration**:
+   Register the agent with the runtime's native subagent registration tool when
+   one exists:
+   - `name`: Use the exact GSD subagent name (for example `gsd-debugger`,
+     `gsd-executor`, `gsd-planner`, `gsd-verifier`, `gsd-code-reviewer`, or
+     `gsd-doc-writer`).
+   - `description`: Use the frontmatter-derived description.
+   - `system_prompt`: Use the complete prompt markdown content, including all
+     rules, guidelines, and context references.
+   - Enable MCP, subagent, and write tools when the runtime supports those
+     capability flags.
+
+3. **Subagent Invocation**:
+   Invoke the registered GSD subagent with the task role and task prompt. Use the
+   shared/inherited workspace mode unless the workflow explicitly requires an
+   isolated worktree and that isolation has been created.
+
+4. **Coordinate Execution**:
+   - Listen to the subagent's status updates and collect its final report.
+   - Handle returned checkpoints (for example `checkpoint:human-verify`,
+     `checkpoint:decision`, or `checkpoint:human-action`) by presenting them to
+     the user for input or approval.
+   - When the subagent completes, extract the summary/verification report and
+     advance the GSD state machine.
+
+### Supported GSD Subagents List
+The following 33 GSD subagents are the named specialists to use when their
+corresponding skills/workflows request subagent execution:
+- `gsd-advisor-researcher`
+- `gsd-ai-researcher`
+- `gsd-assumptions-analyzer`
+- `gsd-code-fixer`
+- `gsd-code-reviewer`
+- `gsd-codebase-mapper`
+- `gsd-debug-session-manager`
+- `gsd-debugger`
+- `gsd-doc-classifier`
+- `gsd-doc-synthesizer`
+- `gsd-doc-verifier`
+- `gsd-doc-writer`
+- `gsd-domain-researcher`
+- `gsd-eval-auditor`
+- `gsd-eval-planner`
+- `gsd-executor`
+- `gsd-framework-selector`
+- `gsd-integration-checker`
+- `gsd-intel-updater`
+- `gsd-nyquist-auditor`
+- `gsd-pattern-mapper`
+- `gsd-phase-researcher`
+- `gsd-plan-checker`
+- `gsd-planner`
+- `gsd-project-researcher`
+- `gsd-research-synthesizer`
+- `gsd-roadmapper`
+- `gsd-security-auditor`
+- `gsd-ui-auditor`
+- `gsd-ui-checker`
+- `gsd-ui-researcher`
+- `gsd-user-profiler`
+- `gsd-verifier`
+
 <!-- GSD:profile-start -->
 ## Developer Profile
 
