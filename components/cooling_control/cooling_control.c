@@ -45,7 +45,8 @@ static cooling_control_blocked_reason_t s_blocked_reason = COOLING_CONTROL_BLOCK
 static uint32_t s_failed_reads;
 static uint32_t s_successful_reads;
 static int64_t s_next_allowed_on_ms;
-static int64_t s_test_deadline_ms;
+static int64_t s_test_remaining_ms;
+static int64_t s_last_test_update_ms;
 static int64_t s_next_sensor_discovery_ms;
 
 static onewire_bus_handle_t s_bus;
@@ -153,10 +154,11 @@ static uint32_t lockout_remaining_locked(int64_t now_ms)
 
 static uint32_t test_remaining_locked(int64_t now_ms)
 {
-    if (s_mode != COOLING_CONTROL_MODE_TEST_ON || s_test_deadline_ms <= now_ms) {
+    (void)now_ms;
+    if (s_mode != COOLING_CONTROL_MODE_TEST_ON || s_test_remaining_ms <= 0) {
         return 0;
     }
-    return seconds_until_deadline(now_ms, s_test_deadline_ms);
+    return (uint32_t)((s_test_remaining_ms + MS_PER_SEC - 1) / MS_PER_SEC);
 }
 
 static void reset_runtime_state_locked(void)
@@ -178,7 +180,8 @@ static void reset_runtime_state_locked(void)
     s_failed_reads = 0;
     s_successful_reads = 0;
     s_next_allowed_on_ms = 0;
-    s_test_deadline_ms = 0;
+    s_test_remaining_ms = 0;
+    s_last_test_update_ms = 0;
     s_next_sensor_discovery_ms = 0;
 }
 
@@ -274,9 +277,19 @@ static void update_control_locked(int64_t now_ms)
         return;
     }
 
-    if (s_mode == COOLING_CONTROL_MODE_TEST_ON && s_test_deadline_ms <= now_ms) {
-        s_mode = s_previous_mode;
-        s_test_deadline_ms = 0;
+    if (s_mode == COOLING_CONTROL_MODE_TEST_ON) {
+        int64_t elapsed_ms = now_ms - s_last_test_update_ms;
+        if (elapsed_ms < 0) {
+            elapsed_ms = 0;
+        }
+        if (lockout_remaining_locked(now_ms) == 0) {
+            s_test_remaining_ms -= elapsed_ms;
+        }
+        if (s_test_remaining_ms <= 0) {
+            s_test_remaining_ms = 0;
+            s_mode = s_previous_mode;
+        }
+        s_last_test_update_ms = now_ms;
     }
 
     bool demand = false;
@@ -580,7 +593,8 @@ bool cooling_control_apply_config(const cooling_control_config_t *config)
     s_previous_mode = s_mode == COOLING_CONTROL_MODE_TEST_ON
         ? COOLING_CONTROL_MODE_FORCE_OFF
         : s_mode;
-    s_test_deadline_ms = 0;
+    s_test_remaining_ms = 0;
+    s_last_test_update_ms = 0;
     update_control_locked(now_ms);
     xSemaphoreGive(s_cooling_mutex);
     return true;
@@ -595,7 +609,8 @@ bool cooling_control_stop(void)
     int64_t now_ms = esp_timer_get_time() / 1000;
     set_relay_energized_locked(false, now_ms);
     s_mode = COOLING_CONTROL_MODE_FORCE_OFF;
-    s_test_deadline_ms = 0;
+    s_test_remaining_ms = 0;
+    s_last_test_update_ms = 0;
     update_control_locked(now_ms);
     xSemaphoreGive(s_cooling_mutex);
     return true;
@@ -649,7 +664,8 @@ bool cooling_control_set_mode(cooling_control_mode_t mode)
     }
     int64_t now_ms = esp_timer_get_time() / 1000;
     s_mode = mode;
-    s_test_deadline_ms = 0;
+    s_test_remaining_ms = 0;
+    s_last_test_update_ms = 0;
     update_control_locked(now_ms);
     xSemaphoreGive(s_cooling_mutex);
     return true;
@@ -671,7 +687,8 @@ bool cooling_control_start_test(void)
         s_previous_mode = s_mode;
     }
     s_mode = COOLING_CONTROL_MODE_TEST_ON;
-    s_test_deadline_ms = now_ms + ((int64_t)s_config.test_timeout_sec * MS_PER_SEC);
+    s_test_remaining_ms = (int64_t)s_config.test_timeout_sec * MS_PER_SEC;
+    s_last_test_update_ms = now_ms;
     update_control_locked(now_ms);
     xSemaphoreGive(s_cooling_mutex);
     return true;
