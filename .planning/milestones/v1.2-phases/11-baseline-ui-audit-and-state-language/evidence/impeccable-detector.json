@@ -1,0 +1,56 @@
+[
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card or tab. Review whether the accent is necessary or should be replaced with a quieter full-surface treatment.",
+    "severity": "warning",
+    "file": "main/static/style.css",
+    "line": 318,
+    "snippet": "border-right: 4px solid var(--primary)"
+  },
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card or tab. Review whether the accent is necessary or should be replaced with a quieter full-surface treatment.",
+    "severity": "warning",
+    "file": "main/static/style.css",
+    "line": 532,
+    "snippet": "border-left: 4px solid var(--primary)"
+  },
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card or tab. Review whether the accent is necessary or should be replaced with a quieter full-surface treatment.",
+    "severity": "warning",
+    "file": "main/static/style.css",
+    "line": 767,
+    "snippet": "border-left: 4px solid var(--secondary)"
+  },
+  {
+    "antipattern": "side-tab",
+    "name": "Side-tab accent border",
+    "description": "Thick colored border on one side of a card or tab. Review whether the accent is necessary or should be replaced with a quieter full-surface treatment.",
+    "severity": "warning",
+    "file": "main/static/style.css",
+    "line": 819,
+    "snippet": "border-left: 4px solid var(--tertiary)"
+  },
+  {
+    "antipattern": "layout-transition",
+    "name": "Layout property animation",
+    "description": "Animating width can trigger layout work. Keep only if later visual verification confirms the bounded progress update remains smooth.",
+    "severity": "warning",
+    "file": "main/static/style.css",
+    "line": 470,
+    "snippet": "transition: width"
+  },
+  {
+    "antipattern": "flat-type-hierarchy",
+    "name": "Flat type hierarchy",
+    "description": "The Wi-Fi page uses several closely spaced text sizes. Validate the hierarchy visually before deciding whether to change it.",
+    "severity": "warning",
+    "file": "main/static/wifi.html",
+    "line": 59,
+    "snippet": "Sizes: 12px, 14px, 16px (ratio 1.3:1)"
+  }
+]

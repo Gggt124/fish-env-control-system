@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: arch
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Architecture
@@ -96,3 +99,31 @@ The codebase is layered ESP-IDF firmware. Reusable low-level modules live in `co
 ## Design Boundary
 
 The firmware now has the pump-control core, NVS-backed pump settings, boot auto-start behavior, authenticated pump API routes, and a local pump-control dashboard. Hardware validation is still deferred to Phase 5 hardware procedures for flash/manual relay and float validation.
+
+## Incremental Refresh: Planning Architecture
+
+This section was refreshed from `.planning/` and `PRODUCT.md` only. Firmware
+architecture above is retained from the prior full-map scan and was not
+re-audited during this scoped pass.
+
+### Milestone Flow
+
+1. `.planning/MILESTONES.md` archives v1.0 and v1.1 outcomes.
+2. `.planning/ROADMAP.md` defines v1.2 as four sequential phases: baseline UI
+   audit, app-shell/dashboard implementation, install/setup/status
+   implementation, and full visual/build/regression validation.
+3. `.planning/STATE.md` records Phase 11 complete and Phase 12 ready for
+   discussion or planning.
+4. `.planning/REQUIREMENTS.md` maps all twenty v1.2 requirements to Phases
+   11-14 with no unmapped requirement.
+
+### Phase 11 Handoff
+
+- `11-BASELINE-UI-AUDIT.md` captures the pre-edit UI audit.
+- `11-STATE-LANGUAGE.md` defines the shared state vocabulary and assistive
+  semantics.
+- `11-ESP32-UI-CHECKLIST.md` adapts design-system checks to an offline embedded
+  footprint.
+- `11-PHASE-12-BRIEF.md` and `11-PHASE-13-BRIEF.md` route all thirteen findings
+  into implementation scope.
+- `11-VERIFICATION.md` closes Phase 11 without claiming runtime UI changes.

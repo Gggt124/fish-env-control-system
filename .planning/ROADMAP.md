@@ -1,13 +1,13 @@
 # Roadmap: Fish Pump Relay Timer Control
 
-**Created:** 2026-05-18  
+**Created:** 2026-05-18
 **Mode:** Vertical MVP
-**Current Milestone:** Awaiting next milestone definition
 
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-05-20) — `.planning/milestones/v1.0-ROADMAP.md`
 - ✅ **v1.1 Dual Relay Cooling And Install UI** — Phases 6-10 (shipped 2026-06-02) — `.planning/milestones/v1.1-ROADMAP.md`
+- ✅ **v1.2 Owner UI Polish And Hardware Readiness** — Phases 11-14 (shipped 2026-06-04) — `.planning/milestones/v1.2-ROADMAP.md`
 
 ## Phases
 
@@ -33,6 +33,16 @@
 
 </details>
 
+<details>
+<summary>✅ v1.2 Owner UI Polish And Hardware Readiness (Phases 11-14) — SHIPPED 2026-06-04</summary>
+
+- [x] Phase 11: Baseline UI Audit And State Language (3/3 plans) — completed 2026-06-02
+- [x] Phase 12: App Shell Login And Owner Dashboard (3/3 plans) — completed 2026-06-03
+- [x] Phase 13: Install Setup, Status UX, and Professional UI Overhaul (3/3 plans) — completed 2026-06-03
+- [x] Phase 14: Full UI Visual Regression Validation (4/4 plans) — completed 2026-06-03
+
+</details>
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -43,11 +53,15 @@
 | 4. Web Pump Control UI | v1.0 | 3/3 | Complete | 2026-05-20 |
 | 5. Hardware Validation And Regression Pass | v1.0 | 1/1 | Complete | 2026-05-20 |
 | 6. Hardware Contract And Persistent Map Foundation | v1.1 | 3/3 | Complete | 2026-05-22 |
-| 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
-| 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete    | 2026-05-23 |
-| 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete   | 2026-05-23 |
+| 7. Dual Timer Relay Pump Runtime | v1.1 | 3/3 | Complete | 2026-05-23 |
+| 8. DS18B20 Cooling Runtime | v1.1 | 3/3 | Complete | 2026-05-23 |
+| 9. Authenticated Hardware And Cooling APIs | v1.1 | 3/3 | Complete | 2026-05-23 |
 | 10. Owner Dashboard, Hardware Install UI, And Validation | v1.1 | 3/3 | Complete | 2026-06-02 |
+| 11. Baseline UI Audit And State Language | v1.2 | 3/3 | Complete | 2026-06-02 |
+| 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
+| 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 3/3 | Complete | 2026-06-03 |
+| 14. Full UI Visual Regression Validation | v1.2 | 4/4 | Complete | 2026-06-03 |
 
 ---
 *Roadmap created: 2026-05-18*
-*Last updated: 2026-06-02 after v1.1 milestone completion*
+*Last updated: 2026-06-04 after v1.2 milestone completion*

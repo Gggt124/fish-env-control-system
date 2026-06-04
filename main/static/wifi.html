@@ -10,13 +10,13 @@
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Wi-Fi Setup</span>
-    <div class="topbar-icons">
-        <a href="/dashboard" style="color:var(--primary);text-decoration:none;">&#8592;</a>
-    </div>
+    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
 </header>
 
+<div class="drawer-overlay" id="drawer-overlay" onclick="var s=document.getElementById('app-sidebar'),b=document.querySelector('.hamburger-btn');if(s){s.classList.remove('open');this.classList.remove('open');}if(b)b.setAttribute('aria-expanded','false');"></div>
+
 <!-- Sidebar (Desktop) -->
-<aside class="app-sidebar">
+<aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">
@@ -99,19 +99,25 @@
         </div>
     </div>
 
+    <!-- Reconnection Helper Banner -->
+    <div id="reconnect-banner" role="alert" style="display:none; padding:16px; margin-bottom:var(--sp-md); background:var(--tertiary-container); color:var(--on-surface); border-radius:var(--radius-md); border:1px solid var(--tertiary);">
+        <strong>กำลังเชื่อมต่อ...</strong> <span id="reconnect-countdown">15</span>s<br>
+        <span style="font-size:14px;">หากหลุด ให้ตรวจสอบ Wi-Fi มือถือว่าต่อกับ SoftAP IP <strong>192.168.4.1</strong> อีกครั้ง</span>
+    </div>
+
     <!-- Wi-Fi Grid -->
     <div class="wifi-grid">
         <!-- Network List -->
-        <div class="network-panel">
-            <div class="network-panel-header">
-                <h3>&#128269; เครือข่ายที่พบ</h3>
-                <button class="scan-btn" id="scan-btn" onclick="doScan()">&#8635; สแกนใหม่</button>
+        <div class="card network-card">
+            <div class="card-header">
+                <h3>เครือข่ายที่พบ</h3>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()">&#128260; ค้นหา</button>
             </div>
-            <ul class="network-list" id="network-list">
-                <li style="padding:32px;text-align:center;color:var(--outline);" id="scan-placeholder">
-                    กด "สแกนใหม่" เพื่อค้นหาเครือข่าย
-                </li>
-            </ul>
+            <div class="network-list" id="network-list" aria-live="polite">
+                <div class="network-item" style="justify-content:center; color:var(--on-surface-variant); cursor:default;">
+                    กด "ค้นหา" เพื่อสแกน Wi-Fi
+                </div>
+            </div>
         </div>
 
         <!-- Input Panel -->
@@ -125,11 +131,11 @@
                 &#128273; ระบุรหัสผ่าน
             </h3>
             <div class="form-group">
-                <label>SSID ที่เลือก</label>
+                <label for="selected-ssid-display">SSID ที่เลือก</label>
                 <div class="selected-ssid-display" id="selected-ssid-display">---</div>
             </div>
             <div class="form-group">
-                <label>รหัสผ่าน (Password)</label>
+                <label for="wifi-password">รหัสผ่าน (Password)</label>
                 <div class="input-wrapper">
                     <span class="input-icon">&#128274;</span>
                     <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" disabled>
@@ -147,21 +153,21 @@
             </div>
             <div class="static-ip-fields" id="static-ip-fields" style="display:none;">
                 <div class="form-group">
-                    <label>IP Address</label>
+                    <label for="static-ip">IP Address</label>
                     <div class="input-wrapper">
                         <span class="input-icon">&#127758;</span>
                         <input type="text" id="static-ip" placeholder="เช่น 192.168.1.100" disabled>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Gateway</label>
+                    <label for="static-gateway">Gateway</label>
                     <div class="input-wrapper">
                         <span class="input-icon">&#128279;</span>
                         <input type="text" id="static-gateway" placeholder="เช่น 192.168.1.1" disabled>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Netmask</label>
+                    <label for="static-netmask">Netmask</label>
                     <div class="input-wrapper">
                         <span class="input-icon">&#128225;</span>
                         <input type="text" id="static-netmask" placeholder="เช่น 255.255.255.0" value="255.255.255.0" disabled>

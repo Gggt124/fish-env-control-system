@@ -577,8 +577,11 @@ void app_main(void)
     }
 
     /* 2. Initialize session system */
-    session_init();
-    ESP_LOGI(TAG, "Session system initialized");
+    if (!session_init()) {
+        ESP_LOGE(TAG, "Session system init failed; local web login unavailable");
+    } else {
+        ESP_LOGI(TAG, "Session system initialized");
+    }
 
     /* 3. Initialize Wi-Fi (AP + STA with event handlers) */
     if (!wifi_manager_init()) {

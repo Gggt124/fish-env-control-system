@@ -165,7 +165,7 @@ bool nvs_store_save_wifi(const char *ssid, const char *password)
         nvs_erase_key(handle, NVS_KEY_PASS);
     }
 
-    if (ok) nvs_commit(handle);
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
     return ok;
 }
@@ -200,11 +200,12 @@ bool nvs_store_clear_wifi(void)
 {
     nvs_handle_t handle;
     if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
-    nvs_erase_key(handle, NVS_KEY_SSID);
-    nvs_erase_key(handle, NVS_KEY_PASS);
-    nvs_commit(handle);
+    bool ok = true;
+    if (!erase_optional_key(handle, NVS_KEY_SSID)) ok = false;
+    if (!erase_optional_key(handle, NVS_KEY_PASS)) ok = false;
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
-    return true;
+    return ok;
 }
 
 bool nvs_store_save_ap_config(uint32_t stop_timeout_ms, bool auto_stop)
@@ -217,7 +218,7 @@ bool nvs_store_save_ap_config(uint32_t stop_timeout_ms, bool auto_stop)
     uint8_t val = auto_stop ? 1 : 0;
     if (nvs_set_u8(handle, NVS_KEY_AP_AUTO, val) != ESP_OK) ok = false;
 
-    if (ok) nvs_commit(handle);
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
     return ok;
 }
@@ -274,7 +275,7 @@ bool nvs_store_save_sta_ip(const char *ip, const char *gateway, const char *netm
         nvs_erase_key(handle, NVS_KEY_DNS);
     }
 
-    if (ok) nvs_commit(handle);
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
     return ok;
 }
@@ -322,13 +323,14 @@ bool nvs_store_clear_sta_ip(void)
 {
     nvs_handle_t handle;
     if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
-    nvs_erase_key(handle, NVS_KEY_IP);
-    nvs_erase_key(handle, NVS_KEY_GW);
-    nvs_erase_key(handle, NVS_KEY_MASK);
-    nvs_erase_key(handle, NVS_KEY_DNS);
-    nvs_commit(handle);
+    bool ok = true;
+    if (!erase_optional_key(handle, NVS_KEY_IP)) ok = false;
+    if (!erase_optional_key(handle, NVS_KEY_GW)) ok = false;
+    if (!erase_optional_key(handle, NVS_KEY_MASK)) ok = false;
+    if (!erase_optional_key(handle, NVS_KEY_DNS)) ok = false;
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
-    return true;
+    return ok;
 }
 
 void nvs_store_pump_settings_defaults(nvs_store_pump_settings_t *out)

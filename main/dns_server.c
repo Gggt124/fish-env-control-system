@@ -24,10 +24,22 @@ typedef struct __attribute__((packed)) {
 
 /* Build a DNS response: echo back the question + add A-record answer with given IP */
 static void build_dns_response(const uint8_t *query, size_t query_len,
-                               uint8_t *resp, size_t *resp_len,
+                               uint8_t *resp, size_t resp_capacity, size_t *resp_len,
                                uint32_t answer_ip)
 {
-    if (query_len < sizeof(dns_header_t)) {
+    const size_t answer_len = 16;
+
+    if (!query || !resp || !resp_len ||
+        query_len < sizeof(dns_header_t) ||
+        resp_capacity < sizeof(dns_header_t) + answer_len) {
+        if (resp_len) {
+            *resp_len = 0;
+        }
+        return;
+    }
+
+    *resp_len = 0;
+    if (query_len > resp_capacity) {
         *resp_len = 0;
         return;
     }
@@ -47,6 +59,10 @@ static void build_dns_response(const uint8_t *query, size_t query_len,
     /* Find end of QNAME (compressed labels end with 0x00) */
     const uint8_t *p = qname_start;
     while (offset < query_len && *p != 0) {
+        if ((*p & 0xc0) != 0 || offset + (size_t)(*p) + 1 >= query_len) {
+            *resp_len = 0;
+            return;
+        }
         offset += (*p) + 1;
         p = query + offset;
     }
@@ -64,6 +80,10 @@ static void build_dns_response(const uint8_t *query, size_t query_len,
     offset += 4;
 
     size_t question_len = (size_t)((query + offset) - qname_start);
+    if (sizeof(dns_header_t) + question_len + answer_len > resp_capacity) {
+        *resp_len = 0;
+        return;
+    }
     memcpy(resp + sizeof(dns_header_t), qname_start, question_len);
 
     /* Now append the answer record */
@@ -107,6 +127,7 @@ static void dns_server_task(void *pvParameter)
     s_dns_sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (s_dns_sock < 0) {
         ESP_LOGE(TAG, "Failed to create DNS socket");
+        s_dns_task = NULL;
         vTaskDelete(NULL);
         return;
     }
@@ -125,6 +146,7 @@ static void dns_server_task(void *pvParameter)
         ESP_LOGE(TAG, "Failed to bind DNS socket on port %d", DNS_PORT);
         close(s_dns_sock);
         s_dns_sock = -1;
+        s_dns_task = NULL;
         vTaskDelete(NULL);
         return;
     }
@@ -156,7 +178,7 @@ static void dns_server_task(void *pvParameter)
         ip4addr_aton("192.168.4.1", &ap_ip);
 
         size_t resp_len = 0;
-        build_dns_response(query_buf, (size_t)len, resp_buf, &resp_len, ap_ip.addr);
+        build_dns_response(query_buf, (size_t)len, resp_buf, sizeof(resp_buf), &resp_len, ap_ip.addr);
 
         if (resp_len > 0) {
             sendto(s_dns_sock, resp_buf, resp_len, 0,
@@ -166,6 +188,7 @@ static void dns_server_task(void *pvParameter)
 
     close(s_dns_sock);
     s_dns_sock = -1;
+    s_dns_task = NULL;
     vTaskDelete(NULL);
 }
 
@@ -195,10 +218,6 @@ void dns_server_stop(void)
     if (s_dns_sock >= 0) {
         close(s_dns_sock);
         s_dns_sock = -1;
-    }
-    if (s_dns_task) {
-        vTaskDelete(s_dns_task);
-        s_dns_task = NULL;
     }
     ESP_LOGI(TAG, "DNS server stopped");
 }

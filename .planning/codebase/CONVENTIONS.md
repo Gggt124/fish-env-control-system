@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: quality
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Conventions
@@ -72,3 +75,22 @@ focus: quality
 - `docs/development-notes.md` records concrete lessons from prior implementation/debugging work.
 - `REFERENCE.md` should record any external repositories used as architecture or API references.
 
+## Incremental Refresh: Planning And UI Conventions
+
+This section was refreshed from `.planning/` and `PRODUCT.md` only. Firmware
+conventions above remain from the prior full-map scan.
+
+- Planning uses vertical milestone phases with `PLAN.md`, `SUMMARY.md`, and
+  `VERIFICATION.md` artifacts under `.planning/phases/`.
+- `.planning/STATE.md` is the operational pointer for the next GSD action;
+  after Phase 11 it points to Phase 12 discussion or planning.
+- `PRODUCT.md` establishes a calm, clear, trustworthy product voice with
+  Thai-first copy and precise English technical nouns where useful.
+- Phase 11 state language requires contextual safety and recovery messages;
+  toast messages are supplemental and must not carry the only error or
+  pending-reboot explanation.
+- Phase 11 validation records rendered or device-backed evidence as `not-run`
+  when unavailable. Do not synthesize screenshots or imply visual success.
+- The embedded UI convention remains local plain HTML, CSS, and JavaScript
+  with visible focus, assistive status semantics, mobile touch targets, and no
+  remote runtime assets.

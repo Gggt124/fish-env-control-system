@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: concerns
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Concerns
@@ -70,3 +73,27 @@ The codebase is intentionally a local setup prototype. Most concerns are accepta
 - Flash encryption, NVS encryption, and secure boot.
 - Stronger per-client rate limiting.
 - Automated tests for session, input validation, Wi-Fi state transitions, and HTTP route behavior.
+
+## Incremental Refresh: Recorded Follow-Up
+
+This section was refreshed from `.planning/`, `.gitignore`,
+`.graphify_detect.json`, and `PRODUCT.md` only. Source-level concerns above are
+retained from the prior full-map scan and were not re-audited.
+
+- `.planning/debug/wifi-ap-sta-longrun-stuck.md` is resolved after bounded
+  diagnostics and a passing `13:38:10` real-use soak. Preserve its APSTA,
+  asynchronous-scan, stale-client, and radio evidence as regression context.
+- `.planning/milestones/v1.1-MILESTONE-AUDIT.md` retains a hardware follow-up:
+  install the documented external `4.7 kOhm` DS18B20 DQ-to-`3.3 V` pull-up
+  before the next hardware cycle.
+- The same milestone audit records retroactive Nyquist `VALIDATION.md`
+  documentation debt for Phases 7-10.
+- `.planning/STATE.md` records eight retained quick-task scanner rows as
+  bookkeeping debt, not unfinished firmware scope.
+- `.planning/phases/11-baseline-ui-audit-and-state-language/11-VERIFICATION.md`
+  records browser screenshots and device-backed state capture as `not-run`
+  after browser bootstrap failed twice. Phase 14 still owns full visual and
+  device-backed validation.
+- `.graphify_detect.json` reports a large generated corpus and includes ignored
+  managed dependency files. Keep graph tooling scoped so generated inventory
+  noise does not drive source-level conclusions.

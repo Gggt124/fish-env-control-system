@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: tech
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Integrations
@@ -76,3 +79,22 @@ This firmware has only local-device integrations. It does not call cloud APIs, d
 - No HTTPS certificate integration.
 - No WebSocket.
 - No filesystem such as SPIFFS or LittleFS.
+
+## Incremental Refresh: Product Integration Contract
+
+This section was refreshed from `.planning/` and `PRODUCT.md` only. Runtime
+integration descriptions above remain from the prior full-map scan.
+
+- `PRODUCT.md` confirms a local appliance boundary: owners and installers use
+  the UI without internet access, so cloud services and remote assets remain
+  excluded.
+- `.planning/PROJECT.md` records the shipped v1.1 integration baseline:
+  authenticated Thai-language dashboard and Hardware/Install page, SoftAP
+  fallback, STA configuration, captive DNS, bounded diagnostics, dual pump
+  relays, DS18B20 cooling, and active/pending hardware maps.
+- `.planning/phases/11-baseline-ui-audit-and-state-language/11-STATE-LANGUAGE.md`
+  adds a shared presentation contract for loading, success, error, empty,
+  disabled, unavailable, pending reboot, and disconnected states.
+- `.planning/phases/11-baseline-ui-audit-and-state-language/11-PHASE-12-BRIEF.md`
+  and `11-PHASE-13-BRIEF.md` preserve runtime behavior while improving local UI
+  semantics and recovery guidance.

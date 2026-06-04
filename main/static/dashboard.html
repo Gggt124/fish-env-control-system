@@ -10,14 +10,14 @@
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Fish Pump Control</span>
-    <div class="topbar-icons">
-        <span>&#128246;</span>
-        <span>&#9881;</span>
-    </div>
+    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
 </header>
 
-<!-- Sidebar (Desktop) -->
-<aside class="app-sidebar">
+<!-- Mobile Drawer Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="var s=document.getElementById('app-sidebar'),b=document.querySelector('.hamburger-btn');if(s){s.classList.remove('open');this.classList.remove('open');}if(b)b.setAttribute('aria-expanded','false');"></div>
+
+<!-- Sidebar (Desktop & Mobile) -->
+<aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">
@@ -106,7 +106,7 @@
         <div class="pump-runtime-actions">
             <button class="btn btn-primary" id="pump-start-btn" type="button" disabled>Start</button>
             <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled>Stop</button>
-            <span class="runtime-action-state" id="pump-action-state"></span>
+            <span class="runtime-action-state" id="pump-action-state" aria-live="polite"></span>
         </div>
         <div class="pump-alert hidden" id="pump-status-error"></div>
     </section>
@@ -176,7 +176,7 @@
             <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>Auto</button>
             <button class="btn btn-outline" id="cooling-mode-force-off" type="button" disabled>Force OFF</button>
             <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>Test ON</button>
-            <span class="runtime-action-state" id="cooling-mode-action-state"></span>
+            <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
         </div>
 
         <form class="cooling-config-form" id="cooling-config-form" novalidate>
@@ -218,7 +218,7 @@
         <div class="section-heading-row">
             <div>
                 <h3>ตั้งค่า Timer</h3>
-                <p>Float ON -> Timer 1 / Relay 1, Float OFF -> Timer 2 / Relay 2</p>
+                <p>Float OFF -> Timer 1 / Relay 1, Float ON -> Timer 2 / Relay 2</p>
             </div>
             <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
         </div>
@@ -226,7 +226,7 @@
         <form id="pump-config-form" novalidate>
             <div class="timer-grid">
                 <fieldset class="timer-card">
-                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย ON</legend>
+                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย OFF</legend>
                     <div class="duration-row">
                         <div class="duration-field">
                             <label for="timer1-on-min">ช่วงเปิด นาที</label>
@@ -260,7 +260,7 @@
                 </fieldset>
 
                 <fieldset class="timer-card">
-                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย OFF</legend>
+                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย ON</legend>
                     <div class="duration-row">
                         <div class="duration-field">
                             <label for="timer2-on-min">ช่วงเปิด นาที</label>

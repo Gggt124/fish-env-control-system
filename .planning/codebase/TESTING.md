@@ -1,6 +1,9 @@
 ---
 generated: 2026-05-18
+refreshed: 2026-06-02
+last_mapped_commit: 3ef2ac063ebead27920e5e340508c371f689cdca
 focus: quality
+scope: .gitignore,.graphify_detect.json,.planning,PRODUCT.md
 ---
 
 # Testing And Validation
@@ -76,3 +79,23 @@ Documented manual flow in `README.md`:
 
 Because the project relies on manual device validation, concurrency regressions in Wi-Fi events, scan timeout handling, AP fallback, and session expiry may only appear on hardware. Build success is necessary but not enough to prove runtime behavior.
 
+## Incremental Refresh: Validation Baseline
+
+This section was refreshed from `.planning/` only. Testing descriptions above
+remain from the prior full-map scan unless superseded below.
+
+- `.planning/milestones/v1.1-MILESTONE-AUDIT.md` records green build, syntax,
+  source-diff, schema-drift, hardware UAT, and long-uptime evidence for v1.1.
+- `.planning/debug/wifi-ap-sta-longrun-stuck.md` records a resolved APSTA,
+  asynchronous scan, and HTTP transport investigation with a passing
+  `13:38:10` real-use soak.
+- `.planning/phases/11-baseline-ui-audit-and-state-language/11-VERIFICATION.md`
+  records a documentation-scope Phase 11 pass: JavaScript syntax, offline
+  dependency scan, and the `main/static/` no-edit boundary passed.
+- Phase 11 browser screenshots and device-backed UI states remain `not-run`
+  after browser bootstrap failed twice.
+- `.planning/ROADMAP.md` assigns desktop/mobile screenshots, accessibility
+  review, closing Impeccable audit, ESP-IDF build, footprint comparison, and
+  stable v1.1 hardware regression to Phase 14.
+- `.planning/milestones/v1.1-MILESTONE-AUDIT.md` records missing retroactive
+  Nyquist `VALIDATION.md` artifacts for Phases 7-10 as documentation debt.

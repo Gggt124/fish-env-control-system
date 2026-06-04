@@ -9,14 +9,15 @@
 <body>
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
-    <span class="brand">System Status</span>
-    <div class="topbar-icons">
-        <a href="/dashboard" style="color:var(--primary);text-decoration:none;">&#8592;</a>
-    </div>
+    <span class="brand">Fish Pump Control</span>
+    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
 </header>
 
-<!-- Sidebar (Desktop) -->
-<aside class="app-sidebar">
+<!-- Mobile Drawer Overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="var s=document.getElementById('app-sidebar'),b=document.querySelector('.hamburger-btn');if(s){s.classList.remove('open');this.classList.remove('open');}if(b)b.setAttribute('aria-expanded','false');"></div>
+
+<!-- Sidebar (Desktop & Mobile) -->
+<aside class="app-sidebar" id="app-sidebar">
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">
