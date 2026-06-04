@@ -3,6 +3,7 @@
  * Vanilla JS, no frameworks. Compact for ESP32 flash.
  */
 
+
 /* ======== Session / Auth ======== */
 
 function getSessionToken() {

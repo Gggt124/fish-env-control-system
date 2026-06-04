@@ -12,7 +12,6 @@
 <header class="mobile-topbar">
     <span class="brand">Wi-Fi Setup</span>
     <div class="topbar-icons">
-        <button class="theme-toggle-btn btn btn-outline" style="min-width:44px;min-height:44px;padding:0;border:none;box-shadow:none;font-size:20px;margin-right:8px;" aria-label="Toggle Theme" onclick="window.toggleTheme()">🌙</button>
         <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
     </div>
 </header>
@@ -48,34 +47,25 @@
             <span class="nav-icon">&#128295;</span> Hardware/Install
         </a>
         <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
-            <span class="nav-icon">&#128682;</span> ออกจากระบบ
+            <span class="nav-icon">&#128682;</span> Logout
         </a>
     </nav>
-    <div class="sidebar-bottom">
-        <button class="theme-toggle-btn btn btn-outline btn-block" style="display:flex;justify-content:space-between;margin-bottom:16px;" onclick="window.toggleTheme()">
-            <span>Dark Mode</span> <span class="theme-icon">🌙</span>
-        </button>
-    </div>
+    <div class="sidebar-bottom"></div>
 </aside>
 
 <!-- Main Content -->
 <main class="main-content">
-    <!-- Context Bar (Desktop) -->
-    <div class="context-bar">
-        <div>
-            <h2>การตั้งค่าเครือข่าย</h2>
-            <p style="font-size:14px;color:var(--on-surface-variant);">จัดการการเชื่อมต่อ Wi-Fi สำหรับอุปกรณ์</p>
-        </div>
-        <div class="ap-pill" id="ap-pill">
-            <span class="pulse-dot"></span>
-            <span class="ap-label">AP Mode: Active</span>
-            <span class="ap-ip" id="ap-pill-ip">192.168.4.1</span>
-        </div>
-    </div>
-
     <div class="page-header">
         <div class="header-left">
             <h1>Wi-Fi Setup <span style="font-size:16px;font-weight:400;color:var(--on-surface-variant);">(การตั้งค่า Wi-Fi)</span></h1>
+            <p>จัดการการเชื่อมต่อ Wi-Fi สำหรับอุปกรณ์</p>
+        </div>
+        <div class="header-actions">
+            <div class="ap-pill" id="ap-pill">
+                <span class="pulse-dot"></span>
+                <span class="ap-label">AP Mode: Active</span>
+                <span class="ap-ip" id="ap-pill-ip">192.168.4.1</span>
+            </div>
         </div>
     </div>
 

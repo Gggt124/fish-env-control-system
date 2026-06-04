@@ -2798,6 +2798,7 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     return result;
 }
 
+
 /* --------------- Server Start --------------- */
 
 static web_route_diag_t s_routes[] = {
@@ -2829,6 +2830,7 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/api/cooling/config", .method = HTTP_GET,  .handler = handle_api_cooling_config_get },
     { .uri = "/api/cooling/config", .method = HTTP_POST, .handler = handle_api_cooling_config_post },
     { .uri = "/api/cooling/mode", .method = HTTP_POST, .handler = handle_api_cooling_mode_post },
+
     { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start },
     { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop },
 };

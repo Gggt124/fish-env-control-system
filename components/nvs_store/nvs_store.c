@@ -828,3 +828,5 @@ bool nvs_store_clear_cooling_settings(void)
     nvs_close(handle);
     return ok;
 }
+
+

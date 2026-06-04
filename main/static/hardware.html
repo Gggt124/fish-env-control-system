@@ -10,7 +10,9 @@
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Fish Pump Control</span>
-    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
+    <div class="topbar-icons">
+        <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
+    </div>
 </header>
 
 <!-- Mobile Drawer Overlay -->
@@ -47,8 +49,7 @@
         <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
             <span class="nav-icon">&#128682;</span> Logout
         </a>
-    </nav>
-    <div class="sidebar-bottom"></div>
+    </nav>
 </aside>
 
 <!-- Main Content -->

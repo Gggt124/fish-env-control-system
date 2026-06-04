@@ -60,6 +60,7 @@ Milestone v1.2 archived. No active phase.
 | 260603-88n | Pre-phase-14 audit fixes for blockers and unusable UI | 2026-06-03 | pending | [260603-88n-pre-phase-14-audit-fixes-for-blockers-an](./quick/260603-88n-pre-phase-14-audit-fixes-for-blockers-an/) |
 | 260603-l43 | Repair GSD health warnings and reconcile phase artifacts | 2026-06-03 | pending | [260603-l43-repair-gsd-health-warnings-and-reconcile](./quick/260603-l43-repair-gsd-health-warnings-and-reconcile/) |
 | 260603-thm | Implemented Dark Theme toggle, NVS persistence, and zero-flash local storage sync | 2026-06-03 | pending | [260603-theme-switch-nvs](./quick/260603-theme-switch-nvs/) |
+| 260604-rem | Removed dark theme, theme switcher, NVS persistence, and API endpoints | 2026-06-04 | d4c7d79 | [260604-remove-dark-theme](./quick/260604-remove-dark-theme/) |
 
 ## Deferred Items
 

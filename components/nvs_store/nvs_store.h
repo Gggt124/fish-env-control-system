@@ -102,6 +102,7 @@ nvs_store_cooling_settings_load_status_t nvs_store_load_cooling_settings(nvs_sto
 bool nvs_store_save_cooling_settings(const nvs_store_cooling_settings_t *settings);
 bool nvs_store_clear_cooling_settings(void);
 
+
 #ifdef __cplusplus
 }
 #endif

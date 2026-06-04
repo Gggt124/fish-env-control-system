@@ -71,32 +71,6 @@
     --font-mono: 'Courier New', Consolas, monospace;
 }
 
-:root.theme-dark {
-    --surface: #0a0b10;
-    --surface-dim: #050508;
-    --surface-bright: #12131a;
-    --surface-container-lowest: #0a0b10;
-    --surface-container-low: #0f111a;
-    --surface-container: #12131a;
-    --surface-container-high: #1a1c23;
-    --surface-container-highest: #22242c;
-    --on-surface: #f1f0f5;
-    --on-surface-variant: #a0a5b5;
-    --inverse-surface: #ffffff;
-    --inverse-on-surface: #12131a;
-    --outline: #717786;
-    --outline-variant: #414755;
-    --surface-tint: #0070eb;
-    --primary: #0070eb;
-    --on-primary: #ffffff;
-    --primary-hover: #1a80ff;
-    --overlay-bg: rgba(10, 11, 16, 0.65);
-    --bg-body: #050508;
-    
-    --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.5);
-    --shadow-login: 0px 8px 24px rgba(0, 0, 0, 0.8);
-    --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.4);
-}
 
 /* === Reset === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -474,13 +448,13 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
 .ap-pill {
     display: flex; align-items: center; gap: 12px;
     background: var(--surface-container); padding: 6px 12px;
-    border-radius: var(--radius-full); border: 1px solid rgba(193, 198, 215, 0.3);
+    border-radius: var(--radius-full); border: 1px solid var(--outline-variant);
 }
 
 .ap-pill .pulse-dot {
     position: relative;
     width: 8px; height: 8px; border-radius: 50%;
-    background: #10b981;
+    background: var(--secondary);
 }
 
 .ap-pill .pulse-dot::after {
@@ -488,7 +462,7 @@ h3 { font-size: 16px; font-weight: 600; line-height: 24px; }
     position: absolute;
     inset: -4px;
     border-radius: 50%;
-    background: #10b981;
+    background: var(--secondary);
     opacity: 0.4;
     animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
