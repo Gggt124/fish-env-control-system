@@ -2,6 +2,47 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v1.2 — Owner UI Polish And Hardware Readiness
+
+**Shipped:** 2026-06-04
+**Phases:** 4 | **Plans:** 13
+
+### What Was Built
+- Baseline UI audit with evidence-backed findings and Thai-first shared state language before any source edits.
+- Global accessible keyboard focus primitives, login error announcements, and mobile slide-out drawer navigation.
+- Owner dashboard hierarchy separating pump runtime/timer/relay from cooling operational channel.
+- Professional light-theme CSS system with HSL color palette, accessible contrast, and cleaned-up AI-generated artifacts.
+- Hardware/Install active vs pending GPIO map visual separation with DS18B20 4.7 kΩ pull-up guidance.
+- Wi-Fi scan/connect state flow improvements covering loading, error, empty, disconnected, and connected states.
+- Full visual regression validation: browser screenshots, accessibility audit, impeccable/ui-ux-pro-max review, build/footprint gate, and device-backed hardware regression.
+
+### What Worked
+- The no-edit Phase 11 baseline audit made all subsequent UI changes traceable and gave clear acceptance criteria.
+- Using `impeccable` and `ui-ux-pro-max` as design gates forced professional-quality outcomes without subjective debate.
+- CSS-only overhaul within offline constraints proved sufficient — no framework or CDN was needed.
+- Device-backed hardware regression in Phase 14 confirmed no runtime impact from UI changes.
+
+### What Was Inefficient
+- Phase 14 validation required 4 separate plans (browser evidence, accessibility, build, hardware) where some could have been combined.
+- Three quick tasks during the milestone (audit fixes, health repair, dark theme) added scope not originally in the v1.2 requirements.
+
+### Patterns Established
+- Audit before implement: baseline evidence pass → shared state language → implementation briefs → source edits.
+- CSS overhaul stays offline-safe: HSL tokens, system font stack, no CDN or remote assets.
+- Active vs pending hardware maps: visual separation reinforced as a UI pattern, not just a firmware contract.
+
+### Key Lessons
+1. A no-edit baseline audit phase pays for itself by establishing clear before/after evidence and scoped implementation briefs.
+2. Professional CSS aesthetics are achievable within offline embedded constraints using HSL color systems and careful typography.
+3. Mobile drawer navigation is essential for ESP32 operator dashboards where users connect from phones.
+
+### Cost Observations
+- Model mix: not recorded.
+- Sessions: not recorded.
+- Notable: the 2-day milestone was efficient due to the Phase 11 audit establishing clear scope boundaries.
+
+---
+
 ## Milestone: v1.1 — Dual Relay Cooling And Install UI
 
 **Shipped:** 2026-06-02
@@ -49,14 +90,18 @@
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
 | v1.1 | not recorded | 5 | Added real-board UAT plus a 13-hour whole-device soak before archive |
+| v1.2 | not recorded | 4 | Added no-edit baseline audit phase before UI edits; used impeccable/ui-ux-pro-max as design gates |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
 | v1.1 | Build, syntax check, 10 UAT cases, 13-hour soak | Hardware and long-uptime evidence | Offline embedded UI retained |
+| v1.2 | Build, footprint gate, browser screenshots, accessibility audit, device-backed hardware regression | 20/20 requirements, 4/4 Nyquist compliant | Professional CSS overhaul, mobile drawer, accessible focus — still zero external deps |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Keep relay boot behavior fail-safe and validate on the physical board.
 2. Keep the local UI independent from external runtime assets.
+3. Audit-before-implement eliminates rework — establish baseline evidence and acceptance criteria before source edits.
+

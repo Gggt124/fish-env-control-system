@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Owner UI Polish And Hardware Readiness
-status: human_needed
-last_updated: "2026-06-03T09:29:42.126Z"
-last_activity: 2026-06-03
+status: archived
+last_updated: "2026-06-04T02:49:00.000Z"
+last_activity: 2026-06-04
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
   completed_plans: 13
-  percent: 75
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-02)
+See: `.planning/PROJECT.md` (updated 2026-06-04)
 
-**Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.  
-**Current focus:** Phase 14 — Full UI Visual Regression Validation
+**Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
+**Current focus:** Planning next milestone
 
 ## Workflow
 
@@ -38,14 +38,12 @@ See: `.planning/PROJECT.md` (updated 2026-06-02)
 - Project context: `.planning/PROJECT.md`
 - Config: `.planning/config.json`
 - Research: `.planning/research/`
-- Latest archived requirements: `.planning/milestones/v1.1-REQUIREMENTS.md`
+- Latest archived requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
 - Roadmap: `.planning/ROADMAP.md`
 
 ## Current Phase
 
-### No Active Phase
-
-**Status:** Human verification needed for Phase 14
+Milestone v1.2 archived. No active phase.
 
 ### Quick Tasks Completed
 
@@ -61,6 +59,7 @@ See: `.planning/PROJECT.md` (updated 2026-06-02)
 | 260601-jk6 | Add board CPU, watchdog, heap, pump, and cooling soak diagnostics | 2026-06-01 | cc7576b | [260601-jk6-add-pump-cooling-board-runtime-cpu-workl](./quick/260601-jk6-add-pump-cooling-board-runtime-cpu-workl/) |
 | 260603-88n | Pre-phase-14 audit fixes for blockers and unusable UI | 2026-06-03 | pending | [260603-88n-pre-phase-14-audit-fixes-for-blockers-an](./quick/260603-88n-pre-phase-14-audit-fixes-for-blockers-an/) |
 | 260603-l43 | Repair GSD health warnings and reconcile phase artifacts | 2026-06-03 | pending | [260603-l43-repair-gsd-health-warnings-and-reconcile](./quick/260603-l43-repair-gsd-health-warnings-and-reconcile/) |
+| 260603-thm | Implemented Dark Theme toggle, NVS persistence, and zero-flash local storage sync | 2026-06-03 | pending | [260603-theme-switch-nvs](./quick/260603-theme-switch-nvs/) |
 
 ## Deferred Items
 
@@ -97,20 +96,16 @@ rows are bookkeeping debt, not unfinished firmware work.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 - The Phase 6 GPIO and cooling hardware contract TODO was moved to completed on 2026-06-02.
 
-Last activity: 2026-06-03
+Last activity: 2026-06-04
 
 ---
 *State initialized: 2026-05-18*
 
 ## Current Position
 
-Phase: 14 (Full UI Visual Regression Validation) — HUMAN_NEEDED
-Plan: 4 of 4 executed
-Status: Human verification needed
-Last activity: 2026-06-03 -- Phase 14 evidence recorded; current-firmware flash, screenshots, and hardware regression still pending
+Milestone: v1.2 — ARCHIVED on 2026-06-04
+Next step: `/gsd-new-milestone` to start next milestone
 
 ## Operator Next Steps
 
-- Flash or otherwise confirm the ESP32 is serving the current repository build.
-- Re-run 375px drawer validation and screenshot capture against current firmware.
-- Perform device-backed hardware regression for relay, timer, float, cooling, Wi-Fi, and APSTA flows before closing milestone v1.2.
+- Run `/gsd-new-milestone` to start the next milestone (questioning → research → requirements → roadmap).

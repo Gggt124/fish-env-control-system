@@ -1,5 +1,30 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.2 Owner UI Polish And Hardware Readiness (Shipped: 2026-06-04)
+
+**Phases completed:** 4 phases, 13 plans
+**Requirements:** 20/20 complete
+
+**Git stats:** 37 commits, 17 source files changed, +583 / -175 lines (source), 2026-06-02 to 2026-06-03
+
+**Key accomplishments:**
+
+- Baseline UI audit and Thai-first shared state language established before any source edits
+- Global accessible keyboard focus, login error announcements, and mobile drawer navigation
+- Owner dashboard hierarchy separating pump runtime and cooling operational channels
+- Professional light-theme CSS overhaul with HSL color system and accessible contrast
+- Hardware/Install active vs pending GPIO separation with DS18B20 4.7 kΩ pull-up guidance
+- Wi-Fi scan/connect state flow improvements for loading, error, empty, and connected states
+- Full visual regression validation with browser screenshots, accessibility audit, build/footprint gate, and device-backed hardware regression
+
+### Archives
+
+- Roadmap: `.planning/milestones/v1.2-ROADMAP.md`
+- Requirements: `.planning/milestones/v1.2-REQUIREMENTS.md`
+- Audit: `.planning/milestones/v1.2-MILESTONE-AUDIT.md`
+
+---
+
 ## v1.1 Dual Relay Cooling And Install UI (Shipped: 2026-06-02)
 
 **Phases completed:** 5 phases, 15 plans, 62 tasks
