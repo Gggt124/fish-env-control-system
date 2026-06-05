@@ -8,7 +8,7 @@
 - ✅ **v1.0 MVP** — Phases 1-5 (shipped 2026-05-20) — `.planning/milestones/v1.0-ROADMAP.md`
 - ✅ **v1.1 Dual Relay Cooling And Install UI** — Phases 6-10 (shipped 2026-06-02) — `.planning/milestones/v1.1-ROADMAP.md`
 - ✅ **v1.2 Owner UI Polish And Hardware Readiness** — Phases 11-14 (shipped 2026-06-04) — `.planning/milestones/v1.2-ROADMAP.md`
-- ⏳ **v1.3 UI Details Refinement** — Phase 15 (in progress)
+- ✅ **v1.3 UI Details Refinement** — Phase 15 (completed 2026-06-04)
 
 ## Phases
 
@@ -48,12 +48,13 @@
 ### Phase 15: UI Refinements
 
 **Goal**: Implement UI refinements for the Hardware page, Wi-Fi settings, owner dashboard forms, navigation, and styling to improve usability and contrast.
-**Mode**: Vertical MVP
+**Mode**: standard
 **Requirements**: UI-17, UI-18, UI-19, UI-20, UI-21, UI-22, UI-23, UI-24, REG-01
-**Plans:** 1 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md — UI refinements and regression safety
+- [x] 15-01-PLAN.md — UI refinements and regression safety
+- [x] 15-02-PLAN.md — Test ON Lockout Countdown
 
 ## Progress
 
@@ -74,7 +75,7 @@ Plans:
 | 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 14. Full UI Visual Regression Validation | v1.2 | 4/4 | Complete | 2026-06-03 |
-| 15. UI Refinements | v1.3 | 0/1 | In Progress | |
+| 15. UI Refinements | v1.3 | 1/1 | Complete | 2026-06-04 |
 
 ---
 *Roadmap created: 2026-05-18*
