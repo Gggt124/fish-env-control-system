@@ -3,10 +3,10 @@
 ## v1 Requirements
 
 ### Wi-Fi Setup UI Polish (WIFI-UI)
-- [ ] **WIFI-UI-01**: When no Wi-Fi network is selected, the credentials input panel is hidden and replaced by a clean, styled Empty State Card instructing the user to select a network from the left.
-- [ ] **WIFI-UI-02**: Clicking a network in the scan list hides the Empty State Card and displays the input form with a smooth fade-in transition.
-- [ ] **WIFI-UI-03**: Clicking the "Cancel" (ยกเลิก) button resets the selection, hiding the input form and restoring the Empty State Card.
-- [ ] **WIFI-UI-04**: The Empty State Card must use the existing CSS variables for design system consistency and completely avoid the performance-heavy CSS backdrop blur.
+- [x] **WIFI-UI-01**: When no Wi-Fi network is selected, the credentials input panel is hidden and replaced by a clean, styled Empty State Card instructing the user to select a network from the left.
+- [x] **WIFI-UI-02**: Clicking a network in the scan list hides the Empty State Card and displays the input form with a smooth fade-in transition.
+- [x] **WIFI-UI-03**: Clicking the "Cancel" (ยกเลิก) button resets the selection, hiding the input form and restoring the Empty State Card.
+- [x] **WIFI-UI-04**: The Empty State Card must use the existing CSS variables for design system consistency and completely avoid the performance-heavy CSS backdrop blur.
 
 ### Code Quality Review (CODE-REV)
 - [ ] **CODE-REV-01**: Review C firmware source files for compile warnings, logical bugs, and race conditions.
@@ -24,10 +24,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WIFI-UI-01 | Phase 16 | Pending |
-| WIFI-UI-02 | Phase 16 | Pending |
-| WIFI-UI-03 | Phase 16 | Pending |
-| WIFI-UI-04 | Phase 16 | Pending |
+| WIFI-UI-01 | Phase 16 | Complete |
+| WIFI-UI-02 | Phase 16 | Complete |
+| WIFI-UI-03 | Phase 16 | Complete |
+| WIFI-UI-04 | Phase 16 | Complete |
 | CODE-REV-01 | Phase 17 | Pending |
 | CODE-REV-02 | Phase 17 | Pending |
 | CODE-REV-03 | Phase 17 | Pending |

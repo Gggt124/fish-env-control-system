@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Wi-Fi UI Polish and Code Review
 status: planning
-last_updated: "2026-06-05T14:24:52.451Z"
+last_updated: "2026-06-05T16:57:00.297Z"
 last_activity: 2026-06-05 — Milestone v1.4 started
 progress:
   total_phases: 2
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -43,14 +43,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-05)
 
 ## Current Phase
 
-Phase 16: Wi-Fi Setup UI Polish (Not started)
+Phase 17: Code Quality Review & Stability Validation (Not started)
 
 ## Current Position
 
-Phase: Not started (defining plans)
-Plan: —
-Status: Planning Phase 16
-Last activity: 2026-06-05 — Milestone v1.4 started
+Phase: 16-wi-fi-setup-ui-polish
+Plan: 16-01
+Status: Completed Phase 16 Plan 01
+Last activity: 2026-06-05 — Completed Phase 16 Plan 01
 
 ## Deferred Items
 
@@ -86,7 +86,9 @@ rows are bookkeeping debt, not unfinished firmware work.
 - v1.1 planning preserves v1.0 phase directories and continues phase numbering from Phase 6.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
 - The Phase 6 GPIO and cooling hardware contract TODO was moved to completed on 2026-06-02.
+- v1.4 Phase 16: Used sequential opacity fade swapping (fade out, hide, show, reflow, fade in) in app.js and CSS transitions with a min-height: 300px styling constraint to polish the Wi-Fi setup page and avoid backdrop-filter compositing overhead on low-power devices.
 
 ## Operator Next Steps
 
-- Formulate plans for Phase 16 with /gsd-plan-phase
+- Formulate plans for Phase 17 with /gsd-plan-phase
+

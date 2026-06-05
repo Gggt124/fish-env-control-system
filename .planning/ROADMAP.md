@@ -54,7 +54,7 @@
 
 ### Active Milestone: v1.4 Wi-Fi UI Polish and Code Review
 
-- [ ] **Phase 16: Wi-Fi Setup UI Polish** - Clean empty state card and smooth form transition on the Wi-Fi setup page
+- [x] **Phase 16: Wi-Fi Setup UI Polish** - Clean empty state card and smooth form transition on the Wi-Fi setup page (completed 2026-06-05)
 - [ ] **Phase 17: Code Quality Review & Stability Validation** - Review firmware source and web assets to resolve warnings, console errors, and ensure runtime stability
 
 ## Phase Details
@@ -100,7 +100,7 @@
 | 13. Install Setup, Status UX, and Professional UI Overhaul | 3/3 | Complete | 2026-06-03 |
 | 14. Full UI Visual Regression Validation | 4/4 | Complete | 2026-06-03 |
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
-| 16. Wi-Fi Setup UI Polish | 0/1 | Planned    |  |
+| 16. Wi-Fi Setup UI Polish | 1/1 | Complete   | 2026-06-05 |
 | 17. Code Quality Review & Stability Validation | 0/0 | Not started | - |
 
 ---
