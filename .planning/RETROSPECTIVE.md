@@ -2,6 +2,41 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v1.4 — Wi-Fi UI Polish and Code Review
+
+**Shipped:** 2026-06-06
+**Phases:** 2 | **Plans:** 2
+
+### What Was Built
+- Polished the Wi-Fi setup page by replacing the performance-heavy backdrop blur disabled panel overlay with a clean, CSS-styled Empty State Card that guides the user to select a network.
+- Implemented a smooth sequential 0.2s fade transition (fade-out, hide, show, reflow, fade-in) in vanilla JS and CSS to swap panels cleanly without height shifts or layout jumps.
+- Added prefers-reduced-motion media query and JS overrides to immediately bypass animations for users with motion sensitivities.
+- Audited the custom C sources and static web assets for compiler warnings, syntax errors, and debug console logs, confirming a completely clean codebase.
+- Corrected the task watchdog comment alignment in `app_main.c` and timeout configuration in `app_config.h` to enforce a 10s custom watchdog timeout fed every 5s.
+
+### What Worked
+- Replacing backdrop-filter blur styles with simple opacity transitions solved composition performance issues on low-power client viewports while maintaining visual elegance.
+- Sequential transition choreography using setTimeout in `app.js` and layout reflows (`offsetHeight`) prevented overlapping panels during swapping.
+- Automated Python tests in `tests/test_ui_phase16.py` ensured regression coverage for empty state card styles, SVG namespaces, and transition duration overrides.
+
+### What Was Inefficient
+- We had a slight compile warning in CSS about SVG namespaces which required a fix commit, but this was resolved quickly by URL-encoding namespaces.
+
+### Patterns Established
+- Sequential fade-swapping (fadeSwap): Transition opacity first, wait for completion, swap visibility classes, force reflow, and fade in to prevent cumulative layout shifts in vanilla JS.
+- Watchdog configuration feedback loops: Match comment details directly with code definitions and actual runtime feeding periods to maintain readability and prevent false timeouts.
+
+### Key Lessons
+- Do not use CPU-heavy backdrop filters in local captive-portal setup screens since clients connect from low-power devices with varying hardware acceleration.
+- Check and align inline documentation/comments during code reviews; incorrect comments can mislead developers as much as code bugs.
+
+### Cost Observations
+- Model mix: not recorded.
+- Sessions: not recorded.
+- Notable: v1.4 successfully closed the milestone with 100% test success and zero warnings in custom sources.
+
+---
+
 ## Milestone: v1.3 — UI Details Refinement
 
 **Shipped:** 2026-06-05
@@ -129,6 +164,7 @@
 | v1.1 | not recorded | 5 | Added real-board UAT plus a 13-hour whole-device soak before archive |
 | v1.2 | not recorded | 4 | Added no-edit baseline audit phase before UI edits; used impeccable/ui-ux-pro-max as design gates |
 | v1.3 | not recorded | 1 | Refined interactive form UX and decoupled state-machine hysteresis control |
+| v1.4 | not recorded | 2 | Polished Wi-Fi setup view with Empty State Card and sequential transitions; completed full warnings and quality audit |
 
 ### Cumulative Quality
 
@@ -137,10 +173,10 @@
 | v1.1 | Build, syntax check, 10 UAT cases, 13-hour soak | Hardware and long-uptime evidence | Offline embedded UI retained |
 | v1.2 | Build, footprint gate, browser screenshots, accessibility audit, device-backed hardware regression | 20/20 requirements, 4/4 Nyquist compliant | Professional CSS overhaul, mobile drawer, accessible focus — still zero external deps |
 | v1.3 | Build, integration audit, E2E flow trace, device verification | 9/9 requirements, 1/1 phase complete | Dynamic form state, paused timer, and decoupled demand state |
+| v1.4 | Build, 13 automated tests, device verification | 7/7 requirements, 2/2 phases complete | Polished Wi-Fi layout, sequential panel transitions, and aligned watchdog timeout comments |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Keep relay boot behavior fail-safe and validate on the physical board.
 2. Keep the local UI independent from external runtime assets.
 3. Audit-before-implement eliminates rework — establish baseline evidence and acceptance criteria before source edits.
-
