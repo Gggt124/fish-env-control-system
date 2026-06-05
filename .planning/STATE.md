@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Wi-Fi UI Polish and Code Review
 status: planning
-last_updated: "2026-06-05T21:21:00Z"
-last_activity: 2026-06-05
+last_updated: "2026-06-05T14:24:52.451Z"
+last_activity: 2026-06-05 — Milestone v1.4 started
 progress:
   total_phases: 2
   completed_phases: 0
