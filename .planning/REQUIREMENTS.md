@@ -21,4 +21,14 @@
 - Changing the underlying connection state API or connection logic itself (focus is purely on UI/UX and codebase polish).
 
 ## Traceability
-*To be filled by the roadmapper*
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| WIFI-UI-01 | Phase 16 | Pending |
+| WIFI-UI-02 | Phase 16 | Pending |
+| WIFI-UI-03 | Phase 16 | Pending |
+| WIFI-UI-04 | Phase 16 | Pending |
+| CODE-REV-01 | Phase 17 | Pending |
+| CODE-REV-02 | Phase 17 | Pending |
+| CODE-REV-03 | Phase 17 | Pending |
+
