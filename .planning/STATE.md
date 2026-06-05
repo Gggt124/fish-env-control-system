@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: UI Details Refinement
-status: complete
-last_updated: "2026-06-05T12:37:25.329Z"
-last_activity: 2026-06-04
+status: active
+last_updated: "2026-06-05T12:41:00.000Z"
+last_activity: 2026-06-05
 progress:
   total_phases: 1
-  completed_phases: 1
-  total_plans: 2
+  completed_phases: 0
+  total_plans: 3
   completed_plans: 2
-  percent: 100
+  percent: 66
 ---
 
 # Project State
@@ -43,12 +43,13 @@ See: `.planning/PROJECT.md` (updated 2026-06-04)
 
 ## Current Phase
 
-Phase 15: UI Refinements (2/2 plans complete)
+Phase 15: UI Refinements (2/3 plans complete)
 
 - Plan 1: [15-01-PLAN.md](file:///c:/Users/Copter/OneDrive/Desktop/fish-pump-RelayTimerControl/.planning/phases/15-ui-refinements/15-01-PLAN.md)
 - Summary 1: [15-01-SUMMARY.md](file:///c:/Users/Copter/OneDrive/Desktop/fish-pump-RelayTimerControl/.planning/phases/15-ui-refinements/15-01-SUMMARY.md)
 - Plan 2: [15-02-PLAN.md](file:///c:/Users/Copter/OneDrive/Desktop/fish-pump-RelayTimerControl/.planning/phases/15-ui-refinements/15-02-PLAN.md)
 - Summary 2: [15-02-SUMMARY.md](file:///c:/Users/Copter/OneDrive/Desktop/fish-pump-RelayTimerControl/.planning/phases/15-ui-refinements/15-02-SUMMARY.md)
+- Plan 3: [15-03-PLAN.md](file:///c:/Users/Copter/OneDrive/Desktop/fish-pump-RelayTimerControl/.planning/phases/15-ui-refinements/15-03-PLAN.md)
 
 ### Quick Tasks Completed
 
@@ -109,9 +110,9 @@ Last activity: 2026-06-04
 
 ## Current Position
 
-Milestone: v1.3 — COMPLETE
-Next step: Milestone closeout
+Milestone: v1.3 — IN PROGRESS
+Next step: Execute 15-03-PLAN.md
 
 ## Operator Next Steps
 
-- Perform UAT audit and close the milestone
+- Execute 15-03-PLAN.md to resolve mode transition bug
