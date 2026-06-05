@@ -79,7 +79,9 @@
   1. The firmware builds successfully (`idf.py build`) without compile warnings.
   2. The web interface loads in the browser and functions without JavaScript console errors.
   3. The controller operates stably under manual testing and runs pump and cooling control without unexpected crashes, watchdog resets, or connection drops.
-**Plans**: TBD
+**Plans**: 1 plans
+- [ ] 17-01-PLAN.md — Code quality review, web assets audit, and manual regression checks
+
 
 ## Progress
 
@@ -101,7 +103,7 @@
 | 14. Full UI Visual Regression Validation | 4/4 | Complete | 2026-06-03 |
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
 | 16. Wi-Fi Setup UI Polish | 1/1 | Complete   | 2026-06-05 |
-| 17. Code Quality Review & Stability Validation | 0/0 | Not started | - |
+| 17. Code Quality Review & Stability Validation | 0/1 | Active | - |
 
 ---
 *Roadmap created: 2026-05-18*
