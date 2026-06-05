@@ -62,7 +62,7 @@
 
 ### 🚧 Next Milestone (Awaiting Definition)
 
-- [ ] Phase 18: TFT Display Integration (0/1 plans)
+- [ ] Phase 18: TFT Display Integration (0/2 plans)
 
 ## Phase Details
 
@@ -78,7 +78,9 @@
   1. The TFT display initializes successfully on boot.
   2. The display renders correct real-time status in landscape mode.
   3. The firmware builds without warnings and runs stably during regression testing.
-**Plans**: TBD
+**Plans**:
+- [ ] 18-01-PLAN.md — Initialize SPI bus, native esp_lcd ILI9341 driver, lightweight drawing primitives, and boot splash screen
+- [ ] 18-02-PLAN.md — Implement landscape status dashboard layout and FreeRTOS differential update task
 
 ## Progress
 
@@ -101,7 +103,7 @@
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
 | 16. Wi-Fi Setup UI Polish | 1/1 | Complete   | 2026-06-05 |
 | 17. Code Quality Review & Stability Validation | 1/1 | Complete | 2026-06-06 |
-| 18. TFT Display Integration | 0/1 | Not started | - |
+| 18. TFT Display Integration | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
