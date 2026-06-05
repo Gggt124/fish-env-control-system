@@ -1886,6 +1886,26 @@ function toggleWifiPasswordVisibility() {
     }
 }
 
+function fadeSwap(toHide, toShow) {
+    if (!toHide || !toShow) return;
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) {
+        toHide.classList.add('hidden');
+        toHide.style.opacity = '0';
+        toShow.classList.remove('hidden');
+        toShow.style.opacity = '1';
+        return;
+    }
+    toHide.style.opacity = '0';
+    setTimeout(function() {
+        toHide.classList.add('hidden');
+        toShow.style.opacity = '0';
+        toShow.classList.remove('hidden');
+        toShow.offsetHeight; // force reflow
+        toShow.style.opacity = '1';
+    }, 200);
+}
+
 function selectNetwork(ssid) {
     var items = document.querySelectorAll('.network-item');
     for (var i = 0; i < items.length; i++) {
@@ -1902,7 +1922,7 @@ function selectNetwork(ssid) {
 
     /* Enable input panel */
     var panel = document.getElementById('input-panel');
-    var overlay = document.getElementById('overlay-hint');
+    var emptyCard = document.getElementById('empty-state-card');
     var pwInput = document.getElementById('wifi-password');
     var showPwToggle = document.getElementById('show-wifi-password');
     var connectBtn = document.getElementById('connect-btn');
@@ -1911,7 +1931,11 @@ function selectNetwork(ssid) {
     var ipToggle = document.getElementById('static-ip-toggle');
     if (ipToggle) ipToggle.disabled = false;
     if (panel) panel.classList.remove('disabled');
-    if (overlay) overlay.style.display = 'none';
+    
+    if (panel && panel.classList.contains('hidden')) {
+        fadeSwap(emptyCard, panel);
+    }
+    
     if (pwInput) pwInput.disabled = false;
     if (showPwToggle) showPwToggle.disabled = false;
     if (connectBtn) connectBtn.disabled = false;
@@ -1935,7 +1959,7 @@ function clearSelection() {
     selectedSsid = null;
     var display = document.getElementById('selected-ssid-display');
     var panel = document.getElementById('input-panel');
-    var overlay = document.getElementById('overlay-hint');
+    var emptyCard = document.getElementById('empty-state-card');
     var pwInput = document.getElementById('wifi-password');
     var showPwToggle = document.getElementById('show-wifi-password');
     var connectBtn = document.getElementById('connect-btn');
@@ -1947,7 +1971,11 @@ function clearSelection() {
     toggleStaticIp();
     if (display) display.textContent = '---';
     if (panel) panel.classList.add('disabled');
-    if (overlay) overlay.style.display = '';
+    
+    if (emptyCard && emptyCard.classList.contains('hidden')) {
+        fadeSwap(panel, emptyCard);
+    }
+    
     if (pwInput) { pwInput.disabled = true; pwInput.value = ''; pwInput.type = 'password'; }
     if (showPwToggle) { showPwToggle.disabled = true; showPwToggle.checked = false; }
     if (connectBtn) connectBtn.disabled = true;
