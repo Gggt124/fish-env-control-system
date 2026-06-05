@@ -93,6 +93,11 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
  */
 void tft_display_draw_dashboard_skeleton(void);
 
+/**
+ * @brief Start the background periodic update FreeRTOS task.
+ */
+void tft_display_start_task(void);
+
 #ifdef __cplusplus
 }
 #endif
