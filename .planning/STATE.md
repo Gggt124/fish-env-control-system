@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: TFT Display Integration
-status: verifying
+status: human_needed
 last_updated: "2026-06-05T23:01:11.194Z"
 last_activity: 2026-06-05
 progress:
