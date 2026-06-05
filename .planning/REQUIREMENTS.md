@@ -9,9 +9,9 @@
 - [x] **WIFI-UI-04**: The Empty State Card must use the existing CSS variables for design system consistency and completely avoid the performance-heavy CSS backdrop blur.
 
 ### Code Quality Review (CODE-REV)
-- [ ] **CODE-REV-01**: Review C firmware source files for compile warnings, logical bugs, and race conditions.
-- [ ] **CODE-REV-02**: Review javascript/html files for console errors, styling inconsistency, or cleanup opportunities.
-- [ ] **CODE-REV-03**: Safely resolve all identified issues while preserving verified pump, cooling, and Wi-Fi soak stability.
+- [x] **CODE-REV-01**: Review C firmware source files for compile warnings, logical bugs, and race conditions.
+- [x] **CODE-REV-02**: Review javascript/html files for console errors, styling inconsistency, or cleanup opportunities.
+- [x] **CODE-REV-03**: Safely resolve all identified issues while preserving verified pump, cooling, and Wi-Fi soak stability.
 
 ## Future Requirements (Deferred)
 - None
@@ -28,7 +28,7 @@
 | WIFI-UI-02 | Phase 16 | Complete |
 | WIFI-UI-03 | Phase 16 | Complete |
 | WIFI-UI-04 | Phase 16 | Complete |
-| CODE-REV-01 | Phase 17 | Pending |
-| CODE-REV-02 | Phase 17 | Pending |
-| CODE-REV-03 | Phase 17 | Pending |
+| CODE-REV-01 | Phase 17 | Complete |
+| CODE-REV-02 | Phase 17 | Complete |
+| CODE-REV-03 | Phase 17 | Complete |
 

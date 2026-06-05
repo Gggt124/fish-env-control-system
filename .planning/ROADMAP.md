@@ -55,7 +55,7 @@
 ### Active Milestone: v1.4 Wi-Fi UI Polish and Code Review
 
 - [x] **Phase 16: Wi-Fi Setup UI Polish** - Clean empty state card and smooth form transition on the Wi-Fi setup page (completed 2026-06-05)
-- [ ] **Phase 17: Code Quality Review & Stability Validation** - Review firmware source and web assets to resolve warnings, console errors, and ensure runtime stability
+- [x] **Phase 17: Code Quality Review & Stability Validation** - Review firmware source and web assets to resolve warnings, console errors, and ensure runtime stability (completed 2026-06-06)
 
 ## Phase Details
 
@@ -80,7 +80,7 @@
   2. The web interface loads in the browser and functions without JavaScript console errors.
   3. The controller operates stably under manual testing and runs pump and cooling control without unexpected crashes, watchdog resets, or connection drops.
 **Plans**: 1 plans
-- [ ] 17-01-PLAN.md — Code quality review, web assets audit, and manual regression checks
+- [x] 17-01-PLAN.md — Code quality review, web assets audit, and manual regression checks
 
 
 ## Progress
@@ -103,7 +103,7 @@
 | 14. Full UI Visual Regression Validation | 4/4 | Complete | 2026-06-03 |
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
 | 16. Wi-Fi Setup UI Polish | 1/1 | Complete   | 2026-06-05 |
-| 17. Code Quality Review & Stability Validation | 0/1 | Active | - |
+| 17. Code Quality Review & Stability Validation | 1/1 | Complete | 2026-06-06 |
 
 ---
 *Roadmap created: 2026-05-18*

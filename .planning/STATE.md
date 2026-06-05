@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Wi-Fi UI Polish and Code Review
-status: planning
-last_updated: "2026-06-05T16:57:00.297Z"
-last_activity: 2026-06-05 — Milestone v1.4 started
+status: Awaiting next milestone
+last_updated: "2026-06-06T00:45:00.000Z"
+last_activity: 2026-06-06 — Phase 17 completed
 progress:
   total_phases: 2
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 50
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -43,14 +43,14 @@ See: `.planning/PROJECT.md` (updated 2026-06-05)
 
 ## Current Phase
 
-Phase 17: Code Quality Review & Stability Validation (Not started)
+Phase 17: Code Quality Review & Stability Validation (1/1 plan complete)
 
 ## Current Position
 
-Phase: 16-wi-fi-setup-ui-polish
-Plan: 16-01
-Status: Completed Phase 16 Plan 01
-Last activity: 2026-06-05 — Completed Phase 16 Plan 01
+Phase: Milestone v1.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-06 — Phase 17 completed
 
 ## Deferred Items
 
@@ -91,4 +91,3 @@ rows are bookkeeping debt, not unfinished firmware work.
 ## Operator Next Steps
 
 - Formulate plans for Phase 17 with /gsd-plan-phase
-
