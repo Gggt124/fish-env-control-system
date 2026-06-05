@@ -12,7 +12,15 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Milestone Status
 
-**Latest shipped:** v1.2 Owner UI Polish And Hardware Readiness on 2026-06-04
+**Latest shipped:** v1.3 UI Details Refinement on 2026-06-05
+
+## Current Milestone: v1.4 Wi-Fi UI Polish and Code Review
+
+**Goal:** Polish the Wi-Fi configuration page UI and perform a comprehensive code review to improve codebase quality and stability.
+
+**Target features:**
+- Replace the blurred overlay in the Wi-Fi setup page with a clean Empty State Card (Option 1) that transitions to the input form when a network is selected.
+- Conduct a code quality review across firmware components (like wifi_manager, web_server, session) and fix bugs or warnings.
 
 ## Requirements
 
@@ -180,4 +188,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 after v1.3 milestone completion*
+*Last updated: 2026-06-05 after v1.4 milestone start*
