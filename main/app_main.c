@@ -620,7 +620,7 @@ void app_main(void)
         ESP_LOGI(TAG, "DNS fallback server started (port 53)");
     }
 
-    /* 8. Initialize task watchdog (30s timeout with panic) */
+    /* 8. Initialize task watchdog (10s timeout with panic) */
     esp_task_wdt_config_t wdt_config = {
         .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
         .idle_core_mask = 0,

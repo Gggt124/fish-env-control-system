@@ -12,15 +12,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Milestone Status
 
-**Latest shipped:** v1.3 UI Details Refinement on 2026-06-05
-
-## Current Milestone: v1.4 Wi-Fi UI Polish and Code Review
-
-**Goal:** Polish the Wi-Fi configuration page UI and perform a comprehensive code review to improve codebase quality and stability.
-
-**Target features:**
-- Replace the blurred overlay in the Wi-Fi setup page with a clean Empty State Card (Option 1) that transitions to the input form when a network is selected.
-- Conduct a code quality review across firmware components (like wifi_manager, web_server, session) and fix bugs or warnings.
+**Latest shipped:** v1.4 Wi-Fi UI Polish and Code Review on 2026-06-06
 
 ## Requirements
 
@@ -78,6 +70,13 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ UI-22: Pump and Cooling Settings forms unsaved warning and button disable on value reversion — v1.3
 - ✓ UI-23: Logout menu requires confirmation dialog — v1.3
 - ✓ UI-24: "Force OFF" cooling mode button styled red danger button (btn-danger) — v1.3
+- ✓ WIFI-UI-01: Hidden credentials panel when no network selected, styled Empty State Card — v1.4
+- ✓ WIFI-UI-02: Clicking scan network fades out empty state and fades in credentials panel — v1.4
+- ✓ WIFI-UI-03: Clicking Cancel button restores empty state card — v1.4
+- ✓ WIFI-UI-04: Style system uses native CSS variables and strictly avoids GPU-heavy backdrop blur — v1.4
+- ✓ CODE-REV-01: Review C firmware source files for warnings, logical bugs, and race conditions — v1.4
+- ✓ CODE-REV-02: Review JS/HTML assets for console errors, formatting, and leftover debug statements — v1.4
+- ✓ CODE-REV-03: Safely resolve all identified issues while maintaining stable operation — v1.4
 
 ### Active
 
@@ -95,7 +94,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Current State
 
-**Shipped:** v1.3 UI Details Refinement on 2026-06-05
+**Shipped:** v1.4 Wi-Fi UI Polish and Code Review on 2026-06-06
 
 The firmware is a complete local ESP32 pump and cooling controller with:
 - GPIO32 float input selecting GPIO26 Relay 1 or GPIO27 Relay 2 timer channels
@@ -104,11 +103,12 @@ The firmware is a complete local ESP32 pump and cooling controller with:
 - Professional, accessible Thai-language owner dashboard with operator-first hierarchy
 - Consistent mobile-responsive app shell with drawer navigation
 - Hardware/Install page with active/pending GPIO map and DS18B20 pull-up guidance
-- Wi-Fi scan/connect with clear state flow, Status diagnostics, and accessible login
+- Wi-Fi setup page polished with a CSS-styled Empty State Card and sequential 0.2s fade-in/fade-out panel switching (with instant transition for prefers-reduced-motion)
 - SoftAP fallback, STA configuration, captive DNS, and bounded long-uptime diagnostics
 - Interactive forms dirty checking, Thai confirmation dialogs, and simplified buttons to improve UX
 - Duration-based Test ON countdown timer that pauses during active compressor protection lockout
 - Isolated Auto mode demand state using s_auto_demand to prevent stuck cooling relay on transitions
+- Code reviewed, warning-free build, aligned task watchdog configuration and comments (10s watchdog timeout fed every 5s)
 - Real-board hardware UAT and a `13:38:10` soak with no reboot, watchdog trip, or monotonic heap loss
 
 **Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.0.1.
@@ -135,7 +135,7 @@ Recommended hardware contract (validated):
 - **Board**: ESP32 DevKit V1 30-pin / classic ESP32 — pin recommendations and build target assume this board.
 - **Float input**: Binary switch only — do not model real hardware as continuous water level.
 - **GPIO safety**: Use conservative default pins and configurable polarity — relay modules vary and wrong polarity can energize the pump unexpectedly.
-- **Boot behavior**: Auto-start is disabled by default but must be user-configurable and persisted.
+- **Boot behavior**: Auto-start is disabled by default but must be user-toggleable and persisted.
 - **Local operation**: UI must work without internet because SoftAP setup mode has no external connectivity.
 - **Existing foundation**: Preserve Wi-Fi setup, SoftAP fallback, login/session, captive DNS, and status routes while adding pump control.
 - **Validation**: `idf.py build` remains the main automated validation gate; hardware behavior needs manual flash/device testing.
@@ -169,6 +169,8 @@ Recommended hardware contract (validated):
 | Active vs pending GPIO map visual separation | Installer needs to see what is live vs what requires reboot before wiring changes | ✓ Good |
 | Use esp_timer_get_time() to calculate elapsed time in milliseconds for the test timer rather than a static deadline | Allows the Test ON countdown to be selectively paused during active compressor protection lockout | ✓ Good |
 | Isolate Auto mode demand tracking using a dedicated s_auto_demand variable | Ensures mode transitions (like from Test ON back to Auto) immediately evaluate conditions without being biased by the physical relay's prior state | ✓ Good |
+| Replace CPU-heavy backdrop blur panel with Empty State Card and sequential fade transitions | Solves low-power GPU repaint issues and improves UX visual clarity | ✓ Good |
+| Align task watchdog timeout default to 10s and feed loop at 5s | Resolves configuration comment drift and provides conservative CPU starvation protection | ✓ Good |
 
 ## Evolution
 
@@ -188,4 +190,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 after v1.4 milestone start*
+*Last updated: 2026-06-06 after v1.4 milestone completion*

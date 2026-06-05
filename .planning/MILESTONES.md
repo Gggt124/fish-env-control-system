@@ -1,5 +1,16 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.4 Wi-Fi UI Polish and Code Review (Shipped: 2026-06-05)
+
+**Phases completed:** 2 phases, 2 plans, 6 tasks
+
+**Key accomplishments:**
+
+- Replaced the CPU-heavy backdrop blur panel overlay with a clean Empty State Card, implementing smooth sequential fade transitions and prefers-reduced-motion overrides.
+- Verified that custom source code builds cleanly with zero compilation warnings, checked static frontend files for debug logs, corrected the watchdog timeout configuration to align with decision D-07, and confirmed stable hardware regression operation.
+
+---
+
 ## v1.3 UI Details Refinement (Shipped: 2026-06-05)
 
 **Phases completed:** 1 phases, 3 plans, 4 tasks
