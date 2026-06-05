@@ -35,6 +35,7 @@ static bool s_fault;
 static bool s_temperature_valid;
 static bool s_relay_energized;
 static bool s_cooling_demand;
+static bool s_auto_demand;
 static bool s_lockout_active;
 static float s_temperature_c;
 static cooling_control_mode_t s_mode = COOLING_CONTROL_MODE_FORCE_OFF;
@@ -170,6 +171,7 @@ static void reset_runtime_state_locked(void)
     s_temperature_valid = false;
     s_relay_energized = false;
     s_cooling_demand = false;
+    s_auto_demand = false;
     s_lockout_active = false;
     s_temperature_c = 0.0f;
     s_mode = COOLING_CONTROL_MODE_FORCE_OFF;
@@ -298,19 +300,23 @@ static void update_control_locked(int64_t now_ms)
 
     if (s_mode == COOLING_CONTROL_MODE_FORCE_OFF) {
         s_blocked_reason = COOLING_CONTROL_BLOCKED_FORCE_OFF;
+        s_auto_demand = false;
     } else if (s_mode == COOLING_CONTROL_MODE_TEST_ON) {
         demand = true;
         may_energize = true;
+        s_auto_demand = false;
     } else if (!cooling_sensor_ready_locked()) {
         s_blocked_reason = COOLING_CONTROL_BLOCKED_SENSOR_FAULT;
+        s_auto_demand = false;
     } else {
         float threshold_c = (float)s_config.threshold_c_x10 / 10.0f;
         float off_c = threshold_c - ((float)s_config.hysteresis_c_x10 / 10.0f);
-        if (s_relay_energized) {
+        if (s_auto_demand) {
             demand = s_temperature_c >= off_c;
         } else {
             demand = s_temperature_c >= threshold_c;
         }
+        s_auto_demand = demand;
         may_energize = demand;
     }
 
