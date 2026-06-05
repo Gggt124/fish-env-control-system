@@ -68,7 +68,7 @@
   2. Clicking a network in the scan list smoothly fades in the Wi-Fi credentials input form and hides the Empty State Card.
   3. Clicking the "Cancel" (ยกเลิก) button clears the selected network, hides the input form, and restores the Empty State Card.
   4. The Wi-Fi configuration UI operates smoothly and fits the styling/theme design system without CSS backdrop blur performance issues.
-**Plans**: TBD
+**Plans**: [16-01-PLAN.md](phases/16-wi-fi-setup-ui-polish/16-01-PLAN.md)
 **UI hint**: yes
 
 ### Phase 17: Code Quality Review & Stability Validation
@@ -100,7 +100,7 @@
 | 13. Install Setup, Status UX, and Professional UI Overhaul | 3/3 | Complete | 2026-06-03 |
 | 14. Full UI Visual Regression Validation | 4/4 | Complete | 2026-06-03 |
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
-| 16. Wi-Fi Setup UI Polish | 0/0 | Not started | - |
+| 16. Wi-Fi Setup UI Polish | 0/1 | Planned    |  |
 | 17. Code Quality Review & Stability Validation | 0/0 | Not started | - |
 
 ---
