@@ -14,7 +14,7 @@ CONFIG_BOOTLOADER_LOG_LEVEL_ERROR=y
 # Flash size: actual hardware is 4MB
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
-# Disable ESP-IDF auto TWDT init (we init it ourselves in app_main with 30s timeout + panic)
+# Disable ESP-IDF auto TWDT init (we init it ourselves in app_main with 10s timeout + panic)
 # CONFIG_ESP_TASK_WDT_INIT is not set
 
 # HTTP server plus captive DNS need socket headroom during browser refreshes.
