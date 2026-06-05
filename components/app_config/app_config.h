@@ -82,6 +82,13 @@ extern "C" {
 #define APP_TEMPLATE_PUMP_AUTO_START_DEFAULT false
 #define APP_TEMPLATE_PUMP_FLOAT_DEBOUNCE_MS 100
 
+#define APP_TEMPLATE_TFT_CS_GPIO            5
+#define APP_TEMPLATE_TFT_RESET_GPIO         22
+#define APP_TEMPLATE_TFT_DC_GPIO            21
+#define APP_TEMPLATE_TFT_MOSI_GPIO          23
+#define APP_TEMPLATE_TFT_SCK_GPIO           18
+#define APP_TEMPLATE_TFT_LED_GPIO           4
+
 #ifdef __cplusplus
 }
 #endif

@@ -3,6 +3,7 @@ idf_component_register(
         "app_main.c"
         "web_server.c"
         "dns_server.c"
+        "tft_display.c"
     INCLUDE_DIRS
         "."
     EMBED_FILES
@@ -25,4 +26,5 @@ idf_component_register(
         esp_wifi
         cjson
         mdns
+        esp_lcd
 )
