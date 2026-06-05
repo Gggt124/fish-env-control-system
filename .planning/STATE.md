@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Wi-Fi UI Polish and Code Review
-status: Awaiting next milestone
-last_updated: "2026-06-05T17:57:45.493Z"
-last_activity: 2026-06-05 — Milestone v1.4 completed and archived
+milestone: v1.5
+milestone_name: TFT Display Integration
+status: planning
+last_updated: "2026-06-05T22:20:24.998Z"
+last_activity: 2026-06-05
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -47,10 +47,10 @@ Phase 17: Code Quality Review & Stability Validation (1/1 plan complete)
 
 ## Current Position
 
-Phase: Milestone v1.4 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-05 — Milestone v1.4 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-05 — Milestone v1.5 started
 
 ## Deferred Items
 

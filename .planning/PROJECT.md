@@ -14,6 +14,16 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 **Latest shipped:** v1.4 Wi-Fi UI Polish and Code Review on 2026-06-06
 
+## Current Milestone: v1.5 TFT Display Integration
+
+**Goal:** Integrate the 2.4" TFT (ILI9341) display using native `esp_lcd` to display real-time pump, timer, temperature, and network status in landscape mode.
+
+**Target features:**
+- TFT-01: SPI and native `esp_lcd` initialization for ILI9341.
+- TFT-02: Lightweight text/shapes rendering wrapper.
+- TFT-03: Landscape status dashboard rendering.
+- TFT-04: Periodic update task integration (non-blocking).
+
 ## Requirements
 
 ### Validated
@@ -80,7 +90,10 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ### Active
 
-(None — planning next milestone)
+- [ ] TFT-01: Initialize SPI bus (VSPI) and native `esp_lcd` driver for ILI9341 display.
+- [ ] TFT-02: Implement a lightweight display rendering module for custom fonts and shapes.
+- [ ] TFT-03: Render the landscape dashboard showing pump state, active timer, countdown, temperature, cooling relay state, float switch, and Wi-Fi IP.
+- [ ] TFT-04: Update the screen periodically (e.g., every 500ms or on state change) without blocking the main event loop or watchdog.
 
 ### Out of Scope
 
@@ -190,4 +203,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-06 after v1.4 milestone completion*
+*Last updated: 2026-06-06 for active milestone v1.5 initiation*
