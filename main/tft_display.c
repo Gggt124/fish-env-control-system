@@ -252,3 +252,31 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
         }
     }
 }
+
+void tft_display_draw_dashboard_skeleton(void) {
+    tft_clear(TFT_COLOR_BLACK);
+    
+    // Top status bar horizontal divider line
+    tft_fill_rect(0, 24, TFT_WIDTH, 1, TFT_COLOR_GRAY);
+    
+    // Vertical column divider line
+    tft_fill_rect(160, 24, 1, TFT_HEIGHT - 24, TFT_COLOR_GRAY);
+    
+    // Top status bar static labels
+    tft_draw_string(10, 5, "WiFi: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(175, 5, "Uptime: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    
+    // Left Column (Pump Channel)
+    tft_draw_string(20, 35, "PUMP CHANNEL", TFT_COLOR_CYAN, TFT_COLOR_BLACK);
+    tft_draw_string(10, 65, "STATUS: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(10, 95, "Active: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(10, 125, "Phase: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(10, 155, "Remaining: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    
+    // Right Column (Cooling Channel)
+    tft_draw_string(175, 35, "COOLING CHANNEL", TFT_COLOR_CYAN, TFT_COLOR_BLACK);
+    tft_draw_string(170, 65, "Temp: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(170, 95, "Cooling: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(170, 125, "Mode: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+    tft_draw_string(170, 155, "Lockout: ", TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+}
