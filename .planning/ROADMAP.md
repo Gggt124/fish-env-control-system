@@ -62,16 +62,22 @@
 
 ### 🚧 Next Milestone (Awaiting Definition)
 
-- [ ] Phase 18: Next Stage Planning & Feature Backlog Transition
+- [ ] Phase 18: TFT Display Integration (0/1 plans)
 
 ## Phase Details
 
-### Phase 18: Next Stage Planning & Feature Backlog Transition
-**Goal**: Define requirements and roadmap for subsequent firmware and dashboard improvements.
+### Phase 18: TFT Display Integration
+**Goal**: Integrate the 2.4" TFT (ILI9341) display using native `esp_lcd` to display real-time pump, timer, temperature, and network status in landscape mode.
 **Depends on**: Phase 17
-**Requirements**: None (planning phase)
+**Requirements**:
+  - TFT-01: Initialize SPI bus (VSPI) and native `esp_lcd` driver for ILI9341 display.
+  - TFT-02: Implement a lightweight display rendering module for custom fonts and shapes.
+  - TFT-03: Render the landscape dashboard showing pump state, active timer, countdown, temperature, cooling relay state, float switch, and Wi-Fi IP.
+  - TFT-04: Update the screen periodically (e.g., every 500ms or on state change) without blocking the main event loop or watchdog.
 **Success Criteria** (what must be TRUE):
-  1. Next milestone goals and requirements are established.
+  1. The TFT display initializes successfully on boot.
+  2. The display renders correct real-time status in landscape mode.
+  3. The firmware builds without warnings and runs stably during regression testing.
 **Plans**: TBD
 
 ## Progress
@@ -95,7 +101,7 @@
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
 | 16. Wi-Fi Setup UI Polish | 1/1 | Complete   | 2026-06-05 |
 | 17. Code Quality Review & Stability Validation | 1/1 | Complete | 2026-06-06 |
-| 18. Next Stage Planning | 0/1 | Not started | - |
+| 18. TFT Display Integration | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-05-18*
