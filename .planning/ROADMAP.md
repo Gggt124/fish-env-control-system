@@ -50,12 +50,12 @@
 **Goal**: Implement UI refinements for the Hardware page, Wi-Fi settings, owner dashboard forms, navigation, and styling to improve usability and contrast.
 **Mode**: standard
 **Requirements**: UI-17, UI-18, UI-19, UI-20, UI-21, UI-22, UI-23, UI-24, REG-01
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 15-01-PLAN.md — UI refinements and regression safety
 - [x] 15-02-PLAN.md — Test ON Lockout Countdown
-- [ ] 15-03-PLAN.md — Test ON to Auto Transition
+- [x] 15-03-PLAN.md — Test ON to Auto Transition
 
 ## Progress
 
@@ -76,7 +76,7 @@ Plans:
 | 12. App Shell Login And Owner Dashboard | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 13. Install Setup, Status UX, and Professional UI Overhaul | v1.2 | 3/3 | Complete | 2026-06-03 |
 | 14. Full UI Visual Regression Validation | v1.2 | 4/4 | Complete | 2026-06-03 |
-| 15. UI Refinements | v1.3 | 2/3 | In Progress | |
+| 15. UI Refinements | v1.3 | 3/3 | Complete   | 2026-06-05 |
 
 ---
 *Roadmap created: 2026-05-18*
