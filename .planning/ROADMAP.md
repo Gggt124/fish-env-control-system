@@ -62,7 +62,7 @@
 
 ### 🚧 Next Milestone (Awaiting Definition)
 
-- [ ] Phase 18: TFT Display Integration (0/2 plans)
+- [x] Phase 18: TFT Display Integration (0/2 plans) (completed 2026-06-05)
 
 ## Phase Details
 
@@ -80,7 +80,7 @@
   3. The firmware builds without warnings and runs stably during regression testing.
 **Plans**:
 - [x] 18-01-PLAN.md — Initialize SPI bus, native esp_lcd ILI9341 driver, lightweight drawing primitives, and boot splash screen
-- [ ] 18-02-PLAN.md — Implement landscape status dashboard layout and FreeRTOS differential update task
+- [x] 18-02-PLAN.md — Implement landscape status dashboard layout and FreeRTOS differential update task
 
 ## Progress
 
@@ -103,7 +103,7 @@
 | 15. UI Refinements | 3/3 | Complete | 2026-06-05 |
 | 16. Wi-Fi Setup UI Polish | 1/1 | Complete   | 2026-06-05 |
 | 17. Code Quality Review & Stability Validation | 1/1 | Complete | 2026-06-06 |
-| 18. TFT Display Integration | 1/2 | In Progress|  |
+| 18. TFT Display Integration | 2/2 | Complete   | 2026-06-05 |
 
 ---
 *Roadmap created: 2026-05-18*
