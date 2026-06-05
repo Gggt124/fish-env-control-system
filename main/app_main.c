@@ -7,6 +7,7 @@
 #include "session.h"
 #include "web_server.h"
 #include "dns_server.h"
+#include "tft_display.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_err.h"
@@ -475,6 +476,15 @@ void app_main(void)
         return;
     }
     ESP_LOGI(TAG, "NVS initialized");
+
+    /* Initialize TFT display */
+    if (tft_display_init() == ESP_OK) {
+        tft_clear(TFT_COLOR_BLACK);
+        // Draw centered high-contrast "Booting..." splash screen
+        tft_draw_string_x2(80, 60, "Booting...", TFT_COLOR_GREEN, TFT_COLOR_BLACK);
+        tft_draw_string(44, 110, APP_TEMPLATE_NAME, TFT_COLOR_WHITE, TFT_COLOR_BLACK);
+        tft_draw_string(136, 135, APP_TEMPLATE_FIRMWARE_VERSION, TFT_COLOR_GRAY, TFT_COLOR_BLACK);
+    }
 
     hardware_map_t active_hardware_map;
     nvs_store_hardware_map_load_status_t hardware_map_status =
