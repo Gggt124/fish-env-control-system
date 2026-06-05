@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: UI Details Refinement
-status: active
-last_updated: "2026-06-05T12:50:41.130Z"
+status: Awaiting next milestone
+last_updated: "2026-06-05T12:57:01.753Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 1
@@ -111,9 +111,11 @@ Last activity: 2026-06-05
 
 ## Current Position
 
-Milestone: v1.3 — COMPLETED
-Next step: None (Milestone complete)
+Phase: Milestone v1.3 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-05 — Milestone v1.3 completed and archived
 
 ## Operator Next Steps
 
-- All active plans for Milestone v1.3 have been completed.
+- Start the next milestone with /gsd-new-milestone

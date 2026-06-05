@@ -1,5 +1,26 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.3 UI Details Refinement (Shipped: 2026-06-05)
+
+**Phases completed:** 1 phases, 3 plans, 4 tasks
+**Requirements:** 9/9 complete
+
+**Known deferred items at close:** 10 scanner bookkeeping rows (see `.planning/STATE.md` Deferred Items)
+
+**Key accomplishments:**
+
+- Replaced absolute test deadline with duration-based countdown logic in cooling control, enabling the Test ON timer to pause during active compressor protection lockout.
+- Isolated Auto mode demand state using s_auto_demand to prevent the cooling relay from getting stuck ON during transitions from Test ON to Auto mode.
+- Added interactive forms dirty checking, Thai confirmation dialogs, and simplified disconnect buttons to improve UI/UX.
+
+### Archives
+
+- Roadmap: `.planning/milestones/v1.3-ROADMAP.md`
+- Requirements: `.planning/milestones/v1.3-REQUIREMENTS.md`
+- Audit: `.planning/milestones/v1.3-MILESTONE-AUDIT.md`
+
+---
+
 ## v1.2 Owner UI Polish And Hardware Readiness (Shipped: 2026-06-04)
 
 **Phases completed:** 4 phases, 13 plans

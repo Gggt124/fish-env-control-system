@@ -450,12 +450,58 @@ corresponding skills/workflows request subagent execution:
 - `gsd-project-researcher`
 - `gsd-research-synthesizer`
 - `gsd-roadmapper`
+- `gsd-advisor-researcher`
+- `gsd-ai-researcher`
+- `gsd-assumptions-analyzer`
+- `gsd-code-fixer`
+- `gsd-code-reviewer`
+- `gsd-codebase-mapper`
+- `gsd-debug-session-manager`
+- `gsd-debugger`
+- `gsd-doc-classifier`
+- `gsd-doc-synthesizer`
+- `gsd-doc-verifier`
+- `gsd-doc-writer`
+- `gsd-domain-researcher`
+- `gsd-eval-auditor`
+- `gsd-eval-planner`
+- `gsd-executor`
+- `gsd-framework-selector`
+- `gsd-integration-checker`
+- `gsd-intel-updater`
+- `gsd-nyquist-auditor`
+- `gsd-pattern-mapper`
+- `gsd-phase-researcher`
+- `gsd-plan-checker`
+- `gsd-planner`
+- `gsd-project-researcher`
+- `gsd-research-synthesizer`
+- `gsd-roadmapper`
 - `gsd-security-auditor`
 - `gsd-ui-auditor`
 - `gsd-ui-checker`
 - `gsd-ui-researcher`
 - `gsd-user-profiler`
 - `gsd-verifier`
+
+## Native Planning Mode and GSD Workflow Integration
+
+To prevent conflicts between the native agentic `<planning_mode>` rules (creating plans/tasks in the global `<appDataDir>\brain\<conversation-id>/` directory) and the repository's `GSD` workflow rules, follow these strict directives:
+
+1. **Detecting GSD Context**:
+   - If the workspace contains a `.planning/` directory (specifically `.planning/STATE.md` and `.planning/ROADMAP.md`), the session is considered a **GSD-active workspace**.
+   - If GSD is active, the agent must **always** prioritize and follow the GSD workflow and use GSD subagents (`gsd-planner`, `gsd-executor`, `gsd-verifier`, etc.) for planning, execution, and verification.
+
+2. **Native `<planning_mode>` Override under GSD**:
+   - When the agent is in native `<planning_mode>` but GSD is active:
+     - The agent **MUST NOT** write implementation steps or tasks directly into `<appDataDir>\brain\<conversation-id>/implementation_plan.md` or `task.md`.
+     - Instead, the agent's native `implementation_plan.md` should only declare: *"The plan is to invoke the GSD workflow and delegate Phase [N] to the corresponding GSD subagents."*
+     - The agent must write all actual plans, summaries, contexts, validations, and verification logs into the `.planning/phases/` directory (e.g., `.planning/phases/<phase-name>/`) as defined by the GSD workflow.
+     - When the user approves the native plan, the agent must start the execution phase by registering and invoking GSD subagents (`define_subagent` and `invoke_subagent` with prompts from `C:\Users\Copter\.gemini\config\agents/`) rather than running commands or editing files inline.
+     - After GSD subagents complete, the agent can write the final walkthrough to the native `walkthrough.md` referencing the GSD phase documents.
+
+3. **Fallback to Native Planning Mode**:
+   - If GSD is NOT active (i.e. no `.planning/` directory or GSD files are present in the workspace), the agent must plan, execute, and verify using the native `<planning_mode>` format (writing code inline and creating plans/tasks inside the `<appDataDir>\brain\<conversation-id>/` directory) as normal.
 
 <!-- GSD:profile-start -->
 ## Developer Profile

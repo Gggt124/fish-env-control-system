@@ -62,6 +62,14 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ Keyboard focus visibility and assistive-technology status announcements across all pages — v1.2
 - ✓ Professional CSS overhaul with HSL color system, accessible contrast, no CDN or external assets — v1.2
 - ✓ Full visual regression validated with screenshots, accessibility audit, build/footprint gate, and device-backed hardware regression — v1.2
+- ✓ UI-17: Only list changed GPIO pins in the Pending Reboot Map display — v1.3
+- ✓ UI-18: GPIO map unsaved warning disappears and button disables on value reversion — v1.3
+- ✓ UI-19: Wi-Fi disconnect button simplified to "Disconnect" / "Disconnecting..." — v1.3
+- ✓ UI-20: Wi-Fi disconnect requires confirmation dialog — v1.3
+- ✓ UI-21: Pump and Cooling Settings save buttons disabled by default — v1.3
+- ✓ UI-22: Pump and Cooling Settings forms unsaved warning and button disable on value reversion — v1.3
+- ✓ UI-23: Logout menu requires confirmation dialog — v1.3
+- ✓ UI-24: "Force OFF" cooling mode button styled red danger button (btn-danger) — v1.3
 
 ### Active
 
@@ -79,7 +87,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Current State
 
-**Shipped:** v1.2 Owner UI Polish And Hardware Readiness on 2026-06-04
+**Shipped:** v1.3 UI Details Refinement on 2026-06-05
 
 The firmware is a complete local ESP32 pump and cooling controller with:
 - GPIO32 float input selecting GPIO26 Relay 1 or GPIO27 Relay 2 timer channels
@@ -90,6 +98,9 @@ The firmware is a complete local ESP32 pump and cooling controller with:
 - Hardware/Install page with active/pending GPIO map and DS18B20 pull-up guidance
 - Wi-Fi scan/connect with clear state flow, Status diagnostics, and accessible login
 - SoftAP fallback, STA configuration, captive DNS, and bounded long-uptime diagnostics
+- Interactive forms dirty checking, Thai confirmation dialogs, and simplified buttons to improve UX
+- Duration-based Test ON countdown timer that pauses during active compressor protection lockout
+- Isolated Auto mode demand state using s_auto_demand to prevent stuck cooling relay on transitions
 - Real-board hardware UAT and a `13:38:10` soak with no reboot, watchdog trip, or monotonic heap loss
 
 **Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.0.1.
@@ -148,6 +159,8 @@ Recommended hardware contract (validated):
 | CSS-only overhaul within offline embedded constraints | No CDN, web fonts, or frameworks — keeps UI offline-capable and ESP32-safe | ✓ Good |
 | Separate pump and cooling operational channels on dashboard | Operator needs to distinguish daily pump control from cooling system at a glance | ✓ Good |
 | Active vs pending GPIO map visual separation | Installer needs to see what is live vs what requires reboot before wiring changes | ✓ Good |
+| Use esp_timer_get_time() to calculate elapsed time in milliseconds for the test timer rather than a static deadline | Allows the Test ON countdown to be selectively paused during active compressor protection lockout | ✓ Good |
+| Isolate Auto mode demand tracking using a dedicated s_auto_demand variable | Ensures mode transitions (like from Test ON back to Auto) immediately evaluate conditions without being biased by the physical relay's prior state | ✓ Good |
 
 ## Evolution
 
@@ -167,4 +180,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-04 after v1.2 milestone completion*
+*Last updated: 2026-06-05 after v1.3 milestone completion*

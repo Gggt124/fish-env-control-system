@@ -2,6 +2,43 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v1.3 — UI Details Refinement
+
+**Shipped:** 2026-06-05
+**Phases:** 1 | **Plans:** 3
+
+### What Was Built
+- Form dirty checking and save button state management: save buttons disabled by default; warning ("มีการแก้ไขที่ยังไม่ได้บันทึก" / "Unsaved GPIO map changes") and save button dynamic toggles on value modifications or reversion to baseline.
+- Pending GPIO map rendering optimized to only list the roles whose pending values differ from active, showing "No pending changes" if none differ.
+- Simplified Wi-Fi disconnect button text to "Disconnect" / "Disconnecting...", with a native Thai confirmation prompt prior to disconnect execution.
+- Added a native Thai confirmation prompt to sidebar logout action.
+- Styled cooling "Force OFF" button as red danger button (`btn-danger`) and disabled active cooling mode buttons.
+- Replaced absolute test deadline with duration-based countdown logic utilizing uptime updates in cooling control, enabling the Test ON timer to pause during active compressor lockout protection.
+- Decoupled Auto mode demand state from physical relay state using a dedicated `s_auto_demand` tracking variable to prevent cooling relay stuck ON condition on mode transitions.
+
+### What Worked
+- Performing integration checks through a specialized `gsd-integration-checker` subagent validated full data-flow trace (baseline status -> UI forms -> API post) across the visual changes.
+- Decoupling physical relay state from the internal Auto mode hysteresis controller (via `s_auto_demand`) immediately solved transition bugs.
+- Tracking countdown through delta uptime updates allowed paused timer behavior without loss of precision.
+
+### What Was Inefficient
+- Managing multiple small plans (01, 02, 03) within a single Phase 15 could have been consolidated into one larger plan, but keeping them separate did isolate the state machine fixes cleanly.
+
+### Patterns Established
+- Pausing countdown timers: Use elapsed time tracking based on delta uptime (millisecond updates) to enable pausing state machine timers when preconditions are not met.
+- Decoupled demand tracking: Keep internal mode demand state isolated from physical hardware feedback to prevent stuck transitions.
+
+### Key Lessons
+- Do not overload a physical output's state (e.g. `s_relay_energized`) as the active state variable in a control loop. Use a separate logical demand tracker (`s_auto_demand`) to avoid prior-state bias.
+- Form level dirty checking improves UX by preventing redundant API posts and visually signaling unsaved work.
+
+### Cost Observations
+- Model mix: not recorded.
+- Sessions: not recorded.
+- Notable: v1.3 focused on fine-grained control loop and interactive details, validating them successfully.
+
+---
+
 ## Milestone: v1.2 — Owner UI Polish And Hardware Readiness
 
 **Shipped:** 2026-06-04
@@ -91,6 +128,7 @@
 |-----------|----------|--------|------------|
 | v1.1 | not recorded | 5 | Added real-board UAT plus a 13-hour whole-device soak before archive |
 | v1.2 | not recorded | 4 | Added no-edit baseline audit phase before UI edits; used impeccable/ui-ux-pro-max as design gates |
+| v1.3 | not recorded | 1 | Refined interactive form UX and decoupled state-machine hysteresis control |
 
 ### Cumulative Quality
 
@@ -98,6 +136,7 @@
 |-----------|-------|----------|-------------------|
 | v1.1 | Build, syntax check, 10 UAT cases, 13-hour soak | Hardware and long-uptime evidence | Offline embedded UI retained |
 | v1.2 | Build, footprint gate, browser screenshots, accessibility audit, device-backed hardware regression | 20/20 requirements, 4/4 Nyquist compliant | Professional CSS overhaul, mobile drawer, accessible focus — still zero external deps |
+| v1.3 | Build, integration audit, E2E flow trace, device verification | 9/9 requirements, 1/1 phase complete | Dynamic form state, paused timer, and decoupled demand state |
 
 ### Top Lessons (Verified Across Milestones)
 
