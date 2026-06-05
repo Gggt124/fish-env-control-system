@@ -170,6 +170,9 @@ function initLogin() {
 /* ======== Logout ======== */
 
 function doLogout() {
+    if (!confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+        return;
+    }
     apiPost('/api/logout', {}, function() {
         document.cookie = 'session=; Path=/; Max-Age=0';
         window.location.href = '/login';
@@ -300,13 +303,53 @@ function wirePumpActions() {
     if (stopBtn) stopBtn.onclick = stopPump;
 }
 
+function checkPumpDirty() {
+    if (!pumpConfig) return false;
+    var t1OnMin = parseInt(pumpEl('timer1-on-min').value, 10) || 0;
+    var t1OnSec = parseInt(pumpEl('timer1-on-sec').value, 10) || 0;
+    var t1OnTotal = (t1OnMin * 60) + t1OnSec;
+
+    var t1OffMin = parseInt(pumpEl('timer1-off-min').value, 10) || 0;
+    var t1OffSec = parseInt(pumpEl('timer1-off-sec').value, 10) || 0;
+    var t1OffTotal = (t1OffMin * 60) + t1OffSec;
+
+    var t2OnMin = parseInt(pumpEl('timer2-on-min').value, 10) || 0;
+    var t2OnSec = parseInt(pumpEl('timer2-on-sec').value, 10) || 0;
+    var t2OnTotal = (t2OnMin * 60) + t2OnSec;
+
+    var t2OffMin = parseInt(pumpEl('timer2-off-min').value, 10) || 0;
+    var t2OffSec = parseInt(pumpEl('timer2-off-sec').value, 10) || 0;
+    var t2OffTotal = (t2OffMin * 60) + t2OffSec;
+
+    var t1Start = pumpEl('timer1-start-phase').value;
+    var t2Start = pumpEl('timer2-start-phase').value;
+    var autoStart = !!pumpEl('pump-auto-start').checked;
+
+    if (t1OnTotal !== Number(pumpConfig.timer1_on_sec)) return true;
+    if (t1OffTotal !== Number(pumpConfig.timer1_off_sec)) return true;
+    if (t2OnTotal !== Number(pumpConfig.timer2_on_sec)) return true;
+    if (t2OffTotal !== Number(pumpConfig.timer2_off_sec)) return true;
+    if (t1Start !== pumpConfig.timer1_start_phase) return true;
+    if (t2Start !== pumpConfig.timer2_start_phase) return true;
+    if (autoStart !== !!pumpConfig.auto_start) return true;
+
+    return false;
+}
+
 function markPumpDirty() {
-    pumpEditVersion += 1;
-    pumpDirty = true;
+    var dirty = checkPumpDirty();
+    pumpDirty = dirty;
     var warning = pumpEl('pump-unsaved-warning');
-    if (warning) warning.classList.remove('hidden');
-    setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
-    updatePumpConfigSaveButton(true);
+    if (warning) {
+        if (dirty) {
+            warning.classList.remove('hidden');
+            setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+        } else {
+            warning.classList.add('hidden');
+            setText('pump-config-state', 'โหลดค่าแล้ว');
+        }
+    }
+    updatePumpConfigSaveButton();
 }
 
 function setPumpClean(label) {
@@ -314,25 +357,25 @@ function setPumpClean(label) {
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.add('hidden');
     setText('pump-config-state', label || 'บันทึกแล้ว');
-    updatePumpConfigSaveButton(true);
+    updatePumpConfigSaveButton();
 }
 
-function updatePumpConfigSaveButton(enabled) {
+function updatePumpConfigSaveButton() {
     var saveBtn = pumpEl('pump-save-config');
-    if (saveBtn) saveBtn.disabled = !enabled || !pumpConfigLoaded || !pumpRelayPolarity;
+    if (saveBtn) saveBtn.disabled = !pumpConfigLoaded || !pumpRelayPolarity || !pumpDirty;
 }
 
 function loadPumpConfig() {
     var requestEditVersion = pumpEditVersion;
     setText('pump-config-state', 'กำลังโหลดค่า...');
     setPumpAlert('pump-config-error', '');
-    updatePumpConfigSaveButton(false);
+    updatePumpConfigSaveButton();
     apiGet('/api/pump/config', function(err, data) {
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
             setText('pump-config-state', 'โหลดค่าไม่สำเร็จ');
             setPumpAlert('pump-config-error', 'โหลดค่าตั้งเวลาไม่สำเร็จ กรุณาโหลดค่าให้สำเร็จก่อนบันทึก');
-            updatePumpConfigSaveButton(false);
+            updatePumpConfigSaveButton();
             return;
         }
         pumpConfig = data;
@@ -340,7 +383,7 @@ function loadPumpConfig() {
         pumpConfigLoaded = !!pumpRelayPolarity;
         if (pumpEditVersion !== requestEditVersion) {
             setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
-            updatePumpConfigSaveButton(pumpConfigLoaded);
+            updatePumpConfigSaveButton();
             return;
         }
         setDurationFields('timer1-on', data.timer1_on_sec);
@@ -469,7 +512,7 @@ function savePumpConfig() {
     if (!pumpConfigLoaded || !pumpRelayPolarity) {
         setText('pump-config-state', 'ยังบันทึกไม่ได้');
         setPumpAlert('pump-config-error', 'กรุณาโหลดค่าจากอุปกรณ์ให้สำเร็จก่อนบันทึก');
-        updatePumpConfigSaveButton(false);
+        updatePumpConfigSaveButton();
         return;
     }
 
@@ -495,7 +538,7 @@ function savePumpConfig() {
         if (err || !data || !data.ok) {
             setText('pump-config-state', 'บันทึกไม่สำเร็จ');
             setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
-            updatePumpConfigSaveButton(true);
+            updatePumpConfigSaveButton();
             return;
         }
         pumpConfig = data.config || data;
@@ -505,7 +548,7 @@ function savePumpConfig() {
             setPumpClean('บันทึกแล้ว');
         } else {
             setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
-            updatePumpConfigSaveButton(pumpConfigLoaded);
+            updatePumpConfigSaveButton();
         }
         showToast('บันทึกค่าปั๊มเรียบร้อย', 'success');
         if (data.status) applyPumpStatus(data.status, true);
@@ -848,12 +891,55 @@ function wireCoolingActions() {
     if (testBtn) testBtn.onclick = function() { setCoolingMode('test_on'); };
 }
 
+function checkCoolingDirty() {
+    if (!coolingConfig) return false;
+
+    var threshInput = pumpEl('cooling-threshold-input');
+    var threshVal = threshInput ? threshInput.value.trim() : '';
+    if (threshVal === '') return true;
+    var thresholdX10 = Math.round(Number(threshVal) * 10);
+
+    var hystInput = pumpEl('cooling-hysteresis-input');
+    var hystVal = hystInput ? hystInput.value.trim() : '';
+    if (hystVal === '') return true;
+    var hysteresisX10 = Math.round(Number(hystVal) * 10);
+
+    var timeoutInput = pumpEl('cooling-test-timeout');
+    var timeoutVal = timeoutInput ? timeoutInput.value.trim() : '';
+    if (timeoutVal === '') return true;
+    var testTimeout = parseInt(timeoutVal, 10);
+
+    var minOffInput = pumpEl('cooling-min-off');
+    var minOffVal = minOffInput ? minOffInput.value.trim() : '';
+    if (minOffVal === '') return true;
+    var minOff = parseInt(minOffVal, 10);
+
+    var autoEnableInput = pumpEl('cooling-auto-enable');
+    var autoEnable = autoEnableInput ? !!autoEnableInput.checked : false;
+
+    if (thresholdX10 !== Number(coolingConfig.threshold_c_x10)) return true;
+    if (hysteresisX10 !== Number(coolingConfig.hysteresis_c_x10)) return true;
+    if (testTimeout !== Number(coolingConfig.test_timeout_sec)) return true;
+    if (minOff !== Number(coolingConfig.compressor_min_off_sec)) return true;
+    if (autoEnable !== !!coolingConfig.auto_enable) return true;
+
+    return false;
+}
+
 function markCoolingDirty() {
-    coolingDirty = true;
+    var dirty = checkCoolingDirty();
+    coolingDirty = dirty;
     var warning = pumpEl('cooling-unsaved-warning');
-    if (warning) warning.classList.remove('hidden');
-    setText('cooling-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
-    updateCoolingConfigSaveButton(true);
+    if (warning) {
+        if (dirty) {
+            warning.classList.remove('hidden');
+            setText('cooling-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+        } else {
+            warning.classList.add('hidden');
+            setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
+        }
+    }
+    updateCoolingConfigSaveButton();
 }
 
 function setCoolingClean(label) {
@@ -861,24 +947,24 @@ function setCoolingClean(label) {
     var warning = pumpEl('cooling-unsaved-warning');
     if (warning) warning.classList.add('hidden');
     setText('cooling-config-state', label || 'บันทึกแล้ว');
-    updateCoolingConfigSaveButton(true);
+    updateCoolingConfigSaveButton();
 }
 
-function updateCoolingConfigSaveButton(enabled) {
+function updateCoolingConfigSaveButton() {
     var saveBtn = pumpEl('cooling-save-config');
-    if (saveBtn) saveBtn.disabled = !enabled || !coolingConfigLoaded || coolingPending;
+    if (saveBtn) saveBtn.disabled = !coolingConfigLoaded || coolingPending || !coolingDirty;
 }
 
 function loadCoolingConfig() {
     setText('cooling-config-state', 'กำลังโหลดค่า...');
     setCoolingAlert('');
-    updateCoolingConfigSaveButton(false);
+    updateCoolingConfigSaveButton();
     apiGet('/api/cooling/config', function(err, data) {
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
             setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
             setCoolingAlert('โหลดค่า cooling ไม่สำเร็จ');
-            updateCoolingConfigSaveButton(false);
+            updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
         }
@@ -972,14 +1058,14 @@ function saveCoolingConfig() {
     coolingPending = true;
     setCoolingAlert('');
     setText('cooling-config-state', 'กำลังบันทึก cooling...');
-    updateCoolingConfigSaveButton(false);
+    updateCoolingConfigSaveButton();
     updateCoolingButtons();
     apiPost('/api/cooling/config', built.payload, function(err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
             setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
             setCoolingAlert((data && data.message) ? data.message : 'บันทึก cooling ไม่สำเร็จ');
-            updateCoolingConfigSaveButton(true);
+            updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
         }
@@ -1081,10 +1167,12 @@ function updateCoolingButtons() {
     var autoBtn = pumpEl('cooling-mode-auto');
     var forceBtn = pumpEl('cooling-mode-force-off');
     var testBtn = pumpEl('cooling-test-on');
-    if (autoBtn) autoBtn.disabled = disabled;
-    if (forceBtn) forceBtn.disabled = disabled;
-    if (testBtn) testBtn.disabled = disabled;
-    updateCoolingConfigSaveButton(coolingConfigLoaded);
+    var currentMode = coolingLastStatus ? coolingLastStatus.mode : null;
+    
+    if (autoBtn) autoBtn.disabled = disabled || (currentMode === 'auto');
+    if (forceBtn) forceBtn.disabled = disabled || (currentMode === 'force_off');
+    if (testBtn) testBtn.disabled = disabled || (currentMode === 'test_on');
+    updateCoolingConfigSaveButton();
 }
 
 function startCoolingStatusTimer() {
@@ -1191,10 +1279,33 @@ function setHardwareError(message) {
     el.textContent = message || '';
 }
 
+function checkHardwareDirty() {
+    if (!hardwareMapData) return false;
+    var currentForm = readHardwareMapForm();
+    if (!currentForm) return false;
+    var baseline = hardwareMapData.pending_valid && hardwareMapData.pending ? hardwareMapData.pending : hardwareMapData.active;
+    if (!baseline) return false;
+
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var key = HARDWARE_FIELDS[i].key;
+        if (String(currentForm[key]) !== String(baseline[key])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function markHardwareDirty() {
-    hardwareDirty = true;
+    var dirty = checkHardwareDirty();
+    hardwareDirty = dirty;
     var warn = hardwareEl('hardware-unsaved-warning');
-    if (warn) warn.classList.remove('hidden');
+    if (warn) {
+        if (dirty) {
+            warn.classList.remove('hidden');
+        } else {
+            warn.classList.add('hidden');
+        }
+    }
     updateHardwareSaveButton();
 }
 
@@ -1244,7 +1355,7 @@ function applyHardwareMap(data) {
 
     renderHardwareBanner(data);
     renderHardwareSummary('hardware-active-summary', data.active, 'active');
-    renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending');
+    renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending', data.active);
     populateHardwareSelects(data.options || {}, effective || data.active || {});
     renderHardwareWiring(data.active, data.pending_valid ? data.pending : null);
     renderHardwareTechnical(data.options || {});
@@ -1265,7 +1376,7 @@ function renderHardwareBanner(data) {
     el.innerHTML = '<strong>Reboot required</strong><span> A pending GPIO map is saved. Reboot the ESP32 before wiring behavior changes.</span>';
 }
 
-function renderHardwareSummary(id, map, emptyLabel) {
+function renderHardwareSummary(id, map, emptyLabel, activeMap) {
     var el = hardwareEl(id);
     if (!el) return;
     if (!map) {
@@ -1274,14 +1385,24 @@ function renderHardwareSummary(id, map, emptyLabel) {
     }
 
     var html = '';
+    var count = 0;
     for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
         var field = HARDWARE_FIELDS[i];
+        if (activeMap && String(map[field.key]) === String(activeMap[field.key])) {
+            continue;
+        }
+        count++;
         html += '<div class="hardware-summary-row">'
             + '<span>' + escHtml(field.label) + '</span>'
             + '<strong>GPIO ' + escHtml(String(map[field.key])) + '</strong>'
             + '</div>';
     }
-    el.innerHTML = html;
+
+    if (activeMap && count === 0) {
+        el.innerHTML = '<div class="hardware-summary-empty">No ' + escHtml(emptyLabel) + ' changes</div>';
+    } else {
+        el.innerHTML = html;
+    }
 }
 
 function populateHardwareSelects(options, map) {
@@ -1640,26 +1761,29 @@ function updateConnectionStatus() {
 }
 
 function doDisconnect() {
+    if (!confirm('คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?')) {
+        return;
+    }
     var btn = document.getElementById('disconnect-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Disconnecting...'; }
 
     apiPost('/api/wifi/disconnect', {}, function(err, data) {
         if ((data && data.ok) || (err && !data)) {
-            showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e41\u0e25\u0e30\u0e25\u0e37\u0e21 Wi-Fi \u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22', 'success');
+            showToast('ตัดการเชื่อมต่อเรียบร้อย', 'success');
             clearSelection();
             setTimeout(function() {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = '\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e41\u0e25\u0e30\u0e25\u0e37\u0e21\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22';
+                    btn.textContent = 'Disconnect';
                 }
                 updateConnectionStatus();
             }, 1200);
         } else {
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = '\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e41\u0e25\u0e30\u0e25\u0e37\u0e21\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22';
+                btn.textContent = 'Disconnect';
             }
-            showToast('\u0e15\u0e31\u0e14\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
+            showToast('ตัดการเชื่อมต่อไม่สำเร็จ', 'error');
         }
     });
 }
