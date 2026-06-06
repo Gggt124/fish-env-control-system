@@ -246,8 +246,8 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
 
     uint16_t big_endian_color = SWAP_BYTES(color);
 
-    // Limit stack allocation to 320 elements (640 bytes buffer, well under the 1024-byte limit)
-    uint16_t chunk_buf[320];
+    // Static (file-scope) buffer — keeps the 640-byte chunk_buf out of any task stack that calls tft_fill_rect, which is critical for the 8192-byte tft_display_task stack. The buffer is single-writer at a time because callers serialize transfers via s_trans_done_sem.
+    static uint16_t chunk_buf[320];
     for (int i = 0; i < w; i++) {
         chunk_buf[i] = big_endian_color;
     }
@@ -472,5 +472,11 @@ static void tft_display_task(void *pvParameters) {
 }
 
 void tft_display_start_task(void) {
-    xTaskCreate(tft_display_task, "tft_display_task", 3072, NULL, 4, NULL);
+    ESP_LOGI(TAG, "Creating TFT display background update task (stack=8192, prio=4)");
+    BaseType_t created = xTaskCreate(tft_display_task, "tft_display_task", 8192, NULL, 4, NULL);
+    if (created != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create tft_display_task: ret=%d", (int)created);
+    } else {
+        ESP_LOGI(TAG, "tft_display_task created successfully");
+    }
 }
