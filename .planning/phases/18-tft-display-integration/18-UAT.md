@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 18-tft-display-integration
 source: [18-01-SUMMARY.md, 18-02-SUMMARY.md]
 started: 2026-06-06T07:00:46+07:00
@@ -71,12 +71,20 @@ blocked: 0
   reason: "User reported: ??????????????????? // ????????? ???? ip ?????????? sta ?????? ip ???????????? AP ?????????????????? ////???????????????????????? sta ????????? Ip ?????? ??????????????????????? ??? IP ??????"
   severity: cosmetic
   test: 4
-  artifacts: []
-  missing: []
+  root_cause: "The wifi string is formatted with %-13.13s limitation in 	ft_display.c, cutting off strings longer than 13 characters like 'AP:192.168.4.1' (14 chars) or long STA IP addresses."
+  artifacts:
+    - path: "main/tft_display.c"
+      issue: "snprintf(wifi_formatted, sizeof(wifi_formatted), "%-13.13s", wifi_str); is too short for AP IP or long STA IPs."
+  missing:
+    - "Increase format specifier width from 13 to 15 (e.g., %-15.15s and ensure array is large enough, like char wifi_formatted[16];) to accommodate longer IP formats."
 - truth: "When the pump turns ON/OFF (via float switch toggle or timer phase change), the dashboard's pump state, active timer label, and phase update within ~1 second. Only the changed fields redraw — no flicker on unchanged fields."
   status: failed
   reason: "User reported: ?????????????? status ?? stop ??? relay ??????????????? ??????  phase ??????????? on"
   severity: major
   test: 6
-  artifacts: []
-  missing: []
+  root_cause: "When pump_running is false (status is STOPPED), the pump.phase variable from backend might still reflect the active timer's current cycle (e.g., ON phase), causing the TFT to show 'ON' phase while the relay itself is completely stopped."
+  artifacts:
+    - path: "main/tft_display.c"
+      issue: "The Phase field UI logic (line 405-417) blindly renders the pump.phase value without considering if the pump is actually RUNNING (pump_running)."
+  missing:
+    - "Override the Phase display string to 'IDLE' or '-' when !pump_running (i.e. Pump Status is STOPPED) so it accurately reflects that the relay output is inactive."
