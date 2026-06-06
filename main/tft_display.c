@@ -128,11 +128,17 @@ esp_err_t tft_display_init(void) {
         ESP_LOGE(TAG, "Failed to swap XY axes: %s", esp_err_to_name(ret));
         return ret;
     }
-    ret = esp_lcd_panel_mirror(s_panel_handle, false, true);
+    ret = esp_lcd_panel_mirror(s_panel_handle, true, false);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set mirroring: %s", esp_err_to_name(ret));
         return ret;
     }
+    ret = esp_lcd_panel_set_gap(s_panel_handle, 0, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set panel gap: %s", esp_err_to_name(ret));
+        return ret;
+    }
+    ESP_LOGI(TAG, "Panel layout: swap_xy=true, mirror=(true,false), gap=(0,0)");
 
     ESP_LOGI(TAG, "TFT display successfully initialized");
     return ESP_OK;
