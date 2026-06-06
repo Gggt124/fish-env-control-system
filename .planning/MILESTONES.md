@@ -1,5 +1,20 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.5 TFT Display Integration (Shipped: 2026-06-06)
+
+**Phases completed:** 1 phases, 5 plans, 8 tasks
+
+**Key accomplishments:**
+
+- Native esp_lcd driver setup for ILI9341 with 8x16 VGA font drawing primitives and a DMA-synchronized boot splash screen.
+- Landscape dual-column status dashboard layout and a periodic background FreeRTOS task with state-cached differential rendering to display live pump, timer, temperature, and network status.
+- Fix the blocker gap (UAT test 3) where the TFT background update task was created but never executed its first statement: 3072-byte task stack was overflowing under the deep call chain through `tft_display_draw_dashboard_skeleton` -> `tft_fill_rect` with a 640-byte stack-local buffer.
+- Close the UAT test 1 major gap: boot splash renders mirrored, with a cyan/light-blue background and a bright white vertical band on the right portion of the screen. Apply the two cheapest source-only fixes (mirror-flag flip + explicit set_gap) and prepare a build-time ST7789 driver toggle as a gated fallback for the case where the actual panel controller is ST7789 mislabelled as ILI9341.
+- One-Liner:
+- Status:
+
+---
+
 ## v1.4 Wi-Fi UI Polish and Code Review (Shipped: 2026-06-05)
 
 **Phases completed:** 2 phases, 2 plans, 6 tasks

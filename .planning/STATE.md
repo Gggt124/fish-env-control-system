@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: TFT Display Integration
-status: completed
-last_updated: "2026-06-06T11:52:29.562Z"
-last_activity: 2026-06-06
+status: Awaiting next milestone
+last_updated: "2026-06-06T13:00:51.014Z"
+last_activity: 2026-06-06 — Milestone v1.5 completed and archived
 progress:
   total_phases: 1
   completed_phases: 1
   total_plans: 5
-  completed_plans: 5
+  completed_plans: 6
   percent: 100
 ---
 
@@ -47,33 +47,10 @@ Phase 17: Code Quality Review & Stability Validation (1/1 plan complete)
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-06-06
-
-## Deferred Items
-
-Items acknowledged and deferred at milestone close on 2026-06-02:
-
-| Category | Item | Status |
-|----------|------|--------|
-| quick_task | `260520-s4a-smooth-pump-countdown-ui-and-update-safe` | `missing` |
-| quick_task | `260520-siy-switch-to-dual-ota-partition-layout` | `missing` |
-| quick_task | `260529-kso-use-esp-idf-from-c-esp-v6-0-1-esp-idf-re` | `missing` |
-| quick_task | `260531-lvf-mark-the-currently-connected-wi-fi-netwo` | `missing` |
-| quick_task | `260531-nag-add-a-mobile-friendly-show-password-chec` | `missing` |
-| quick_task | `260601-g74-investigate-and-fix-long-uptime-webapp-i` | `missing` |
-| quick_task | `260601-iqx-add-structured-web-server-and-wifi-diagn` | `missing` |
-| quick_task | `260601-jk6-add-pump-cooling-board-runtime-cpu-workl` | `missing` |
-
-The retained quick-task summaries contain completion frontmatter. The scanner
-rows are bookkeeping debt, not unfinished firmware work.
-
-### Hardware Follow-Up
-
-- Add the documented external `4.7 kOhm` DS18B20 DQ-to-3.3 V pull-up before the
-  next hardware cycle.
+Phase: Milestone v1.5 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-06 — Milestone v1.5 completed and archived
 
 ## Notes
 

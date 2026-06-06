@@ -380,11 +380,13 @@ static void tft_display_task(void *pvParameters) {
         
         // 3. Pump Status
         bool pump_running = pump.running;
+        bool pump_running_changed = (!s_cache_valid || s_tft_cache.pump_running != pump_running);
+        
         char pump_status_formatted[12];
         snprintf(pump_status_formatted, sizeof(pump_status_formatted), "%-8s", pump_running ? "RUNNING" : "STOPPED");
         uint16_t pump_status_color = pump_running ? TFT_COLOR_GREEN : TFT_COLOR_GRAY;
         
-        if (!s_cache_valid || s_tft_cache.pump_running != pump_running) {
+        if (pump_running_changed) {
             s_tft_cache.pump_running = pump_running;
             tft_draw_string(100, 65, pump_status_formatted, pump_status_color, TFT_COLOR_BLACK);
         }
@@ -420,7 +422,7 @@ static void tft_display_task(void *pvParameters) {
         }
         snprintf(phase_formatted, sizeof(phase_formatted), "%-8s", phase_name);
         
-        if (!s_cache_valid || s_tft_cache.pump_phase != phase) {
+        if (!s_cache_valid || s_tft_cache.pump_phase != phase || pump_running_changed) {
             s_tft_cache.pump_phase = phase;
             tft_draw_string(100, 125, phase_formatted, phase_color, TFT_COLOR_BLACK);
         }
@@ -430,7 +432,7 @@ static void tft_display_task(void *pvParameters) {
         char countdown_formatted[12];
         snprintf(countdown_formatted, sizeof(countdown_formatted), "%-8lus", countdown_sec);
         
-        if (!s_cache_valid || s_tft_cache.pump_countdown_sec != countdown_sec) {
+        if (!s_cache_valid || s_tft_cache.pump_countdown_sec != countdown_sec || pump_running_changed) {
             s_tft_cache.pump_countdown_sec = countdown_sec;
             tft_draw_string(100, 155, countdown_formatted, pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_BLACK);
         }

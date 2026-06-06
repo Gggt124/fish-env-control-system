@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: passed
 phase: 18-tft-display-integration
 source: [18-01-SUMMARY.md, 18-02-SUMMARY.md]
 started: 2026-06-06T07:00:46+07:00
@@ -35,7 +35,7 @@ expected: The WiFi IP field on the dashboard shows the current STA IP when conne
 result: pass
 
 ### 6. Pump State Updates (Float Switch / Timer)
-expected: When the pump turns ON/OFF (via float switch toggle or timer phase change), the dashboard's pump state, active timer label, and phase update within ~1 second. Only the changed fields redraw � no flicker on unchanged fields.
+expected: When the pump turns ON/OFF (via float switch toggle or timer phase change), the dashboard's pump state, active timer label, and phase update within ~1 second. Only the changed fields redraw — no flicker on unchanged fields.
 result: issue
 reported: "?????????????? status ?? stop ??? relay ??????????????? ??????  phase ??????????? on"
 severity: major
@@ -53,7 +53,7 @@ expected: The cooling temperature (DS18B20) and cooling relay state are displaye
 result: pass
 
 ### 10. Long-Run Stability (No Watchdog / No Crashes)
-expected: Let the device run for a few minutes with the dashboard active. No watchdog panics, no resets, no display freezes. Serial monitor stays clean. Other subsystems (web server, Wi-Fi, pump control) continue to function normally — TFT task does not starve them.
+expected: Let the device run for a few minutes with the dashboard active. No watchdog panics, no resets, no display freezes. Serial monitor stays clean. Other subsystems (web server, Wi-Fi, pump control) continue to function normally â€” TFT task does not starve them.
 result: pass
 
 ## Summary
@@ -77,7 +77,7 @@ blocked: 0
       issue: "snprintf(wifi_formatted, sizeof(wifi_formatted), "%-13.13s", wifi_str); is too short for AP IP or long STA IPs."
   missing:
     - "Increase format specifier width from 13 to 15 (e.g., %-15.15s and ensure array is large enough, like char wifi_formatted[16];) to accommodate longer IP formats."
-- truth: "When the pump turns ON/OFF (via float switch toggle or timer phase change), the dashboard's pump state, active timer label, and phase update within ~1 second. Only the changed fields redraw � no flicker on unchanged fields."
+- truth: "When the pump turns ON/OFF (via float switch toggle or timer phase change), the dashboard's pump state, active timer label, and phase update within ~1 second. Only the changed fields redraw — no flicker on unchanged fields."
   status: failed
   reason: "User reported: ?????????????? status ?? stop ??? relay ??????????????? ??????  phase ??????????? on"
   severity: major
