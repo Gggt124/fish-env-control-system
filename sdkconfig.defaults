@@ -24,3 +24,6 @@ CONFIG_LWIP_MAX_SOCKETS=16
 CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
 CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
 
+# Stack overflow detection: method 2 (stack pointer canary check) panics on overflow instead of silently corrupting memory.
+CONFIG_FREERTOS_CHECK_STACKOVERFLOW=2
+
