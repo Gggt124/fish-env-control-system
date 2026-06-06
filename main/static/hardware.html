@@ -49,7 +49,8 @@
         <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
             <span class="nav-icon">&#128682;</span> Logout
         </a>
-    </nav>
+    </nav>
+
 </aside>
 
 <!-- Main Content -->
@@ -110,6 +111,60 @@
                 <div>
                     <h4>Cooling Relay</h4>
                     <p id="wire-cooling-relay">--</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="section-card hardware-install" id="tft-wiring" style="margin-top: var(--sp-lg);">
+        <div class="section-heading-row">
+            <div>
+                <div class="runtime-eyebrow good">Fixed SPI Pinout</div>
+                <h3>TFT Display (ILI9341 2.4" SPI)</h3>
+                <p>These pins are reserved for the TFT screen and cannot be changed.</p>
+            </div>
+        </div>
+        <div class="hardware-wiring-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+            <article class="hardware-wire-item">
+                <span class="hardware-wire-icon">&#128204;</span>
+                <div>
+                    <h4>SCK (Clock)</h4>
+                    <p>GPIO 18</p>
+                </div>
+            </article>
+            <article class="hardware-wire-item">
+                <span class="hardware-wire-icon">&#128204;</span>
+                <div>
+                    <h4>MOSI (Data)</h4>
+                    <p>GPIO 23</p>
+                </div>
+            </article>
+            <article class="hardware-wire-item">
+                <span class="hardware-wire-icon">&#128204;</span>
+                <div>
+                    <h4>CS (Chip Select)</h4>
+                    <p>GPIO 5</p>
+                </div>
+            </article>
+            <article class="hardware-wire-item">
+                <span class="hardware-wire-icon">&#128204;</span>
+                <div>
+                    <h4>DC (Data/Command)</h4>
+                    <p>GPIO 21</p>
+                </div>
+            </article>
+            <article class="hardware-wire-item">
+                <span class="hardware-wire-icon">&#128204;</span>
+                <div>
+                    <h4>RESET</h4>
+                    <p>GPIO 22</p>
+                </div>
+            </article>
+            <article class="hardware-wire-item">
+                <span class="hardware-wire-icon">&#128204;</span>
+                <div>
+                    <h4>LED (Backlight)</h4>
+                    <p>GPIO 4</p>
                 </div>
             </article>
         </div>

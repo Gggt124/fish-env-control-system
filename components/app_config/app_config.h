@@ -89,6 +89,10 @@ extern "C" {
 #define APP_TEMPLATE_TFT_SCK_GPIO           18
 #define APP_TEMPLATE_TFT_LED_GPIO           4
 
+// Enable ST7789 panel driver instead of ILI9341 driver
+#define APP_TEMPLATE_TFT_PANEL_ST7789
+
+
 #ifdef __cplusplus
 }
 #endif

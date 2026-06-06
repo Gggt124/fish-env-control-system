@@ -1,8 +1,7 @@
 param(
     [string]$Port = "COM5",
     [string]$IdfPath = $env:IDF_PATH,
-    [string]$IdfToolsPath = $env:IDF_TOOLS_PATH,
-    [switch]$Monitor
+    [string]$IdfToolsPath = $env:IDF_TOOLS_PATH
 )
 
 $ErrorActionPreference = "Stop"
@@ -84,9 +83,5 @@ if (-not (Test-Path $exportScript)) {
 
 & $exportScript
 
-idf.py --version
-if ($Monitor) {
-    idf.py -p $Port flash monitor
-} else {
-    idf.py -p $Port flash
-}
+Write-Host "Flashing to port $Port..."
+idf.py -p $Port flash
