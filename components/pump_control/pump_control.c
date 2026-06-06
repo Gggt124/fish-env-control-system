@@ -678,6 +678,11 @@ bool pump_control_get_status(pump_control_status_t *out)
     out->active_relay = s_active_relay;
     out->phase = s_phase;
     out->countdown_sec = s_countdown_sec;
+    out->total_duration_sec = 0;
+    const pump_control_timer_config_t *timer = active_timer_config_locked();
+    if (timer && (s_phase == PUMP_CONTROL_PHASE_ON || s_phase == PUMP_CONTROL_PHASE_OFF)) {
+        out->total_duration_sec = s_phase == PUMP_CONTROL_PHASE_ON ? timer->on_sec : timer->off_sec;
+    }
 
     xSemaphoreGive(s_pump_mutex);
     return true;

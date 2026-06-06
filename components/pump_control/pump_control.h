@@ -81,6 +81,7 @@ typedef struct {
     pump_control_active_relay_t active_relay;
     pump_control_timer_phase_t phase;
     uint32_t countdown_sec;
+    uint32_t total_duration_sec;
 } pump_control_status_t;
 
 pump_control_config_t pump_control_default_config(void);

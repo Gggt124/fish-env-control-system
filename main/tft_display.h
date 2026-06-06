@@ -22,6 +22,8 @@ extern "C" {
 #define TFT_COLOR_CYAN    0x07FF
 #define TFT_COLOR_MAGENTA 0xF81F
 #define TFT_COLOR_GRAY    0x7BEF
+#define TFT_COLOR_DARK_NAVY 0x0821
+#define TFT_COLOR_DARK_PANEL 0x18E3
 
 /**
  * @brief Initialize the SPI bus and ILI9341 TFT display using esp_lcd.
