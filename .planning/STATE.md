@@ -60,11 +60,18 @@ Last activity: 2026-06-06 — Milestone v1.5 completed and archived
 - Auto-start defaults disabled but must be persisted and user-toggleable.
 - Hardware validation passed on the user's real ESP32/relay/float setup; latest quick task is smoothing countdown UI and changing safer defaults.
 - Flash layout now uses dual OTA app slots sized `0x1F0000` each on the 4MB ESP32 flash.
-- v1.1 planning preserves v1.0 phase directories and continues phase numbering from Phase 6.
+- v1.1 planning preserves v1.0 phase directories and continues phase numbering from P6.
 - v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
-- The Phase 6 GPIO and cooling hardware contract TODO was moved to completed on 2026-06-02.
+- The P6 GPIO and cooling hardware contract TODO was moved to completed on 2026-06-02.
 - v1.4 Phase 16: Used sequential opacity fade swapping (fade out, hide, show, reflow, fade in) in app.js and CSS transitions with a min-height: 300px styling constraint to polish the Wi-Fi setup page and avoid backdrop-filter compositing overhead on low-power devices.
 
 ## Operator Next Steps
 
 - Start the next milestone with /gsd-new-milestone
+
+## Quick Tasks Completed
+
+| Date | Slug | Description |
+|---|---|---|
+| 2026-06-06 | hardware-ui-tweak | Changed "Fixed SPI Pinout" to neutral and "Active map loaded" to green |
+| 2026-06-06 | 260607-157 | Redesign TFT Dashboard Layout |
