@@ -361,7 +361,7 @@ static void tft_display_task(void *pvParameters) {
         }
         
         char wifi_formatted[16];
-        snprintf(wifi_formatted, sizeof(wifi_formatted), "%-13.13s", wifi_str);
+        snprintf(wifi_formatted, sizeof(wifi_formatted), "%-15.15s", wifi_str);
         
         if (!s_cache_valid || strcmp(s_tft_cache.wifi, wifi_formatted) != 0) {
             strcpy(s_tft_cache.wifi, wifi_formatted);
@@ -407,7 +407,11 @@ static void tft_display_task(void *pvParameters) {
         char phase_formatted[12];
         const char *phase_name = "IDLE";
         uint16_t phase_color = TFT_COLOR_GRAY;
-        if (phase == PUMP_CONTROL_PHASE_ON) {
+        
+        if (!pump_running) {
+            phase_name = "IDLE";
+            phase_color = TFT_COLOR_GRAY;
+        } else if (phase == PUMP_CONTROL_PHASE_ON) {
             phase_name = "ON";
             phase_color = TFT_COLOR_GREEN;
         } else if (phase == PUMP_CONTROL_PHASE_OFF) {
