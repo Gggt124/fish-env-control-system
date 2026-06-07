@@ -4,7 +4,7 @@
 
 ### Architecture & Assets (ARCH-UI)
 - [ ] **ARCH-UI-01**: Implement Single Page Application (SPA) layout approach to allow smooth transitions without full page reloads.
-- [ ] **ARCH-UI-02**: Enforce zero external dependencies by using system fonts and inline SVGs instead of external icon libraries or web fonts.
+- [x] **ARCH-UI-02**: Enforce zero external dependencies by using system fonts and inline SVGs instead of external icon libraries or web fonts.
 - [ ] **ARCH-UI-03**: Adopt a new HSL-based color scheme, soft box shadows, and card-based layout (Modern UI styling).
 
 ### Dashboard & Control (DASH-UI)
@@ -33,7 +33,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | ARCH-UI-01  | Phase 18 | Pending|
-| ARCH-UI-02  | Phase 18 | Pending|
+| ARCH-UI-02  | Phase 18 | Complete |
 | ARCH-UI-03  | Phase 18 | Pending|
 | DASH-UI-01  | Phase 19 | Pending|
 | DASH-UI-02  | Phase 19 | Pending|
