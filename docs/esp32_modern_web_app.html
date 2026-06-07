@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Fish Pump Control</title>
+    <style>
+        /* =========================================
+           1. CSS Variables (ชุดสีและขนาด)
+           ========================================= */
+        :root {
+            --primary: #2563eb;       
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --success: #10b981;       
+            --danger: #ef4444;        
+            --danger-hover: #dc2626;
+            --warning: #f59e0b;       
+            --bg-app: #f1f5f9;        
+            --bg-surface: #ffffff;    
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --sidebar-width: 260px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            
+            --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* =========================================
+           2. Reset & Base Styles
+           ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family); background-color: var(--bg-app);
+            color: var(--text-main); display: flex; min-height: 100vh;
+            overflow-x: hidden; transition: background-color 0.3s;
+        }
+        
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+        .text-primary { color: var(--primary); }
+        .text-muted { color: var(--text-muted); }
+        
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; }
+
+        svg.icon {
+            width: 20px; height: 20px; stroke: currentColor; stroke-width: 2;
+            stroke-linecap: round; stroke-linejoin: round; fill: none; flex-shrink: 0;
+        }
+
+        /* =========================================
+           3. Layout: Sidebar & Mobile Header
+           ========================================= */
+        .sidebar {
+            width: var(--sidebar-width); background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color); display: flex; flex-direction: column;
+            position: fixed; top: 0; left: 0; bottom: 0;
+            z-index: 40; transition: transform 0.3s ease;
+        }
+
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border-color); }
+        .brand-title { font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;}
+        
+        .system-status-badge {
+            display: flex; align-items: center; gap: 8px; background: var(--bg-app); padding: 8px 12px;
+            border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 500; border: 1px solid var(--border-color);
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .nav-menu { padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            color: var(--text-muted); text-decoration: none; border-radius: var(--radius-md);
+            font-weight: 500; transition: all 0.2s; cursor: pointer;
+        }
+        .nav-item:hover { background-color: var(--bg-app); color: var(--text-main); }
+        .nav-item.active { background-color: var(--primary-light); color: var(--primary); font-weight: 600; }
+        
+        .logout { margin-top: auto; padding: 16px 12px; border-top: 1px solid var(--border-color); }
+
+        .mobile-header {
+            display: none; background-color: var(--bg-surface); padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color); align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 30;
+        }
+        .menu-btn {
+            background: none; border: none; cursor: pointer; color: var(--text-main);
+            padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
+        }
+
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35; }
+
+        /* =========================================
+           4. Main Content Area & Page Views
+           ========================================= */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; width: 100%; padding-left: var(--sidebar-width); }
+        .main-content { padding: 32px; max-width: 1200px; width: 100%; margin: 0 auto; }
+
+        .page-view { display: none; animation: fadeIn 0.3s ease; }
+        .page-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+        .page-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.02em;}
+        .page-subtitle { color: var(--text-muted); font-size: 0.95rem; }
+        .header-actions { display: flex; gap: 8px; }
+
+        /* =========================================
+           5. Card Components
+           ========================================= */
+        .card {
+            background: var(--bg-surface); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+            margin-bottom: 24px; overflow: hidden;
+        }
+        .card-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .card-title { font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .card-body { padding: 24px; }
+        .card-footer { padding: 16px 24px; background-color: #f8fafc; border-top: 1px solid var(--border-color); display: flex; gap: 12px; align-items: center;}
+        
+        .section-title { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.05em; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .info-box { background-color: var(--bg-app); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+        .info-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; justify-content: space-between;}
+        .info-value { font-size: 1.1rem; font-weight: 600; overflow-wrap: break-word; word-break: break-word; }
+
+        /* Progress Bar */
+        .progress-bar-bg { width: 100%; height: 8px; background-color: var(--border-color); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background-color: var(--primary); border-radius: 4px; }
+
+        /* Alerts */
+        .alert { padding: 16px; border-radius: var(--radius-md); margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px; font-weight: 500;}
+        .alert-warning { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; }
+        .alert-success { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; border-left: 4px solid #10b981; }
+
+        /* =========================================
+           6. Buttons, Forms & Toggles
+           ========================================= */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+            padding: 10px 20px; border-radius: var(--radius-sm); border: 1px solid transparent;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .btn-outline { background: var(--bg-surface); border-color: var(--border-color); color: var(--text-main); }
+        .btn-outline:hover { background: var(--bg-app); }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-danger { background-color: var(--danger); color: white; box-shadow: var(--shadow-sm); }
+        .btn-danger:hover { background-color: var(--danger-hover); }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
+        .form-control {
+            padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
+            font-size: 0.95rem; font-family: inherit; outline: none; transition: all 0.2s; background: var(--bg-surface); width: 100%;
+            color: var(--text-main);
+        }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+        select.form-control { cursor: pointer; appearance: auto; }
+        
+        .input-group { display: flex; align-items: center; }
+        .input-group .form-control { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none;}
+        .input-group-text {
+            background-color: var(--bg-app); border: 1px solid var(--border-color); padding: 10px 12px;
+            font-size: 0.9rem; color: var(--text-muted); border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm);
+        }
+
+        /* Toggle Switch */
+        .toggle-wrapper { display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg-app); border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0;}
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: var(--shadow-sm); }
+        .toggle-switch input:checked + .toggle-slider { background-color: var(--success); }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
+        
+        .timer-box { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; background: var(--bg-surface);}
+
+        /* =========================================
+           NEW: Modal & Loading Spinner
+           ========================================= */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; }
+        
+        /* Loading State สำหรับปุ่ม */
+        .btn.loading { opacity: 0.7; pointer-events: none; cursor: not-allowed; }
+        .btn.loading .icon-normal { display: none; }
+        .btn.loading .icon-spinner { display: inline-block; animation: spin 1s linear infinite; }
+        .btn .icon-spinner { display: none; } /* ซ่อน spinner เป็นค่าเริ่มต้น */
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-container {
+            background: var(--bg-surface); width: 90%; max-width: 400px;
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+            overflow: hidden; transform: translateY(0); transition: all 0.3s;
+        }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+        .modal-title { font-size: 1.15rem; font-weight: 700; margin: 0;}
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; background: var(--bg-app); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;}
+        .close-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm);}
+        .close-btn:hover { background: var(--bg-app); color: var(--danger); }
+
+        /* =========================================
+           7. Login Layout Specifics
+           ========================================= */
+        body.layout-login { justify-content: center; align-items: center; background-color: var(--bg-app); }
+        body.layout-login .sidebar, body.layout-login .mobile-header { display: none !important; }
+        body.layout-login .main-wrapper { align-items: center; justify-content: center; padding-left: 0; }
+        body.layout-login .main-content { margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .login-card { max-width: 400px; width: 100%; text-align: center; padding: 40px 32px; }
+        .login-logo { width: 64px; height: 64px; background: var(--primary-light); color: var(--primary); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; }
+        .login-logo svg { width: 32px; height: 32px; }
+
+        /* =========================================
+           8. Responsive Design
+           ========================================= */
+        @media (max-width: 900px) { .header-actions { display: none; } }
+        @media (max-width: 768px) {
+            .mobile-header { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrapper { padding-left: 0; }
+            .main-content { padding: 16px; margin-left: 0; }
+            .card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .card-footer { flex-direction: column; align-items: stretch;}
+            .card-footer .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-title">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Fish Pump Control
+            </div>
+            <div class="system-status-badge">
+                <div class="status-dot"></div>
+                <span>Fish Pump<br><small class="text-success">● Online</small></span>
+            </div>
+        </div>
+        
+        <nav class="nav-menu">
+            <a class="nav-item active" onclick="navigateTo('view-dashboard', this)">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                Dashboard
+            </a>
+            <a class="nav-item" onclick="navigateTo('view-status', this)">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                System Status
+            </a>
+            <a class="nav-item" onclick="navigateTo('view-wifi', this)">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                Wi-Fi Settings
+            </a>
+            <a class="nav-item" onclick="navigateTo('view-hardware', this)">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                Hardware/Install
+            </a>
+        </nav>
+        
+        <div class="logout">
+            <a class="nav-item" style="color: var(--danger);" onclick="navigateTo('view-login', this)">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Logout
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="main-wrapper">
+        
+        <header class="mobile-header">
+            <h1 class="brand-title" style="margin:0; font-size:1.1rem;">Fish Pump Control</h1>
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </header>
+
+        <main class="main-content">
+            
+            <!-- ==============================================
+                 PAGE: LOGIN (1/5)
+                 ============================================== -->
+            <div id="view-login" class="page-view">
+                <div class="card login-card">
+                    <div class="login-logo">
+                        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </div>
+                    <h1 class="page-title" style="margin-bottom:8px; text-align:center;">Fish Pump Control</h1>
+                    <p class="page-subtitle" style="margin-bottom: 32px; text-align:center;">จัดการอุปกรณ์และการเชื่อมต่อของคุณ</p>
+                    
+                    <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+                        <label>ชื่อผู้ใช้งาน</label>
+                        <input type="text" class="form-control" value="admin" placeholder="Username">
+                    </div>
+                    <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+                        <label>รหัสผ่าน</label>
+                        <input type="password" class="form-control" value="12345678" placeholder="Password">
+                    </div>
+                    
+                    <button class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;" onclick="navigateTo('view-dashboard', document.querySelectorAll('.nav-item')[0])">เข้าสู่ระบบ</button>
+                    
+                    <p style="margin-top: 24px; font-size: 0.85rem; color: var(--text-muted);">Fish Pump Wi-Fi Setup</p>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 PAGE: DASHBOARD (2/5)
+                 ============================================== -->
+            <div id="view-dashboard" class="page-view active">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Pump Control</h1>
+                        <p class="page-subtitle">ควบคุม Timer 1 / Timer 2 และติดตามสถานะปั๊ม</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline" onclick="simulateLoading(this)">
+                            <svg class="icon icon-normal" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                            <svg class="icon icon-spinner" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                            Sync
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 1. Pump Status Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--success); font-weight: 700; text-transform: uppercase;">ซิงก์ล่าสุดจากอุปกรณ์</span>
+                            <h2 class="card-title" style="margin-top: 4px;">ระบบปั๊ม: กำลังทำงาน</h2>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">เวลาคงเหลือ</div>
+                            <div style="font-size: 1.75rem; font-weight: 700; font-family: monospace; letter-spacing: 2px;">0:50</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-grid">
+                            <div class="info-box"><div class="info-label">Timer</div><div class="info-value">Timer 2</div></div>
+                            <div class="info-box"><div class="info-label">Phase</div><div class="info-value text-muted">Timer 2 - ช่วงเปิด</div></div>
+                            <div class="info-box"><div class="info-label">Float Switch</div><div class="info-value">ON ➔ Timer 2</div></div>
+                            <div class="info-box" style="border-left: 3px solid var(--success);"><div class="info-label">Active Relay</div><div class="info-value">Relay 2 <span class="text-success">ON</span></div></div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" style="opacity:0.7; cursor:not-allowed;">Start System</button>
+                        <button class="btn btn-danger">Stop System</button>
+                    </div>
+                </div>
+
+                <!-- 2. Cooling Control Card (นำกลับมาจาก Original UI) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Cooling Control</h2>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">DS18B20 temperature channel and cooling relay are separate from pump relays.</p>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-grid" style="margin-bottom: 24px;">
+                            <div class="info-box"><div class="info-label">Temperature</div><div class="info-value" style="font-size: 1.25rem;">26.5 °C</div></div>
+                            <div class="info-box"><div class="info-label">Cooling Relay</div><div class="info-value text-danger">OFF</div></div>
+                            <div class="info-box"><div class="info-label">Mode</div><div class="info-value">Auto</div></div>
+                            <div class="info-box"><div class="info-label">Sensor Status</div><div class="info-value text-success">OK</div></div>
+                        </div>
+
+                        <div class="section-title">การตั้งค่าพารามิเตอร์</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Threshold (°C)</label>
+                                <input type="number" class="form-control" value="31.0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>Hysteresis (°C)</label>
+                                <input type="number" class="form-control" value="1.6" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>Test ON (วินาที)</label>
+                                <input type="number" class="form-control" value="10">
+                            </div>
+                            <div class="form-group">
+                                <label>Lockout (วินาที)</label>
+                                <input type="number" class="form-control" value="10">
+                            </div>
+                        </div>
+
+                        <div class="toggle-wrapper" style="margin-top: 16px;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem;">Cooling auto-enable หลังบูต</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">บันทึกพฤติกรรมตอนเปิดเครื่อง ไม่ใช้คำสั่ง Test ON</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer" style="justify-content: space-between;">
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline text-primary" style="border-color: var(--primary-light); background: var(--primary-light);">Auto</button>
+                            <button class="btn btn-outline text-danger">Force OFF</button>
+                            <button class="btn btn-outline">Test ON</button>
+                        </div>
+                        <button class="btn btn-primary" onclick="simulateLoading(this)">
+                            <svg class="icon icon-spinner" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                            <span class="icon-normal">บันทึก Cooling</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Timer Settings Card (นำกลับมาจาก Original UI) -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">ตั้งค่า Timer</h2>
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">ค่าโหลดแล้ว • <strong class="text-success">Auto-start: ON</strong></span>
+                    </div>
+                    <div class="card-body">
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Float OFF ➔ Timer 1 / Relay 1, Float ON ➔ Timer 2 / Relay 2</p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                            <!-- Timer 1 Box -->
+                            <div class="timer-box">
+                                <div class="section-title text-primary" style="margin-bottom: 20px;">Timer 1 / Relay 1 - เมื่อลูกลอย OFF</div>
+                                
+                                <div class="form-grid" style="margin-bottom: 16px;">
+                                    <div class="form-group">
+                                        <label>ช่วงเปิด (นาที)</label>
+                                        <input type="number" class="form-control" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>ช่วงเปิด (วินาที)</label>
+                                        <input type="number" class="form-control" value="30">
+                                    </div>
+                                </div>
+                                <div class="form-grid" style="margin-bottom: 16px;">
+                                    <div class="form-group">
+                                        <label>ช่วงปิด (นาที)</label>
+                                        <input type="number" class="form-control" value="2">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>ช่วงปิด (วินาที)</label>
+                                        <input type="number" class="form-control" value="0">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>เริ่มรอบด้วย</label>
+                                    <select class="form-control">
+                                        <option>ON - เปิด Relay 1 ก่อน</option>
+                                        <option>OFF - ปิด Relay 1 ก่อน</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Timer 2 Box -->
+                            <div class="timer-box">
+                                <div class="section-title text-primary" style="margin-bottom: 20px;">Timer 2 / Relay 2 - เมื่อลูกลอย ON</div>
+                                
+                                <div class="form-grid" style="margin-bottom: 16px;">
+                                    <div class="form-group">
+                                        <label>ช่วงเปิด (นาที)</label>
+                                        <input type="number" class="form-control" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>ช่วงเปิด (วินาที)</label>
+                                        <input type="number" class="form-control" value="50">
+                                    </div>
+                                </div>
+                                <div class="form-grid" style="margin-bottom: 16px;">
+                                    <div class="form-group">
+                                        <label>ช่วงปิด (นาที)</label>
+                                        <input type="number" class="form-control" value="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>ช่วงปิด (วินาที)</label>
+                                        <input type="number" class="form-control" value="0">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>เริ่มรอบด้วย</label>
+                                    <select class="form-control">
+                                        <option>ON - เปิด Relay 2 ก่อน</option>
+                                        <option>OFF - ปิด Relay 2 ก่อน</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="toggle-wrapper" style="margin-top: 24px;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem;">Auto-start หลังบูต</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 2px;">บันทึกเป็นพฤติกรรมตอนเปิดเครื่อง ไม่สั่ง Start/Stop ทันที</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer" style="justify-content: flex-end;">
+                        <button class="btn btn-primary">บันทึกค่า Timer</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 PAGE: SYSTEM STATUS (3/5)
+                 ============================================== -->
+            <div id="view-status" class="page-view">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">System Status</h1>
+                        <p class="page-subtitle">MCU status and health information</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline"><svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> Refresh</button>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <!-- System Card -->
+                    <div class="card">
+                        <div class="card-header"><h2 class="card-title">System</h2><svg class="icon text-muted" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg></div>
+                        <div class="card-body" style="padding: 16px;">
+                            <div class="info-label"><span>Chip</span> <span class="info-value">ESP32</span></div><hr style="border:0; border-top:1px solid var(--border-color); margin:8px 0;">
+                            <div class="info-label"><span>Revision</span> <span class="info-value">301</span></div><hr style="border:0; border-top:1px solid var(--border-color); margin:8px 0;">
+                            <div class="info-label"><span>Cores</span> <span class="info-value">2</span></div><hr style="border:0; border-top:1px solid var(--border-color); margin:8px 0;">
+                            <div class="info-label"><span>CPU Speed</span> <span class="info-value">160 MHz</span></div><hr style="border:0; border-top:1px solid var(--border-color); margin:8px 0;">
+                            <div class="info-label"><span>IDF Version</span> <span class="info-value">v6.0.1</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Memory Card -->
+                    <div class="card">
+                        <div class="card-header"><h2 class="card-title">Memory</h2><svg class="icon text-muted" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg></div>
+                        <div class="card-body" style="padding: 16px;">
+                            <div class="info-label"><span>Free</span> <span class="info-value">174 KB</span></div><hr style="border:0; border-top:1px solid var(--border-color); margin:8px 0;">
+                            <div class="info-label"><span>Min Free</span> <span class="info-value">136 KB</span></div><hr style="border:0; border-top:1px solid var(--border-color); margin:8px 0;">
+                            <div class="info-label"><span>Total DRAM</span> <span class="info-value">313 KB</span></div>
+                            
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 44.6%;"></div></div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">Usage: 44.6%</p>
+                        </div>
+                    </div>
+
+                    <!-- Uptime Card -->
+                    <div class="card">
+                        <div class="card-header"><h2 class="card-title">Uptime</h2><svg class="icon text-muted" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+                        <div class="card-body" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; min-height: 180px;">
+                            <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 8px; color: var(--primary);">19m 25s</div>
+                            <p class="text-muted" style="font-size: 0.9rem;">System running time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 PAGE: WI-FI SETTINGS (4/5)
+                 ============================================== -->
+            <div id="view-wifi" class="page-view">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Wi-Fi Setup <span style="font-size: 1rem; font-weight: 500; color: var(--text-muted);">(การตั้งค่า)</span></h1>
+                        <p class="page-subtitle">จัดการการเชื่อมต่อเครือข่ายสำหรับอุปกรณ์</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-success" style="justify-content: space-between; flex-wrap: wrap; align-items: center;">
+                    <div class="flex items-center gap-3">
+                        <svg class="icon text-success" style="width: 28px; height: 28px;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <div>
+                            <h3 style="margin:0; font-size:1rem; font-weight: 600;">เชื่อมต่อแล้ว: KRAPAO JADJAN_2.4G</h3>
+                            <p style="margin:2px 0 0 0; font-size:0.85rem; opacity:0.8;">IP: 192.168.1.39</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline text-danger" style="background: white;">Disconnect</button>
+                </div>
+
+                <!-- Custom Stepper -->
+                <div style="display: flex; justify-content: center; align-items: center; margin: 32px 0;">
+                    <div style="text-align: center; position: relative;">
+                        <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 auto 8px auto; z-index: 2; position: relative;">1</div>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--primary);">Scan</span>
+                    </div>
+                    <div style="flex: 1; max-width: 60px; height: 2px; background: var(--border-color); margin: 0 10px; transform: translateY(-10px);"></div>
+                    <div style="text-align: center; position: relative;">
+                        <div style="width: 32px; height: 32px; background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 auto 8px auto; z-index: 2; position: relative;">2</div>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Password</span>
+                    </div>
+                    <div style="flex: 1; max-width: 60px; height: 2px; background: var(--border-color); margin: 0 10px; transform: translateY(-10px);"></div>
+                    <div style="text-align: center; position: relative;">
+                        <div style="width: 32px; height: 32px; background: var(--bg-surface); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 auto 8px auto; z-index: 2; position: relative;">3</div>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Connect</span>
+                    </div>
+                </div>
+
+                <!-- ปรับ Layout หน้า Wi-Fi ใหม่ให้เป็น List ที่ดูดีขึ้น -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">เครือข่ายที่พบ (Networks)</h2>
+                        <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem;"><svg class="icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg> สแกนใหม่</button>
+                    </div>
+                    
+                    <!-- ตัวอย่าง Mockup รายชื่อ Wi-Fi (แทนที่ช่องว่างๆ เดิม) -->
+                    <div class="card-body" style="padding: 0;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-app)'" onmouseout="this.style.background='transparent'" onclick="openWifiModal('KRAPAO JADJAN_2.4G')">
+                            <div class="flex items-center gap-3">
+                                <svg class="icon text-primary" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                                <span style="font-weight: 600;">KRAPAO JADJAN_2.4G</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-muted" style="font-size: 0.85rem;">-54 dBm</span>
+                                <svg class="icon text-muted" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-app)'" onmouseout="this.style.background='transparent'" onclick="openWifiModal('Guest_Network')">
+                            <div class="flex items-center gap-3">
+                                <svg class="icon text-muted" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                                <span style="font-weight: 500;">Guest_Network</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-muted" style="font-size: 0.85rem;">-72 dBm</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-app)'" onmouseout="this.style.background='transparent'" onclick="openWifiModal('Home_IoT_5G')">
+                            <div class="flex items-center gap-3">
+                                <svg class="icon text-muted" viewBox="0 0 24 24"><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                                <span style="font-weight: 500;">Home_IoT_5G</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-muted" style="font-size: 0.85rem;">-85 dBm</span>
+                                <svg class="icon text-muted" style="width: 16px; height: 16px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==============================================
+                 PAGE: HARDWARE (5/5)
+                 ============================================== -->
+            <div id="view-hardware" class="page-view">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Hardware/Install</h1>
+                        <p class="page-subtitle">Wiring, sensor GPIO mapping, device configs.</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline text-danger" style="border-color: #fca5a5;"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Factory Reset</button>
+                        <button class="btn btn-primary"><svg class="icon" viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg> Reboot</button>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <div>
+                        <div style="font-weight: 700;">Pending Changes</div>
+                        <div style="font-size: 0.85rem; margin-top: 4px;">คุณมีการตั้งค่าพินใหม่ที่ยังไม่ได้รีบูต ระบบจะยังใช้ค่าเดิมจนกว่าจะสั่ง Reboot</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Wiring Summary</h2></div>
+                    <div class="card-body">
+                        <div class="info-grid">
+                            <div class="info-box" style="display: flex; align-items: center; gap: 12px; padding: 20px;">
+                                <div style="width:40px; height:40px; background:var(--primary-light); color:var(--primary); border-radius:10px; display:flex; align-items:center; justify-content:center;"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg></div>
+                                <div><div class="info-label" style="margin-bottom:2px;">Float Input</div><div class="info-value">GPIO 34</div></div>
+                            </div>
+                            <div class="info-box" style="display: flex; align-items: center; gap: 12px; padding: 20px;">
+                                <div style="width:40px; height:40px; background:#fef3c7; color:var(--warning); border-radius:10px; display:flex; align-items:center; justify-content:center;"><svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+                                <div><div class="info-label" style="margin-bottom:2px;">Pump Relay 1</div><div class="info-value">GPIO 26</div></div>
+                            </div>
+                            <div class="info-box" style="display: flex; align-items: center; gap: 12px; padding: 20px;">
+                                <div style="width:40px; height:40px; background:#fee2e2; color:var(--danger); border-radius:10px; display:flex; align-items:center; justify-content:center;"><svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+                                <div><div class="info-label" style="margin-bottom:2px;">Pump Relay 2</div><div class="info-value">GPIO 27</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">GPIO Map</h2></div>
+                    <div class="card-body">
+                        <div class="form-grid" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label>Float Input</label>
+                                <select class="form-control">
+                                    <option>GPIO 34 (Default)</option>
+                                    <option>GPIO 35</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Pump Relay 1</label>
+                                <select class="form-control">
+                                    <option>GPIO 26 (Default)</option>
+                                    <option>GPIO 27</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Pump Relay 2</label>
+                                <select class="form-control">
+                                    <option>GPIO 27 (Default)</option>
+                                    <option>GPIO 26</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div style="background: var(--bg-app); padding: 16px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 12px;">
+                            <input type="checkbox" id="confirm-gpio" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                            <label for="confirm-gpio" style="font-size: 0.9rem; color: var(--text-main); font-weight: 500; cursor: pointer; user-select: none;">ฉันเข้าใจว่าการเปลี่ยน GPIO จะต้องทำการ Reboot เครื่องก่อนถึงจะมีผล</label>
+                        </div>
+                        
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" onclick="simulateLoading(this)">
+                            <svg class="icon icon-spinner" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                            <span class="icon-normal">Save Pending Map</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal สำหรับกรอกรหัสผ่าน Wi-Fi -->
+    <div id="wifi-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">เชื่อมต่อ Wi-Fi</h3>
+                <button class="close-btn" onclick="closeWifiModal()">
+                    <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>เครือข่าย: <span id="modal-ssid-name" class="text-primary"></span></label>
+                    <input type="password" id="wifi-password-input" class="form-control" placeholder="กรอกรหัสผ่าน..." style="margin-top: 8px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeWifiModal()">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="connectWifi(this)">
+                    <svg class="icon icon-normal" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                    <svg class="icon icon-spinner" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                    เชื่อมต่อ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT สำหรับระบบนำทาง (Navigation) -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                overlay.style.display = 'none';
+            } else {
+                sidebar.classList.add('open');
+                overlay.style.display = 'block';
+            }
+        }
+
+        function navigateTo(viewId, navElement) {
+            document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            if(navElement) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                navElement.classList.add('active');
+            }
+
+            if (viewId === 'view-login') {
+                document.body.classList.add('layout-login');
+            } else {
+                document.body.classList.remove('layout-login');
+            }
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('overlay').style.display = 'none';
+            }
+            window.scrollTo(0, 0); // เลื่อนขึ้นบนสุดเวลาเปลี่ยนหน้า
+        }
+
+        // ==========================================
+        // ฟังก์ชัน UI: Loading State & Modal
+        // ==========================================
+
+        // จำลองสถานะ Loading สำหรับปุ่มต่างๆ
+        function simulateLoading(btn) {
+            if(btn.classList.contains('loading')) return; // ป้องกันการกดซ้ำ
+            
+            btn.classList.add('loading');
+            
+            // สมมุติว่า Request ใช้เวลา 1.5 วินาที
+            setTimeout(() => {
+                btn.classList.remove('loading');
+            }, 1500);
+        }
+
+        // เปิด Modal กรอกรหัส Wi-Fi
+        function openWifiModal(ssid) {
+            document.getElementById('modal-ssid-name').innerText = ssid;
+            document.getElementById('wifi-password-input').value = ''; // เคลียร์ช่อง input
+            document.getElementById('wifi-modal').style.display = 'flex';
+        }
+
+        // ปิด Modal Wi-Fi
+        function closeWifiModal() {
+            document.getElementById('wifi-modal').style.display = 'none';
+        }
+
+        // เมื่อกดปุ่มเชื่อมต่อใน Modal
+        function connectWifi(btn) {
+            simulateLoading(btn);
+            
+            // จำลองการเชื่อมต่อ
+            setTimeout(() => {
+                closeWifiModal();
+                // นำไปเขียนโค้ด AJAX ต่อที่นี่
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
