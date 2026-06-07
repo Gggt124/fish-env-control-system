@@ -12,17 +12,19 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Milestone Status
 
-**Latest shipped:** v1.4 Wi-Fi UI Polish and Code Review on 2026-06-06
+**Latest shipped:** v1.5 TFT Display Integration on 2026-06-06
 
-## Current Milestone: v1.5 TFT Display Integration
+## Current Milestone: v1.6 Modern Web UI Optimization
 
-**Goal:** Integrate the 2.4" TFT (ILI9341) display using native `esp_lcd` to display real-time pump, timer, temperature, and network status in landscape mode.
+**Goal:** Overhaul the Web UI (Dashboard, Status, Wi-Fi, Hardware) to a Modern UI (Soft UI, Card-based) with improved UX, retaining offline capabilities and existing hardware logic.
 
 **Target features:**
-- TFT-01: SPI and native `esp_lcd` initialization for ILI9341.
-- TFT-02: Lightweight text/shapes rendering wrapper.
-- TFT-03: Landscape status dashboard rendering.
-- TFT-04: Periodic update task integration (non-blocking).
+- UI-01: Single Page Application (SPA) architecture layout.
+- UI-02: Zero External Dependencies (inline SVG, system fonts, CSS vars).
+- UI-03: Modern card-based layout for Pump, Timer, and Cooling control.
+- UI-04: Stepper and loading states for Wi-Fi Setup.
+- UI-05: Redesign System Status and Hardware/Install.
+- UI-06: Loading spinners, debouncing, and modal popups.
 
 ## Requirements
 
@@ -87,13 +89,19 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ CODE-REV-01: Review C firmware source files for warnings, logical bugs, and race conditions — v1.4
 - ✓ CODE-REV-02: Review JS/HTML assets for console errors, formatting, and leftover debug statements — v1.4
 - ✓ CODE-REV-03: Safely resolve all identified issues while maintaining stable operation — v1.4
+- ✓ TFT-01: Initialize SPI bus (VSPI) and native `esp_lcd` driver for ILI9341 display. — v1.5
+- ✓ TFT-02: Implement a lightweight display rendering module for custom fonts and shapes. — v1.5
+- ✓ TFT-03: Render the landscape dashboard showing pump state, active timer, countdown, temperature, cooling relay state, float switch, and Wi-Fi IP. — v1.5
+- ✓ TFT-04: Update the screen periodically (e.g., every 500ms or on state change) without blocking the main event loop or watchdog. — v1.5
 
 ### Active
 
-- [ ] TFT-01: Initialize SPI bus (VSPI) and native `esp_lcd` driver for ILI9341 display.
-- [ ] TFT-02: Implement a lightweight display rendering module for custom fonts and shapes.
-- [ ] TFT-03: Render the landscape dashboard showing pump state, active timer, countdown, temperature, cooling relay state, float switch, and Wi-Fi IP.
-- [ ] TFT-04: Update the screen periodically (e.g., every 500ms or on state change) without blocking the main event loop or watchdog.
+- [ ] UI-01: Implement Single Page Application (SPA) architecture for smoother transitions.
+- [ ] UI-02: Update styles with HSL color system, system fonts, and inline SVG icons (Zero External Dependencies).
+- [ ] UI-03: Redesign Pump Control, Timer Settings, and Cooling Control dashboards to a modern card-based layout.
+- [ ] UI-04: Overhaul Wi-Fi Setup page with stepper, loading states, and modal popups.
+- [ ] UI-05: Redesign System Status and Hardware/Install pages for better readability and UX.
+- [ ] UI-06: Add UI feedback mechanisms (loading spinners, debouncing, modal confirmation).
 
 ### Out of Scope
 
@@ -107,7 +115,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Current State
 
-**Shipped:** v1.4 Wi-Fi UI Polish and Code Review on 2026-06-06
+**Shipped:** v1.5 TFT Display Integration on 2026-06-06
 
 The firmware is a complete local ESP32 pump and cooling controller with:
 - GPIO32 float input selecting GPIO26 Relay 1 or GPIO27 Relay 2 timer channels
@@ -203,4 +211,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-06 for active milestone v1.5 initiation*
+*Last updated: 2026-06-08 for active milestone v1.6 initiation*

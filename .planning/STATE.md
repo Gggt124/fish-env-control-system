@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: TFT Display Integration
-status: Awaiting next milestone
-last_updated: "2026-06-06T13:00:51.014Z"
-last_activity: 2026-06-06 — Milestone v1.5 completed and archived
+milestone: v1.6
+milestone_name: Modern Web UI Optimization
+status: planning
+last_updated: "2026-06-08T00:00:00.000Z"
+last_activity: 2026-06-08 — Milestone v1.6 started
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 5
-  completed_plans: 6
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -41,16 +41,12 @@ See: `.planning/PROJECT.md` (updated 2026-06-05)
 - Latest archived requirements: `.planning/milestones/v1.3-REQUIREMENTS.md`
 - Roadmap: `.planning/ROADMAP.md`
 
-## Current Phase
-
-Phase 17: Code Quality Review & Stability Validation (1/1 plan complete)
-
 ## Current Position
 
-Phase: Milestone v1.5 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-06 — Milestone v1.5 completed and archived
+Status: Defining requirements
+Last activity: 2026-06-08 — Milestone v1.6 started
 
 ## Notes
 
