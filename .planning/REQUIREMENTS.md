@@ -3,9 +3,9 @@
 ## v1 Requirements
 
 ### Architecture & Assets (ARCH-UI)
-- [ ] **ARCH-UI-01**: Implement Single Page Application (SPA) layout approach to allow smooth transitions without full page reloads.
+- [x] **ARCH-UI-01**: Implement Single Page Application (SPA) layout approach to allow smooth transitions without full page reloads.
 - [x] **ARCH-UI-02**: Enforce zero external dependencies by using system fonts and inline SVGs instead of external icon libraries or web fonts.
-- [ ] **ARCH-UI-03**: Adopt a new HSL-based color scheme, soft box shadows, and card-based layout (Modern UI styling).
+- [x] **ARCH-UI-03**: Adopt a new HSL-based color scheme, soft box shadows, and card-based layout (Modern UI styling).
 
 ### Dashboard & Control (DASH-UI)
 - [ ] **DASH-UI-01**: Redesign the Pump Control and Timer Settings to use the new card-based layout with clear informational grids.
@@ -32,9 +32,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-UI-01  | Phase 18 | Pending|
+| ARCH-UI-01  | Phase 18 | Complete |
 | ARCH-UI-02  | Phase 18 | Complete |
-| ARCH-UI-03  | Phase 18 | Pending|
+| ARCH-UI-03  | Phase 18 | Complete |
 | DASH-UI-01  | Phase 19 | Pending|
 | DASH-UI-02  | Phase 19 | Pending|
 | SYS-UI-01   | Phase 21 | Pending|
