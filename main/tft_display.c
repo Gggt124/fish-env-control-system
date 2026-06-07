@@ -390,7 +390,8 @@ static void tft_display_task(void *pvParameters) {
         
         if (!s_cache_valid || s_tft_cache.pump_active_timer != active_timer) {
             s_tft_cache.pump_active_timer = active_timer;
-            tft_draw_string(20, 105, active_timer_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_NAVY);
+            tft_fill_rect(20, 100, 130, 32, TFT_COLOR_DARK_NAVY);
+            tft_draw_string_x2(20, 100, active_timer_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_NAVY);
         }
         
         // 5. Pump Phase
@@ -399,15 +400,16 @@ static void tft_display_task(void *pvParameters) {
         if (!s_cache_valid || s_tft_cache.pump_phase != phase || pump_running_changed) {
             s_tft_cache.pump_phase = phase;
             if (!pump_running) {
-                tft_fill_rect(20, 130, 40, 16, TFT_COLOR_DARK_NAVY);
-                tft_draw_string(20, 130, "IDLE", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_fill_rect(20, 140, 130, 32, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_x2(20, 140, "IDLE", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             } else if (phase == PUMP_CONTROL_PHASE_ON) {
-                tft_fill_rect(20, 130, 32, 16, TFT_COLOR_GREEN);
-                tft_draw_string(20, 130, " ON ", TFT_COLOR_BLACK, TFT_COLOR_GREEN);
-                tft_fill_rect(20 + 32, 130, 8, 16, TFT_COLOR_DARK_NAVY);
+                tft_fill_rect(20, 140, 64, 32, TFT_COLOR_GREEN);
+                tft_draw_string_x2(20, 140, " ON ", TFT_COLOR_BLACK, TFT_COLOR_GREEN);
+                tft_fill_rect(20 + 64, 140, 130 - 64, 32, TFT_COLOR_DARK_NAVY);
             } else if (phase == PUMP_CONTROL_PHASE_OFF) {
-                tft_fill_rect(20, 130, 40, 16, TFT_COLOR_GRAY);
-                tft_draw_string(20, 130, " OFF ", TFT_COLOR_BLACK, TFT_COLOR_GRAY);
+                tft_fill_rect(20, 140, 80, 32, TFT_COLOR_GRAY);
+                tft_draw_string_x2(20, 140, " OFF ", TFT_COLOR_BLACK, TFT_COLOR_GRAY);
+                tft_fill_rect(20 + 80, 140, 130 - 80, 32, TFT_COLOR_DARK_NAVY);
             }
         }
         
@@ -418,19 +420,20 @@ static void tft_display_task(void *pvParameters) {
         
         if (!s_cache_valid || s_tft_cache.pump_countdown_sec != countdown_sec || pump_running_changed) {
             s_tft_cache.pump_countdown_sec = countdown_sec;
-            tft_draw_string(20, 155, countdown_formatted, pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+            tft_fill_rect(20, 180, 130, 32, TFT_COLOR_DARK_NAVY);
+            tft_draw_string_x2(20, 180, countdown_formatted, pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             
             if (pump_running && pump.total_duration_sec > 0) {
                 float progress = (float)(pump.total_duration_sec - countdown_sec) / pump.total_duration_sec;
                 if (progress < 0) progress = 0;
                 if (progress > 1) progress = 1;
                 uint16_t bar_width = (uint16_t)(140 * progress);
-                tft_fill_rect(10, 175, bar_width, 10, TFT_COLOR_CYAN);
+                tft_fill_rect(10, 220, bar_width, 10, TFT_COLOR_CYAN);
                 if (bar_width < 140) {
-                    tft_fill_rect(10 + bar_width, 175, 140 - bar_width, 10, TFT_COLOR_DARK_NAVY);
+                    tft_fill_rect(10 + bar_width, 220, 140 - bar_width, 10, TFT_COLOR_DARK_NAVY);
                 }
             } else {
-                tft_fill_rect(10, 175, 140, 10, TFT_COLOR_DARK_NAVY);
+                tft_fill_rect(10, 220, 140, 10, TFT_COLOR_DARK_NAVY);
             }
         }
         
@@ -467,12 +470,13 @@ static void tft_display_task(void *pvParameters) {
         if (!s_cache_valid || s_tft_cache.cooling_relay_energized != cooling_relay) {
             s_tft_cache.cooling_relay_energized = cooling_relay;
             if (cooling_relay) {
-                tft_fill_rect(175, 105, 32, 16, TFT_COLOR_CYAN);
-                tft_draw_string(175, 105, " ON ", TFT_COLOR_BLACK, TFT_COLOR_CYAN);
-                tft_fill_rect(175 + 32, 105, 8, 16, TFT_COLOR_DARK_NAVY);
+                tft_fill_rect(175, 100, 64, 32, TFT_COLOR_CYAN);
+                tft_draw_string_x2(175, 100, " ON ", TFT_COLOR_BLACK, TFT_COLOR_CYAN);
+                tft_fill_rect(175 + 64, 100, 140 - 64, 32, TFT_COLOR_DARK_NAVY);
             } else {
-                tft_fill_rect(175, 105, 40, 16, TFT_COLOR_DARK_NAVY);
-                tft_draw_string(175, 105, "OFF  ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_fill_rect(175, 100, 80, 32, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_x2(175, 100, " OFF ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_fill_rect(175 + 80, 100, 140 - 80, 32, TFT_COLOR_DARK_NAVY);
             }
         }
         
@@ -492,7 +496,8 @@ static void tft_display_task(void *pvParameters) {
         
         if (!s_cache_valid || s_tft_cache.cooling_mode != cooling_mode) {
             s_tft_cache.cooling_mode = cooling_mode;
-            tft_draw_string(175, 130, cooling_mode_formatted, mode_color, TFT_COLOR_DARK_NAVY);
+            tft_fill_rect(175, 140, 140, 32, TFT_COLOR_DARK_NAVY);
+            tft_draw_string_x2(175, 140, cooling_mode_formatted, mode_color, TFT_COLOR_DARK_NAVY);
         }
         
         // 10. Cooling Lockout
@@ -503,7 +508,8 @@ static void tft_display_task(void *pvParameters) {
         
         if (!s_cache_valid || s_tft_cache.cooling_lockout_active != lockout_active) {
             s_tft_cache.cooling_lockout_active = lockout_active;
-            tft_draw_string(175, 155, lockout_formatted, lockout_color, TFT_COLOR_DARK_NAVY);
+            tft_fill_rect(175, 180, 140, 32, TFT_COLOR_DARK_NAVY);
+            tft_draw_string_x2(175, 180, lockout_formatted, lockout_color, TFT_COLOR_DARK_NAVY);
         }
         
         s_cache_valid = true;
