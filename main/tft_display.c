@@ -359,29 +359,19 @@ static void tft_display_task(void *pvParameters) {
         // 1. Wi-Fi status
         char wifi_str[32];
         if (wifi_manager_is_sta_connected()) {
-            snprintf(wifi_str, sizeof(wifi_str), "%s", wifi_manager_get_sta_ip());
+            snprintf(wifi_str, sizeof(wifi_str), "STA: %s", wifi_manager_get_sta_ip());
         } else if (wifi_manager_is_ap_enabled()) {
-            snprintf(wifi_str, sizeof(wifi_str), "%s", wifi_manager_get_ap_ip());
+            snprintf(wifi_str, sizeof(wifi_str), "AP: %s", wifi_manager_get_ap_ip());
         } else {
-            snprintf(wifi_str, sizeof(wifi_str), "DISCONNECT");
+            snprintf(wifi_str, sizeof(wifi_str), "DISCONNECT     ");
         }
         
-        char wifi_formatted[20];
-        snprintf(wifi_formatted, sizeof(wifi_formatted), "%-15.15s", wifi_str);
+        char wifi_formatted[24];
+        snprintf(wifi_formatted, sizeof(wifi_formatted), "%-19.19s", wifi_str);
         
         if (!s_cache_valid || strcmp(s_tft_cache.wifi, wifi_formatted) != 0) {
             strcpy(s_tft_cache.wifi, wifi_formatted);
-            tft_draw_string(128, 5, wifi_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
-        }
-        
-        // 2. Uptime
-        uint32_t uptime_sec = (uint32_t)(esp_timer_get_time() / 1000000);
-        char uptime_formatted[16];
-        snprintf(uptime_formatted, sizeof(uptime_formatted), "%lu s     ", uptime_sec);
-        
-        if (!s_cache_valid || s_tft_cache.uptime_sec != uptime_sec) {
-            s_tft_cache.uptime_sec = uptime_sec;
-            tft_draw_string(252, 5, uptime_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
+            tft_draw_string(160, 5, wifi_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
         }
         
         // 3. Pump Status
