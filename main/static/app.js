@@ -19,7 +19,7 @@ function checkAuth() {
     /* Skip auth check on login page itself */
     if (window.location.pathname === '/login') return;
     if (!isAuthenticated()) {
-        window.location.href = '/login';
+        navigateTo('/login');
     }
 }
 
@@ -162,7 +162,7 @@ function initLogin() {
                 return;
             }
 
-            window.location.href = '/dashboard';
+            navigateTo('/dashboard');
         });
     };
 }
@@ -170,12 +170,12 @@ function initLogin() {
 /* ======== Logout ======== */
 
 function doLogout() {
-    if (!confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+    if (!confirm('à¸„à¸¸à¸“à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸šà¹ƒà¸Šà¹ˆà¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆ?')) {
         return;
     }
     apiPost('/api/logout', {}, function() {
         document.cookie = 'session=; Path=/; Max-Age=0';
-        window.location.href = '/login';
+        navigateTo('/login');
     });
 }
 
@@ -343,10 +343,10 @@ function markPumpDirty() {
     if (warning) {
         if (dirty) {
             warning.classList.remove('hidden');
-            setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+            setText('pump-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
         } else {
             warning.classList.add('hidden');
-            setText('pump-config-state', 'โหลดค่าแล้ว');
+            setText('pump-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹à¸¥à¹‰à¸§');
         }
     }
     updatePumpConfigSaveButton();
@@ -356,7 +356,7 @@ function setPumpClean(label) {
     pumpDirty = false;
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('pump-config-state', label || 'บันทึกแล้ว');
+    setText('pump-config-state', label || 'à¸šà¸±à¸™à¸—à¸¶à¸à¹à¸¥à¹‰à¸§');
     updatePumpConfigSaveButton();
 }
 
@@ -367,14 +367,14 @@ function updatePumpConfigSaveButton() {
 
 function loadPumpConfig() {
     var requestEditVersion = pumpEditVersion;
-    setText('pump-config-state', 'กำลังโหลดค่า...');
+    setText('pump-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²...');
     setPumpAlert('pump-config-error', '');
     updatePumpConfigSaveButton();
     apiGet('/api/pump/config', function(err, data) {
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
-            setText('pump-config-state', 'โหลดค่าไม่สำเร็จ');
-            setPumpAlert('pump-config-error', 'โหลดค่าตั้งเวลาไม่สำเร็จ กรุณาโหลดค่าให้สำเร็จก่อนบันทึก');
+            setText('pump-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setPumpAlert('pump-config-error', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹ƒà¸«à¹‰à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸');
             updatePumpConfigSaveButton();
             return;
         }
@@ -382,7 +382,7 @@ function loadPumpConfig() {
         pumpRelayPolarity = data.relay_polarity || null;
         pumpConfigLoaded = !!pumpRelayPolarity;
         if (pumpEditVersion !== requestEditVersion) {
-            setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+            setText('pump-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
             updatePumpConfigSaveButton();
             return;
         }
@@ -395,7 +395,7 @@ function loadPumpConfig() {
         var autoStart = pumpEl('pump-auto-start');
         if (autoStart) autoStart.checked = !!data.auto_start;
         clearPumpValidation();
-        setPumpClean('โหลดค่าแล้ว');
+        setPumpClean('à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹à¸¥à¹‰à¸§');
     });
 }
 
@@ -427,21 +427,21 @@ function readDuration(prefix, label) {
     };
 
     if (rawMin === '' || rawSec === '') {
-        return fail(label + ': กรุณากรอกนาทีและวินาที');
+        return fail(label + ': à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸™à¸²à¸—à¸µà¹à¸¥à¸°à¸§à¸´à¸™à¸²à¸—à¸µ');
     }
     if (!/^\d+$/.test(rawMin) || !/^\d+$/.test(rawSec)) {
-        return fail(label + ': ต้องเป็นจำนวนเต็ม 0 หรือมากกว่า');
+        return fail(label + ': à¸•à¹‰à¸­à¸‡à¹€à¸›à¹‡à¸™à¸ˆà¸³à¸™à¸§à¸™à¹€à¸•à¹‡à¸¡ 0 à¸«à¸£à¸·à¸­à¸¡à¸²à¸à¸à¸§à¹ˆà¸²');
     }
 
     var minutes = parseInt(rawMin, 10);
     var seconds = parseInt(rawSec, 10);
     if (seconds > 59) {
-        return fail(label + ': วินาทีต้องอยู่ระหว่าง 0..59');
+        return fail(label + ': à¸§à¸´à¸™à¸²à¸—à¸µà¸•à¹‰à¸­à¸‡à¸­à¸¢à¸¹à¹ˆà¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡ 0..59');
     }
 
     var total = (minutes * 60) + seconds;
     if (total < 5 || total > 86400) {
-        return fail(label + ': ระยะเวลาต้องอยู่ระหว่าง 5..86400 วินาที');
+        return fail(label + ': à¸£à¸°à¸¢à¸°à¹€à¸§à¸¥à¸²à¸•à¹‰à¸­à¸‡à¸­à¸¢à¸¹à¹ˆà¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡ 5..86400 à¸§à¸´à¸™à¸²à¸—à¸µ');
     }
 
     if (errEl) errEl.textContent = '';
@@ -455,7 +455,7 @@ function readStartPhase(id, label) {
     var errEl = pumpEl(id + '-error');
     var value = el ? el.value : '';
     if (value !== 'on' && value !== 'off') {
-        if (errEl) errEl.textContent = label + ': เลือก ON หรือ OFF';
+        if (errEl) errEl.textContent = label + ': à¹€à¸¥à¸·à¸­à¸ ON à¸«à¸£à¸·à¸­ OFF';
         if (el) el.classList.add('invalid');
         return { ok: false, value: 'on' };
     }
@@ -485,12 +485,12 @@ function clearPumpValidation() {
 
 function validatePumpConfig() {
     clearPumpValidation();
-    var timer1On = readDuration('timer1-on', 'Timer 1 ช่วงเปิด');
-    var timer1Off = readDuration('timer1-off', 'Timer 1 ช่วงปิด');
-    var timer2On = readDuration('timer2-on', 'Timer 2 ช่วงเปิด');
-    var timer2Off = readDuration('timer2-off', 'Timer 2 ช่วงปิด');
-    var timer1Start = readStartPhase('timer1-start-phase', 'Timer 1 เริ่มรอบ');
-    var timer2Start = readStartPhase('timer2-start-phase', 'Timer 2 เริ่มรอบ');
+    var timer1On = readDuration('timer1-on', 'Timer 1 à¸Šà¹ˆà¸§à¸‡à¹€à¸›à¸´à¸”');
+    var timer1Off = readDuration('timer1-off', 'Timer 1 à¸Šà¹ˆà¸§à¸‡à¸›à¸´à¸”');
+    var timer2On = readDuration('timer2-on', 'Timer 2 à¸Šà¹ˆà¸§à¸‡à¹€à¸›à¸´à¸”');
+    var timer2Off = readDuration('timer2-off', 'Timer 2 à¸Šà¹ˆà¸§à¸‡à¸›à¸´à¸”');
+    var timer1Start = readStartPhase('timer1-start-phase', 'Timer 1 à¹€à¸£à¸´à¹ˆà¸¡à¸£à¸­à¸š');
+    var timer2Start = readStartPhase('timer2-start-phase', 'Timer 2 à¹€à¸£à¸´à¹ˆà¸¡à¸£à¸­à¸š');
     if (!timer1On.ok || !timer1Off.ok || !timer2On.ok || !timer2Off.ok ||
         !timer1Start.ok || !timer2Start.ok) {
         return null;
@@ -510,8 +510,8 @@ function validatePumpConfig() {
 function savePumpConfig() {
     var saveBtn = pumpEl('pump-save-config');
     if (!pumpConfigLoaded || !pumpRelayPolarity) {
-        setText('pump-config-state', 'ยังบันทึกไม่ได้');
-        setPumpAlert('pump-config-error', 'กรุณาโหลดค่าจากอุปกรณ์ให้สำเร็จก่อนบันทึก');
+        setText('pump-config-state', 'à¸¢à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸à¹„à¸¡à¹ˆà¹„à¸”à¹‰');
+        setPumpAlert('pump-config-error', 'à¸à¸£à¸¸à¸“à¸²à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¸ˆà¸²à¸à¸­à¸¸à¸›à¸à¸£à¸“à¹Œà¹ƒà¸«à¹‰à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸');
         updatePumpConfigSaveButton();
         return;
     }
@@ -519,25 +519,25 @@ function savePumpConfig() {
     var requestEditVersion = pumpEditVersion;
     var payload = validatePumpConfig();
     if (!payload) {
-        setPumpAlert('pump-config-error', 'ตรวจสอบค่าตั้งเวลาแล้วลองบันทึกอีกครั้ง');
+        setPumpAlert('pump-config-error', 'à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹à¸¥à¹‰à¸§à¸¥à¸­à¸‡à¸šà¸±à¸™à¸—à¸¶à¸à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡');
         return;
     }
 
     setPumpAlert('pump-config-error', '');
     if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.textContent = 'กำลังบันทึก...';
+        saveBtn.textContent = 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...';
     }
-    setText('pump-config-state', 'กำลังบันทึก...');
+    setText('pump-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...');
 
     apiPost('/api/pump/config', payload, function(err, data) {
         if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.textContent = 'บันทึกค่า';
+            saveBtn.textContent = 'à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²';
         }
         if (err || !data || !data.ok) {
-            setText('pump-config-state', 'บันทึกไม่สำเร็จ');
-            setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
+            setText('pump-config-state', 'à¸šà¸±à¸™à¸—à¸¶à¸à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
             updatePumpConfigSaveButton();
             return;
         }
@@ -545,23 +545,23 @@ function savePumpConfig() {
         if (pumpConfig.relay_polarity) pumpRelayPolarity = pumpConfig.relay_polarity;
         pumpConfigLoaded = !!pumpRelayPolarity;
         if (pumpEditVersion === requestEditVersion) {
-            setPumpClean('บันทึกแล้ว');
+            setPumpClean('à¸šà¸±à¸™à¸—à¸¶à¸à¹à¸¥à¹‰à¸§');
         } else {
-            setText('pump-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+            setText('pump-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
             updatePumpConfigSaveButton();
         }
-        showToast('บันทึกค่าปั๊มเรียบร้อย', 'success');
+        showToast('à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²à¸›à¸±à¹Šà¸¡à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
         if (data.status) applyPumpStatus(data.status, true);
         syncPumpStatus(true);
     });
 }
 
 function startPump() {
-    requestPumpAction('/api/pump/start', 'กำลังสั่ง Start...', 'เริ่มระบบปั๊มแล้ว');
+    requestPumpAction('/api/pump/start', 'à¸à¸³à¸¥à¸±à¸‡à¸ªà¸±à¹ˆà¸‡ Start...', 'à¹€à¸£à¸´à¹ˆà¸¡à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡à¹à¸¥à¹‰à¸§');
 }
 
 function stopPump() {
-    requestPumpAction('/api/pump/stop', 'กำลังสั่ง Stop...', 'หยุดระบบปั๊มแล้ว');
+    requestPumpAction('/api/pump/stop', 'à¸à¸³à¸¥à¸±à¸‡à¸ªà¸±à¹ˆà¸‡ Stop...', 'à¸«à¸¢à¸¸à¸”à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡à¹à¸¥à¹‰à¸§');
 }
 
 function requestPumpAction(url, pendingText, successText) {
@@ -573,13 +573,13 @@ function requestPumpAction(url, pendingText, successText) {
         pumpPending = false;
         if (err || !data || !data.ok) {
             setText('pump-action-state', '');
-            setPumpAlert('pump-status-error', (data && data.message) ? data.message : 'สั่งงานปั๊มไม่สำเร็จ');
+            setPumpAlert('pump-status-error', (data && data.message) ? data.message : 'à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™à¸›à¸±à¹Šà¸¡à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
             updatePumpButtons();
-            showToast('สั่งงานปั๊มไม่สำเร็จ', 'error');
+            showToast('à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™à¸›à¸±à¹Šà¸¡à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
             return;
         }
         if (data.status) applyPumpStatus(data.status, true);
-        setText('pump-action-state', data.already_running ? 'ระบบทำงานอยู่แล้ว' : (data.already_stopped ? 'ระบบหยุดอยู่แล้ว' : ''));
+        setText('pump-action-state', data.already_running ? 'à¸£à¸°à¸šà¸šà¸—à¸³à¸‡à¸²à¸™à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§' : (data.already_stopped ? 'à¸£à¸°à¸šà¸šà¸«à¸¢à¸¸à¸”à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§' : ''));
         setPumpAlert('pump-status-error', '');
         updatePumpButtons();
         showToast(successText, 'success');
@@ -623,14 +623,14 @@ function applyPumpStatus(status, authoritative) {
     if (sync) {
         sync.className = status.fault ? 'runtime-eyebrow error' :
             (status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
-        sync.textContent = status.fault ? 'ระบบ relay fault: ปิด relay ทั้งหมดแล้ว' :
-            (status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงก์ล่าสุดจากอุปกรณ์');
+        sync.textContent = status.fault ? 'à¸£à¸°à¸šà¸š relay fault: à¸›à¸´à¸” relay à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”à¹à¸¥à¹‰à¸§' :
+            (status.initial_stabilizing ? 'à¸à¸³à¸¥à¸±à¸‡à¸£à¸­à¸¥à¸¹à¸à¸¥à¸­à¸¢à¸™à¸´à¹ˆà¸‡' : 'à¸‹à¸´à¸‡à¸à¹Œà¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸ˆà¸²à¸à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ');
     }
     if (!pumpDirty && status.settings_status) {
         setText('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
     }
-    setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
-        (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
+    setPumpAlert('pump-status-error', status.fault ? 'à¸žà¸š relay fault à¸£à¸°à¸šà¸šà¸šà¸±à¸‡à¸„à¸±à¸šà¸›à¸´à¸” Relay 1 à¹à¸¥à¸° Relay 2 à¹à¸¥à¹‰à¸§' :
+        (status.config_valid === false ? 'à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸žà¸£à¹‰à¸­à¸¡à¹ƒà¸Šà¹‰à¸‡à¸²à¸™' : ''));
     updatePumpButtons();
 }
 
@@ -640,10 +640,10 @@ function handlePumpStatusFailure() {
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'สถานะปั๊มขาดการซิงก์' : 'รอซิงก์จากอุปกรณ์';
+        sync.textContent = stale ? 'à¸ªà¸–à¸²à¸™à¸°à¸›à¸±à¹Šà¸¡à¸‚à¸²à¸”à¸à¸²à¸£à¸‹à¸´à¸‡à¸à¹Œ' : 'à¸£à¸­à¸‹à¸´à¸‡à¸à¹Œà¸ˆà¸²à¸à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ';
     }
     if (stale) {
-        setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงก์สำเร็จ');
+        setPumpAlert('pump-status-error', 'à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸­à¹ˆà¸²à¸™à¸ªà¸–à¸²à¸™à¸°à¸›à¸±à¹Šà¸¡à¹„à¸”à¹‰à¸Šà¸±à¹ˆà¸§à¸„à¸£à¸²à¸§ à¸›à¸´à¸”à¸›à¸¸à¹ˆà¸¡ Start/Stop à¸ˆà¸™à¸à¸§à¹ˆà¸²à¸ˆà¸°à¸‹à¸´à¸‡à¸à¹Œà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
     }
     updatePumpButtons();
 }
@@ -796,27 +796,27 @@ function renderPumpTimer(value) {
 }
 
 function renderPumpRunLabel(status) {
-    if (!status) return 'ระบบปั๊ม: --';
-    if (status.running) return 'ระบบปั๊ม: กำลังทำงาน';
+    if (!status) return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: --';
+    if (status.running) return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: à¸à¸³à¸¥à¸±à¸‡à¸—à¸³à¸‡à¸²à¸™';
     if (status.active_timer && status.active_timer !== 'none') {
-        return 'ระบบปั๊ม: หยุดอยู่ - พร้อมเริ่ม ' + renderPumpTimer(status.active_timer);
+        return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: à¸«à¸¢à¸¸à¸”à¸­à¸¢à¸¹à¹ˆ - à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡ ' + renderPumpTimer(status.active_timer);
     }
-    return 'ระบบปั๊ม: หยุดอยู่';
+    return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: à¸«à¸¢à¸¸à¸”à¸­à¸¢à¸¹à¹ˆ';
 }
 
 function renderPumpPhase(timer, phase, running) {
     if (!timer || timer === 'none' || !phase || phase === 'idle') return 'Idle';
     var timerLabel = renderPumpTimer(timer);
-    var prefix = running ? '' : 'พร้อมเริ่ม ';
-    if (phase === 'on') return prefix + timerLabel + ' - ช่วงเปิด';
-    if (phase === 'off') return prefix + timerLabel + ' - ช่วงปิด';
+    var prefix = running ? '' : 'à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡ ';
+    if (phase === 'on') return prefix + timerLabel + ' - à¸Šà¹ˆà¸§à¸‡à¹€à¸›à¸´à¸”';
+    if (phase === 'off') return prefix + timerLabel + ' - à¸Šà¹ˆà¸§à¸‡à¸›à¸´à¸”';
     return timerLabel + ' - --';
 }
 
 function renderFloatState(value) {
-    if (value === 'on') return 'ลูกลอย: ON -> Timer 2 / Relay 2';
-    if (value === 'off') return 'ลูกลอย: OFF -> Timer 1 / Relay 1';
-    return 'ลูกลอย: ไม่ทราบสถานะ';
+    if (value === 'on') return 'à¸¥à¸¹à¸à¸¥à¸­à¸¢: ON -> Timer 2 / Relay 2';
+    if (value === 'off') return 'à¸¥à¸¹à¸à¸¥à¸­à¸¢: OFF -> Timer 1 / Relay 1';
+    return 'à¸¥à¸¹à¸à¸¥à¸­à¸¢: à¹„à¸¡à¹ˆà¸—à¸£à¸²à¸šà¸ªà¸–à¸²à¸™à¸°';
 }
 
 function renderRelayName(value) {
@@ -834,26 +834,26 @@ function relayEnergizedFor(channel, status) {
 }
 
 function renderActiveRelayState(status) {
-    if (!status || !status.active_relay || status.active_relay === 'none') return 'รีเลย์: --';
+    if (!status || !status.active_relay || status.active_relay === 'none') return 'à¸£à¸µà¹€à¸¥à¸¢à¹Œ: --';
     var label = renderRelayName(status.active_relay);
-    if (!status.running) return label + ' พร้อมเริ่ม (OFF)';
+    if (!status.running) return label + ' à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡ (OFF)';
     return label + (status.relay_energized ? ' ON' : ' OFF');
 }
 
 function renderRelayChannelState(channel, status) {
     var label = renderRelayName(channel);
     var energized = relayEnergizedFor(channel, status);
-    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' พร้อมเริ่ม';
+    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡';
     return label + ': ' + (energized ? 'ON' : 'OFF') + suffix;
 }
 
 function renderSettingsStatus(value, autoStart) {
-    var label = 'สถานะค่า: ' + value;
-    if (value === 'loaded') label = 'ค่าโหลดแล้ว';
-    else if (value === 'defaults_missing') label = 'ใช้ค่าเริ่มต้น';
-    else if (value === 'defaults_invalid') label = 'ค่าเริ่มต้นไม่ถูกต้อง';
-    else if (value === 'defaults_error') label = 'โหลดค่าเริ่มต้นผิดพลาด';
-    return label + ' • Auto-start: ' + (autoStart ? 'ON' : 'OFF');
+    var label = 'à¸ªà¸–à¸²à¸™à¸°à¸„à¹ˆà¸²: ' + value;
+    if (value === 'loaded') label = 'à¸„à¹ˆà¸²à¹‚à¸«à¸¥à¸”à¹à¸¥à¹‰à¸§';
+    else if (value === 'defaults_missing') label = 'à¹ƒà¸Šà¹‰à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™';
+    else if (value === 'defaults_invalid') label = 'à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™à¹„à¸¡à¹ˆà¸–à¸¹à¸à¸•à¹‰à¸­à¸‡';
+    else if (value === 'defaults_error') label = 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™à¸œà¸´à¸”à¸žà¸¥à¸²à¸”';
+    return label + ' â€¢ Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
 /* ======== Cooling Dashboard ======== */
@@ -933,10 +933,10 @@ function markCoolingDirty() {
     if (warning) {
         if (dirty) {
             warning.classList.remove('hidden');
-            setText('cooling-config-state', 'มีการแก้ไขที่ยังไม่ได้บันทึก');
+            setText('cooling-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
         } else {
             warning.classList.add('hidden');
-            setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
+            setText('cooling-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹à¸¥à¹‰à¸§');
         }
     }
     updateCoolingConfigSaveButton();
@@ -946,7 +946,7 @@ function setCoolingClean(label) {
     coolingDirty = false;
     var warning = pumpEl('cooling-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('cooling-config-state', label || 'บันทึกแล้ว');
+    setText('cooling-config-state', label || 'à¸šà¸±à¸™à¸—à¸¶à¸à¹à¸¥à¹‰à¸§');
     updateCoolingConfigSaveButton();
 }
 
@@ -956,14 +956,14 @@ function updateCoolingConfigSaveButton() {
 }
 
 function loadCoolingConfig() {
-    setText('cooling-config-state', 'กำลังโหลดค่า...');
+    setText('cooling-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²...');
     setCoolingAlert('');
     updateCoolingConfigSaveButton();
     apiGet('/api/cooling/config', function(err, data) {
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
-            setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
-            setCoolingAlert('โหลดค่า cooling ไม่สำเร็จ');
+            setText('cooling-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setCoolingAlert('à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
             updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
@@ -972,7 +972,7 @@ function loadCoolingConfig() {
         coolingConfigLoaded = true;
         setCoolingConfigFields(data);
         if (data.status) applyCoolingStatus(data.status, true);
-        setCoolingClean('โหลดค่า cooling แล้ว');
+        setCoolingClean('à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹à¸¥à¹‰à¸§');
     });
 }
 
@@ -1000,11 +1000,11 @@ function readCoolingX10(id, label, minValue, maxValue) {
     var raw = el ? el.value.trim() : '';
     var value = Number(raw);
     if (raw === '' || !isFinite(value)) {
-        return { ok: false, message: label + ': กรุณากรอกตัวเลข', value: 0 };
+        return { ok: false, message: label + ': à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸•à¸±à¸§à¹€à¸¥à¸‚', value: 0 };
     }
     var x10 = Math.round(value * 10);
     if (Math.abs((value * 10) - x10) > 0.0001 || x10 < minValue || x10 > maxValue) {
-        return { ok: false, message: label + ': ค่าอยู่นอกช่วงที่รองรับ', value: 0 };
+        return { ok: false, message: label + ': à¸„à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆà¸™à¸­à¸à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¸£à¸­à¸‡à¸£à¸±à¸š', value: 0 };
     }
     return { ok: true, value: x10 };
 }
@@ -1013,11 +1013,11 @@ function readCoolingU32(id, label, minValue, maxValue) {
     var el = pumpEl(id);
     var raw = el ? el.value.trim() : '';
     if (!/^\d+$/.test(raw)) {
-        return { ok: false, message: label + ': ต้องเป็นจำนวนเต็ม', value: 0 };
+        return { ok: false, message: label + ': à¸•à¹‰à¸­à¸‡à¹€à¸›à¹‡à¸™à¸ˆà¸³à¸™à¸§à¸™à¹€à¸•à¹‡à¸¡', value: 0 };
     }
     var value = parseInt(raw, 10);
     if (value < minValue || value > maxValue) {
-        return { ok: false, message: label + ': ค่าอยู่นอกช่วงที่รองรับ', value: 0 };
+        return { ok: false, message: label + ': à¸„à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆà¸™à¸­à¸à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¸£à¸­à¸‡à¸£à¸±à¸š', value: 0 };
     }
     return { ok: true, value: value };
 }
@@ -1051,20 +1051,20 @@ function saveCoolingConfig() {
     if (!coolingConfigLoaded || coolingPending) return;
     var built = buildCoolingConfigPayload();
     if (!built || !built.ok) {
-        setCoolingAlert((built && built.message) ? built.message : 'ตรวจสอบค่า cooling แล้วลองบันทึกอีกครั้ง');
+        setCoolingAlert((built && built.message) ? built.message : 'à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸„à¹ˆà¸² cooling à¹à¸¥à¹‰à¸§à¸¥à¸­à¸‡à¸šà¸±à¸™à¸—à¸¶à¸à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡');
         return;
     }
 
     coolingPending = true;
     setCoolingAlert('');
-    setText('cooling-config-state', 'กำลังบันทึก cooling...');
+    setText('cooling-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸ cooling...');
     updateCoolingConfigSaveButton();
     updateCoolingButtons();
     apiPost('/api/cooling/config', built.payload, function(err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
-            setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
-            setCoolingAlert((data && data.message) ? data.message : 'บันทึก cooling ไม่สำเร็จ');
+            setText('cooling-config-state', 'à¸šà¸±à¸™à¸—à¸¶à¸ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setCoolingAlert((data && data.message) ? data.message : 'à¸šà¸±à¸™à¸—à¸¶à¸ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
             updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
@@ -1073,8 +1073,8 @@ function saveCoolingConfig() {
         coolingConfigLoaded = true;
         setCoolingConfigFields(data);
         if (data.status) applyCoolingStatus(data.status, true);
-        setCoolingClean('บันทึก cooling แล้ว');
-        showToast('บันทึกค่า cooling เรียบร้อย', 'success');
+        setCoolingClean('à¸šà¸±à¸™à¸—à¸¶à¸ cooling à¹à¸¥à¹‰à¸§');
+        showToast('à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸² cooling à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
     });
 }
 
@@ -1082,15 +1082,15 @@ function setCoolingMode(mode) {
     if (coolingPending) return;
     coolingPending = true;
     var label = mode === 'auto' ? 'Auto' : (mode === 'test_on' ? 'Test ON' : 'Force OFF');
-    setText('cooling-mode-action-state', 'กำลังสั่ง ' + label + '...');
+    setText('cooling-mode-action-state', 'à¸à¸³à¸¥à¸±à¸‡à¸ªà¸±à¹ˆà¸‡ ' + label + '...');
     updateCoolingButtons();
     apiPost('/api/cooling/mode', { mode: mode }, function(err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
             setText('cooling-mode-action-state', '');
-            setCoolingAlert((data && data.message) ? data.message : 'สั่งงาน cooling ไม่สำเร็จ');
+            setCoolingAlert((data && data.message) ? data.message : 'à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
             updateCoolingButtons();
-            showToast('สั่งงาน cooling ไม่สำเร็จ', 'error');
+            showToast('à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
             return;
         }
         coolingConfig = data;
@@ -1099,7 +1099,7 @@ function setCoolingMode(mode) {
         setText('cooling-mode-action-state', '');
         setCoolingAlert('');
         updateCoolingButtons();
-        showToast('สั่งงาน cooling เรียบร้อย', 'success');
+        showToast('à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™ cooling à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
         syncCoolingStatus(true);
     });
 }
@@ -1142,9 +1142,9 @@ function applyCoolingStatus(status, authoritative) {
             : (status.lockout_active || status.mode === 'test_on' ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
         sync.textContent = status.fault || status.sensor_state === 'fault'
             ? 'Sensor fault: cooling relay forced OFF'
-            : (status.lockout_active ? 'Compressor lockout active' : 'ซิงก์ล่าสุดจาก cooling runtime');
+            : (status.lockout_active ? 'Compressor lockout active' : 'à¸‹à¸´à¸‡à¸à¹Œà¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸ˆà¸²à¸ cooling runtime');
     }
-    setCoolingAlert(status.fault ? 'พบ sensor fault ระบบบังคับปิด cooling relay แล้ว' : '');
+    setCoolingAlert(status.fault ? 'à¸žà¸š sensor fault à¸£à¸°à¸šà¸šà¸šà¸±à¸‡à¸„à¸±à¸šà¸›à¸´à¸” cooling relay à¹à¸¥à¹‰à¸§' : '');
     updateCoolingButtons();
 }
 
@@ -1153,10 +1153,10 @@ function handleCoolingStatusFailure() {
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'สถานะ cooling ขาดการซิงก์' : 'รอซิงก์ cooling';
+        sync.textContent = stale ? 'à¸ªà¸–à¸²à¸™à¸° cooling à¸‚à¸²à¸”à¸à¸²à¸£à¸‹à¸´à¸‡à¸à¹Œ' : 'à¸£à¸­à¸‹à¸´à¸‡à¸à¹Œ cooling';
     }
     if (stale) {
-        setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
+        setCoolingAlert('à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸­à¹ˆà¸²à¸™à¸ªà¸–à¸²à¸™à¸° cooling à¹„à¸”à¹‰à¸Šà¸±à¹ˆà¸§à¸„à¸£à¸²à¸§');
     }
     updateCoolingButtons();
 }
@@ -1333,7 +1333,7 @@ function loadHardwareMap() {
     apiGet('/api/hardware/map', function(err, data) {
         if (err) {
             if (err.message === 'HTTP 401') {
-                window.location.href = '/login';
+                navigateTo('/login');
                 return;
             }
             setHardwareState('Load failed');
@@ -1545,7 +1545,7 @@ function refreshFullStatus() {
     apiGet('/api/status', function(err, data) {
         statusFullRequestInFlight = false;
         if (err || !data || !data.ok) {
-            if (err && err.message === 'HTTP 401') { window.location.href = '/login'; }
+            if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
             return;
         }
 
@@ -1629,7 +1629,7 @@ function refreshStatus() {
     apiGet('/api/status', function(err, data) {
         statusSummaryRequestInFlight = false;
         if (err || !data || !data.ok) {
-            if (err && err.message === 'HTTP 401') { window.location.href = '/login'; }
+            if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
             return;
         }
 
@@ -1761,7 +1761,7 @@ function updateConnectionStatus() {
 }
 
 function doDisconnect() {
-    if (!confirm('คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?')) {
+    if (!confirm('à¸„à¸¸à¸“à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­ Wi-Fi à¹ƒà¸Šà¹ˆà¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆ?')) {
         return;
     }
     var btn = document.getElementById('disconnect-btn');
@@ -1769,7 +1769,7 @@ function doDisconnect() {
 
     apiPost('/api/wifi/disconnect', {}, function(err, data) {
         if ((data && data.ok) || (err && !data)) {
-            showToast('ตัดการเชื่อมต่อเรียบร้อย', 'success');
+            showToast('à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
             clearSelection();
             setTimeout(function() {
                 if (btn) {
@@ -1783,7 +1783,7 @@ function doDisconnect() {
                 btn.disabled = false;
                 btn.textContent = 'Disconnect';
             }
-            showToast('ตัดการเชื่อมต่อไม่สำเร็จ', 'error');
+            showToast('à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
         }
     });
 }
@@ -2107,24 +2107,86 @@ function escJs(str) {
     return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+
+/* ======== SPA Routing ======== */
+
+function navigateTo(path) {
+    if (window.location.pathname === path) return;
+    history.pushState(null, '', path);
+    handleRoute();
+}
+
+function handleRoute() {
+    var path = window.location.pathname;
+    
+    if (path === '/' || path === '') {
+        path = isAuthenticated() ? '/dashboard' : '/login';
+        history.replaceState(null, '', path);
+    }
+    
+    var views = document.querySelectorAll('.view');
+    for (var i = 0; i < views.length; i++) {
+        views[i].classList.add('hidden');
+    }
+    
+    var viewId = 'view-login';
+    if (path === '/dashboard') viewId = 'view-dashboard';
+    else if (path === '/status') viewId = 'view-status';
+    else if (path === '/wifi') viewId = 'view-wifi';
+    else if (path === '/hardware') viewId = 'view-hardware';
+    
+    var activeView = document.getElementById(viewId);
+    if (activeView) {
+        activeView.classList.remove('hidden');
+    }
+    
+    var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+    for (var j = 0; j < navItems.length; j++) {
+        navItems[j].classList.remove('active');
+        if (navItems[j].getAttribute('href') === path) {
+            navItems[j].classList.add('active');
+        }
+    }
+    
+    checkAuth();
+    
+    if (path === '/login') {
+        if (typeof initLogin === 'function') initLogin();
+    } else if (path === '/dashboard') {
+        if (typeof initDashboard === 'function') initDashboard();
+    } else if (path === '/status') {
+        if (typeof initStatus === 'function') initStatus();
+    } else if (path === '/wifi') {
+        if (typeof initWifi === 'function') initWifi();
+    } else if (path === '/hardware') {
+        if (typeof initHardwareInstall === 'function') initHardwareInstall();
+    }
+    
+    if (typeof closeMobileNav === 'function') closeMobileNav();
+}
+
+window.addEventListener('popstate', handleRoute);
+
 /* ======== Init ======== */
 
 (function() {
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeMobileNav();
+        if (e.key === 'Escape') {
+            if (typeof closeMobileNav === 'function') closeMobileNav();
+        }
     });
 
-    var path = window.location.pathname;
+    document.addEventListener('click', function(e) {
+        var link = e.target.closest('a');
+        if (link) {
+            var href = link.getAttribute('href');
+            if (href && href.startsWith('/') && href !== '#') {
+                e.preventDefault();
+                navigateTo(href);
+            }
+        }
+    });
 
-    if (path === '/login') {
-        initLogin();
-    } else if (path === '/dashboard') {
-        initDashboard();
-    } else if (path === '/status') {
-        initStatus();
-    } else if (path === '/wifi') {
-        initWifi();
-    } else if (path === '/hardware') {
-        initHardwareInstall();
-    }
+    handleRoute();
 })();
+
