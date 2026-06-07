@@ -2,12 +2,12 @@
 
 **4 phases** | **10 requirements mapped** | All covered ✓
 
-| # | Phase | Goal | Requirements | Success Criteria |
-|---|-------|------|--------------|------------------|
-| 18 | Modern App Shell & Architecture Foundation | Establish SPA layout, CSS variables, and typography. | ARCH-UI-01, ARCH-UI-02, ARCH-UI-03 | 3 |
-| 19 | Dashboard & Control Implementation | Redesign Pump, Timer, and Cooling controls to card-based layout. | DASH-UI-01, DASH-UI-02 | 3 |
-| 20 | System Status & Hardware/Install Pages | Overhaul the status view and GPIO configuration interface. | SYS-UI-02, SYS-UI-03 | 3 |
-| 21 | Wi-Fi Setup & UX Polish | Overhaul Wi-Fi Setup stepper and integrate loading/modal feedback across the app. | SYS-UI-01, UX-UI-01, UX-UI-02 | 3 |
+| # | Phase | Status | Goal | Requirements | Success Criteria |
+|---|-------|--------|------|--------------|------------------|
+| 18 | Modern App Shell & Architecture Foundation | Not Started | Establish SPA layout, CSS variables, and typography. | ARCH-UI-01, ARCH-UI-02, ARCH-UI-03 | 3 |
+| 19 | Dashboard & Control Implementation | Not Started | Redesign Pump, Timer, and Cooling controls to card-based layout. | DASH-UI-01, DASH-UI-02 | 3 |
+| 20 | System Status & Hardware/Install Pages | Not Started | Overhaul the status view and GPIO configuration interface. | SYS-UI-02, SYS-UI-03 | 3 |
+| 21 | Wi-Fi Setup & UX Polish | Not Started | Overhaul Wi-Fi Setup stepper and integrate loading/modal feedback across the app. | SYS-UI-01, UX-UI-01, UX-UI-02 | 3 |
 
 ### Phase Details
 
@@ -18,6 +18,13 @@ Success criteria:
 1. Base HTML structure includes sidebar, mobile header, and main content wrapper.
 2. CSS variables (HSL colors, radius, shadows) and system font stack are applied.
 3. No external dependencies (CDNs) are loaded; inline SVGs are used.
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — CSS Design System Refactor
+- [ ] 18-02-PLAN.md — SPA Shell HTML and JS Routing Setup
+- [ ] 18-03-PLAN.md — HTML Content Migration and C Server Integration
 
 **Phase 19: Dashboard & Control Implementation**
 Goal: Redesign Pump, Timer, and Cooling controls to card-based layout.
