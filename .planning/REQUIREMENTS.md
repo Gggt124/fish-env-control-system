@@ -32,13 +32,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-UI-01  | TBD   | Pending|
-| ARCH-UI-02  | TBD   | Pending|
-| ARCH-UI-03  | TBD   | Pending|
-| DASH-UI-01  | TBD   | Pending|
-| DASH-UI-02  | TBD   | Pending|
-| SYS-UI-01   | TBD   | Pending|
-| SYS-UI-02   | TBD   | Pending|
-| SYS-UI-03   | TBD   | Pending|
-| UX-UI-01    | TBD   | Pending|
-| UX-UI-02    | TBD   | Pending|
+| ARCH-UI-01  | Phase 18 | Pending|
+| ARCH-UI-02  | Phase 18 | Pending|
+| ARCH-UI-03  | Phase 18 | Pending|
+| DASH-UI-01  | Phase 19 | Pending|
+| DASH-UI-02  | Phase 19 | Pending|
+| SYS-UI-01   | Phase 21 | Pending|
+| SYS-UI-02   | Phase 20 | Pending|
+| SYS-UI-03   | Phase 20 | Pending|
+| UX-UI-01    | Phase 21 | Pending|
+| UX-UI-02    | Phase 21 | Pending|
