@@ -77,3 +77,4 @@ Last activity: 2026-06-06 — Milestone v1.5 completed and archived
 | 2026-06-06 | 260607-157 | Redesign TFT Dashboard Layout |
 | 2026-06-07 | tft-label-cleanup | Removed redundant labels from TFT display |
 | 2026-06-07 | tft-scale-values | Scaled up TFT dynamic values to x2 size for clarity |
+| 2026-06-07 | tft-modern-card-redesign | Refactored TFT dashboard layout to modern card design |
