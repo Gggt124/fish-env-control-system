@@ -102,7 +102,7 @@ esp_err_t tft_display_init(void) {
     // 5. Install panel driver
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = APP_TEMPLATE_TFT_RESET_GPIO,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
 #ifdef APP_TEMPLATE_TFT_PANEL_ST7789
@@ -310,7 +310,7 @@ void tft_display_draw_dashboard_skeleton(void) {
     tft_draw_string(185, 32, "COOLING CHANNEL", TFT_COLOR_BLACK, TFT_COLOR_CYAN);
     
     // Status bar static labels
-    tft_draw_string(5, 5, APP_TEMPLATE_MDNS_HOSTNAME ".local", TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
+    tft_draw_string(5, 5, "fish-pump", TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
     
     // Static Labels Left Card
     tft_draw_string(15, 120, "TIMER :", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
@@ -359,7 +359,7 @@ static void tft_display_task(void *pvParameters) {
         // 1. Wi-Fi status
         char wifi_str[32];
         if (wifi_manager_is_sta_connected()) {
-            snprintf(wifi_str, sizeof(wifi_str), "STA: %s", wifi_manager_get_sta_ip());
+            snprintf(wifi_str, sizeof(wifi_str), "%s", wifi_manager_get_sta_ip());
         } else if (wifi_manager_is_ap_enabled()) {
             snprintf(wifi_str, sizeof(wifi_str), "AP: %s", wifi_manager_get_ap_ip());
         } else {
@@ -367,23 +367,21 @@ static void tft_display_task(void *pvParameters) {
         }
         
         char wifi_formatted[20];
-        snprintf(wifi_formatted, sizeof(wifi_formatted), "%-18.18s", wifi_str);
+        snprintf(wifi_formatted, sizeof(wifi_formatted), "%-16.16s", wifi_str);
         
         if (!s_cache_valid || strcmp(s_tft_cache.wifi, wifi_formatted) != 0) {
             strcpy(s_tft_cache.wifi, wifi_formatted);
-            tft_fill_rect(110, 5, 135, 16, TFT_COLOR_DARK_PANEL);
-            tft_draw_string(110, 5, wifi_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
+            tft_draw_string(85, 5, wifi_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
         }
         
         // 2. Uptime
         uint32_t uptime_sec = (uint32_t)(esp_timer_get_time() / 1000000);
         char uptime_formatted[16];
-        snprintf(uptime_formatted, sizeof(uptime_formatted), "UP: %luds", uptime_sec);
+        snprintf(uptime_formatted, sizeof(uptime_formatted), "UP: %lu s    ", uptime_sec);
         
         if (!s_cache_valid || s_tft_cache.uptime_sec != uptime_sec) {
             s_tft_cache.uptime_sec = uptime_sec;
-            tft_fill_rect(245, 5, 75, 16, TFT_COLOR_DARK_PANEL);
-            tft_draw_string(245, 5, uptime_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
+            tft_draw_string(220, 5, uptime_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
         }
         
         // 3. Pump Status
@@ -431,12 +429,11 @@ static void tft_display_task(void *pvParameters) {
         
         // 6. Pump Remaining
         uint32_t countdown_sec = pump.countdown_sec;
-        char countdown_formatted[12];
-        snprintf(countdown_formatted, sizeof(countdown_formatted), "%-8lus", countdown_sec);
+        char countdown_formatted[16];
+        snprintf(countdown_formatted, sizeof(countdown_formatted), "%lu s     ", countdown_sec);
         
         if (!s_cache_valid || s_tft_cache.pump_countdown_sec != countdown_sec || pump_running_changed) {
             s_tft_cache.pump_countdown_sec = countdown_sec;
-            tft_fill_rect(75, 170, 75, 16, TFT_COLOR_DARK_NAVY);
             tft_draw_string(75, 170, countdown_formatted, pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             
             if (pump_running && pump.total_duration_sec > 0) {
@@ -458,6 +455,8 @@ static void tft_display_task(void *pvParameters) {
         // 7. Cooling Temp
         bool temp_valid = cooling.temperature_valid;
         float temp_val = cooling.temperature_c;
+        float threshold = cooling.threshold_c_x10 / 10.0f;
+        float hysteresis = cooling.hysteresis_c_x10 / 10.0f;
         char temp_formatted[12];
         if (temp_valid) {
             snprintf(temp_formatted, sizeof(temp_formatted), "%5.1f C", temp_val);
@@ -467,8 +466,8 @@ static void tft_display_task(void *pvParameters) {
         
         uint16_t temp_color = TFT_COLOR_RED;
         if (temp_valid) {
-            if (temp_val < 28.0f) temp_color = TFT_COLOR_GREEN;
-            else if (temp_val <= 30.0f) temp_color = TFT_COLOR_YELLOW;
+            if (temp_val < (threshold - hysteresis)) temp_color = TFT_COLOR_GREEN;
+            else if (temp_val < threshold) temp_color = TFT_COLOR_ORANGE;
             else temp_color = TFT_COLOR_RED;
         }
         
