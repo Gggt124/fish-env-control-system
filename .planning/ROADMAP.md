@@ -24,7 +24,7 @@ Success criteria:
 Plans:
 - [x] 18-01-PLAN.md — CSS Design System Refactor
 - [x] 18-02-PLAN.md — SPA Shell HTML and JS Routing Setup
-- [ ] 18-03-PLAN.md — HTML Content Migration and C Server Integration
+- [x] 18-03-PLAN.md — HTML Content Migration and C Server Integration
 
 **Phase 19: Dashboard & Control Implementation**
 Goal: Redesign Pump, Timer, and Cooling controls to card-based layout.
