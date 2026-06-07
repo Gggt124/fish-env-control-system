@@ -376,41 +376,39 @@ static void tft_display_task(void *pvParameters) {
         
         // 3. Pump Status
         bool pump_running = pump.running;
-        bool pump_running_changed = (!s_cache_valid || s_tft_cache.pump_running != pump_running);
-        
-        if (pump_running_changed) {
-            s_tft_cache.pump_running = pump_running;
-            if (pump_running) {
-                tft_draw_string_x2(24, 60, "RUNNING", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
-            } else {
-                tft_draw_string_x2(24, 60, "STOPPED", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
-            }
-        }
-        
-        // 4. Pump Active Timer
         pump_control_active_timer_t active_timer = pump.active_timer;
-        char active_timer_formatted[12];
-        const char *timer_name = "NONE";
-        if (active_timer == PUMP_CONTROL_TIMER_1) timer_name = "TIMER 1";
-        else if (active_timer == PUMP_CONTROL_TIMER_2) timer_name = "TIMER 2";
-        snprintf(active_timer_formatted, sizeof(active_timer_formatted), "%-8s", timer_name);
-        
-        if (!s_cache_valid || s_tft_cache.pump_active_timer != active_timer) {
-            s_tft_cache.pump_active_timer = active_timer;
-            tft_draw_string(75, 120, active_timer_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_NAVY);
-        }
-        
-        // 5. Pump Phase
         pump_control_timer_phase_t phase = pump.phase;
         
-        if (!s_cache_valid || s_tft_cache.pump_phase != phase || pump_running_changed) {
+        bool pump_running_changed = (!s_cache_valid || s_tft_cache.pump_running != pump_running);
+        bool pump_timer_changed = (!s_cache_valid || s_tft_cache.pump_active_timer != active_timer);
+        bool pump_phase_changed = (!s_cache_valid || s_tft_cache.pump_phase != phase);
+        
+        if (pump_running_changed || pump_timer_changed || pump_phase_changed) {
+            s_tft_cache.pump_running = pump_running;
+            s_tft_cache.pump_active_timer = active_timer;
             s_tft_cache.pump_phase = phase;
+            
             if (!pump_running) {
+                tft_draw_string_x2(11, 60, "STOPPED ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_draw_string(75, 120, "NONE    ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
                 tft_draw_string(75, 145, "[IDLE] ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
-            } else if (phase == PUMP_CONTROL_PHASE_ON) {
-                tft_draw_string(75, 145, "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
-            } else if (phase == PUMP_CONTROL_PHASE_OFF) {
-                tft_draw_string(75, 145, "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+            } else {
+                char big_str[10];
+                char t_chr = (active_timer == PUMP_CONTROL_TIMER_1) ? '1' : '2';
+                
+                if (phase == PUMP_CONTROL_PHASE_ON) {
+                    snprintf(big_str, sizeof(big_str), "T%c RUN  ", t_chr);
+                    tft_draw_string_x2(11, 60, big_str, TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
+                    tft_draw_string(75, 145, "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
+                } else {
+                    snprintf(big_str, sizeof(big_str), "T%c IDLE ", t_chr);
+                    tft_draw_string_x2(11, 60, big_str, TFT_COLOR_ORANGE, TFT_COLOR_DARK_NAVY);
+                    tft_draw_string(75, 145, "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                }
+                
+                char active_timer_formatted[12];
+                snprintf(active_timer_formatted, sizeof(active_timer_formatted), "TIMER %c ", t_chr);
+                tft_draw_string(75, 120, active_timer_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_NAVY);
             }
         }
         
@@ -492,7 +490,7 @@ static void tft_display_task(void *pvParameters) {
         if (!s_cache_valid || s_tft_cache.cooling_relay_energized != cooling_relay) {
             s_tft_cache.cooling_relay_energized = cooling_relay;
             if (cooling_relay) {
-                tft_draw_string(235, 145, "[ ON ] ", TFT_COLOR_CYAN, TFT_COLOR_DARK_NAVY);
+                tft_draw_string(235, 145, "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
             } else {
                 tft_draw_string(235, 145, "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             }
