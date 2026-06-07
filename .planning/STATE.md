@@ -76,3 +76,4 @@ Last activity: 2026-06-06 — Milestone v1.5 completed and archived
 | 2026-06-06 | hardware-ui-tweak | Changed "Fixed SPI Pinout" to neutral and "Active map loaded" to green |
 | 2026-06-06 | 260607-157 | Redesign TFT Dashboard Layout |
 | 2026-06-07 | tft-label-cleanup | Removed redundant labels from TFT display |
+| 2026-06-07 | tft-scale-values | Scaled up TFT dynamic values to x2 size for clarity |
