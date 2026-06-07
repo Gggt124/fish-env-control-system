@@ -7,11 +7,7 @@ idf_component_register(
     INCLUDE_DIRS
         "."
     EMBED_FILES
-        "static/login.html"
-        "static/dashboard.html"
-        "static/status.html"
-        "static/wifi.html"
-        "static/hardware.html"
+        "static/index.html"
         "static/style.css"
         "static/app.js"
     REQUIRES
