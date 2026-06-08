@@ -8,7 +8,7 @@
 | 19 | Dashboard & Control Implementation | Not Started | Redesign Pump, Timer, and Cooling controls to card-based layout. | DASH-UI-01, DASH-UI-02 | 3 |
 | 20 | System Status & Hardware/Install Pages | Not Started | Overhaul the status view and GPIO configuration interface. | SYS-UI-02, SYS-UI-03 | 3 |
 | 21 | Wi-Fi Setup & UX Polish | Not Started | Overhaul Wi-Fi Setup stepper and integrate loading/modal feedback across the app. | SYS-UI-01, UX-UI-01, UX-UI-02 | 3 |
-| 22 | UAT Bug Fixes | Not Started | Address the User Acceptance Testing (UAT) feedback for the Modern Web UI milestone. | UAT-UI-01 | 4 |
+| 22 | UAT Bug Fixes | Completed | Address the User Acceptance Testing (UAT) feedback for the Modern Web UI milestone. | UAT-UI-01 | 4 |
 
 ### Phase Details
 
@@ -81,4 +81,4 @@ Success criteria:
 
 Plans:
 - [x] 22-01-PLAN.md — Fix Dark Mode and Sidebar
-- [ ] 22-02-PLAN.md — Fix Functional Bugs and Encoding
+- [x] 22-02-PLAN.md — Fix Functional Bugs and Encoding
