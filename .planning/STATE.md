@@ -69,6 +69,7 @@ Last activity: 2026-06-08 - Completed 22-uat-bug-fixes-02-PLAN.md
 
 | Date | Slug | Description |
 |---|---|---|
+| 2026-06-08 | 260608-wifi-modal-refinements | Refine Wi-Fi Settings page styling (transparent disconnected card, larger checkboxes, direct connection trigger) |
 | 2026-06-08 | 260608-wifi-modal-layout | Refactor Wi-Fi Settings page styling and modal-based connection dialog |
 | 2026-06-06 | hardware-ui-tweak | Changed "Fixed SPI Pinout" to neutral and "Active map loaded" to green |
 | 2026-06-06 | 260607-157 | Redesign TFT Dashboard Layout |
