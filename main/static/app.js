@@ -122,6 +122,42 @@ function closeMobileNav() {
 window.toggleMobileNav = toggleMobileNav;
 window.closeMobileNav = closeMobileNav;
 
+
+function setLoading(btn, isLoading) {
+    if (typeof btn === 'string') btn = document.getElementById(btn);
+    if (!btn) return;
+    btn.disabled = !!isLoading;
+    if (isLoading) {
+        btn.classList.add('loading');
+    } else {
+        btn.classList.remove('loading');
+    }
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    var container = document.getElementById('modal-container');
+    var titleEl = document.getElementById('modal-title');
+    var msgEl = document.getElementById('modal-message');
+    var cancelBtn = document.getElementById('modal-cancel');
+    var confirmBtn = document.getElementById('modal-confirm');
+    
+    if (!container || !titleEl || !msgEl || !cancelBtn || !confirmBtn) return;
+    
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    
+    function cleanup() {
+        container.classList.add('hidden');
+        cancelBtn.onclick = null;
+        confirmBtn.onclick = null;
+    }
+    
+    cancelBtn.onclick = function() { cleanup(); };
+    confirmBtn.onclick = function() { cleanup(); if (onConfirm) onConfirm(); };
+    
+    container.classList.remove('hidden');
+}
+
 /* ======== Login Page ======== */
 
 function initLogin() {
@@ -142,13 +178,11 @@ function initLogin() {
             return;
         }
 
-        btn.disabled = true;
-        btn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a...';
+        setLoading(btn, true);
         errEl.style.display = 'none';
 
         apiPost('/api/login', { username: username, password: password }, function(err, data) {
-            btn.disabled = false;
-            btn.textContent = '\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a';
+            setLoading(btn, false);
 
             if (err || !data || !data.ok) {
                 errEl.style.display = 'block';
@@ -170,12 +204,11 @@ function initLogin() {
 /* ======== Logout ======== */
 
 function doLogout() {
-    if (!confirm('à¸„à¸¸à¸“à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸šà¹ƒà¸Šà¹ˆà¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆ?')) {
-        return;
-    }
+    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function() {
     apiPost('/api/logout', {}, function() {
         document.cookie = 'session=; Path=/; Max-Age=0';
         navigateTo('/login');
+    });
     });
 }
 
@@ -524,17 +557,11 @@ function savePumpConfig() {
     }
 
     setPumpAlert('pump-config-error', '');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...';
-    }
+    if (saveBtn) setLoading(saveBtn, true);
     setText('pump-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...');
 
     apiPost('/api/pump/config', payload, function(err, data) {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²';
-        }
+        if (saveBtn) setLoading(saveBtn, false);
         if (err || !data || !data.ok) {
             setText('pump-config-state', 'à¸šà¸±à¸™à¸—à¸¶à¸à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
             setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
@@ -971,7 +998,14 @@ function setCoolingClean(label) {
 
 function updateCoolingConfigSaveButton() {
     var saveBtn = pumpEl('cooling-save-config');
-    if (saveBtn) saveBtn.disabled = !coolingConfigLoaded || coolingPending || !coolingDirty;
+    if (saveBtn) {
+        if (coolingPending) {
+            setLoading(saveBtn, true);
+        } else {
+            setLoading(saveBtn, false);
+            saveBtn.disabled = !coolingConfigLoaded || !coolingDirty;
+        }
+    }
 }
 
 function loadCoolingConfig() {
@@ -1342,8 +1376,12 @@ function updateHardwareSaveButton() {
     var btn = hardwareEl('hardware-save-map');
     if (!btn) return;
     var confirm = hardwareEl('hardware-confirm-reboot');
-    btn.disabled = hardwarePending || !hardwareDirty || !confirm || !confirm.checked;
-    btn.textContent = hardwarePending ? 'Applying...' : 'Apply';
+    if (hardwarePending) {
+        setLoading(btn, true);
+    } else {
+        setLoading(btn, false);
+        btn.disabled = !hardwareDirty || !confirm || !confirm.checked;
+    }
 }
 
 function loadHardwareMap() {
@@ -1780,11 +1818,9 @@ function updateConnectionStatus() {
 }
 
 function doDisconnect() {
-    if (!confirm('à¸„à¸¸à¸“à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­ Wi-Fi à¹ƒà¸Šà¹ˆà¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆ?')) {
-        return;
-    }
+    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function() {
     var btn = document.getElementById('disconnect-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Disconnecting...'; }
+    if (btn) { setLoading(btn, true); }
 
     apiPost('/api/wifi/disconnect', {}, function(err, data) {
         if ((data && data.ok) || (err && !data)) {
@@ -1792,18 +1828,17 @@ function doDisconnect() {
             clearSelection();
             setTimeout(function() {
                 if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = 'Disconnect';
+                    setLoading(btn, false);
                 }
                 updateConnectionStatus();
             }, 1200);
         } else {
             if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Disconnect';
+                setLoading(btn, false);
             }
             showToast('à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
         }
+    });
     });
 }
 
@@ -1825,7 +1860,7 @@ function doScan() {
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class=\"spinner\"></span> \u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e41\u0e01\u0e19...'; }
 
     apiGet('/api/wifi/scan', function(err, data) {
-        if (btn) { btn.disabled = false; btn.innerHTML = '&#8635; \u0e2a\u0e41\u0e01\u0e19\u0e43\u0e2b\u0e21\u0e48'; }
+        if (btn) setLoading(btn, false);
 
         if (err || !data || !data.ok) {
             if (list) list.innerHTML = '<div class=\"network-empty error\">\u0e2a\u0e41\u0e01\u0e19\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08</div>';
@@ -2018,7 +2053,7 @@ function doConnect() {
     var connectBtn = document.getElementById('connect-btn');
     var statusEl = document.getElementById('connect-status');
 
-    if (connectBtn) { connectBtn.disabled = true; connectBtn.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; }
+    if (connectBtn) setLoading(connectBtn, true);
     if (statusEl) { statusEl.textContent = ''; statusEl.style.color = 'var(--on-surface-variant)'; }
 
     updateStepper(3);
@@ -2032,7 +2067,7 @@ function doConnect() {
 
     apiPost('/api/wifi/connect', body, function(err, data) {
         if (err) {
-            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (connectBtn) setLoading(connectBtn, false);
             if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14'; statusEl.style.color = 'var(--error)'; }
             updateStepper(2);
             return;
@@ -2047,14 +2082,14 @@ function doConnect() {
             if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
             wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 1000);
         } else if (data && data.ok) {
-            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (connectBtn) setLoading(connectBtn, false);
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
             /* Mark step 3 as done */
             updateStepper(3, true);
             /* Update AP pill */
             updateApPill();
         } else {
-            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (connectBtn) setLoading(connectBtn, false);
             if (statusEl) {
                 statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: ' + (data && data.error ? data.error : '\u0e25\u0e2d\u0e07\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07');
                 statusEl.style.color = 'var(--error)';
@@ -2071,7 +2106,7 @@ function pollWifiConnection(attempt) {
 
         if (!err && data && data.ok && data.sta_connected) {
             wifiConnectPollTimer = null;
-            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (connectBtn) setLoading(connectBtn, false);
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
             
             var banner = document.getElementById('reconnect-banner');
@@ -2085,7 +2120,7 @@ function pollWifiConnection(attempt) {
 
         if (attempt >= 15) {
             wifiConnectPollTimer = null;
-            if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d'; }
+            if (connectBtn) setLoading(connectBtn, false);
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: \u0e25\u0e2d\u0e07\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e41\u0e25\u0e49\u0e27\u0e25\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48'; statusEl.style.color = 'var(--error)'; }
             
             var banner = document.getElementById('reconnect-banner');
