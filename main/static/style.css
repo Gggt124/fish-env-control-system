@@ -113,27 +113,6 @@
     --font-mono: "Courier New", Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --surface-h: 232; --surface-s: 18%; --surface-l: 9%;
-        --surface-dim-h: 228; --surface-dim-s: 9%; --surface-dim-l: 11%;
-        --surface-cont-high-h: 225; --surface-cont-high-s: 8%; --surface-cont-high-l: 15%;
-        --surface-cont-highest-h: 223; --surface-cont-highest-s: 8%; --surface-cont-highest-l: 20%;
-        
-        --on-surface-h: 0; --on-surface-s: 0%; --on-surface-l: 100%;
-        --on-surface-var-h: 226; --on-surface-var-s: 20%; --on-surface-var-l: 80%;
-        --outline-h: 225; --outline-s: 8%; --outline-l: 47%;
-        --outline-var-h: 228; --outline-var-s: 9%; --outline-var-l: 25%;
-        
-        --primary-h: 212; --primary-s: 100%; --primary-l: 65%;
-        --secondary-h: 142; --secondary-s: 100%; --secondary-l: 65%;
-        --tertiary-h: 23; --tertiary-s: 100%; --tertiary-l: 65%;
-        --error-h: 0; --error-s: 75%; --error-l: 65%;
-
-        --inverse-surface: hsl(0, 0%, 100%);
-        --inverse-on-surface: hsl(232, 18%, 9%);
-    }
-}
 
 
 /* === Reset === */
@@ -1657,3 +1636,12 @@ select:disabled {
     justify-content: flex-end;
     gap: var(--sp-sm);
 }
+
+body.login-active #app-sidebar, body.login-active .mobile-topbar {
+    display: none !important;
+}
+body.login-active #app-content {
+    margin-left: 0 !important;
+    margin-top: 0 !important;
+}
+
