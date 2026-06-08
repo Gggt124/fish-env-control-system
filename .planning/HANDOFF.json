@@ -1,34 +1,24 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-08T11:51:50Z",
+  "timestamp": "2026-06-08T14:06:18Z",
   "phase": "22",
   "phase_name": "uat-bug-fixes",
   "phase_dir": ".planning/phases/22-uat-bug-fixes",
   "plan": 2,
-  "task": 3,
-  "total_tasks": 3,
+  "task": 0,
+  "total_tasks": 0,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Execute Plan 22-01 (Fix UI styling bugs)", "status": "done"},
-    {"id": 2, "name": "Execute Plan 22-02 (Fix functional bugs)", "status": "done"},
-    {"id": 3, "name": "Additional UI styling fixes from user feedback", "status": "done", "progress": "Fixed dashboard full width, gaps, cooling card auto-enable switch layout, and stretched cooling card to match column heights. Flashed to COM5."}
+    {"id": 1, "name": "Restore white card container and apply greyish icon color for disconnected status", "status": "done", "commit": "aff6859"},
+    {"id": 2, "name": "Fix wifi-off SVG paths to use official Feather icons format", "status": "done", "commit": "a0e6687"}
   ],
-  "remaining_tasks": [
-    {"id": 4, "name": "Complete phase and advance milestone", "status": "not_started"}
-  ],
-  "blockers": [
-    {"description": "User Verification: Waiting for user to confirm UI layout changes via browser", "type": "human_action"}
-  ],
-  "human_actions_pending": [
-    {"action": "Verify UI layout in browser", "context": "Ensuring the new styling matches user expectations", "blocking": true}
-  ],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [],
   "decisions": [
-    {"decision": "Used inline styles and flexbox to stretch Cooling Control card", "rationale": "To match the dynamic height of the Timer card on the left column in the CSS grid", "phase": "22"},
-    {"decision": "Removed .cooling-auto-toggle and used .settings-actions", "rationale": "To exactly match the layout structure of the Timer Auto-start switch", "phase": "22"}
+    {"decision": "Use official Feather icon paths for wifi-off", "rationale": "Fixes disjointed and clipped SVG paths", "phase": "22"}
   ],
-  "uncommitted_files": [
-    "main/static/index.html"
-  ],
-  "next_action": "Wait for user confirmation on the layout changes, then use /gsd-progress or complete Phase 22.",
-  "context_notes": "We successfully iterated through 4 UI layout feedback requests from the user. The firmware flashed correctly each time."
+  "uncommitted_files": [],
+  "next_action": "Start the next milestone using /gsd-new-milestone",
+  "context_notes": "All styling fixes for the Wi-Fi connection card, checkboxes, modal triggers, and icon paths are complete and flashed."
 }
