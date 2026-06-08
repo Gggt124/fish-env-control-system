@@ -1641,7 +1641,8 @@ body.login-active #app-sidebar, body.login-active .mobile-topbar {
     display: none !important;
 }
 body.login-active #app-content {
-    margin-left: 0 !important;
-    margin-top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
 }
 
