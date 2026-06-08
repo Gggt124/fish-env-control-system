@@ -38,8 +38,8 @@ Success criteria:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 19-01-PLAN.md — Dashboard Grid Layout & iOS Switch
-- [ ] 19-02-PLAN.md — Circular Progress Rings
+- [x] 19-01-PLAN.md ï¿½ Dashboard Grid Layout & iOS Switch
+- [ ] 19-02-PLAN.md ï¿½ Circular Progress Rings
 
 **Phase 20: System Status & Hardware/Install Pages**
 Goal: Overhaul the status view and GPIO configuration interface.

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Modern Web UI Optimization
-status: Defining requirements
-last_updated: "2026-06-07T20:59:27.864Z"
+Status: Completed 19-dashboard-controls-01-PLAN.md
+last_updated: "2026-06-08T04:54:29.999Z"
 last_activity: 2026-06-08 — Milestone v1.6 started
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 5
+  completed_plans: 4
+  percent: 50
 ---
 
 # Project State
@@ -43,10 +43,10 @@ See: `.planning/PROJECT.md` (updated 2026-06-05)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-06-08 — Milestone v1.6 started
+Phase: 19-dashboard-controls
+Plan: 01
+Status: Completed 19-dashboard-controls-01-PLAN.md
+Last activity: 2026-06-08 � Completed 19-dashboard-controls-01
 
 ## Notes
 
@@ -75,3 +75,6 @@ Last activity: 2026-06-08 — Milestone v1.6 started
 | 2026-06-07 | tft-scale-values | Scaled up TFT dynamic values to x2 size for clarity |
 | 2026-06-07 | tft-modern-card-redesign | Refactored TFT dashboard layout to modern card design |
 | 2026-06-07 | tft-fix-rgb-order-overlap | Fixed RGB/BGR inversion, top bar overlapping, and temp colors |
+
+- Wrapped dashboard runtime cards in a CSS grid with 1fr columns on mobile and 1fr 1fr on desktop to maximize screen space.
+- Used pseudo-elements (:before) to style standard checkboxes into animated iOS-style pill switches, avoiding extra JS overhead.

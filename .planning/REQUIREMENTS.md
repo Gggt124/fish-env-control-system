@@ -8,8 +8,8 @@
 - [x] **ARCH-UI-03**: Adopt a new HSL-based color scheme, soft box shadows, and card-based layout (Modern UI styling).
 
 ### Dashboard & Control (DASH-UI)
-- [ ] **DASH-UI-01**: Redesign the Pump Control and Timer Settings to use the new card-based layout with clear informational grids.
-- [ ] **DASH-UI-02**: Redesign the Cooling Control section to visually separate it from pump controls and display temperature and relay state clearly.
+- [x] **DASH-UI-01**: Redesign the Pump Control and Timer Settings to use the new card-based layout with clear informational grids.
+- [x] **DASH-UI-02**: Redesign the Cooling Control section to visually separate it from pump controls and display temperature and relay state clearly.
 
 ### System & Settings (SYS-UI)
 - [ ] **SYS-UI-01**: Overhaul the Wi-Fi Setup page to include a numbered stepper, network scan list improvements, and connection loading states.
@@ -35,8 +35,8 @@
 | ARCH-UI-01  | Phase 18 | Complete |
 | ARCH-UI-02  | Phase 18 | Complete |
 | ARCH-UI-03  | Phase 18 | Complete |
-| DASH-UI-01  | Phase 19 | Pending|
-| DASH-UI-02  | Phase 19 | Pending|
+| DASH-UI-01  | Phase 19 | Complete |
+| DASH-UI-02  | Phase 19 | Complete |
 | SYS-UI-01   | Phase 21 | Pending|
 | SYS-UI-02   | Phase 20 | Pending|
 | SYS-UI-03   | Phase 20 | Pending|
