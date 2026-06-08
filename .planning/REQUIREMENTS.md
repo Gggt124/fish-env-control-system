@@ -13,8 +13,8 @@
 
 ### System & Settings (SYS-UI)
 - [ ] **SYS-UI-01**: Overhaul the Wi-Fi Setup page to include a numbered stepper, network scan list improvements, and connection loading states.
-- [ ] **SYS-UI-02**: Redesign the System Status view to display chip information, memory usage progress bars, and uptime.
-- [ ] **SYS-UI-03**: Redesign the Hardware/Install page with clear distinction between active and pending GPIO configurations.
+- [x] **SYS-UI-02**: Redesign the System Status view to display chip information, memory usage progress bars, and uptime.
+- [x] **SYS-UI-03**: Redesign the Hardware/Install page with clear distinction between active and pending GPIO configurations.
 
 ### UX & Feedback (UX-UI)
 - [ ] **UX-UI-01**: Integrate loading spinners on buttons (like Sync, Start/Stop, Connect) to indicate ongoing processes.
@@ -38,7 +38,7 @@
 | DASH-UI-01  | Phase 19 | Complete |
 | DASH-UI-02  | Phase 19 | Complete |
 | SYS-UI-01   | Phase 21 | Pending|
-| SYS-UI-02   | Phase 20 | Pending|
-| SYS-UI-03   | Phase 20 | Pending|
+| SYS-UI-02   | Phase 20 | Complete |
+| SYS-UI-03   | Phase 20 | Complete |
 | UX-UI-01    | Phase 21 | Pending|
 | UX-UI-02    | Phase 21 | Pending|

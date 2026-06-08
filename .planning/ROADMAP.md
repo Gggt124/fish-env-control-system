@@ -52,7 +52,7 @@ Success criteria:
 **Plans:** 1 plans
 
 Plans:
-- [ ] 20-01-PLAN.md — Overhaul system status and GPIO configuration interfaces
+- [x] 20-01-PLAN.md — Overhaul system status and GPIO configuration interfaces
 
 **Phase 21: Wi-Fi Setup & UX Polish**
 Goal: Overhaul Wi-Fi Setup stepper and integrate loading/modal feedback across the app.
