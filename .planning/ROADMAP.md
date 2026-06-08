@@ -1,4 +1,4 @@
-﻿# Roadmap: Milestone v1.6 Modern Web UI Optimization
+# Roadmap: Milestone v1.6 Modern Web UI Optimization
 
 **4 phases** | **10 requirements mapped** | All covered âœ“
 
@@ -62,4 +62,7 @@ Success criteria:
 2. Action buttons display loading spinners while waiting for API responses.
 3. Important actions trigger modal confirmations instead of browser alerts.
 
+**Plans:** 1 plans
 
+Plans:
+- [ ] 21-01-PLAN.md — UX Polish with Modal Confirmations and Button Loading States
