@@ -39,7 +39,7 @@
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Fish Pump Control</span>
-    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}">&#9776;</button>
+    <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false" onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
 </header>
 
 <!-- Mobile Drawer Overlay -->
@@ -50,7 +50,7 @@
     <div class="sidebar-brand">
         <div class="brand-name">Fish Pump Control</div>
         <div class="sidebar-node-info">
-            <div class="node-icon">&#9881;</div>
+            <div class="node-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
             <div>
                 <div class="node-name">Fish Pump Control</div>
                 <div class="node-status">
@@ -62,19 +62,19 @@
     </div>
     <nav class="sidebar-nav">
         <a href="/dashboard" class="nav-item active" id="nav-dashboard">
-            <span class="nav-icon">&#9632;</span> Dashboard
+            <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg></span> Dashboard
         </a>
         <a href="/status" class="nav-item" id="nav-status">
-            <span class="nav-icon">&#9881;</span> System Status
+            <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span> System Status
         </a>
         <a href="/wifi" class="nav-item" id="nav-wifi">
-            <span class="nav-icon">&#128246;</span> Wi-Fi Settings
+            <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line></svg></span> Wi-Fi Settings
         </a>
         <a href="/hardware" class="nav-item" id="nav-hardware">
-            <span class="nav-icon">&#128295;</span> Hardware/Install
+            <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg></span> Hardware/Install
         </a>
         <a href="#" class="nav-item" id="nav-logout" onclick="doLogout();return false;">
-            <span class="nav-icon">&#128682;</span> Logout
+            <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span> Logout
         </a>
     </nav>
 </aside>
@@ -85,7 +85,7 @@
 <div class="login-container">
 <main class="login-card">
         <header class="login-header">
-            <div class="icon-circle">&#9881;</div>
+            <div class="icon-circle"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
             <div>
                 <h1>Fish Pump Control</h1>
                 <p>จัดการอุปกรณ์และการเชื่อมต่อของคุณ</p>
@@ -95,14 +95,14 @@
             <div class="form-group">
                 <label for="username">ชื่อผู้ใช้งาน</label>
                 <div class="input-wrapper">
-                    <span class="input-icon">&#128100;</span>
+                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
                     <input id="username" name="username" type="text" placeholder="admin" required autocomplete="username">
                 </div>
             </div>
             <div class="form-group">
                 <label for="password">รหัสผ่าน</label>
                 <div class="input-wrapper">
-                    <span class="input-icon">&#128274;</span>
+                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
                     <input id="password" name="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required autocomplete="current-password">
                 </div>
             </div>
@@ -123,9 +123,9 @@
             <p>ควบคุม Timer 1 / Timer 2 และติดตามสถานะปั๊ม</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)">&#8635; Sync</button>
-            <a href="/hardware" class="btn btn-outline btn-sm">&#128295; Hardware</a>
-            <a href="/wifi" class="btn btn-primary btn-sm">&#128246; Wi-Fi Setup</a>
+            <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path></svg> Sync</button>
+            <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> Hardware</a>
+            <a href="/wifi" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line></svg> Wi-Fi Setup</a>
         </div>
     </div>
 
@@ -161,19 +161,19 @@
             </div>
             <div class="runtime-stat">
                 <span class="summary-label">Float Switch</span>
-                <strong id="pump-float-state">ลูกลอย: --</strong>
+                <strong id="pump-float-state">--</strong>
             </div>
             <div class="runtime-stat primary">
                 <span class="summary-label">Active Relay</span>
-                <strong id="pump-relay-state">รีเลย์: --</strong>
+                <strong id="pump-relay-state">--</strong>
             </div>
             <div class="runtime-stat">
                 <span class="summary-label">Relay 1</span>
-                <strong id="pump-relay-1-state">Relay 1: --</strong>
+                <strong id="pump-relay-1-state">--</strong>
             </div>
             <div class="runtime-stat">
                 <span class="summary-label">Relay 2</span>
-                <strong id="pump-relay-2-state">Relay 2: --</strong>
+                <strong id="pump-relay-2-state">--</strong>
             </div>
         </div>
         <div class="pump-runtime-actions">
@@ -304,15 +304,15 @@
             </div>
             <div class="runtime-stat primary">
                 <span class="summary-label">Cooling Relay</span>
-                <strong id="cooling-relay-state">Relay: --</strong>
+                <strong id="cooling-relay-state">--</strong>
             </div>
             <div class="runtime-stat">
                 <span class="summary-label">Mode</span>
                 <strong id="cooling-mode-state">--</strong>
             </div>
             <div class="runtime-stat">
-                <span class="summary-label">Sensor</span>
-                <strong id="cooling-sensor-state">Sensor: --</strong>
+                <span class="summary-label">Sensor Status</span>
+                <strong id="cooling-sensor-state">--</strong>
             </div>
             <div class="runtime-stat">
                 <span class="summary-label">Fault</span>
@@ -328,7 +328,7 @@
             </div>
             <div class="runtime-stat">
                 <span class="summary-label">Boot Auto</span>
-                <strong id="cooling-auto-enable-state">Auto-enable: --</strong>
+                <strong id="cooling-auto-enable-state">--</strong>
             </div>
         </div>
 
@@ -403,9 +403,9 @@
                 <p>ข้อมูลระบบแบบย่อ</p>
             </div>
             <div class="quick-links">
-                <a href="/status" class="btn btn-outline btn-sm">&#9881; System Status</a>
-                <a href="/wifi" class="btn btn-outline btn-sm">&#128246; Wi-Fi Settings</a>
-                <a href="/hardware" class="btn btn-outline btn-sm">&#128295; Hardware/Install</a>
+                <a href="/status" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> System Status</a>
+                <a href="/wifi" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line></svg> Wi-Fi Settings</a>
+                <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg> Hardware/Install</a>
             </div>
         </div>
         <div class="summary-grid" style="margin-top:var(--sp-md);">
@@ -430,7 +430,7 @@
             <p>MCU status and health information</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-outline btn-sm" onclick="refreshStatus()">&#8635; Refresh</button>
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path></svg> Refresh</button>
         </div>
     </div>
 
@@ -441,7 +441,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-label">System</span>
-                <span style="color:var(--primary);font-size:20px;">&#9881;</span>
+                <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
             </div>
             <table class="info-table">
                 <tr><td class="info-label">Chip</td><td class="info-value" id="st-chip-model">--</td></tr>
@@ -458,7 +458,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-label">Memory</span>
-                <span style="color:var(--primary);font-size:20px;">&#128190;</span>
+                <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg></span>
             </div>
             <table class="info-table">
                 <tr><td class="info-label">Free</td><td class="info-value"><span id="st-free-heap">--</span> <div class="progress-bar-inline"><div class="fill" id="st-heap-bar"></div></div></td></tr>
@@ -472,7 +472,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-label">Uptime</span>
-                <span style="color:var(--primary);font-size:20px;">&#9202;</span>
+                <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
             </div>
             <div class="card-value" id="st-uptime">--</div>
             <div class="card-sub neutral">System running time</div>
@@ -482,7 +482,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-label">Wi-Fi Station</span>
-                <span style="color:var(--primary);font-size:20px;">&#128246;</span>
+                <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line></svg></span>
             </div>
             <table class="info-table">
                 <tr><td class="info-label">Status</td><td class="info-value" id="st-sta-status">--</td></tr>
@@ -499,7 +499,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-label">Access Point</span>
-                <span style="color:var(--secondary);font-size:20px;">&#9673;</span>
+                <span style="color:var(--secondary);font-size:20px;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span>
             </div>
             <table class="info-table">
                 <tr><td class="info-label">SSID</td><td class="info-value" id="st-ap-ssid">--</td></tr>
@@ -514,7 +514,7 @@
         <div class="card">
             <div class="card-header">
                 <span class="card-label">Services</span>
-                <span style="color:var(--primary);font-size:20px;">&#128295;</span>
+                <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg></span>
             </div>
             <table class="info-table">
                 <tr><td class="info-label">Wi-Fi Mode</td><td class="info-value" id="st-wifi-mode">--</td></tr>
@@ -548,7 +548,7 @@
     <!-- Current Connection Status -->
     <div class="connection-status" id="connection-status">
         <div class="status-header">
-            <span class="status-icon" id="conn-icon">&#128268;</span>
+            <span class="status-icon" id="conn-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg></span>
             <div>
                 <div class="status-title" id="conn-title">ไม่ได้เชื่อมต่อ</div>
                 <div class="status-sub" id="conn-sub">STA ไม่ได้เชื่อมต่อกับเครือข่ายใด ๆ</div>
@@ -585,78 +585,12 @@
         <div class="card network-card">
             <div class="card-header">
                 <h3>เครือข่ายที่พบ</h3>
-                <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()">&#128260; ค้นหา</button>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right: 4px; vertical-align: middle;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path></svg> สแกนใหม่</button>
             </div>
             <div class="network-list" id="network-list" aria-live="polite">
                 <div class="network-item" style="justify-content:center; color:var(--on-surface-variant); cursor:default;">
-                    กด "ค้นหา" เพื่อสแกน Wi-Fi
+                    กด "สแกนใหม่" เพื่อสแกน Wi-Fi
                 </div>
-            </div>
-        </div>
-
-        <!-- Empty State Card -->
-        <div class="empty-state-card" id="empty-state-card">
-            <div style="font-size: 48px; margin-bottom: 8px;">📶</div>
-            <h3 style="margin: 0 0 8px 0; font-size: 18px; color: var(--on-surface);">โปรดเลือกเครือข่าย</h3>
-            <p style="margin: 0; font-size: 14px; color: var(--on-surface-variant); max-width: 280px; line-height: 1.5;">เลือกเครือข่าย Wi-Fi ที่พบในตารางด้านซ้ายเพื่อกรอกข้อมูลการตั้งค่า</p>
-        </div>
-
-        <!-- Input Panel -->
-        <div class="input-panel hidden" id="input-panel">
-            <h3 style="font-size:16px;display:flex;align-items:center;gap:8px;">
-                &#128273; ระบุรหัสผ่าน
-            </h3>
-            <div class="form-group">
-                <label for="selected-ssid-display">SSID ที่เลือก</label>
-                <div class="selected-ssid-display" id="selected-ssid-display">---</div>
-            </div>
-            <div class="form-group">
-                <label for="wifi-password">รหัสผ่าน (Password)</label>
-                <div class="input-wrapper">
-                    <span class="input-icon">&#128274;</span>
-                    <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" disabled>
-                </div>
-                <label class="checkbox-label password-visibility-toggle">
-                    <input type="checkbox" id="show-wifi-password" onchange="toggleWifiPasswordVisibility()" disabled>
-                    แสดงรหัสผ่าน
-                </label>
-            </div>
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="static-ip-toggle" onchange="toggleStaticIp()" disabled>
-                    ใช้ IP คงที่ (Static IP)
-                </label>
-            </div>
-            <div class="static-ip-fields" id="static-ip-fields" style="display:none;">
-                <div class="form-group">
-                    <label for="static-ip">IP Address</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">&#127758;</span>
-                        <input type="text" id="static-ip" placeholder="เช่น 192.168.1.100" disabled>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="static-gateway">Gateway</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">&#128279;</span>
-                        <input type="text" id="static-gateway" placeholder="เช่น 192.168.1.1" disabled>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="static-netmask">Netmask</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">&#128225;</span>
-                        <input type="text" id="static-netmask" placeholder="เช่น 255.255.255.0" value="255.255.255.0" disabled>
-                    </div>
-                </div>
-                <div style="font-size:12px;color:var(--outline);margin-top:-8px;">
-                    &#8505; DNS จะใช้ Gateway โดยอัตโนมัติ
-                </div>
-            </div>
-            <div id="connect-status" style="font-size:14px;min-height:20px;"></div>
-            <div class="btn-row">
-                <button class="btn btn-outline btn-sm" id="cancel-btn" disabled onclick="clearSelection()">ยกเลิก</button>
-                <button class="btn btn-primary btn-sm" id="connect-btn" disabled onclick="doConnect()">เชื่อมต่อ</button>
             </div>
         </div>
     </div>
@@ -668,8 +602,8 @@
             <p>Wiring, active GPIOs, and pending reboot changes</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-outline btn-sm" onclick="loadHardwareMap()">&#8635; Refresh</button>
-            <a href="/dashboard" class="btn btn-primary btn-sm">&#8592; Dashboard</a>
+            <button class="btn btn-outline btn-sm" onclick="loadHardwareMap()"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path></svg> Refresh</button>
+            <a href="/dashboard" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;" class="svg-icon"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Dashboard</a>
         </div>
     </div>
 
@@ -686,35 +620,35 @@
 
         <div class="hardware-wiring-grid">
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128167;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg></span>
                 <div>
                     <h4>Float Input</h4>
                     <p id="wire-float-input">--</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#9889;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>
                 <div>
                     <h4>Pump Relay 1</h4>
                     <p id="wire-pump-relay1">--</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#9889;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>
                 <div>
                     <h4>Pump Relay 2</h4>
                     <p id="wire-pump-relay2">--</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#127777;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg></span>
                 <div>
                     <h4>DS18B20 Sensor</h4>
                     <p id="wire-ds18b20">--</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#10052;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line><path d="M20 16l-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"></path></svg></span>
                 <div>
                     <h4>Cooling Relay</h4>
                     <p id="wire-cooling-relay">--</p>
@@ -733,42 +667,42 @@
         </div>
         <div class="hardware-wiring-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128204;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="18" y1="8" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="6"></line><path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path><line x1="12" y1="17" x2="6" y2="23"></line></svg></span>
                 <div>
                     <h4>SCK (Clock)</h4>
                     <p>GPIO 18</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128204;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="18" y1="8" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="6"></line><path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path><line x1="12" y1="17" x2="6" y2="23"></line></svg></span>
                 <div>
                     <h4>MOSI (Data)</h4>
                     <p>GPIO 23</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128204;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="18" y1="8" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="6"></line><path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path><line x1="12" y1="17" x2="6" y2="23"></line></svg></span>
                 <div>
                     <h4>CS (Chip Select)</h4>
                     <p>GPIO 5</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128204;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="18" y1="8" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="6"></line><path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path><line x1="12" y1="17" x2="6" y2="23"></line></svg></span>
                 <div>
                     <h4>DC (Data/Command)</h4>
                     <p>GPIO 21</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128204;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="18" y1="8" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="6"></line><path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path><line x1="12" y1="17" x2="6" y2="23"></line></svg></span>
                 <div>
                     <h4>RESET</h4>
                     <p>GPIO 22</p>
                 </div>
             </article>
             <article class="hardware-wire-item">
-                <span class="hardware-wire-icon">&#128204;</span>
+                <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="18" y1="8" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="6"></line><path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path><line x1="12" y1="17" x2="6" y2="23"></line></svg></span>
                 <div>
                     <h4>LED (Backlight)</h4>
                     <p>GPIO 4</p>
@@ -856,8 +790,77 @@
         <h3 id="modal-title"></h3>
         <p id="modal-message"></p>
         <div class="modal-actions">
+            <button class="btn btn-danger" id="modal-confirm">Confirm</button>
             <button class="btn btn-outline" id="modal-cancel">Cancel</button>
-            <button class="btn btn-primary" id="modal-confirm">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Wi-Fi Connect Modal -->
+<div id="wifi-connect-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 480px;">
+        <h3 style="font-size:18px; display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="color:var(--primary);"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line></svg>
+            <span>เชื่อมต่อ Wi-Fi</span>
+        </h3>
+        
+        <div class="form-group">
+            <label>ชื่อเครือข่าย (SSID)</label>
+            <div class="selected-ssid-display" id="modal-wifi-ssid" style="font-weight:600; padding:10px 14px; background:var(--surface-container); border-radius:var(--radius-md); border:1px solid var(--outline-variant); color:var(--on-surface);">---</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="wifi-password">รหัสผ่าน (Password)</label>
+            <div class="input-wrapper">
+                <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+                <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi">
+            </div>
+            <label class="checkbox-label password-visibility-toggle" style="margin-top: 8px;">
+                <input type="checkbox" id="show-wifi-password" onchange="toggleWifiPasswordVisibility()">
+                <span>แสดงรหัสผ่าน</span>
+            </label>
+        </div>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="static-ip-toggle" onchange="toggleStaticIp()">
+                <span>ใช้ IP คงที่ (Static IP)</span>
+            </label>
+        </div>
+        
+        <div class="static-ip-fields" id="static-ip-fields" style="display:none; margin-top: 12px; border-top: 1px dashed var(--outline-variant); padding-top: 12px;">
+            <div class="form-group">
+                <label for="static-ip">IP Address</label>
+                <div class="input-wrapper">
+                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></span>
+                    <input type="text" id="static-ip" placeholder="เช่น 192.168.1.100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="static-gateway">Gateway</label>
+                <div class="input-wrapper">
+                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                    <input type="text" id="static-gateway" placeholder="เช่น 192.168.1.1">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="static-netmask">Netmask</label>
+                <div class="input-wrapper">
+                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M12 2a10 10 0 0 1 10 10"></path><path d="M12 6a6 6 0 0 1 6 6"></path><circle cx="12" cy="18" r="1"></circle><path d="M12 14v4"></path></svg></span>
+                    <input type="text" id="static-netmask" placeholder="เช่น 255.255.255.0" value="255.255.255.0">
+                </div>
+            </div>
+            <div style="font-size:12px;color:var(--outline);margin-top:-4px;margin-bottom:12px; display:flex; align-items:center; gap:4px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> 
+                <span>DNS จะใช้ Gateway โดยอัตโนมัติ</span>
+            </div>
+        </div>
+        
+        <div id="connect-status" style="font-size:14px; min-height:20px; margin-bottom: 16px; font-weight: 500;"></div>
+        
+        <div class="modal-actions" style="margin-top: 16px;">
+            <button class="btn btn-outline" id="cancel-btn" onclick="clearSelection()">ยกเลิก</button>
+            <button class="btn btn-primary" id="connect-btn" onclick="doConnect()">เชื่อมต่อ</button>
         </div>
     </div>
 </div>

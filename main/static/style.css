@@ -7,65 +7,51 @@
 
 /* === CSS Variables (Design Tokens) === */
 :root {
-    /* Base Colors HSL components */
-    --primary-h: 212; --primary-s: 100%; --primary-l: 37%;
-    --secondary-h: 142; --secondary-s: 100%; --secondary-l: 22%;
-    --tertiary-h: 23; --tertiary-s: 100%; --tertiary-l: 31%;
-    --error-h: 0; --error-s: 75%; --error-l: 42%;
+    /* Base Colors - Accent Colors */
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-container: #eff6ff;
+    --primary-fixed: #eff6ff;
+    --primary-fixed-dim: rgba(37, 99, 235, 0.15);
+    --on-primary: #ffffff;
+    --surface-tint: #2563eb;
+
+    /* Base Colors - Semantic Colors */
+    --secondary: #10b981;
+    --on-secondary: #ffffff;
+    --secondary-container: rgba(16, 185, 129, 0.08);
+    --secondary-fixed-dim: rgba(16, 185, 129, 0.15);
+
+    --tertiary: #f59e0b;
+    --on-tertiary: #ffffff;
+    --tertiary-container: rgba(245, 158, 11, 0.08);
+
+    --error: #ef4444;
+    --error-hover: #dc2626;
+    --on-error: #ffffff;
+    --error-container: rgba(239, 68, 68, 0.08);
+
+    /* Base Colors - Neutral & Layout Palette */
+    --bg-body: #f1f5f9;
+    --surface: #ffffff;
+    --surface-dim: #f1f5f9;
+    --surface-bright: #ffffff;
     
-    --surface-h: 0; --surface-s: 0%; --surface-l: 100%;
-    --surface-dim-h: 252; --surface-dim-s: 60%; --surface-dim-l: 98%;
-    --surface-cont-high-h: 240; --surface-cont-high-s: 24%; --surface-cont-high-l: 96%;
-    --surface-cont-highest-h: 240; --surface-cont-highest-s: 11%; --surface-cont-highest-l: 91%;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #ffffff;
+    --surface-container: #f1f5f9;
+    --surface-container-high: #f1f5f9;
+    --surface-container-highest: #e2e8f0;
     
-    --on-surface-h: 228; --on-surface-s: 9%; --on-surface-l: 11%;
-    --on-surface-var-h: 225; --on-surface-var-s: 8%; --on-surface-var-l: 47%;
-    --outline-h: 223; --outline-s: 8%; --outline-l: 48%;
-    --outline-var-h: 226; --outline-var-s: 20%; --outline-var-l: 80%;
-
-    /* Composite Colors */
-    --surface: hsl(var(--surface-h), var(--surface-s), var(--surface-l));
-    --surface-dim: hsl(var(--surface-dim-h), var(--surface-dim-s), var(--surface-dim-l));
-    --surface-bright: var(--surface);
-    --surface-container-lowest: var(--surface);
-    --surface-container-low: var(--surface-dim);
-    --surface-container: var(--surface-dim);
-    --surface-container-high: hsl(var(--surface-cont-high-h), var(--surface-cont-high-s), var(--surface-cont-high-l));
-    --surface-container-highest: hsl(var(--surface-cont-highest-h), var(--surface-cont-highest-s), var(--surface-cont-highest-l));
+    --on-surface: #0f172a;
+    --on-surface-variant: #64748b;
+    --inverse-surface: #0f172a;
+    --inverse-on-surface: #ffffff;
     
-    --on-surface: hsl(var(--on-surface-h), var(--on-surface-s), var(--on-surface-l));
-    --on-surface-variant: hsl(var(--on-surface-var-h), var(--on-surface-var-s), var(--on-surface-var-l));
-    --inverse-surface: hsl(232, 18%, 9%);
-    --inverse-on-surface: hsl(0, 0%, 100%);
+    --outline: #64748b;
+    --outline-variant: #e2e8f0;
     
-    --outline: hsl(var(--outline-h), var(--outline-s), var(--outline-l));
-    --outline-variant: hsl(var(--outline-var-h), var(--outline-var-s), var(--outline-var-l));
-    --surface-tint: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
-
-    --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
-    --on-primary: hsl(0, 0%, 100%);
-    --primary-container: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.08);
-    --primary-fixed: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.08);
-    --primary-fixed-dim: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.15);
-
-    --secondary: hsl(var(--secondary-h), var(--secondary-s), var(--secondary-l));
-    --on-secondary: hsl(0, 0%, 100%);
-    --secondary-container: hsla(var(--secondary-h), var(--secondary-s), var(--secondary-l), 0.08);
-    --secondary-fixed-dim: hsla(var(--secondary-h), var(--secondary-s), var(--secondary-l), 0.15);
-
-    --tertiary: hsl(var(--tertiary-h), var(--tertiary-s), var(--tertiary-l));
-    --on-tertiary: hsl(0, 0%, 100%);
-    --tertiary-container: hsla(var(--tertiary-h), var(--tertiary-s), var(--tertiary-l), 0.08);
-
-    --error: hsl(var(--error-h), var(--error-s), var(--error-l));
-    --error-hover: hsl(var(--error-h), var(--error-s), calc(var(--error-l) - 5%));
-    --on-error: hsl(0, 0%, 100%);
-    --error-container: hsla(var(--error-h), var(--error-s), var(--error-l), 0.08);
-
-    --primary-hover: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) - 5%));
-    --overlay-bg: hsla(var(--surface-dim-h), var(--surface-dim-s), var(--surface-dim-l), 0.65);
-
-    --bg-body: var(--surface-container-high);
+    --overlay-bg: rgba(241, 245, 249, 0.65);
 
     /* Spacing Grid (4px/8px based) */
     --space-1: 0.25rem; /* 4px */
@@ -343,9 +329,17 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     font-size: var(--text-xs); color: var(--on-surface-variant);
     margin-top: 2px;
 }
-
-.connection-status.connected .status-icon { color: var(--secondary); }
-
+.connection-status.connected {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #065f46;
+}
+.connection-status.connected .status-sub {
+    color: #047857;
+}
+.connection-status.connected .status-icon {
+    color: #10b981;
+}
 @media (max-width: 576px) {
     .connection-status {
         flex-direction: column;
@@ -442,7 +436,18 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     font-weight: 600;
 }
 
-.nav-item .nav-icon { font-size: var(--text-lg); width: 24px; text-align: center; }
+.nav-item .nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.svg-icon {
+    display: inline-block;
+    vertical-align: middle;
+}
 
 .sidebar-bottom { padding: var(--sp-xl) var(--sp-xl) 0; margin-top: auto; }
 
@@ -1368,10 +1373,6 @@ select:disabled {
     display: grid; grid-template-columns: 1fr; gap: var(--sp-lg);
 }
 
-@media (min-width: 1024px) {
-    .wifi-grid { grid-template-columns: 8fr 4fr; }
-}
-
 /* Network list */
 .network-panel {
     background: var(--surface); border-radius: var(--radius-lg);
@@ -1645,4 +1646,8 @@ body.login-active #app-content {
     padding: 0 !important;
     max-width: none !important;
 }
+
+.status-success { color: var(--secondary) !important; }
+.status-danger { color: var(--error) !important; }
+.status-warning { color: var(--tertiary) !important; }
 

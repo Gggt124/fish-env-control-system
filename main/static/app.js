@@ -134,7 +134,7 @@ function setLoading(btn, isLoading) {
     }
 }
 
-function showConfirmModal(title, message, onConfirm) {
+function showConfirmModal(title, message, onConfirm, isDangerous) {
     var container = document.getElementById('modal-container');
     var titleEl = document.getElementById('modal-title');
     var msgEl = document.getElementById('modal-message');
@@ -145,6 +145,12 @@ function showConfirmModal(title, message, onConfirm) {
     
     titleEl.textContent = title;
     msgEl.textContent = message;
+    
+    if (isDangerous) {
+        confirmBtn.className = 'btn btn-danger';
+    } else {
+        confirmBtn.className = 'btn btn-primary';
+    }
     
     function cleanup() {
         container.classList.add('hidden');
@@ -205,11 +211,11 @@ function initLogin() {
 
 function doLogout() {
     showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function() {
-    apiPost('/api/logout', {}, function() {
-        document.cookie = 'session=; Path=/; Max-Age=0';
-        navigateTo('/login');
-    });
-    });
+        apiPost('/api/logout', {}, function() {
+            document.cookie = 'session=; Path=/; Max-Age=0';
+            navigateTo('/login');
+        });
+    }, true);
 }
 
 /* ======== Dashboard Page ======== */
@@ -376,10 +382,10 @@ function markPumpDirty() {
     if (warning) {
         if (dirty) {
             warning.classList.remove('hidden');
-            setText('pump-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
+            setText('pump-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
         } else {
             warning.classList.add('hidden');
-            setText('pump-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹à¸¥à¹‰à¸§');
+            setText('pump-config-state', 'โหลดค่าแล้ว');
         }
     }
     updatePumpConfigSaveButton();
@@ -389,7 +395,7 @@ function setPumpClean(label) {
     pumpDirty = false;
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('pump-config-state', label || 'à¸šà¸±à¸™à¸—à¸¶à¸à¹à¸¥à¹‰à¸§');
+    setText('pump-config-state', label || 'บันทึกแล้ว');
     updatePumpConfigSaveButton();
 }
 
@@ -400,14 +406,14 @@ function updatePumpConfigSaveButton() {
 
 function loadPumpConfig() {
     var requestEditVersion = pumpEditVersion;
-    setText('pump-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²...');
+    setText('pump-config-state', 'กำลังโหลดค่า...');
     setPumpAlert('pump-config-error', '');
     updatePumpConfigSaveButton();
     apiGet('/api/pump/config', function(err, data) {
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
-            setText('pump-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
-            setPumpAlert('pump-config-error', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹ƒà¸«à¹‰à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸');
+            setText('pump-config-state', 'โหลดค่าไม่สำเร็จ');
+            setPumpAlert('pump-config-error', 'โหลดค่าตั้งเวลาไม่สำเร็จ กรุณาโหลดค่าให้สำเร็จก่อนบันทึก');
             updatePumpConfigSaveButton();
             return;
         }
@@ -415,7 +421,7 @@ function loadPumpConfig() {
         pumpRelayPolarity = data.relay_polarity || null;
         pumpConfigLoaded = !!pumpRelayPolarity;
         if (pumpEditVersion !== requestEditVersion) {
-            setText('pump-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
+            setText('pump-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
             updatePumpConfigSaveButton();
             return;
         }
@@ -428,7 +434,7 @@ function loadPumpConfig() {
         var autoStart = pumpEl('pump-auto-start');
         if (autoStart) autoStart.checked = !!data.auto_start;
         clearPumpValidation();
-        setPumpClean('à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹à¸¥à¹‰à¸§');
+        setPumpClean('โหลดค่าแล้ว');
     });
 }
 
@@ -460,21 +466,21 @@ function readDuration(prefix, label) {
     };
 
     if (rawMin === '' || rawSec === '') {
-        return fail(label + ': à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸™à¸²à¸—à¸µà¹à¸¥à¸°à¸§à¸´à¸™à¸²à¸—à¸µ');
+        return fail(label + ': กรุณากรอกนาทีและวินาที');
     }
     if (!/^\d+$/.test(rawMin) || !/^\d+$/.test(rawSec)) {
-        return fail(label + ': à¸•à¹‰à¸­à¸‡à¹€à¸›à¹‡à¸™à¸ˆà¸³à¸™à¸§à¸™à¹€à¸•à¹‡à¸¡ 0 à¸«à¸£à¸·à¸­à¸¡à¸²à¸à¸à¸§à¹ˆà¸²');
+        return fail(label + ': ต้องเป็นจำนวนเต็ม 0 หรือมากกว่า');
     }
 
     var minutes = parseInt(rawMin, 10);
     var seconds = parseInt(rawSec, 10);
     if (seconds > 59) {
-        return fail(label + ': à¸§à¸´à¸™à¸²à¸—à¸µà¸•à¹‰à¸­à¸‡à¸­à¸¢à¸¹à¹ˆà¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡ 0..59');
+        return fail(label + ': วินาทีต้องอยู่ระหว่าง 0..59');
     }
 
     var total = (minutes * 60) + seconds;
     if (total < 5 || total > 86400) {
-        return fail(label + ': à¸£à¸°à¸¢à¸°à¹€à¸§à¸¥à¸²à¸•à¹‰à¸­à¸‡à¸­à¸¢à¸¹à¹ˆà¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡ 5..86400 à¸§à¸´à¸™à¸²à¸—à¸µ');
+        return fail(label + ': ระยะเวลาต้องอยู่ระหว่าง 5..86400 วินาที');
     }
 
     if (errEl) errEl.textContent = '';
@@ -488,7 +494,7 @@ function readStartPhase(id, label) {
     var errEl = pumpEl(id + '-error');
     var value = el ? el.value : '';
     if (value !== 'on' && value !== 'off') {
-        if (errEl) errEl.textContent = label + ': à¹€à¸¥à¸·à¸­à¸ ON à¸«à¸£à¸·à¸­ OFF';
+        if (errEl) errEl.textContent = label + ': เลือก ON หรือ OFF';
         if (el) el.classList.add('invalid');
         return { ok: false, value: 'on' };
     }
@@ -518,12 +524,12 @@ function clearPumpValidation() {
 
 function validatePumpConfig() {
     clearPumpValidation();
-    var timer1On = readDuration('timer1-on', 'Timer 1 à¸Šà¹ˆà¸§à¸‡à¹€à¸›à¸´à¸”');
-    var timer1Off = readDuration('timer1-off', 'Timer 1 à¸Šà¹ˆà¸§à¸‡à¸›à¸´à¸”');
-    var timer2On = readDuration('timer2-on', 'Timer 2 à¸Šà¹ˆà¸§à¸‡à¹€à¸›à¸´à¸”');
-    var timer2Off = readDuration('timer2-off', 'Timer 2 à¸Šà¹ˆà¸§à¸‡à¸›à¸´à¸”');
-    var timer1Start = readStartPhase('timer1-start-phase', 'Timer 1 à¹€à¸£à¸´à¹ˆà¸¡à¸£à¸­à¸š');
-    var timer2Start = readStartPhase('timer2-start-phase', 'Timer 2 à¹€à¸£à¸´à¹ˆà¸¡à¸£à¸­à¸š');
+    var timer1On = readDuration('timer1-on', 'Timer 1 ช่วงเปิด');
+    var timer1Off = readDuration('timer1-off', 'Timer 1 ช่วงปิด');
+    var timer2On = readDuration('timer2-on', 'Timer 2 ช่วงเปิด');
+    var timer2Off = readDuration('timer2-off', 'Timer 2 ช่วงปิด');
+    var timer1Start = readStartPhase('timer1-start-phase', 'Timer 1 เริ่มรอบ');
+    var timer2Start = readStartPhase('timer2-start-phase', 'Timer 2 เริ่มรอบ');
     if (!timer1On.ok || !timer1Off.ok || !timer2On.ok || !timer2Off.ok ||
         !timer1Start.ok || !timer2Start.ok) {
         return null;
@@ -543,8 +549,8 @@ function validatePumpConfig() {
 function savePumpConfig() {
     var saveBtn = pumpEl('pump-save-config');
     if (!pumpConfigLoaded || !pumpRelayPolarity) {
-        setText('pump-config-state', 'à¸¢à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸à¹„à¸¡à¹ˆà¹„à¸”à¹‰');
-        setPumpAlert('pump-config-error', 'à¸à¸£à¸¸à¸“à¸²à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¸ˆà¸²à¸à¸­à¸¸à¸›à¸à¸£à¸“à¹Œà¹ƒà¸«à¹‰à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸');
+        setText('pump-config-state', 'ยังบันทึกไม่ได้');
+        setPumpAlert('pump-config-error', 'กรุณาโหลดค่าจากอุปกรณ์ให้สำเร็จก่อนบันทึก');
         updatePumpConfigSaveButton();
         return;
     }
@@ -552,19 +558,19 @@ function savePumpConfig() {
     var requestEditVersion = pumpEditVersion;
     var payload = validatePumpConfig();
     if (!payload) {
-        setPumpAlert('pump-config-error', 'à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹à¸¥à¹‰à¸§à¸¥à¸­à¸‡à¸šà¸±à¸™à¸—à¸¶à¸à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡');
+        setPumpAlert('pump-config-error', 'ตรวจสอบค่าตั้งเวลาแล้วลองบันทึกอีกครั้ง');
         return;
     }
 
     setPumpAlert('pump-config-error', '');
     if (saveBtn) setLoading(saveBtn, true);
-    setText('pump-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...');
+    setText('pump-config-state', 'กำลังบันทึก...');
 
     apiPost('/api/pump/config', payload, function(err, data) {
         if (saveBtn) setLoading(saveBtn, false);
         if (err || !data || !data.ok) {
-            setText('pump-config-state', 'à¸šà¸±à¸™à¸—à¸¶à¸à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
-            setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setText('pump-config-state', 'บันทึกไม่สำเร็จ');
+            setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
             updatePumpConfigSaveButton();
             return;
         }
@@ -572,23 +578,23 @@ function savePumpConfig() {
         if (pumpConfig.relay_polarity) pumpRelayPolarity = pumpConfig.relay_polarity;
         pumpConfigLoaded = !!pumpRelayPolarity;
         if (pumpEditVersion === requestEditVersion) {
-            setPumpClean('à¸šà¸±à¸™à¸—à¸¶à¸à¹à¸¥à¹‰à¸§');
+            setPumpClean('บันทึกแล้ว');
         } else {
-            setText('pump-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
+            setText('pump-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
             updatePumpConfigSaveButton();
         }
-        showToast('à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸²à¸›à¸±à¹Šà¸¡à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
+        showToast('บันทึกค่าปั๊มเรียบร้อย', 'success');
         if (data.status) applyPumpStatus(data.status, true);
         syncPumpStatus(true);
     });
 }
 
 function startPump() {
-    requestPumpAction('/api/pump/start', 'à¸à¸³à¸¥à¸±à¸‡à¸ªà¸±à¹ˆà¸‡ Start...', 'à¹€à¸£à¸´à¹ˆà¸¡à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡à¹à¸¥à¹‰à¸§');
+    requestPumpAction('/api/pump/start', 'กำลังสั่ง Start...', 'เริ่มระบบปั๊มแล้ว');
 }
 
 function stopPump() {
-    requestPumpAction('/api/pump/stop', 'à¸à¸³à¸¥à¸±à¸‡à¸ªà¸±à¹ˆà¸‡ Stop...', 'à¸«à¸¢à¸¸à¸”à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡à¹à¸¥à¹‰à¸§');
+    requestPumpAction('/api/pump/stop', 'กำลังสั่ง Stop...', 'หยุดระบบปั๊มแล้ว');
 }
 
 function requestPumpAction(url, pendingText, successText) {
@@ -600,13 +606,13 @@ function requestPumpAction(url, pendingText, successText) {
         pumpPending = false;
         if (err || !data || !data.ok) {
             setText('pump-action-state', '');
-            setPumpAlert('pump-status-error', (data && data.message) ? data.message : 'à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™à¸›à¸±à¹Šà¸¡à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setPumpAlert('pump-status-error', (data && data.message) ? data.message : 'สั่งงานปั๊มไม่สำเร็จ');
             updatePumpButtons();
-            showToast('à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™à¸›à¸±à¹Šà¸¡à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
+            showToast('สั่งงานปั๊มไม่สำเร็จ', 'error');
             return;
         }
         if (data.status) applyPumpStatus(data.status, true);
-        setText('pump-action-state', data.already_running ? 'à¸£à¸°à¸šà¸šà¸—à¸³à¸‡à¸²à¸™à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§' : (data.already_stopped ? 'à¸£à¸°à¸šà¸šà¸«à¸¢à¸¸à¸”à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§' : ''));
+        setText('pump-action-state', data.already_running ? 'ระบบทำงานอยู่แล้ว' : (data.already_stopped ? 'ระบบหยุดอยู่แล้ว' : ''));
         setPumpAlert('pump-status-error', '');
         updatePumpButtons();
         showToast(successText, 'success');
@@ -637,27 +643,27 @@ function applyPumpStatus(status, authoritative) {
         updatePumpCountdownDeadline(status);
     }
 
-    setText('pump-running-label', renderPumpRunLabel(status));
+    setHtml('pump-running-label', renderPumpRunLabel(status));
     renderPumpCountdown();
     setText('pump-active-timer', renderPumpTimer(status.active_timer));
-    setText('pump-phase', renderPumpPhase(status.active_timer, status.phase, status.running));
-    setText('pump-float-state', renderFloatState(status.float_state));
-    setText('pump-relay-state', renderActiveRelayState(status));
-    setText('pump-relay-1-state', renderRelayChannelState('relay1', status));
-    setText('pump-relay-2-state', renderRelayChannelState('relay2', status));
+    setHtml('pump-phase', renderPumpPhase(status.active_timer, status.phase, status.running));
+    setHtml('pump-float-state', renderFloatState(status.float_state));
+    setHtml('pump-relay-state', renderActiveRelayState(status));
+    setHtml('pump-relay-1-state', renderRelayChannelState('relay1', status));
+    setHtml('pump-relay-2-state', renderRelayChannelState('relay2', status));
 
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = status.fault ? 'runtime-eyebrow error' :
             (status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
-        sync.textContent = status.fault ? 'à¸£à¸°à¸šà¸š relay fault: à¸›à¸´à¸” relay à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”à¹à¸¥à¹‰à¸§' :
-            (status.initial_stabilizing ? 'à¸à¸³à¸¥à¸±à¸‡à¸£à¸­à¸¥à¸¹à¸à¸¥à¸­à¸¢à¸™à¸´à¹ˆà¸‡' : 'à¸‹à¸´à¸‡à¸à¹Œà¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸ˆà¸²à¸à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ');
+        sync.textContent = status.fault ? 'ระบบ relay fault: ปิด relay ทั้งหมดแล้ว' :
+            (status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงค์ล่าสุดจากอุปกรณ์');
     }
     if (!pumpDirty && status.settings_status) {
         setText('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
     }
-    setPumpAlert('pump-status-error', status.fault ? 'à¸žà¸š relay fault à¸£à¸°à¸šà¸šà¸šà¸±à¸‡à¸„à¸±à¸šà¸›à¸´à¸” Relay 1 à¹à¸¥à¸° Relay 2 à¹à¸¥à¹‰à¸§' :
-        (status.config_valid === false ? 'à¸„à¹ˆà¸²à¸•à¸±à¹‰à¸‡à¹€à¸§à¸¥à¸²à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸žà¸£à¹‰à¸­à¸¡à¹ƒà¸Šà¹‰à¸‡à¸²à¸™' : ''));
+    setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
+        (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
     updatePumpButtons();
 }
 
@@ -667,10 +673,10 @@ function handlePumpStatusFailure() {
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'à¸ªà¸–à¸²à¸™à¸°à¸›à¸±à¹Šà¸¡à¸‚à¸²à¸”à¸à¸²à¸£à¸‹à¸´à¸‡à¸à¹Œ' : 'à¸£à¸­à¸‹à¸´à¸‡à¸à¹Œà¸ˆà¸²à¸à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ';
+        sync.textContent = stale ? 'สถานะปั๊มขาดการซิงค์' : 'รอซิงค์จากอุปกรณ์';
     }
     if (stale) {
-        setPumpAlert('pump-status-error', 'à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸­à¹ˆà¸²à¸™à¸ªà¸–à¸²à¸™à¸°à¸›à¸±à¹Šà¸¡à¹„à¸”à¹‰à¸Šà¸±à¹ˆà¸§à¸„à¸£à¸²à¸§ à¸›à¸´à¸”à¸›à¸¸à¹ˆà¸¡ Start/Stop à¸ˆà¸™à¸à¸§à¹ˆà¸²à¸ˆà¸°à¸‹à¸´à¸‡à¸à¹Œà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+        setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงค์สำเร็จ');
     }
     updatePumpButtons();
 }
@@ -814,10 +820,10 @@ function predictPumpPhaseAdvance() {
     pumpCountdownDeadlineMs = Date.now() + (nextDuration * 1000);
     pumpDisplayedCountdownSec = nextDuration;
 
-    setText('pump-phase', renderPumpPhase(pumpLastStatus.active_timer, pumpLastStatus.phase, pumpLastStatus.running));
-    setText('pump-relay-state', renderActiveRelayState(pumpLastStatus));
-    setText('pump-relay-1-state', renderRelayChannelState('relay1', pumpLastStatus));
-    setText('pump-relay-2-state', renderRelayChannelState('relay2', pumpLastStatus));
+    setHtml('pump-phase', renderPumpPhase(pumpLastStatus.active_timer, pumpLastStatus.phase, pumpLastStatus.running));
+    setHtml('pump-relay-state', renderActiveRelayState(pumpLastStatus));
+    setHtml('pump-relay-1-state', renderRelayChannelState('relay1', pumpLastStatus));
+    setHtml('pump-relay-2-state', renderRelayChannelState('relay2', pumpLastStatus));
     return true;
 }
 
@@ -842,27 +848,27 @@ function renderPumpTimer(value) {
 }
 
 function renderPumpRunLabel(status) {
-    if (!status) return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: --';
-    if (status.running) return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: à¸à¸³à¸¥à¸±à¸‡à¸—à¸³à¸‡à¸²à¸™';
+    if (!status) return 'ระบบปั๊ม: --';
+    if (status.running) return 'ระบบปั๊ม: <span class="status-success">กำลังทำงาน</span>';
     if (status.active_timer && status.active_timer !== 'none') {
-        return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: à¸«à¸¢à¸¸à¸”à¸­à¸¢à¸¹à¹ˆ - à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡ ' + renderPumpTimer(status.active_timer);
+        return 'ระบบปั๊ม: <span class="status-danger">หยุดอยู่</span> - พร้อมเริ่ม ' + renderPumpTimer(status.active_timer);
     }
-    return 'à¸£à¸°à¸šà¸šà¸›à¸±à¹Šà¸¡: à¸«à¸¢à¸¸à¸”à¸­à¸¢à¸¹à¹ˆ';
+    return 'ระบบปั๊ม: <span class="status-danger">หยุดอยู่</span>';
 }
 
 function renderPumpPhase(timer, phase, running) {
     if (!timer || timer === 'none' || !phase || phase === 'idle') return 'Idle';
     var timerLabel = renderPumpTimer(timer);
-    var prefix = running ? '' : 'à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡ ';
-    if (phase === 'on') return prefix + timerLabel + ' - à¸Šà¹ˆà¸§à¸‡à¹€à¸›à¸´à¸”';
-    if (phase === 'off') return prefix + timerLabel + ' - à¸Šà¹ˆà¸§à¸‡à¸›à¸´à¸”';
+    var prefix = running ? '' : 'พร้อมเริ่ม ';
+    if (phase === 'on') return prefix + timerLabel + ' - <span class="status-success">ช่วงเปิด</span>';
+    if (phase === 'off') return prefix + timerLabel + ' - <span class="status-danger">ช่วงปิด</span>';
     return timerLabel + ' - --';
 }
 
 function renderFloatState(value) {
-    if (value === 'on') return 'à¸¥à¸¹à¸à¸¥à¸­à¸¢: ON -> Timer 2 / Relay 2';
-    if (value === 'off') return 'à¸¥à¸¹à¸à¸¥à¸­à¸¢: OFF -> Timer 1 / Relay 1';
-    return 'à¸¥à¸¹à¸à¸¥à¸­à¸¢: à¹„à¸¡à¹ˆà¸—à¸£à¸²à¸šà¸ªà¸–à¸²à¸™à¸°';
+    if (value === 'on') return '<span class="status-success">ON</span> -> Timer 2 / Relay 2';
+    if (value === 'off') return '<span class="status-danger">OFF</span> -> Timer 1 / Relay 1';
+    return 'ไม่ทราบสถานะ';
 }
 
 function renderRelayName(value) {
@@ -880,26 +886,25 @@ function relayEnergizedFor(channel, status) {
 }
 
 function renderActiveRelayState(status) {
-    if (!status || !status.active_relay || status.active_relay === 'none') return 'à¸£à¸µà¹€à¸¥à¸¢à¹Œ: --';
+    if (!status || !status.active_relay || status.active_relay === 'none') return '--';
     var label = renderRelayName(status.active_relay);
-    if (!status.running) return label + ' à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡ (OFF)';
-    return label + (status.relay_energized ? ' ON' : ' OFF');
+    if (!status.running) return label + ' พร้อมเริ่ม <span class="status-danger">(OFF)</span>';
+    return label + (status.relay_energized ? ' <span class="status-success">ON</span>' : ' <span class="status-danger">OFF</span>');
 }
 
 function renderRelayChannelState(channel, status) {
-    var label = renderRelayName(channel);
     var energized = relayEnergizedFor(channel, status);
-    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' à¸žà¸£à¹‰à¸­à¸¡à¹€à¸£à¸´à¹ˆà¸¡';
-    return label + ': ' + (energized ? 'ON' : 'OFF') + suffix;
+    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' พร้อมเริ่ม';
+    return (energized ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>') + suffix;
 }
 
 function renderSettingsStatus(value, autoStart) {
-    var label = 'à¸ªà¸–à¸²à¸™à¸°à¸„à¹ˆà¸²: ' + value;
-    if (value === 'loaded') label = 'à¸„à¹ˆà¸²à¹‚à¸«à¸¥à¸”à¹à¸¥à¹‰à¸§';
-    else if (value === 'defaults_missing') label = 'à¹ƒà¸Šà¹‰à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™';
-    else if (value === 'defaults_invalid') label = 'à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™à¹„à¸¡à¹ˆà¸–à¸¹à¸à¸•à¹‰à¸­à¸‡';
-    else if (value === 'defaults_error') label = 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™à¸œà¸´à¸”à¸žà¸¥à¸²à¸”';
-    return label + ' â€¢ Auto-start: ' + (autoStart ? 'ON' : 'OFF');
+    var label = 'สถานะค่า: ' + value;
+    if (value === 'loaded') label = 'ค่าโหลดแล้ว';
+    else if (value === 'defaults_missing') label = 'ใช้ค่าเริ่มต้น';
+    else if (value === 'defaults_invalid') label = 'ค่าเริ่มต้นไม่ถูกต้อง';
+    else if (value === 'defaults_error') label = 'โหลดค่าเริ่มต้นผิดพลาด';
+    return label + ' • Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
 /* ======== Cooling Dashboard ======== */
@@ -979,10 +984,10 @@ function markCoolingDirty() {
     if (warning) {
         if (dirty) {
             warning.classList.remove('hidden');
-            setText('cooling-config-state', 'à¸¡à¸µà¸à¸²à¸£à¹à¸à¹‰à¹„à¸‚à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸šà¸±à¸™à¸—à¸¶à¸');
+            setText('cooling-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
         } else {
             warning.classList.add('hidden');
-            setText('cooling-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹à¸¥à¹‰à¸§');
+            setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
         }
     }
     updateCoolingConfigSaveButton();
@@ -992,7 +997,7 @@ function setCoolingClean(label) {
     coolingDirty = false;
     var warning = pumpEl('cooling-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('cooling-config-state', label || 'à¸šà¸±à¸™à¸—à¸¶à¸à¹à¸¥à¹‰à¸§');
+    setText('cooling-config-state', label || 'บันทึกแล้ว');
     updateCoolingConfigSaveButton();
 }
 
@@ -1009,14 +1014,14 @@ function updateCoolingConfigSaveButton() {
 }
 
 function loadCoolingConfig() {
-    setText('cooling-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸²...');
+    setText('cooling-config-state', 'กำลังโหลดค่า...');
     setCoolingAlert('');
     updateCoolingConfigSaveButton();
     apiGet('/api/cooling/config', function(err, data) {
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
-            setText('cooling-config-state', 'à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
-            setCoolingAlert('à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
+            setCoolingAlert('โหลดค่า cooling ไม่สำเร็จ');
             updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
@@ -1025,7 +1030,7 @@ function loadCoolingConfig() {
         coolingConfigLoaded = true;
         setCoolingConfigFields(data);
         if (data.status) applyCoolingStatus(data.status, true);
-        setCoolingClean('à¹‚à¸«à¸¥à¸”à¸„à¹ˆà¸² cooling à¹à¸¥à¹‰à¸§');
+        setCoolingClean('โหลดค่า cooling แล้ว');
     });
 }
 
@@ -1053,11 +1058,11 @@ function readCoolingX10(id, label, minValue, maxValue) {
     var raw = el ? el.value.trim() : '';
     var value = Number(raw);
     if (raw === '' || !isFinite(value)) {
-        return { ok: false, message: label + ': à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸•à¸±à¸§à¹€à¸¥à¸‚', value: 0 };
+        return { ok: false, message: label + ': กรุณากรอกตัวเลข', value: 0 };
     }
     var x10 = Math.round(value * 10);
     if (Math.abs((value * 10) - x10) > 0.0001 || x10 < minValue || x10 > maxValue) {
-        return { ok: false, message: label + ': à¸„à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆà¸™à¸­à¸à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¸£à¸­à¸‡à¸£à¸±à¸š', value: 0 };
+        return { ok: false, message: label + ': ค่าอยู่นอกช่วงที่รองรับ', value: 0 };
     }
     return { ok: true, value: x10 };
 }
@@ -1066,11 +1071,11 @@ function readCoolingU32(id, label, minValue, maxValue) {
     var el = pumpEl(id);
     var raw = el ? el.value.trim() : '';
     if (!/^\d+$/.test(raw)) {
-        return { ok: false, message: label + ': à¸•à¹‰à¸­à¸‡à¹€à¸›à¹‡à¸™à¸ˆà¸³à¸™à¸§à¸™à¹€à¸•à¹‡à¸¡', value: 0 };
+        return { ok: false, message: label + ': ต้องเป็นจำนวนเต็ม', value: 0 };
     }
     var value = parseInt(raw, 10);
     if (value < minValue || value > maxValue) {
-        return { ok: false, message: label + ': à¸„à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆà¸™à¸­à¸à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¸£à¸­à¸‡à¸£à¸±à¸š', value: 0 };
+        return { ok: false, message: label + ': ค่าอยู่นอกช่วงที่รองรับ', value: 0 };
     }
     return { ok: true, value: value };
 }
@@ -1104,20 +1109,20 @@ function saveCoolingConfig() {
     if (!coolingConfigLoaded || coolingPending) return;
     var built = buildCoolingConfigPayload();
     if (!built || !built.ok) {
-        setCoolingAlert((built && built.message) ? built.message : 'à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸„à¹ˆà¸² cooling à¹à¸¥à¹‰à¸§à¸¥à¸­à¸‡à¸šà¸±à¸™à¸—à¸¶à¸à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡');
+        setCoolingAlert((built && built.message) ? built.message : 'ตรวจสอบค่า cooling แล้วลองบันทึกอีกครั้ง');
         return;
     }
 
     coolingPending = true;
     setCoolingAlert('');
-    setText('cooling-config-state', 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸ cooling...');
+    setText('cooling-config-state', 'กำลังบันทึก cooling...');
     updateCoolingConfigSaveButton();
     updateCoolingButtons();
     apiPost('/api/cooling/config', built.payload, function(err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
-            setText('cooling-config-state', 'à¸šà¸±à¸™à¸—à¸¶à¸ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
-            setCoolingAlert((data && data.message) ? data.message : 'à¸šà¸±à¸™à¸—à¸¶à¸ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
+            setCoolingAlert((data && data.message) ? data.message : 'บันทึก cooling ไม่สำเร็จ');
             updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
@@ -1126,8 +1131,8 @@ function saveCoolingConfig() {
         coolingConfigLoaded = true;
         setCoolingConfigFields(data);
         if (data.status) applyCoolingStatus(data.status, true);
-        setCoolingClean('à¸šà¸±à¸™à¸—à¸¶à¸ cooling à¹à¸¥à¹‰à¸§');
-        showToast('à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¹ˆà¸² cooling à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
+        setCoolingClean('บันทึก cooling แล้ว');
+        showToast('บันทึกค่า cooling เรียบร้อย', 'success');
     });
 }
 
@@ -1135,15 +1140,15 @@ function setCoolingMode(mode) {
     if (coolingPending) return;
     coolingPending = true;
     var label = mode === 'auto' ? 'Auto' : (mode === 'test_on' ? 'Test ON' : 'Force OFF');
-    setText('cooling-mode-action-state', 'à¸à¸³à¸¥à¸±à¸‡à¸ªà¸±à¹ˆà¸‡ ' + label + '...');
+    setText('cooling-mode-action-state', 'กำลังสั่ง ' + label + '...');
     updateCoolingButtons();
     apiPost('/api/cooling/mode', { mode: mode }, function(err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
             setText('cooling-mode-action-state', '');
-            setCoolingAlert((data && data.message) ? data.message : 'à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ');
+            setCoolingAlert((data && data.message) ? data.message : 'สั่งงาน cooling ไม่สำเร็จ');
             updateCoolingButtons();
-            showToast('à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™ cooling à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
+            showToast('สั่งงาน cooling ไม่สำเร็จ', 'error');
             return;
         }
         coolingConfig = data;
@@ -1152,7 +1157,7 @@ function setCoolingMode(mode) {
         setText('cooling-mode-action-state', '');
         setCoolingAlert('');
         updateCoolingButtons();
-        showToast('à¸ªà¸±à¹ˆà¸‡à¸‡à¸²à¸™ cooling à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
+        showToast('สั่งงาน cooling เรียบร้อย', 'success');
         syncCoolingStatus(true);
     });
 }
@@ -1177,13 +1182,13 @@ function applyCoolingStatus(status, authoritative) {
     if (authoritative) coolingLastSyncMs = Date.now();
 
     setText('cooling-temperature', renderCoolingTemperature(status));
-    setText('cooling-relay-state', 'Relay: ' + (status.relay_energized ? 'ON' : 'OFF'));
+    setHtml('cooling-relay-state', status.relay_energized ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>');
     setText('cooling-mode-state', renderCoolingMode(status.mode));
-    setText('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
-    setText('cooling-fault-state', renderCoolingFault(status));
+    setHtml('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
+    setHtml('cooling-fault-state', renderCoolingFault(status));
     setText('cooling-threshold', renderCoolingCelsius(status.threshold_c));
     setText('cooling-hysteresis', renderCoolingCelsius(status.hysteresis_c));
-    setText('cooling-auto-enable-state', 'Auto-enable: ' + (status.auto_enable ? 'ON' : 'OFF'));
+    setHtml('cooling-auto-enable-state', status.auto_enable ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>');
     setText('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
     setText('cooling-lockout', status.lockout_active ? formatPumpCountdown(status.lockout_remaining_sec) : '--');
     setText('cooling-test-remaining', status.test_remaining_sec ? formatPumpCountdown(status.test_remaining_sec) : '--');
@@ -1195,9 +1200,9 @@ function applyCoolingStatus(status, authoritative) {
             : (status.lockout_active || status.mode === 'test_on' ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
         sync.textContent = status.fault || status.sensor_state === 'fault'
             ? 'Sensor fault: cooling relay forced OFF'
-            : (status.lockout_active ? 'Compressor lockout active' : 'à¸‹à¸´à¸‡à¸à¹Œà¸¥à¹ˆà¸²à¸ªà¸¸à¸”à¸ˆà¸²à¸ cooling runtime');
+            : (status.lockout_active ? 'Compressor lockout active' : 'ซิงค์ล่าสุดจาก cooling runtime');
     }
-    setCoolingAlert(status.fault ? 'à¸žà¸š sensor fault à¸£à¸°à¸šà¸šà¸šà¸±à¸‡à¸„à¸±à¸šà¸›à¸´à¸” cooling relay à¹à¸¥à¹‰à¸§' : '');
+    setCoolingAlert(status.fault ? 'พบ sensor fault ระบบบังคับปิด cooling relay แล้ว' : '');
     updateCoolingButtons();
 }
 
@@ -1206,10 +1211,10 @@ function handleCoolingStatusFailure() {
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'à¸ªà¸–à¸²à¸™à¸° cooling à¸‚à¸²à¸”à¸à¸²à¸£à¸‹à¸´à¸‡à¸à¹Œ' : 'à¸£à¸­à¸‹à¸´à¸‡à¸à¹Œ cooling';
+        sync.textContent = stale ? 'สถานะ cooling ขาดการซิงค์' : 'รอซิงค์ cooling';
     }
     if (stale) {
-        setCoolingAlert('à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸­à¹ˆà¸²à¸™à¸ªà¸–à¸²à¸™à¸° cooling à¹„à¸”à¹‰à¸Šà¸±à¹ˆà¸§à¸„à¸£à¸²à¸§');
+        setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
     }
     updateCoolingButtons();
 }
@@ -1267,15 +1272,15 @@ function renderCoolingMode(value) {
 }
 
 function renderCoolingSensor(value) {
-    if (value === 'ok') return 'Sensor: OK';
-    if (value === 'fault') return 'Sensor: FAULT';
-    return 'Sensor: unknown';
+    if (value === 'ok') return '<span class="status-success">OK</span>';
+    if (value === 'fault') return '<span class="status-danger">FAULT</span>';
+    return 'unknown';
 }
 
 function renderCoolingFault(status) {
     if (!status) return 'Fault: --';
-    if (!status.fault) return 'Fault: none';
-    return 'Fault: ' + (status.fault_code || 'unknown');
+    if (!status.fault) return 'Fault: <span class="status-success">none</span>';
+    return 'Fault: <span class="status-danger">' + (status.fault_code || 'unknown') + '</span>';
 }
 
 function renderCoolingBlocked(value) {
@@ -1681,6 +1686,11 @@ function setText(id, val) {
     if (el) el.textContent = val;
 }
 
+function setHtml(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = val;
+}
+
 function refreshStatus() {
     if (document.hidden) return;
     if (statusSummaryRequestInFlight) return;
@@ -1805,13 +1815,13 @@ function updateConnectionStatus() {
 
         if (!err && data && data.ok && data.sta_connected) {
             el.className = 'connection-status connected';
-            if (icon) icon.innerHTML = '&#10003;';
+            if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
             title.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27: ' + (data.sta_ssid || 'Wi-Fi');
             if (sub) sub.textContent = 'IP: ' + (data.sta_ip || '--');
             if (btn) btn.style.display = '';
         } else {
             el.className = 'connection-status';
-            if (icon) icon.innerHTML = '&#128268;';
+            if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
             title.textContent = '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
             if (sub) sub.textContent = 'STA \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e01\u0e31\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e14\u0e46';
             if (btn) btn.style.display = 'none';
@@ -1820,28 +1830,28 @@ function updateConnectionStatus() {
 }
 
 function doDisconnect() {
-    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function() {
-    var btn = document.getElementById('disconnect-btn');
-    if (btn) { setLoading(btn, true); }
+    showConfirmModal('ตัดการเชื่อมต่อ', 'คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?', function() {
+        var btn = document.getElementById('disconnect-btn');
+        if (btn) { setLoading(btn, true); }
 
-    apiPost('/api/wifi/disconnect', {}, function(err, data) {
-        if ((data && data.ok) || (err && !data)) {
-            showToast('à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
-            clearSelection();
-            setTimeout(function() {
+        apiPost('/api/wifi/disconnect', {}, function(err, data) {
+            if ((data && data.ok) || (err && !data)) {
+                showToast('ตัดการเชื่อมต่อเรียบร้อย', 'success');
+                clearSelection();
+                setTimeout(function() {
+                    if (btn) {
+                        setLoading(btn, false);
+                    }
+                    updateConnectionStatus();
+                }, 1200);
+            } else {
                 if (btn) {
                     setLoading(btn, false);
                 }
-                updateConnectionStatus();
-            }, 1200);
-        } else {
-            if (btn) {
-                setLoading(btn, false);
+                showToast('ตัดการเชื่อมต่อไม่สำเร็จ', 'error');
             }
-            showToast('à¸•à¸±à¸”à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'error');
-        }
-    });
-    });
+        });
+    }, true);
 }
 
 function updateApPill() {
@@ -1902,7 +1912,7 @@ function doScan() {
                     '<div class=\"network-info\">' +
                         '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
                         '<div class=\"net-detail\">' +
-                            (nets[i].auth !== 'Open' ? '&#128274; ' : '') + escHtml(nets[i].auth) +
+                            (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '') + escHtml(nets[i].auth) +
                             ' &bull; Ch ' + nets[i].channel +
                         '</div>' +
                     '</div>' +
@@ -1960,6 +1970,7 @@ function fadeSwap(toHide, toShow) {
         toShow.offsetHeight; // force reflow
         toShow.style.opacity = '1';
     }, 200);
+
 }
 
 function selectNetwork(ssid) {
@@ -1972,30 +1983,29 @@ function selectNetwork(ssid) {
 
     selectedSsid = ssid;
 
-    /* Update display */
-    var display = document.getElementById('selected-ssid-display');
+    /* Update SSID display inside the modal */
+    var display = document.getElementById('modal-wifi-ssid');
     if (display) display.textContent = ssid;
 
-    /* Enable input panel */
-    var panel = document.getElementById('input-panel');
-    var emptyCard = document.getElementById('empty-state-card');
+    /* Reset and enable input fields */
     var pwInput = document.getElementById('wifi-password');
     var showPwToggle = document.getElementById('show-wifi-password');
+    var ipToggle = document.getElementById('static-ip-toggle');
     var connectBtn = document.getElementById('connect-btn');
     var cancelBtn = document.getElementById('cancel-btn');
+    var statusEl = document.getElementById('connect-status');
 
-    var ipToggle = document.getElementById('static-ip-toggle');
-    if (ipToggle) ipToggle.disabled = false;
-    if (panel) panel.classList.remove('disabled');
-    
-    if (panel && panel.classList.contains('hidden')) {
-        fadeSwap(emptyCard, panel);
-    }
-    
-    if (pwInput) pwInput.disabled = false;
-    if (showPwToggle) showPwToggle.disabled = false;
+    if (pwInput) { pwInput.value = ''; pwInput.type = 'password'; pwInput.disabled = false; }
+    if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = false; }
+    if (ipToggle) { ipToggle.checked = false; ipToggle.disabled = false; }
+    toggleStaticIp(); // clear static fields and hide them
+    if (statusEl) statusEl.textContent = '';
     if (connectBtn) connectBtn.disabled = false;
     if (cancelBtn) cancelBtn.disabled = false;
+
+    /* Show the Wi-Fi connect modal */
+    var wifiModal = document.getElementById('wifi-connect-modal');
+    if (wifiModal) wifiModal.classList.remove('hidden');
 
     /* Update step to 2 */
     updateStepper(2);
@@ -2013,30 +2023,26 @@ function selectNetwork(ssid) {
 
 function clearSelection() {
     selectedSsid = null;
-    var display = document.getElementById('selected-ssid-display');
-    var panel = document.getElementById('input-panel');
-    var emptyCard = document.getElementById('empty-state-card');
+
+    /* Hide the Wi-Fi connect modal */
+    var wifiModal = document.getElementById('wifi-connect-modal');
+    if (wifiModal) wifiModal.classList.add('hidden');
+
+    /* Reset inputs */
     var pwInput = document.getElementById('wifi-password');
     var showPwToggle = document.getElementById('show-wifi-password');
+    var ipToggle = document.getElementById('static-ip-toggle');
     var connectBtn = document.getElementById('connect-btn');
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
-    var ipToggle = document.getElementById('static-ip-toggle');
-    if (ipToggle) { ipToggle.disabled = true; ipToggle.checked = false; }
+    if (pwInput) { pwInput.value = ''; pwInput.type = 'password'; pwInput.disabled = true; }
+    if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = true; }
+    if (ipToggle) { ipToggle.checked = false; ipToggle.disabled = true; }
     toggleStaticIp();
-    if (display) display.textContent = '---';
-    if (panel) panel.classList.add('disabled');
-    
-    if (emptyCard && emptyCard.classList.contains('hidden')) {
-        fadeSwap(panel, emptyCard);
-    }
-    
-    if (pwInput) { pwInput.disabled = true; pwInput.value = ''; pwInput.type = 'password'; }
-    if (showPwToggle) { showPwToggle.disabled = true; showPwToggle.checked = false; }
+    if (statusEl) statusEl.textContent = '';
     if (connectBtn) connectBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
-    if (statusEl) statusEl.textContent = '';
 
     updateStepper(1);
 
@@ -2047,9 +2053,11 @@ function clearSelection() {
     }
 }
 
+
+
 function doConnect() {
     if (!selectedSsid) return;
-
+    
     var pwInput = document.getElementById('wifi-password');
     var password = pwInput ? pwInput.value : '';
 
@@ -2092,6 +2100,10 @@ function doConnect() {
                 updateStepper(3, true);
                 /* Update AP pill */
                 updateApPill();
+                /* Auto close modal after 2 seconds */
+                setTimeout(function() {
+                    clearSelection();
+                }, 2000);
             } else {
                 if (connectBtn) setLoading(connectBtn, false);
                 if (statusEl) {
@@ -2101,7 +2113,7 @@ function doConnect() {
                 updateStepper(2);
             }
         });
-    });
+    }, false);
 }
 
 function pollWifiConnection(attempt) {
@@ -2120,6 +2132,11 @@ function pollWifiConnection(attempt) {
             updateStepper(3, true);
             updateConnectionStatus();
             updateApPill();
+            
+            /* Auto close modal after 2 seconds */
+            setTimeout(function() {
+                clearSelection();
+            }, 2000);
             return;
         }
 
