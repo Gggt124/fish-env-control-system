@@ -736,6 +736,25 @@ function getPumpCountdownSec() {
 function renderPumpCountdown() {
     pumpDisplayedCountdownSec = getPumpCountdownSec();
     setText('pump-countdown', formatPumpCountdown(pumpDisplayedCountdownSec));
+
+    var ring = document.getElementById('pump-progress-ring-circle');
+    if (!ring) return;
+
+    var radius = 62;
+    var circumference = 2 * Math.PI * radius;
+    ring.style.strokeDasharray = circumference;
+
+    var offset = 0;
+    if (pumpLastStatus && pumpLastStatus.running && pumpLastStatus.active_timer && pumpLastStatus.phase) {
+        var totalSec = getPumpDurationSec(pumpLastStatus.active_timer, pumpLastStatus.phase);
+        if (totalSec > 0) {
+            var pct = pumpDisplayedCountdownSec / totalSec;
+            if (pct < 0) pct = 0;
+            if (pct > 1) pct = 1;
+            offset = circumference * (1 - pct);
+        }
+    }
+    ring.style.strokeDashoffset = offset;
 }
 
 function getPumpDurationSec(timer, phase) {

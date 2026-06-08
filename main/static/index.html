@@ -125,8 +125,14 @@
                 <h2 id="pump-running-label">ระบบปั๊ม: --</h2>
             </div>
             <div class="pump-countdown-wrap">
-                <span class="summary-label">เวลาคงเหลือ</span>
-                <div class="pump-countdown" id="pump-countdown">--:--</div>
+                <svg class="progress-ring" width="140" height="140" viewBox="0 0 140 140">
+                    <circle class="progress-ring-track" cx="70" cy="70" r="62"></circle>
+                    <circle class="progress-ring-circle" id="pump-progress-ring-circle" cx="70" cy="70" r="62"></circle>
+                </svg>
+                <div style="display: flex; flex-direction: column; align-items: center; z-index: 1;">
+                    <span class="summary-label">เวลาคงเหลือ</span>
+                    <div class="pump-countdown" id="pump-countdown">--:--</div>
+                </div>
             </div>
         </div>
         <div class="pump-runtime-grid">
