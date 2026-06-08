@@ -1797,6 +1797,8 @@ function refreshStatus() {
 
 var selectedSsid = null;
 var wifiConnectPollTimer = null;
+var wifiJustConnected = false;
+var wifiConnectedSsid = null;
 
 function initWifi() {
     if (window.location.pathname !== '/wifi') return;
@@ -2046,12 +2048,42 @@ function clearSelection() {
     if (connectBtn) connectBtn.disabled = true;
     if (cancelBtn) cancelBtn.disabled = true;
 
-    updateStepper(1);
+    /* Only reset stepper if we did NOT just successfully connect */
+    if (!wifiJustConnected) {
+        updateStepper(1);
+    }
 
     /* Clear highlights */
     var items = document.querySelectorAll('.network-item');
     for (var i = 0; i < items.length; i++) {
         items[i].classList.remove('selected');
+    }
+}
+
+/* Update network list in-place to mark the newly connected SSID */
+function markNetworkConnected(ssid) {
+    var items = document.querySelectorAll('.network-item');
+    for (var i = 0; i < items.length; i++) {
+        var itemSsid = items[i].getAttribute('data-ssid');
+        if (itemSsid === ssid) {
+            /* Switch to connected state */
+            items[i].classList.add('connected');
+            items[i].classList.remove('selected');
+            items[i].disabled = true;
+            items[i].removeAttribute('onclick');
+            /* Replace the เลือก button with ✓ เชื่อมต่ออยู่ label */
+            var right = items[i].querySelector('.network-item-right');
+            if (right) {
+                var sigHtml = right.querySelector('.net-signal') ? right.querySelector('.net-signal').outerHTML : '';
+                right.innerHTML = sigHtml + '<span class="network-connected-label">&#10003; \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</span>';
+            }
+            /* Green icon */
+            var icon = items[i].querySelector('.network-icon');
+            if (icon) icon.style.color = 'var(--secondary)';
+        } else {
+            /* Remove connected class from any previously-connected item */
+            items[i].classList.remove('connected');
+        }
     }
 }
 
@@ -2132,15 +2164,23 @@ function pollWifiConnection(attempt) {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
-            
+
             var banner = document.getElementById('reconnect-banner');
             if (banner) banner.style.display = 'none';
-            
+
             updateStepper(3, true);
             updateConnectionStatus();
             updateApPill();
-            
-            /* Auto close modal after 2 seconds */
+
+            /* Mark the connected network in the list */
+            var connSsid = data.sta_ssid || selectedSsid;
+            markNetworkConnected(connSsid);
+
+            /* Keep stepper green after modal closes */
+            wifiJustConnected = true;
+            wifiConnectedSsid = connSsid;
+
+            /* Auto close modal after 2 seconds, keep stepper at step 3 done */
             setTimeout(function() {
                 clearSelection();
             }, 2000);
