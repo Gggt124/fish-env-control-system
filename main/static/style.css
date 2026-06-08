@@ -622,6 +622,24 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     background: var(--primary);
 }
 
+.progress-bar-inline {
+    width: 80px; height: 6px; border-radius: var(--radius-full);
+    background: var(--surface-container-high); overflow: hidden;
+    display: inline-block; vertical-align: middle; margin-left: 8px;
+}
+
+.progress-bar-inline .fill {
+    height: 100%; border-radius: var(--radius-full);
+    background: var(--primary);
+}
+
+.unsaved-banner {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--tertiary-container); border: 1px solid var(--tertiary);
+    color: var(--on-surface); padding: var(--sp-sm) var(--sp-md);
+    border-radius: var(--radius-md); margin-bottom: var(--sp-md);
+}
+
 /* Grid layouts */
 .status-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp-md);

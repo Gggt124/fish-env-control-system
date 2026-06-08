@@ -443,15 +443,11 @@
                 <span style="color:var(--primary);font-size:20px;">&#128190;</span>
             </div>
             <table class="info-table">
-                <tr><td class="info-label">Free</td><td class="info-value" id="st-free-heap">--</td></tr>
+                <tr><td class="info-label">Free</td><td class="info-value"><span id="st-free-heap">--</span> <div class="progress-bar-inline"><div class="fill" id="st-heap-bar"></div></div></td></tr>
                 <tr><td class="info-label">Min Free</td><td class="info-value" id="st-min-free-heap">--</td></tr>
                 <tr><td class="info-label">Largest Block</td><td class="info-value" id="st-largest-free-block">--</td></tr>
                 <tr><td class="info-label">Total DRAM</td><td class="info-value" id="st-total-heap">--</td></tr>
             </table>
-            <div class="progress-bar" style="margin-top:12px;">
-                <div class="fill" id="st-heap-bar" style="width:40%;"></div>
-            </div>
-            <div class="card-sub neutral" id="st-heap-pct" style="margin-top:4px;">Usage: --</div>
         </div>
 
         <!-- Uptime Card -->
@@ -771,6 +767,11 @@
             </div>
         </div>
 
+        <div class="unsaved-banner hidden" id="hardware-unsaved-banner">
+            <div><strong>Unsaved Changes</strong><br>You have pending GPIO map modifications.</div>
+            <button type="submit" form="hardware-map-form" class="btn btn-primary btn-sm" id="hardware-save-map" disabled>Apply</button>
+        </div>
+
         <div class="hardware-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--sp-md); margin-bottom: var(--sp-xl);">
             <div class="hardware-summary-card card" style="border-top: 4px solid var(--secondary);">
                 <span class="summary-label" style="color: var(--secondary); font-weight: bold; margin-bottom: 8px; display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">Active GPIO Map</span>
@@ -811,10 +812,6 @@
                 <span>I understand GPIO changes require a reboot before they are active.</span>
             </label>
 
-            <div class="form-actions">
-                <span class="form-warning hidden" id="hardware-unsaved-warning">Unsaved GPIO map changes</span>
-                <button type="submit" class="btn btn-primary" id="hardware-save-map" disabled>Save Pending Map</button>
-            </div>
             <div class="form-error" id="hardware-map-error"></div>
         </form>
     </section>
