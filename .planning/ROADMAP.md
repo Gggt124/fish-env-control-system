@@ -1,6 +1,6 @@
 # Roadmap: Milestone v1.6 Modern Web UI Optimization
 
-**4 phases** | **10 requirements mapped** | All covered âœ“
+**5 phases** | **11 requirements mapped** | All covered ✓
 
 | # | Phase | Status | Goal | Requirements | Success Criteria |
 |---|-------|--------|------|--------------|------------------|
@@ -8,6 +8,7 @@
 | 19 | Dashboard & Control Implementation | Not Started | Redesign Pump, Timer, and Cooling controls to card-based layout. | DASH-UI-01, DASH-UI-02 | 3 |
 | 20 | System Status & Hardware/Install Pages | Not Started | Overhaul the status view and GPIO configuration interface. | SYS-UI-02, SYS-UI-03 | 3 |
 | 21 | Wi-Fi Setup & UX Polish | Not Started | Overhaul Wi-Fi Setup stepper and integrate loading/modal feedback across the app. | SYS-UI-01, UX-UI-01, UX-UI-02 | 3 |
+| 22 | UAT Bug Fixes | Not Started | Address the User Acceptance Testing (UAT) feedback for the Modern Web UI milestone. | UAT-UI-01 | 4 |
 
 ### Phase Details
 
@@ -66,3 +67,18 @@ Success criteria:
 
 Plans:
 - [x] 21-01-PLAN.md — UX Polish with Modal Confirmations and Button Loading States
+
+**Phase 22: UAT Bug Fixes**
+Goal: Address the User Acceptance Testing (UAT) feedback for the Modern Web UI milestone.
+Requirements: UAT-UI-01
+Success criteria:
+1. Thai encoding is not garbled.
+2. Sidebar is hidden on login.
+3. System status shows memory percentage.
+4. Wi-Fi connect triggers a modal.
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Fix Dark Mode and Sidebar
+- [ ] 22-02-PLAN.md — Fix Functional Bugs and Encoding
