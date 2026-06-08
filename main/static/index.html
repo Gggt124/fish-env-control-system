@@ -114,7 +114,10 @@
         </div>
     </div>
 
-    <!-- Pump Runtime -->
+    
+    <div class="dashboard-grid">
+        <div class="dashboard-col">
+            <!-- Pump Runtime -->
     <section class="pump-runtime section-card" id="pump-runtime-panel">
         <div class="pump-runtime-main">
             <div>
@@ -160,7 +163,109 @@
         <div class="pump-alert hidden" id="pump-status-error"></div>
     </section>
 
-    <!-- Cooling Runtime -->
+    
+            <!-- Pump Settings -->
+    <section class="section-card pump-settings">
+        <div class="section-heading-row">
+            <div>
+                <h3>ตั้งค่า Timer</h3>
+                <p>Float OFF -> Timer 1 / Relay 1, Float ON -> Timer 2 / Relay 2</p>
+            </div>
+            <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
+        </div>
+
+        <form id="pump-config-form" novalidate>
+            <div class="timer-grid">
+                <fieldset class="timer-card">
+                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย OFF</legend>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer1-on-min">ช่วงเปิด นาที</label>
+                            <input id="timer1-on-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer1-on-sec">ช่วงเปิด วินาที</label>
+                            <input id="timer1-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer1-on-error"></div>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer1-off-min">ช่วงปิด นาที</label>
+                            <input id="timer1-off-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer1-off-sec">ช่วงปิด วินาที</label>
+                            <input id="timer1-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer1-off-error"></div>
+                    <div class="duration-field start-phase-field">
+                        <label for="timer1-start-phase">เริ่มรอบด้วย</label>
+                        <select id="timer1-start-phase" name="timer1_start_phase">
+                            <option value="on">ON - เปิด Relay 1 ก่อน</option>
+                            <option value="off">OFF - หน่วงปิดก่อน</option>
+                        </select>
+                    </div>
+                    <div class="field-error" id="timer1-start-phase-error"></div>
+                </fieldset>
+
+                <fieldset class="timer-card">
+                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย ON</legend>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer2-on-min">ช่วงเปิด นาที</label>
+                            <input id="timer2-on-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer2-on-sec">ช่วงเปิด วินาที</label>
+                            <input id="timer2-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer2-on-error"></div>
+                    <div class="duration-row">
+                        <div class="duration-field">
+                            <label for="timer2-off-min">ช่วงปิด นาที</label>
+                            <input id="timer2-off-min" type="number" min="0" step="1" inputmode="numeric">
+                        </div>
+                        <div class="duration-field">
+                            <label for="timer2-off-sec">ช่วงปิด วินาที</label>
+                            <input id="timer2-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
+                        </div>
+                    </div>
+                    <div class="field-error" id="timer2-off-error"></div>
+                    <div class="duration-field start-phase-field">
+                        <label for="timer2-start-phase">เริ่มรอบด้วย</label>
+                        <select id="timer2-start-phase" name="timer2_start_phase">
+                            <option value="on">ON - เปิด Relay 2 ก่อน</option>
+                            <option value="off">OFF - หน่วงปิดก่อน</option>
+                        </select>
+                    </div>
+                    <div class="field-error" id="timer2-start-phase-error"></div>
+                </fieldset>
+            </div>
+
+            <div class="settings-actions">
+                <label class="toggle-row" for="pump-auto-start">
+                    <div class="toggle-switch"><input id="pump-auto-start" type="checkbox"><span class="toggle-slider"></span></div>
+                    <span>
+                        <strong>Auto-start หลังบูต</strong>
+                        <small>บันทึกเป็นพฤติกรรมตอนเปิดเครื่อง ไม่สั่ง Start/Stop ทันที</small>
+                    </span>
+                </label>
+                <div class="settings-button-row">
+                    <span class="unsaved-warning hidden" id="pump-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
+                    <button class="btn btn-primary" id="pump-save-config" type="submit" disabled>บันทึกค่า</button>
+                </div>
+            </div>
+            <div class="pump-alert hidden" id="pump-config-error"></div>
+        </form>
+    </section>
+
+    
+        </div>
+        <div class="dashboard-col">
+            <!-- Cooling Runtime -->
     <section class="section-card cooling-runtime" id="cooling-runtime-panel">
         <div class="section-heading-row">
             <div>
@@ -247,7 +352,7 @@
                     <input id="cooling-min-off" type="number" min="0" max="86400" step="1" inputmode="numeric">
                 </div>
                 <label class="toggle-row cooling-auto-toggle" for="cooling-auto-enable">
-                    <input id="cooling-auto-enable" type="checkbox">
+                    <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox"><span class="toggle-slider"></span></div>
                     <span>
                         <strong>Cooling auto-enable หลังบูต</strong>
                         <small>บันทึกพฤติกรรมตอนเปิดเครื่อง ไม่ใช่คำสั่ง Test ON</small>
@@ -262,104 +367,10 @@
         </form>
     </section>
 
-    <!-- Pump Settings -->
-    <section class="section-card pump-settings">
-        <div class="section-heading-row">
-            <div>
-                <h3>ตั้งค่า Timer</h3>
-                <p>Float OFF -> Timer 1 / Relay 1, Float ON -> Timer 2 / Relay 2</p>
-            </div>
-            <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
+    
         </div>
-
-        <form id="pump-config-form" novalidate>
-            <div class="timer-grid">
-                <fieldset class="timer-card">
-                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย OFF</legend>
-                    <div class="duration-row">
-                        <div class="duration-field">
-                            <label for="timer1-on-min">ช่วงเปิด นาที</label>
-                            <input id="timer1-on-min" type="number" min="0" step="1" inputmode="numeric">
-                        </div>
-                        <div class="duration-field">
-                            <label for="timer1-on-sec">ช่วงเปิด วินาที</label>
-                            <input id="timer1-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
-                        </div>
-                    </div>
-                    <div class="field-error" id="timer1-on-error"></div>
-                    <div class="duration-row">
-                        <div class="duration-field">
-                            <label for="timer1-off-min">ช่วงปิด นาที</label>
-                            <input id="timer1-off-min" type="number" min="0" step="1" inputmode="numeric">
-                        </div>
-                        <div class="duration-field">
-                            <label for="timer1-off-sec">ช่วงปิด วินาที</label>
-                            <input id="timer1-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
-                        </div>
-                    </div>
-                    <div class="field-error" id="timer1-off-error"></div>
-                    <div class="duration-field start-phase-field">
-                        <label for="timer1-start-phase">เริ่มรอบด้วย</label>
-                        <select id="timer1-start-phase" name="timer1_start_phase">
-                            <option value="on">ON - เปิด Relay 1 ก่อน</option>
-                            <option value="off">OFF - หน่วงปิดก่อน</option>
-                        </select>
-                    </div>
-                    <div class="field-error" id="timer1-start-phase-error"></div>
-                </fieldset>
-
-                <fieldset class="timer-card">
-                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย ON</legend>
-                    <div class="duration-row">
-                        <div class="duration-field">
-                            <label for="timer2-on-min">ช่วงเปิด นาที</label>
-                            <input id="timer2-on-min" type="number" min="0" step="1" inputmode="numeric">
-                        </div>
-                        <div class="duration-field">
-                            <label for="timer2-on-sec">ช่วงเปิด วินาที</label>
-                            <input id="timer2-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
-                        </div>
-                    </div>
-                    <div class="field-error" id="timer2-on-error"></div>
-                    <div class="duration-row">
-                        <div class="duration-field">
-                            <label for="timer2-off-min">ช่วงปิด นาที</label>
-                            <input id="timer2-off-min" type="number" min="0" step="1" inputmode="numeric">
-                        </div>
-                        <div class="duration-field">
-                            <label for="timer2-off-sec">ช่วงปิด วินาที</label>
-                            <input id="timer2-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric">
-                        </div>
-                    </div>
-                    <div class="field-error" id="timer2-off-error"></div>
-                    <div class="duration-field start-phase-field">
-                        <label for="timer2-start-phase">เริ่มรอบด้วย</label>
-                        <select id="timer2-start-phase" name="timer2_start_phase">
-                            <option value="on">ON - เปิด Relay 2 ก่อน</option>
-                            <option value="off">OFF - หน่วงปิดก่อน</option>
-                        </select>
-                    </div>
-                    <div class="field-error" id="timer2-start-phase-error"></div>
-                </fieldset>
-            </div>
-
-            <div class="settings-actions">
-                <label class="toggle-row" for="pump-auto-start">
-                    <input id="pump-auto-start" type="checkbox">
-                    <span>
-                        <strong>Auto-start หลังบูต</strong>
-                        <small>บันทึกเป็นพฤติกรรมตอนเปิดเครื่อง ไม่สั่ง Start/Stop ทันที</small>
-                    </span>
-                </label>
-                <div class="settings-button-row">
-                    <span class="unsaved-warning hidden" id="pump-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
-                    <button class="btn btn-primary" id="pump-save-config" type="submit" disabled>บันทึกค่า</button>
-                </div>
-            </div>
-            <div class="pump-alert hidden" id="pump-config-error"></div>
-        </form>
-    </section>
-
+    </div>
+    
     <!-- Summary Row -->
     <section class="section-card compact-status">
         <div class="section-heading-row">
