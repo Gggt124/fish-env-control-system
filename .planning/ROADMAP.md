@@ -80,5 +80,5 @@ Success criteria:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Fix Dark Mode and Sidebar
+- [x] 22-01-PLAN.md — Fix Dark Mode and Sidebar
 - [ ] 22-02-PLAN.md — Fix Functional Bugs and Encoding
