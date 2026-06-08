@@ -1,6 +1,6 @@
-# Roadmap: Milestone v1.6 Modern Web UI Optimization
+﻿# Roadmap: Milestone v1.6 Modern Web UI Optimization
 
-**4 phases** | **10 requirements mapped** | All covered ✓
+**4 phases** | **10 requirements mapped** | All covered âœ“
 
 | # | Phase | Status | Goal | Requirements | Success Criteria |
 |---|-------|--------|------|--------------|------------------|
@@ -22,9 +22,9 @@ Success criteria:
 **Plans:** 3 plans
 
 Plans:
-- [x] 18-01-PLAN.md — CSS Design System Refactor
-- [x] 18-02-PLAN.md — SPA Shell HTML and JS Routing Setup
-- [x] 18-03-PLAN.md — HTML Content Migration and C Server Integration
+- [x] 18-01-PLAN.md â€” CSS Design System Refactor
+- [x] 18-02-PLAN.md â€” SPA Shell HTML and JS Routing Setup
+- [x] 18-03-PLAN.md â€” HTML Content Migration and C Server Integration
 
 **Phase 19: Dashboard & Control Implementation**
 Goal: Redesign Pump, Timer, and Cooling controls to card-based layout.
@@ -38,8 +38,8 @@ Success criteria:
 **Plans:** 2 plans
 
 Plans:
-- [x] 19-01-PLAN.md � Dashboard Grid Layout & iOS Switch
-- [x] 19-02-PLAN.md � Circular Progress Rings
+- [x] 19-01-PLAN.md ï¿½ Dashboard Grid Layout & iOS Switch
+- [x] 19-02-PLAN.md ï¿½ Circular Progress Rings
 
 **Phase 20: System Status & Hardware/Install Pages**
 Goal: Overhaul the status view and GPIO configuration interface.
@@ -49,6 +49,11 @@ Success criteria:
 2. Hardware/Install page distinguishes active and pending configurations.
 3. Responsive design ensures these pages are readable on mobile.
 
+**Plans:** 1 plans
+
+Plans:
+- [ ] 20-01-PLAN.md — Overhaul system status and GPIO configuration interfaces
+
 **Phase 21: Wi-Fi Setup & UX Polish**
 Goal: Overhaul Wi-Fi Setup stepper and integrate loading/modal feedback across the app.
 Requirements: SYS-UI-01, UX-UI-01, UX-UI-02
@@ -56,4 +61,5 @@ Success criteria:
 1. Wi-Fi setup features a 3-step numbered stepper and network list.
 2. Action buttons display loading spinners while waiting for API responses.
 3. Important actions trigger modal confirmations instead of browser alerts.
+
 
