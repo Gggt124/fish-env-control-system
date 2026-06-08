@@ -2194,6 +2194,12 @@ function handleRoute() {
         activeView.classList.remove('hidden');
     }
     
+    if (viewId === 'view-login') {
+        document.body.classList.add('login-active');
+    } else {
+        document.body.classList.remove('login-active');
+    }
+    
     var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
     for (var j = 0; j < navItems.length; j++) {
         navItems[j].classList.remove('active');
