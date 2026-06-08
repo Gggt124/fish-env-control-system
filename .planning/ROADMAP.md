@@ -34,6 +34,13 @@ Success criteria:
 2. Cooling control is distinctly separate from pump controls.
 3. Data grid layouts cleanly display values without overlapping.
 
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 19-01-PLAN.md — Dashboard Grid Layout & iOS Switch
+- [ ] 19-02-PLAN.md — Circular Progress Rings
+
 **Phase 20: System Status & Hardware/Install Pages**
 Goal: Overhaul the status view and GPIO configuration interface.
 Requirements: SYS-UI-02, SYS-UI-03
@@ -49,3 +56,4 @@ Success criteria:
 1. Wi-Fi setup features a 3-step numbered stepper and network list.
 2. Action buttons display loading spinners while waiting for API responses.
 3. Important actions trigger modal confirmations instead of browser alerts.
+
