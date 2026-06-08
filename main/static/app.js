@@ -1317,12 +1317,12 @@ function checkHardwareDirty() {
 function markHardwareDirty() {
     var dirty = checkHardwareDirty();
     hardwareDirty = dirty;
-    var warn = hardwareEl('hardware-unsaved-warning');
-    if (warn) {
+    var banner = hardwareEl('hardware-unsaved-banner');
+    if (banner) {
         if (dirty) {
-            warn.classList.remove('hidden');
+            banner.classList.remove('hidden');
         } else {
-            warn.classList.add('hidden');
+            banner.classList.add('hidden');
         }
     }
     updateHardwareSaveButton();
@@ -1331,8 +1331,8 @@ function markHardwareDirty() {
 function setHardwareClean() {
     hardwareDirty = false;
     hardwarePending = false;
-    var warn = hardwareEl('hardware-unsaved-warning');
-    if (warn) warn.classList.add('hidden');
+    var banner = hardwareEl('hardware-unsaved-banner');
+    if (banner) banner.classList.add('hidden');
     var confirm = hardwareEl('hardware-confirm-reboot');
     if (confirm) confirm.checked = false;
     updateHardwareSaveButton();
@@ -1343,7 +1343,7 @@ function updateHardwareSaveButton() {
     if (!btn) return;
     var confirm = hardwareEl('hardware-confirm-reboot');
     btn.disabled = hardwarePending || !hardwareDirty || !confirm || !confirm.checked;
-    btn.textContent = hardwarePending ? 'Saving...' : 'Save Pending Map';
+    btn.textContent = hardwarePending ? 'Applying...' : 'Apply';
 }
 
 function loadHardwareMap() {
