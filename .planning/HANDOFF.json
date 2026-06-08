@@ -1,27 +1,34 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-08T14:25:25Z",
+  "timestamp": "2026-06-08T11:51:50Z",
   "phase": "22",
-  "phase_name": "UAT Bug Fixes",
+  "phase_name": "uat-bug-fixes",
   "phase_dir": ".planning/phases/22-uat-bug-fixes",
   "plan": 2,
   "task": 3,
   "total_tasks": 3,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Plan 22-01: UI Styling Bugs", "status": "done", "commit": "90dc598"},
-    {"id": 2, "name": "Plan 22-02: Functional Bugs", "status": "done", "commit": "9bb37ca"}
+    {"id": 1, "name": "Execute Plan 22-01 (Fix UI styling bugs)", "status": "done"},
+    {"id": 2, "name": "Execute Plan 22-02 (Fix functional bugs)", "status": "done"},
+    {"id": 3, "name": "Additional UI styling fixes from user feedback", "status": "done", "progress": "Fixed dashboard full width, gaps, cooling card auto-enable switch layout, and stretched cooling card to match column heights. Flashed to COM5."}
   ],
-  "remaining_tasks": [],
-  "blockers": [],
+  "remaining_tasks": [
+    {"id": 4, "name": "Complete phase and advance milestone", "status": "not_started"}
+  ],
+  "blockers": [
+    {"description": "User Verification: Waiting for user to confirm UI layout changes via browser", "type": "human_action"}
+  ],
   "human_actions_pending": [
-    {"action": "Verify UI on physical device or via http://fish-pump.local", "context": "User needs to confirm the UAT bugs are fixed before closing the phase.", "blocking": true}
+    {"action": "Verify UI layout in browser", "context": "Ensuring the new styling matches user expectations", "blocking": true}
   ],
   "decisions": [
-    {"decision": "Fixed Thai encoding issues by ensuring UTF-8 without BOM", "rationale": "Prevents garbled characters in browser", "phase": "22"},
-    {"decision": "Used login-active class to toggle sidebar", "rationale": "Cleaner CSS override without invasive logic changes", "phase": "22"}
+    {"decision": "Used inline styles and flexbox to stretch Cooling Control card", "rationale": "To match the dynamic height of the Timer card on the left column in the CSS grid", "phase": "22"},
+    {"decision": "Removed .cooling-auto-toggle and used .settings-actions", "rationale": "To exactly match the layout structure of the Timer Auto-start switch", "phase": "22"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Wait for user confirmation of UAT bug fixes, then proceed with completing the phase and merging or advancing the milestone.",
-  "context_notes": "Phase 22 bugs have all been resolved and flashed to the ESP32. We are waiting for the user to review."
+  "uncommitted_files": [
+    "main/static/index.html"
+  ],
+  "next_action": "Wait for user confirmation on the layout changes, then use /gsd-progress or complete Phase 22.",
+  "context_notes": "We successfully iterated through 4 UI layout feedback requests from the user. The firmware flashed correctly each time."
 }

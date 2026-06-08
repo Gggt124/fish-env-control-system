@@ -7,16 +7,31 @@
 <link rel="stylesheet" href="/style.css">
 <style>
   #app-content {
-    max-width: 1200px;
-    margin: 0 auto;
+    margin: 0;
   }
   @media (min-width: 1024px) {
     #app-content {
-      margin-left: max(280px, calc((100% - 1200px) / 2 + 280px));
+      margin-left: 280px;
+    }
+    .compact-status {
+      margin-top: var(--sp-lg);
+    }
+    .compact-status .summary-grid {
+      grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+      justify-content: start;
+    }
+  }
+  @media (max-width: 1023px) {
+    .compact-status {
+      margin-top: var(--sp-lg);
     }
   }
   .view.hidden {
     display: none !important;
+  }
+  body.login-active #app-content {
+    margin: 0 !important;
+    padding: 0 !important;
   }
 </style>
 </head>
@@ -272,7 +287,7 @@
         </div>
         <div class="dashboard-col">
             <!-- Cooling Runtime -->
-    <section class="section-card cooling-runtime" id="cooling-runtime-panel">
+    <section class="section-card cooling-runtime" id="cooling-runtime-panel" style="flex: 1; display: flex; flex-direction: column;">
         <div class="section-heading-row">
             <div>
                 <div class="runtime-eyebrow" id="cooling-sync-state">รอข้อมูลชุดทำความเย็น</div>
@@ -339,7 +354,7 @@
             <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
         </div>
 
-        <form class="cooling-config-form" id="cooling-config-form" novalidate>
+        <form class="cooling-config-form" id="cooling-config-form" novalidate style="flex: 1; display: flex; flex-direction: column;">
             <div class="cooling-config-grid">
                 <div class="duration-field">
                     <label for="cooling-threshold-input">Threshold C</label>
@@ -357,17 +372,20 @@
                     <label for="cooling-min-off">Lockout seconds</label>
                     <input id="cooling-min-off" type="number" min="0" max="86400" step="1" inputmode="numeric">
                 </div>
-                <label class="toggle-row cooling-auto-toggle" for="cooling-auto-enable">
+            </div>
+            
+            <div class="settings-actions" style="flex: 1; display: flex; flex-direction: column;">
+                <label class="toggle-row" for="cooling-auto-enable">
                     <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox"><span class="toggle-slider"></span></div>
                     <span>
                         <strong>Cooling auto-enable หลังบูต</strong>
                         <small>บันทึกพฤติกรรมตอนเปิดเครื่อง ไม่ใช่คำสั่ง Test ON</small>
                     </span>
                 </label>
-            </div>
-            <div class="settings-button-row">
-                <span class="unsaved-warning hidden" id="cooling-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
-                <button class="btn btn-primary" id="cooling-save-config" type="submit" disabled>บันทึก Cooling</button>
+                <div class="settings-button-row" style="margin-top: auto;">
+                    <span class="unsaved-warning hidden" id="cooling-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
+                    <button class="btn btn-primary" id="cooling-save-config" type="submit" disabled>บันทึก Cooling</button>
+                </div>
             </div>
             <div class="pump-alert hidden" id="cooling-config-error"></div>
         </form>
