@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-08T14:06:18Z",
+  "timestamp": "2026-06-08T20:00:00Z",
   "phase": "22",
   "phase_name": "uat-bug-fixes",
   "phase_dir": ".planning/phases/22-uat-bug-fixes",
@@ -9,16 +9,18 @@
   "total_tasks": 0,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Restore white card container and apply greyish icon color for disconnected status", "status": "done", "commit": "aff6859"},
-    {"id": 2, "name": "Fix wifi-off SVG paths to use official Feather icons format", "status": "done", "commit": "a0e6687"}
+    {"id": 1, "name": "Implement Wi-Fi multi-credential support", "status": "done", "commit": "HEAD"},
+    {"id": 2, "name": "Fix APP_TEMPLATE_HTTP_MAX_URI_HANDLERS crash", "status": "done", "commit": "HEAD"}
   ],
   "remaining_tasks": [],
   "blockers": [],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    {"action": "Verify webapp and captive portal work properly on device after HTTP max_uri_handlers fix", "context": "User reported captive portal missing and webapp inaccessible after Wi-Fi profile updates", "blocking": true}
+  ],
   "decisions": [
-    {"decision": "Use official Feather icon paths for wifi-off", "rationale": "Fixes disjointed and clipped SVG paths", "phase": "22"}
+    {"decision": "Increase APP_TEMPLATE_HTTP_MAX_URI_HANDLERS to 48", "rationale": "We added 4 new API endpoints for Wi-Fi profiles which pushed the total routes to 34, exceeding the default 32 limit and causing HTTP server initialization to fail.", "phase": "22"}
   ],
   "uncommitted_files": [],
-  "next_action": "Start the next milestone using /gsd-new-milestone",
-  "context_notes": "All styling fixes for the Wi-Fi connection card, checkboxes, modal triggers, and icon paths are complete and flashed."
+  "next_action": "Wait for user to verify the device operates normally before continuing with new features.",
+  "context_notes": "We successfully debugged an issue where the Captive Portal didn't show up and the Webapp crashed due to exceeding the max URI handler limit. The firmware has been flashed with the fix."
 }
