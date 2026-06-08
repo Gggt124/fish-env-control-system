@@ -69,6 +69,7 @@ Last activity: 2026-06-08 - Completed 22-uat-bug-fixes-02-PLAN.md
 
 | Date | Slug | Description |
 |---|---|---|
+| 2026-06-08 | 260608-wifi-off-svg-fix | Fix wifi-off SVG paths to use official Feather icons format |
 | 2026-06-08 | 260608-wifi-modal-styling-fixes | Restore white card container and apply greyish icon color for disconnected status |
 | 2026-06-08 | 260608-wifi-modal-refinements | Refine Wi-Fi Settings page styling (transparent disconnected card, larger checkboxes, direct connection trigger) |
 | 2026-06-08 | 260608-wifi-modal-layout | Refactor Wi-Fi Settings page styling and modal-based connection dialog |
