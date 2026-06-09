@@ -65,9 +65,9 @@
     --space-12: 3rem;   /* 48px */
     --space-16: 4rem;   /* 64px */
 
-    /* Typography Scale (Major Third 1.25) */
-    --text-xs: 0.64rem;
-    --text-sm: 0.8rem;
+    /* Typography Scale (Major Third 1.25 - modified for Thai readability) */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
     --text-base: 1rem;
     --text-lg: 1.25rem;
     --text-xl: 1.563rem;
@@ -1391,7 +1391,7 @@ select:disabled {
 
 .network-panel-header h3 { font-size: var(--text-base); }
 
-.network-list { list-style: none; overflow-y: auto; max-height: 400px; }
+.network-list { list-style: none; overflow-y: auto; max-height: 400px; display: flex; flex-direction: column; }
 
 .network-item {
     display: flex; justify-content: space-between; align-items: center;
@@ -1407,7 +1407,6 @@ select:disabled {
 .network-item:last-child { border-bottom: none; }
 .network-item.selected { background: var(--surface-container-low); }
 .network-item.connected { cursor: default; background: var(--surface-container-low); }
-.network-item.connected .network-icon { color: var(--secondary); }
 
 .network-item-left { display: flex; align-items: center; gap: var(--sp-md); min-width: 0; }
 
@@ -1417,27 +1416,34 @@ select:disabled {
     display: flex; align-items: center; justify-content: center;
     font-size: var(--text-lg); color: var(--on-surface-variant);
 }
+.network-icon.connected-icon, .network-item.connected .network-icon {
+    color: var(--secondary);
+    background: var(--secondary-container);
+}
 
-.network-info { min-width: 0; }
-.network-info .net-ssid {
+.network-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.network-info .net-ssid, .network-info .net-ssid-row {
     font-size: var(--text-base); font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
     overflow-wrap: anywhere;
 }
 .network-info .net-detail {
-    font-size: var(--text-sm); color: var(--outline);
-    display: flex; align-items: center; gap: 8px;
+    font-size: var(--text-sm); color: var(--on-surface-variant);
+    display: flex; align-items: center; gap: 4px;
     flex-wrap: wrap;
 }
 
 .network-item-right { display: flex; align-items: center; gap: var(--sp-md); flex-shrink: 0; }
 .network-connected-label {
-    color: var(--secondary); font-size: var(--text-xs); font-weight: 700;
+    color: var(--secondary); font-size: var(--text-sm); font-weight: 500;
+    display: flex; align-items: center;
     white-space: nowrap;
 }
-.net-signal { text-align: right; }
-.net-signal .sig-label { font-size: var(--text-xs); font-weight: 600; }
+.net-signal { text-align: right; display: flex; flex-direction: column; gap: 4px; }
+.net-signal .sig-label { font-size: var(--text-xs); font-weight: 500; }
 .net-signal .sig-label.strong { color: var(--secondary); }
-.net-signal .sig-label.good { color: var(--on-surface-variant); }
+.net-signal .sig-label.good { color: var(--primary); }
+.net-signal .sig-label.fair { color: var(--on-surface-variant); }
 .net-signal .sig-label.weak { color: var(--tertiary); }
 .network-empty {
     padding: 32px;
@@ -1446,20 +1452,131 @@ select:disabled {
 }
 .network-empty.error { color: var(--error); }
 
-@media (max-width: 480px) {
+/* ---- Saved Wi-Fi Profiles ---- */
+.profile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.profile-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid rgba(193, 198, 215, 0.2);
+    transition: background 0.15s;
+}
+.profile-item:last-child { border-bottom: none; }
+.profile-item:hover { background: var(--surface-container-low); }
+
+.profile-item-left {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-md);
+    min-width: 0;
+}
+
+.badge-current {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--secondary-container);
+    color: var(--secondary);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.text-success { color: var(--secondary); }
+
+.profile-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-md);
+    flex-shrink: 0;
+}
+
+.toggle-row-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+    cursor: pointer;
+}
+
+.toggle-label-text {
+    font-size: var(--text-sm);
+    color: var(--on-surface-variant);
+}
+
+.action-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--outline-variant);
+    margin: 0 4px;
+}
+
+.btn-icon-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-text:hover {
+    color: var(--error);
+    background: rgba(186, 26, 26, 0.08);
+}
+
+.profile-empty {
+    padding: 32px;
+    text-align: center;
+    color: var(--on-surface-variant);
+    font-size: var(--text-sm);
+}
+
+@media (max-width: 640px) {
     .network-item {
         align-items: flex-start;
         flex-direction: column;
         gap: var(--sp-sm);
     }
-
+    
     .network-item-right {
         width: 100%;
         justify-content: space-between;
-        padding-left: 52px;
+        padding-left: 56px;
     }
 
     .net-signal { text-align: left; }
+    
+    .profile-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--sp-md);
+    }
+    
+    .profile-actions {
+        width: 100%;
+        justify-content: space-between;
+        padding-left: 56px;
+    }
+    
+    .action-divider {
+        display: none;
+    }
+    
+    .hidden-mobile {
+        display: none;
+    }
 }
 .net-signal .sig-dbm {
     font-family: var(--font-mono); font-size: var(--text-sm); color: var(--outline);

@@ -1,26 +1,28 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-08T20:00:00Z",
-  "phase": "22",
-  "phase_name": "uat-bug-fixes",
-  "phase_dir": ".planning/phases/22-uat-bug-fixes",
-  "plan": 2,
+  "timestamp": "2026-06-09T17:15:00Z",
+  "phase": "default",
+  "phase_name": "ad-hoc UX fixes",
+  "phase_dir": "",
+  "plan": 0,
   "task": 0,
   "total_tasks": 0,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Implement Wi-Fi multi-credential support", "status": "done", "commit": "HEAD"},
-    {"id": 2, "name": "Fix APP_TEMPLATE_HTTP_MAX_URI_HANDLERS crash", "status": "done", "commit": "HEAD"}
+    {"id": 1, "name": "Debounce 1s for Wi-Fi toggle", "status": "done"},
+    {"id": 2, "name": "Increase small text sizes for Thai readability", "status": "done"}
   ],
-  "remaining_tasks": [],
+  "remaining_tasks": [
+    {"id": 3, "name": "Wait for user feedback on text sizes", "status": "not_started"}
+  ],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "Verify webapp and captive portal work properly on device after HTTP max_uri_handlers fix", "context": "User reported captive portal missing and webapp inaccessible after Wi-Fi profile updates", "blocking": true}
+    {"action": "Check the UI font sizes on the actual device screen", "context": "To ensure readability of Thai text and button labels", "blocking": false}
   ],
   "decisions": [
-    {"decision": "Increase APP_TEMPLATE_HTTP_MAX_URI_HANDLERS to 48", "rationale": "We added 4 new API endpoints for Wi-Fi profiles which pushed the total routes to 34, exceeding the default 32 limit and causing HTTP server initialization to fail.", "phase": "22"}
+    {"decision": "Changed --text-xs to 0.75rem and --text-sm to 0.875rem globally", "rationale": "To proportionally scale up all small UI elements at once instead of patching individual classes", "phase": "default"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Wait for user to verify the device operates normally before continuing with new features.",
-  "context_notes": "We successfully debugged an issue where the Captive Portal didn't show up and the Webapp crashed due to exceeding the max URI handler limit. The firmware has been flashed with the fix."
+  "uncommitted_files": ["main/static/style.css", "main/static/app.js"],
+  "next_action": "Wait for user's feedback on whether the text sizes are good",
+  "context_notes": "We were fixing ad-hoc user requests for the web UI, particularly around the Wi-Fi settings page."
 }
