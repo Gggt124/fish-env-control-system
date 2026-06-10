@@ -21,7 +21,10 @@
   2. User session remains valid despite offline time drift.
   3. System gracefully recovers if NVS partition is corrupted or needs an upgrade.
   4. Oldest sessions are cleanly evicted if user logs in on more than 5 devices.
-**Plans**: TBD
+**Plans:** 3 plans
+- [ ] 01-01-PLAN.md — Core NVS Storage Foundation
+- [ ] 01-02-PLAN.md — Stateless JWT Crypto
+- [ ] 01-03-PLAN.md — "Remember Me" Integration
 
 ### Phase 2: Credential Management UI & Logic
 **Goal**: Users can securely change the default administrator credentials and invalidate old sessions.
@@ -52,6 +55,6 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Persistent Sessions & Storage Foundation | v1.7 | 0/0 | Not started | - |
+| 1. Persistent Sessions & Storage Foundation | v1.7 | 0/3 | Not started | - |
 | 2. Credential Management UI & Logic | v1.7 | 0/0 | Not started | - |
 | 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/0 | Not started | - |
