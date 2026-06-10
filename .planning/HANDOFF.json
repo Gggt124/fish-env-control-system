@@ -1,29 +1,23 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-10T07:29:06Z",
-  "phase": "22",
-  "phase_name": "22-uat-bug-fixes",
-  "phase_dir": ".planning/phases/22-uat-bug-fixes",
-  "plan": 2,
+  "timestamp": "2026-06-11T02:38:19+07:00",
+  "phase": "1",
+  "phase_name": "Persistent Sessions & Storage Foundation",
+  "phase_dir": ".planning/phases/01-persistent-sessions",
+  "plan": 0,
   "task": 0,
-  "total_tasks": 3,
+  "total_tasks": 0,
   "status": "paused",
-  "completed_tasks": [
-    {"id": 1, "name": "Task 1: Add Memory Percentage Display", "status": "done"},
-    {"id": 2, "name": "Task 2: Add Wi-Fi Connection Confirmation Modal", "status": "done"},
-    {"id": 3, "name": "Task 3: Enforce UTF-8 on index.html", "status": "done"},
-    {"id": 4, "name": "Fix Wi-Fi Saved Networks UX", "status": "done"}
-  ],
-  "remaining_tasks": [
-  ],
-  "blockers": [
-  ],
-  "human_actions_pending": [
-  ],
+  "completed_tasks": [],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [],
   "decisions": [
-    {"decision": "Cross-reference Wi-Fi scans", "rationale": "UX is better when 'saved networks' accurately reflects whether they are in range, rather than hardcoding WPA2/3.", "phase": "22"}
+    {"decision": "Token split architecture (RAM + NVS)", "rationale": "Avoid NVS wear while enabling remember me across reboots", "phase": "1"},
+    {"decision": "Timed Setup with Physical Consent", "rationale": "Secure AP Fallback without opening access point automatically to unauthorized users", "phase": "3"},
+    {"decision": "Two-phase configuration validation", "rationale": "Prevent self-lockout from human error by requiring explicit confirmation", "phase": "3"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Wait for the user to resume.",
-  "context_notes": "We just fixed a bug where the 'saved network' section incorrectly showed 'out of range' before a scan had even completed. The code was updated to show 'กำลังใช้งาน' if connected, or 'กดสแกนใหม่เพื่อตรวจสอบระยะ' if a scan hasn't occurred yet."
+  "uncommitted_files": [".planning/PROJECT.md", ".planning/ROADMAP.md", ".planning/STATE.md", ".planning/REQUIREMENTS.md"],
+  "next_action": "Run /gsd-plan-phase 1 to begin work on the first phase of the v1.7 milestone",
+  "context_notes": "We just finished planning milestone v1.7. All research is synthesized into requirements and the roadmap is fully locked. We are ready to start planning the implementation details for Phase 1."
 }
