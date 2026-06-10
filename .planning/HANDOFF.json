@@ -1,9 +1,9 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-11T02:38:19+07:00",
-  "phase": "1",
+  "timestamp": "2026-06-10T20:02:16.618Z",
+  "phase": "01",
   "phase_name": "Persistent Sessions & Storage Foundation",
-  "phase_dir": ".planning/phases/01-persistent-sessions",
+  "phase_dir": ".planning/phases/01-persistent-sessions-storage-foundation",
   "plan": 0,
   "task": 0,
   "total_tasks": 0,
@@ -13,11 +13,13 @@
   "blockers": [],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Token split architecture (RAM + NVS)", "rationale": "Avoid NVS wear while enabling remember me across reboots", "phase": "1"},
-    {"decision": "Timed Setup with Physical Consent", "rationale": "Secure AP Fallback without opening access point automatically to unauthorized users", "phase": "3"},
-    {"decision": "Two-phase configuration validation", "rationale": "Prevent self-lockout from human error by requiring explicit confirmation", "phase": "3"}
+    {"decision": "Use JWT generated/verified on ESP32", "rationale": "Avoids NVS write wear on sessions", "phase": "1"},
+    {"decision": "Waive 5-device limit", "rationale": "100% NVS wear mitigation for sessions", "phase": "1"},
+    {"decision": "No session expiration", "rationale": "Maximum convenience for Koi pond owners", "phase": "1"},
+    {"decision": "IP Binding", "rationale": "Mitigate HTTP sniffing risks on local Wi-Fi", "phase": "1"},
+    {"decision": "Client-side only logout", "rationale": "Accepted risk to avoid NVS writes", "phase": "1"}
   ],
-  "uncommitted_files": [".planning/PROJECT.md", ".planning/ROADMAP.md", ".planning/STATE.md", ".planning/REQUIREMENTS.md"],
-  "next_action": "Run /gsd-plan-phase 1 to begin work on the first phase of the v1.7 milestone",
-  "context_notes": "We just finished planning milestone v1.7. All research is synthesized into requirements and the roadmap is fully locked. We are ready to start planning the implementation details for Phase 1."
+  "uncommitted_files": [],
+  "next_action": "Run /gsd-plan-phase 1 to begin planning",
+  "context_notes": "Phase 1 context gathered via gsd-discuss-phase. User chose to use stateless JWTs with IP binding and no expiration."
 }
