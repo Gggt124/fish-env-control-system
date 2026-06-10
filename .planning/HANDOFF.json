@@ -1,28 +1,29 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-09T17:15:00Z",
-  "phase": "default",
-  "phase_name": "ad-hoc UX fixes",
-  "phase_dir": "",
-  "plan": 0,
+  "timestamp": "2026-06-10T07:29:06Z",
+  "phase": "22",
+  "phase_name": "22-uat-bug-fixes",
+  "phase_dir": ".planning/phases/22-uat-bug-fixes",
+  "plan": 2,
   "task": 0,
-  "total_tasks": 0,
+  "total_tasks": 3,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Debounce 1s for Wi-Fi toggle", "status": "done"},
-    {"id": 2, "name": "Increase small text sizes for Thai readability", "status": "done"}
+    {"id": 1, "name": "Task 1: Add Memory Percentage Display", "status": "done"},
+    {"id": 2, "name": "Task 2: Add Wi-Fi Connection Confirmation Modal", "status": "done"},
+    {"id": 3, "name": "Task 3: Enforce UTF-8 on index.html", "status": "done"},
+    {"id": 4, "name": "Fix Wi-Fi Saved Networks UX", "status": "done"}
   ],
   "remaining_tasks": [
-    {"id": 3, "name": "Wait for user feedback on text sizes", "status": "not_started"}
   ],
-  "blockers": [],
+  "blockers": [
+  ],
   "human_actions_pending": [
-    {"action": "Check the UI font sizes on the actual device screen", "context": "To ensure readability of Thai text and button labels", "blocking": false}
   ],
   "decisions": [
-    {"decision": "Changed --text-xs to 0.75rem and --text-sm to 0.875rem globally", "rationale": "To proportionally scale up all small UI elements at once instead of patching individual classes", "phase": "default"}
+    {"decision": "Cross-reference Wi-Fi scans", "rationale": "UX is better when 'saved networks' accurately reflects whether they are in range, rather than hardcoding WPA2/3.", "phase": "22"}
   ],
-  "uncommitted_files": ["main/static/style.css", "main/static/app.js"],
-  "next_action": "Wait for user's feedback on whether the text sizes are good",
-  "context_notes": "We were fixing ad-hoc user requests for the web UI, particularly around the Wi-Fi settings page."
+  "uncommitted_files": [],
+  "next_action": "Wait for the user to resume.",
+  "context_notes": "We just fixed a bug where the 'saved network' section incorrectly showed 'out of range' before a scan had even completed. The code was updated to show 'กำลังใช้งาน' if connected, or 'กดสแกนใหม่เพื่อตรวจสอบระยะ' if a scan hasn't occurred yet."
 }
