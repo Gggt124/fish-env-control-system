@@ -23,3 +23,9 @@ Address the User Acceptance Testing (UAT) feedback for the Modern Web UI milesto
 5. **Missing Wi-Fi Modal ("modal wifi ไม่มี"):**
    - **Diagnosis:** The "Connect" action on the Wi-Fi Setup Stepper calls `doConnect()` directly without a modal confirmation, contrary to the design requirements.
    - **Fix:** Wrap the logic inside `doConnect()` in `app.js` with `showConfirmModal('ยืนยันการเชื่อมต่อ', 'คุณต้องการเชื่อมต่อกับ ' + selectedSsid + ' ใช่หรือไม่?', function() { ... });`.
+
+## Wave 3 UAT Feedback (UI/UX Refinements)
+6. **Wi-Fi Modal Mobile Overflow:** The Wi-Fi connection modal has a bug on mobile devices where opening advanced options (like Static IP) causes the content to overflow the screen vertically, making it unusable.
+7. **Hardware Install Readability:** The Hardware Install page needs UI/UX improvements to make it easier to read and understand.
+8. **System Status Readability:** The System Status page needs layout/styling tweaks to improve readability.
+9. **Dashboard Cards Polish:** Dashboard cards need individual UI/UX review and refinement. (Pending further research/direction).
