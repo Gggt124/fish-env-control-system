@@ -4,6 +4,20 @@
  */
 
 
+/* ======== SPA State Management ======== */
+var dashboardInterval = null;
+var statusInterval = null;
+
+function cleanupCurrentView() {
+    if (dashboardInterval) { clearInterval(dashboardInterval); dashboardInterval = null; }
+    if (statusInterval) { clearInterval(statusInterval); statusInterval = null; }
+    if (typeof pumpPollTimer !== 'undefined' && pumpPollTimer) { clearInterval(pumpPollTimer); pumpPollTimer = null; }
+    if (typeof pumpTickTimer !== 'undefined' && pumpTickTimer) { clearInterval(pumpTickTimer); pumpTickTimer = null; }
+    if (typeof coolingPollTimer !== 'undefined' && coolingPollTimer) { clearInterval(coolingPollTimer); coolingPollTimer = null; }
+    if (typeof handlePumpVisibilityChange !== 'undefined') document.removeEventListener('visibilitychange', handlePumpVisibilityChange);
+    if (typeof handleCoolingVisibilityChange !== 'undefined') document.removeEventListener('visibilitychange', handleCoolingVisibilityChange);
+}
+
 /* ======== Session / Auth ======== */
 
 function getSessionToken() {
@@ -27,7 +41,7 @@ function checkAuth() {
 
 var API_TIMEOUT_MS = 8000;
 
-function apiGet(url, cb) {
+function apiGet(url, cb, customTimeout) {
     var xhr = new XMLHttpRequest();
     var done = false;
     function finish(err, data) {
@@ -36,7 +50,7 @@ function apiGet(url, cb) {
         cb(err, data);
     }
     xhr.open('GET', url, true);
-    xhr.timeout = API_TIMEOUT_MS;
+    xhr.timeout = customTimeout || API_TIMEOUT_MS;
     xhr.onload = function() {
         if (xhr.status === 200) {
             try { finish(null, JSON.parse(xhr.responseText)); }
@@ -276,7 +290,7 @@ function initPumpDashboard() {
     loadPumpConfig();
     syncPumpStatus(true);
     refreshStatus();
-    setInterval(refreshStatus, 10000);
+    dashboardInterval = setInterval(refreshStatus, 10000);
     startPumpLiveTimers();
     document.addEventListener('visibilitychange', handlePumpVisibilityChange);
 }
@@ -1597,7 +1611,7 @@ function saveHardwareMap() {
 function initStatus() {
     if (window.location.pathname !== '/status') return;
     refreshFullStatus();
-    setInterval(refreshFullStatus, 30000);
+    statusInterval = setInterval(refreshFullStatus, 30000);
 }
 
 function refreshFullStatus() {
@@ -1854,58 +1868,99 @@ function loadWifiProfiles(retryCount) {
             return;
         }
         var profiles = data.profiles || [];
-        if (profiles.length === 0) {
-            el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span style="font-size:12px;color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
-            return;
+        window.savedWifiProfiles = profiles;
+        renderSavedProfiles();
+    });
+}
+
+function renderSavedProfiles() {
+    var el = document.getElementById('profile-list');
+    if (!el) return;
+    
+    var profiles = window.savedWifiProfiles || [];
+    if (profiles.length === 0) {
+        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span style="font-size:12px;color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
+        return;
+    }
+    
+    var html = '<div class="profile-list">';
+    for (var i = 0; i < profiles.length; i++) {
+        var p = profiles[i];
+        var isConn = p.connected === true;
+        
+        // Cross-reference with scan results
+        var scanData = null;
+        if (window.lastScanResults) {
+            for (var k = 0; k < window.lastScanResults.length; k++) {
+                if (window.lastScanResults[k].ssid === p.ssid) {
+                    scanData = window.lastScanResults[k];
+                    break;
+                }
+            }
         }
-        var html = '<div class="profile-list">';
-        for (var i = 0; i < profiles.length; i++) {
-            var p = profiles[i];
-            var isConn = p.connected === true;
-            
-            html += '<div class="profile-item' + (isConn ? ' connected' : '') + '">';
-            
-            /* Left side */
-            html += '<div class="profile-item-left">';
-            html += '<div class="network-icon' + (isConn ? ' connected-icon' : '') + '">';
-            html += '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
-            html += '</div>';
-            html += '<div class="network-info">';
-            html += '<div class="net-ssid-row">';
-            html += '<span class="net-ssid">' + escHtml(p.ssid) + '</span>';
-            if (isConn) {
-                html += '<span class="badge-current"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ปัจจุบัน</span>';
-            }
-            html += '</div>';
-            html += '<div class="net-detail">';
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> WPA2/3'; // generic security as API doesn't provide
-            if (isConn) {
-                html += '<span class="text-success" style="margin-left:8px;">เชื่อมต่อแล้ว</span>';
-            }
-            html += '</div>';
-            html += '</div>';
-            html += '</div>';
-            
-            /* Right side */
-            html += '<div class="profile-actions">';
-            
-            html += '<label class="toggle-row-inline">';
-            html += '<span class="toggle-label-text">เชื่อมต่ออัตโนมัติ</span>';
-            html += '<div class="toggle-switch"><input type="checkbox" onchange="toggleAutoProfile(\'' + escJs(p.ssid) + '\', this.checked, ' + (p.auto ? 'true' : 'false') + ')" ' + (p.auto ? 'checked' : '') + '><span class="toggle-slider"></span></div>';
-            html += '</label>';
-            
-            html += '<div class="action-divider"></div>';
-            
-            html += '<button class="btn-icon-text btn-forget" onclick="forgetProfile(\'' + escJs(p.ssid) + '\')">';
-            html += '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
-            html += '<span class="hidden-mobile">ลืม</span>';
-            html += '</button>';
-            
-            html += '</div></div>';
+        
+        var iconClass = isConn ? ' connected-icon' : (scanData ? '' : ' inactive-icon');
+        var iconStyle = scanData ? '' : 'opacity: 0.4;';
+        
+        html += '<div class="profile-item' + (isConn ? ' connected' : '') + '">';
+        
+        /* Left side */
+        html += '<div class="profile-item-left">';
+        html += '<div class="network-icon' + iconClass + '" style="' + iconStyle + '">';
+        html += '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+        html += '</div>';
+        html += '<div class="network-info">';
+        html += '<div class="net-ssid-row">';
+        html += '<span class="net-ssid">' + escHtml(p.ssid) + '</span>';
+        if (isConn) {
+            html += '<span class="badge-current"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ปัจจุบัน</span>';
         }
         html += '</div>';
-        el.innerHTML = html;
-    });
+        html += '<div class="net-detail">';
+        
+        if (scanData) {
+            // Found in scan
+            var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ';
+            html += authLabel + escHtml(scanData.auth) + ' &bull; Ch ' + scanData.channel;
+            html += '<span class="text-success" style="margin-left:8px;">(อยู่ในระยะ)</span>';
+        } else if (isConn) {
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ';
+            html += '<span style="opacity:0.8;">กำลังใช้งาน</span>';
+        } else if (typeof window.lastScanResults === 'undefined') {
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ';
+            html += '<span style="opacity:0.6; font-size:12px;">กดสแกนใหม่เพื่อตรวจสอบระยะ</span>';
+        } else {
+            // Scanned but not found
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> ';
+            html += '<span style="opacity:0.6;">อยู่นอกระยะสัญญาณ</span>';
+        }
+        
+        if (isConn) {
+            html += '<span class="text-success" style="margin-left:8px;">เชื่อมต่อแล้ว</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+        
+        /* Right side */
+        html += '<div class="profile-actions">';
+        
+        html += '<label class="toggle-row-inline">';
+        html += '<span class="toggle-label-text">เชื่อมต่ออัตโนมัติ</span>';
+        html += '<div class="toggle-switch"><input type="checkbox" onchange="toggleAutoProfile(\'' + escJs(p.ssid) + '\', this.checked, ' + (p.auto ? 'true' : 'false') + ')" ' + (p.auto ? 'checked' : '') + '><span class="toggle-slider"></span></div>';
+        html += '</label>';
+        
+        html += '<div class="action-divider"></div>';
+        
+        html += '<button class="btn-icon-text btn-forget" onclick="forgetProfile(\'' + escJs(p.ssid) + '\')">';
+        html += '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+        html += '<span class="hidden-mobile">ลืม</span>';
+        html += '</button>';
+        
+        html += '</div></div>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
 }
 
 function forgetProfile(ssid) {
@@ -2018,11 +2073,16 @@ function doScan() {
         var nets = data.networks || [];
         if (nets.length === 0) {
             if (list) list.innerHTML = '<div class="network-empty">ไม่พบเครือข่าย</div>';
+            window.lastScanResults = [];
+            if (window.savedWifiProfiles) renderSavedProfiles();
             return;
         }
 
         /* Sort by RSSI (strongest first) */
         nets.sort(function(a, b) { return b.rssi - a.rssi; });
+        
+        window.lastScanResults = nets;
+        if (window.savedWifiProfiles) renderSavedProfiles();
 
         for (var j = 0; j < nets.length; j++) {
             if (nets[j].connected && selectedSsid === nets[j].ssid) {
@@ -2111,6 +2171,13 @@ function fadeSwap(toHide, toShow) {
 
 }
 
+function showSavedPasswordInput() {
+    var pwGroup = document.getElementById('wifi-password-group');
+    var savedMsg = document.getElementById('wifi-saved-msg');
+    if (pwGroup) pwGroup.style.display = 'block';
+    if (savedMsg) savedMsg.style.display = 'none';
+}
+
 function selectNetwork(ssid) {
     var items = document.querySelectorAll('.network-item');
     for (var i = 0; i < items.length; i++) {
@@ -2133,7 +2200,34 @@ function selectNetwork(ssid) {
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
-    if (pwInput) { pwInput.value = ''; pwInput.type = 'password'; pwInput.disabled = false; }
+    var isSaved = false;
+    if (window.savedWifiProfiles) {
+        for (var k = 0; k < window.savedWifiProfiles.length; k++) {
+            if (window.savedWifiProfiles[k].ssid === ssid) {
+                isSaved = true;
+                break;
+            }
+        }
+    }
+
+    if (pwInput) { 
+        pwInput.value = ''; 
+        pwInput.type = 'password'; 
+        pwInput.disabled = false; 
+        
+        var pwGroup = document.getElementById('wifi-password-group');
+        var savedMsg = document.getElementById('wifi-saved-msg');
+        
+        if (isSaved) {
+            pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e16\u0e39\u0e01\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 (\u0e40\u0e27\u0e49\u0e19\u0e27\u0e48\u0e32\u0e07\u0e44\u0e14\u0e49)';
+            if (pwGroup) pwGroup.style.display = 'none';
+            if (savedMsg) savedMsg.style.display = 'block';
+        } else {
+            pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19';
+            if (pwGroup) pwGroup.style.display = 'block';
+            if (savedMsg) savedMsg.style.display = 'none';
+        }
+    }
     if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = false; }
     if (ipToggle) { ipToggle.checked = false; ipToggle.disabled = false; }
     toggleStaticIp(); // clear static fields and hide them
@@ -2249,10 +2343,19 @@ function doConnect() {
 
     apiPost('/api/wifi/connect', body, function(err, data) {
         if (err) {
-            if (connectBtn) setLoading(connectBtn, false);
-            if (cancelBtn) cancelBtn.disabled = false;
-            if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14'; statusEl.style.color = 'var(--error)'; }
-            updateStepper(2);
+            if (err.message && err.message.indexOf('HTTP') === 0) {
+                if (connectBtn) setLoading(connectBtn, false);
+                if (cancelBtn) cancelBtn.disabled = false;
+                if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14: ' + err.message; statusEl.style.color = 'var(--error)'; }
+                updateStepper(2);
+            } else {
+                /* Network error means the ESP32 likely dropped the Wi-Fi to switch networks! */
+                if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
+                var banner = document.getElementById('reconnect-banner');
+                if (banner) banner.style.display = 'block';
+                if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
+                wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 2000);
+            }
             return;
         }
 
@@ -2309,6 +2412,22 @@ function pollWifiConnection(attempt) {
 
             /* Mark the connected network in the list */
             var connSsid = data.sta_ssid || selectedSsid;
+            
+            if (connSsid && connSsid !== selectedSsid) {
+                /* Fallback detected! We are back on the old Wi-Fi */
+                wifiConnectPollTimer = null;
+                if (connectBtn) setLoading(connectBtn, false);
+                if (cancelBtn) cancelBtn.disabled = false;
+                if (statusEl) { 
+                    statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: \u0e23\u0e30\u0e1a\u0e1a\u0e44\u0e14\u0e49\u0e14\u0e36\u0e07\u0e04\u0e38\u0e13\u0e01\u0e25\u0e31\u0e1a\u0e21\u0e32\u0e22\u0e31\u0e07 Wi-Fi \u0e40\u0e14\u0e34\u0e21'; 
+                    statusEl.style.color = 'var(--error)'; 
+                }
+                updateStepper(2);
+                var banner = document.getElementById('reconnect-banner');
+                if (banner) banner.style.display = 'none';
+                return;
+            }
+
             markNetworkConnected(connSsid);
 
             /* Persist the credential to NVS (only on confirmed connect success) */
@@ -2329,12 +2448,17 @@ function pollWifiConnection(attempt) {
             wifiConnectPollTimer = null;
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
-            if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: \u0e25\u0e2d\u0e07\u0e15\u0e23\u0e27\u0e08\u0e2a\u0e2d\u0e1a\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e41\u0e25\u0e49\u0e27\u0e25\u0e2d\u0e07\u0e43\u0e2b\u0e21\u0e48'; statusEl.style.color = 'var(--error)'; }
+            
+            /* If we timeout without falling back, assume success (device moved to new network) */
+            if (statusEl) { 
+                statusEl.textContent = '\u2705 \u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c\u0e22\u0e49\u0e32\u0e22\u0e44\u0e1b\u0e22\u0e31\u0e07\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e2b\u0e21\u0e48\u0e41\u0e25\u0e49\u0e27 \u0e01\u0e23\u0e38\u0e13\u0e32\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19 Wi-Fi \u0e1a\u0e19\u0e21\u0e37\u0e2d\u0e16\u0e37\u0e2d\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19\u0e15\u0e48\u0e2d'; 
+                statusEl.style.color = 'var(--secondary)'; 
+            }
             
             var banner = document.getElementById('reconnect-banner');
             if (banner) banner.style.display = 'none';
             
-            updateStepper(2);
+            updateStepper(3, true);
             updateConnectionStatus();
             return;
         }
@@ -2342,8 +2466,8 @@ function pollWifiConnection(attempt) {
         var countdownEl = document.getElementById('reconnect-countdown');
         if (countdownEl) countdownEl.textContent = (15 - attempt);
 
-        wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(attempt + 1); }, 1000);
-    });
+        wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(attempt + 1); }, 200);
+    }, 800);
 }
 
 function updateStepper(activeStep, done) {
@@ -2417,6 +2541,8 @@ function handleRoute() {
     }
     
     checkAuth();
+    
+    cleanupCurrentView();
     
     if (path === '/login') {
         if (typeof initLogin === 'function') initLogin();

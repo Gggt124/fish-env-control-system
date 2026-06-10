@@ -208,6 +208,218 @@ bool nvs_store_clear_wifi(void)
     return ok;
 }
 
+/* ============================================================
+ * Multi-profile Wi-Fi credential management
+ * Namespace: "wifi_prof"
+ * Keys:
+ *   p_count  (u8)  — number of valid profiles (0..WIFI_PROFILE_MAX)
+ *   p_auto   (i8)  — auto-connect index, stored as u8 with 0xFF = none
+ *   pN_ssid  (str) — SSID for profile N
+ *   pN_pass  (str) — password for profile N
+ * ============================================================ */
+
+#define NVS_PROF_NAMESPACE  "wifi_prof"
+#define NVS_PROF_KEY_COUNT  "p_count"
+#define NVS_PROF_KEY_AUTO   "p_auto"
+#define NVS_PROF_AUTO_NONE  0xFF
+
+/* Build key strings like "p0_ssid", "p3_pass" into caller-supplied buf (len >= 8). */
+static void prof_ssid_key(char *buf, int idx)
+{
+    buf[0] = 'p'; buf[1] = '0' + idx;
+    buf[2] = '_'; buf[3] = 's'; buf[4] = 's'; buf[5] = 'i'; buf[6] = 'd'; buf[7] = '\0';
+}
+static void prof_pass_key(char *buf, int idx)
+{
+    buf[0] = 'p'; buf[1] = '0' + idx;
+    buf[2] = '_'; buf[3] = 'p'; buf[4] = 'a'; buf[5] = 's'; buf[6] = 's'; buf[7] = '\0';
+}
+
+bool nvs_store_load_wifi_profiles(wifi_profile_t *profiles, int *count_out, int *auto_idx_out)
+{
+    if (!profiles || !count_out || !auto_idx_out) return false;
+    memset(profiles, 0, sizeof(wifi_profile_t) * WIFI_PROFILE_MAX);
+    *count_out   = 0;
+    *auto_idx_out = -1;
+
+    nvs_handle_t h;
+    esp_err_t ret = nvs_open(NVS_PROF_NAMESPACE, NVS_READONLY, &h);
+    if (ret == ESP_ERR_NVS_NOT_FOUND) return true;  /* no profiles yet */
+    if (ret != ESP_OK) return false;
+
+    uint8_t count = 0;
+    nvs_get_u8(h, NVS_PROF_KEY_COUNT, &count);
+    if (count > WIFI_PROFILE_MAX) count = WIFI_PROFILE_MAX;
+
+    uint8_t auto_raw = NVS_PROF_AUTO_NONE;
+    nvs_get_u8(h, NVS_PROF_KEY_AUTO, &auto_raw);
+    *auto_idx_out = (auto_raw == NVS_PROF_AUTO_NONE || auto_raw >= count) ? -1 : (int)auto_raw;
+
+    char key[8];
+    for (int i = 0; i < (int)count; i++) {
+        prof_ssid_key(key, i);
+        size_t ssid_len = sizeof(profiles[i].ssid);
+        if (nvs_get_str(h, key, profiles[i].ssid, &ssid_len) != ESP_OK) {
+            profiles[i].ssid[0] = '\0';
+        }
+        prof_pass_key(key, i);
+        size_t pass_len = sizeof(profiles[i].pass);
+        if (nvs_get_str(h, key, profiles[i].pass, &pass_len) != ESP_OK) {
+            profiles[i].pass[0] = '\0';
+        }
+    }
+    *count_out = (int)count;
+    nvs_close(h);
+    return true;
+}
+
+/* Write the in-memory profile array and auto_idx back to NVS atomically. */
+static bool prof_write_all(nvs_handle_t h, const wifi_profile_t *profiles,
+                            int count, int auto_idx)
+{
+    bool ok = true;
+    char key[8];
+
+    if (nvs_set_u8(h, NVS_PROF_KEY_COUNT, (uint8_t)count) != ESP_OK) ok = false;
+    uint8_t auto_raw = (auto_idx >= 0 && auto_idx < count)
+                        ? (uint8_t)auto_idx : NVS_PROF_AUTO_NONE;
+    if (nvs_set_u8(h, NVS_PROF_KEY_AUTO, auto_raw) != ESP_OK) ok = false;
+
+    for (int i = 0; i < count; i++) {
+        prof_ssid_key(key, i);
+        if (nvs_set_str(h, key, profiles[i].ssid) != ESP_OK) ok = false;
+        prof_pass_key(key, i);
+        if (nvs_set_str(h, key, profiles[i].pass) != ESP_OK) ok = false;
+    }
+    /* Erase slots that are no longer used */
+    for (int i = count; i < WIFI_PROFILE_MAX; i++) {
+        prof_ssid_key(key, i);
+        erase_optional_key(h, key);
+        prof_pass_key(key, i);
+        erase_optional_key(h, key);
+    }
+    if (ok && nvs_commit(h) != ESP_OK) ok = false;
+    return ok;
+}
+
+bool nvs_store_save_wifi_profile(const char *ssid, const char *password)
+{
+    if (!ssid || ssid[0] == '\0') return false;
+
+    wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+    int count = 0, auto_idx = -1;
+    nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
+
+    /* Upsert: if SSID already in list, update password in-place */
+    for (int i = 0; i < count; i++) {
+        if (strcmp(profiles[i].ssid, ssid) == 0) {
+            const char *new_pass = password ? password : "";
+            if (strcmp(profiles[i].pass, new_pass) == 0) {
+                return true; /* Unchanged, skip NVS write */
+            }
+            strncpy(profiles[i].pass, new_pass, sizeof(profiles[i].pass) - 1);
+            profiles[i].pass[sizeof(profiles[i].pass) - 1] = '\0';
+            nvs_handle_t h;
+            if (nvs_open(NVS_PROF_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return false;
+            bool ok = prof_write_all(h, profiles, count, auto_idx);
+            nvs_close(h);
+            return ok;
+        }
+    }
+
+    /* New SSID: if full, evict oldest (index 0) by shifting left */
+    if (count >= WIFI_PROFILE_MAX) {
+        /* If auto_idx was 0, it is gone; shift down others */
+        if (auto_idx == 0) auto_idx = -1;
+        else if (auto_idx > 0) auto_idx--;
+        for (int i = 0; i < WIFI_PROFILE_MAX - 1; i++) {
+            profiles[i] = profiles[i + 1];
+        }
+        count = WIFI_PROFILE_MAX - 1;
+    }
+
+    /* Append new profile */
+    strncpy(profiles[count].ssid, ssid, sizeof(profiles[count].ssid) - 1);
+    profiles[count].ssid[sizeof(profiles[count].ssid) - 1] = '\0';
+    strncpy(profiles[count].pass, password ? password : "", sizeof(profiles[count].pass) - 1);
+    profiles[count].pass[sizeof(profiles[count].pass) - 1] = '\0';
+    count++;
+
+    nvs_handle_t h;
+    if (nvs_open(NVS_PROF_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return false;
+    bool ok = prof_write_all(h, profiles, count, auto_idx);
+    nvs_close(h);
+    return ok;
+}
+
+bool nvs_store_forget_wifi_profile(const char *ssid)
+{
+    if (!ssid || ssid[0] == '\0') return true;
+
+    wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+    int count = 0, auto_idx = -1;
+    if (!nvs_store_load_wifi_profiles(profiles, &count, &auto_idx)) return false;
+
+    int found = -1;
+    for (int i = 0; i < count; i++) {
+        if (strcmp(profiles[i].ssid, ssid) == 0) { found = i; break; }
+    }
+    if (found < 0) return true;  /* not found — nothing to do */
+
+    /* Compact array */
+    for (int i = found; i < count - 1; i++) {
+        profiles[i] = profiles[i + 1];
+    }
+    count--;
+    memset(&profiles[count], 0, sizeof(wifi_profile_t));
+
+    /* Adjust auto_idx */
+    if (auto_idx == found)         auto_idx = -1;
+    else if (auto_idx > found)     auto_idx--;
+
+    nvs_handle_t h;
+    if (nvs_open(NVS_PROF_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return false;
+    bool ok = prof_write_all(h, profiles, count, auto_idx);
+    nvs_close(h);
+    return ok;
+}
+
+bool nvs_store_set_wifi_auto_connect(int profile_index)
+{
+    wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+    int count = 0, auto_idx = -1;
+    if (!nvs_store_load_wifi_profiles(profiles, &count, &auto_idx)) return false;
+
+    if (profile_index != -1 && (profile_index < 0 || profile_index >= count)) return false;
+
+    nvs_handle_t h;
+    if (nvs_open(NVS_PROF_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return false;
+    uint8_t raw = (profile_index >= 0) ? (uint8_t)profile_index : NVS_PROF_AUTO_NONE;
+    bool ok = (nvs_set_u8(h, NVS_PROF_KEY_AUTO, raw) == ESP_OK);
+    if (ok) ok = (nvs_commit(h) == ESP_OK);
+    nvs_close(h);
+    return ok;
+}
+
+bool nvs_store_migrate_legacy_wifi(void)
+{
+    /* Check if profiles already exist — if so, nothing to migrate */
+    wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+    int count = 0, auto_idx = -1;
+    nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
+    if (count > 0) return true;  /* already migrated */
+
+    /* Try to load legacy credential */
+    char ssid[33] = {0}, pass[65] = {0};
+    bool has = nvs_store_load_wifi(ssid, sizeof(ssid), pass, sizeof(pass));
+    if (!has || ssid[0] == '\0') return true;  /* nothing to migrate */
+
+    ESP_LOGI(TAG, "Migrating legacy Wi-Fi credential (SSID: %s) to profile store", ssid);
+    if (!nvs_store_save_wifi_profile(ssid, pass)) return false;
+    /* Set it as auto-connect */
+    return nvs_store_set_wifi_auto_connect(0);
+}
+
 bool nvs_store_save_ap_config(uint32_t stop_timeout_ms, bool auto_stop)
 {
     nvs_handle_t handle;

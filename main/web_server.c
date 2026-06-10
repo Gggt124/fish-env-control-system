@@ -2100,6 +2100,20 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", "200 OK");
     }
 
+    /* If password is empty, try to lookup from saved profiles */
+    if (password[0] == '\0') {
+        wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+        int count = 0, auto_idx = -1;
+        nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
+        for (int i = 0; i < count; i++) {
+            if (strcmp(profiles[i].ssid, ssid) == 0) {
+                strncpy(password, profiles[i].pass, sizeof(password) - 1);
+                ESP_LOGI(TAG, "Using saved password for SSID: %s", ssid);
+                break;
+            }
+        }
+    }
+
     if (strlen(ssid) > 32) {
         return send_json(req, "{\"ok\":false,\"error\":\"ssid_too_long\"}", "400 Bad Request");
     }
@@ -2172,6 +2186,159 @@ static void wifi_disconnect_after_response_task(void *arg)
     s_wifi_disconnect_task_pending = false;
     taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
     vTaskDelete(NULL);
+}
+
+/* GET /api/wifi/profiles - protected, returns saved credential profiles */
+static esp_err_t handle_api_wifi_profiles(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+    int count = 0, auto_idx = -1;
+    nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
+
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+    }
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddNumberToObject(root, "auto_index", auto_idx);
+    cJSON *arr = cJSON_AddArrayToObject(root, "profiles");
+    for (int i = 0; i < count; i++) {
+        cJSON *item = cJSON_CreateObject();
+        cJSON_AddStringToObject(item, "ssid", profiles[i].ssid);
+        cJSON_AddBoolToObject(item, "auto", i == auto_idx);
+        cJSON_AddBoolToObject(item, "connected",
+            wifi_manager_is_sta_connected() &&
+            strcmp(wifi_manager_get_sta_ssid(), profiles[i].ssid) == 0);
+        cJSON_AddItemToArray(arr, item);
+    }
+    char *json_str = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    if (!json_str) {
+        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
+    }
+    esp_err_t result = send_json(req, json_str, "200 OK");
+    free(json_str);
+    return result;
+}
+
+/* POST /api/wifi/profiles/forget - protected, remove a saved credential */
+static esp_err_t handle_api_wifi_profiles_forget(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    char body[256] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
+    }
+
+    char ssid[33] = {0};
+    cJSON *root = cJSON_Parse(body);
+    if (root) {
+        cJSON *s = cJSON_GetObjectItem(root, "ssid");
+        if (s && cJSON_IsString(s)) {
+            strncpy(ssid, s->valuestring, sizeof(ssid) - 1);
+        }
+        cJSON_Delete(root);
+    }
+    if (ssid[0] == '\0') {
+        return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", "400 Bad Request");
+    }
+
+    bool ok = nvs_store_forget_wifi_profile(ssid);
+    ESP_LOGI(TAG, "Forget Wi-Fi profile: SSID=%s ok=%d", ssid, ok);
+    return send_json(req, ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"forget_failed\"}", "200 OK");
+}
+
+/* POST /api/wifi/profiles/setauto - protected, set or clear auto-connect profile */
+static esp_err_t handle_api_wifi_profiles_setauto(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    char body[256] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
+    }
+
+    int target_idx = -1;
+    cJSON *root = cJSON_Parse(body);
+    if (root) {
+        /* Accept {"ssid":"..."} to find index, or {"index":-1} to clear */
+        cJSON *idx_item = cJSON_GetObjectItem(root, "index");
+        if (idx_item && cJSON_IsNumber(idx_item)) {
+            target_idx = (int)idx_item->valuedouble;
+        } else {
+            cJSON *s = cJSON_GetObjectItem(root, "ssid");
+            if (s && cJSON_IsString(s)) {
+                wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+                int count = 0, auto_idx = -1;
+                nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
+                for (int i = 0; i < count; i++) {
+                    if (strcmp(profiles[i].ssid, s->valuestring) == 0) {
+                        target_idx = i;
+                        break;
+                    }
+                }
+            }
+        }
+        cJSON_Delete(root);
+    }
+
+    bool ok = nvs_store_set_wifi_auto_connect(target_idx);
+    ESP_LOGI(TAG, "Set Wi-Fi auto-connect index=%d ok=%d", target_idx, ok);
+    return send_json(req, ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"setauto_failed\"}", "200 OK");
+}
+
+/* POST /api/wifi/profiles/save - protected, persist a credential after confirmed connect */
+static esp_err_t handle_api_wifi_profiles_save(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    char body[384] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
+    }
+
+    char ssid[33] = {0}, password[65] = {0};
+    cJSON *root = cJSON_Parse(body);
+    if (root) {
+        cJSON *s = cJSON_GetObjectItem(root, "ssid");
+        cJSON *p = cJSON_GetObjectItem(root, "password");
+        if (s && cJSON_IsString(s)) strncpy(ssid, s->valuestring, sizeof(ssid) - 1);
+        if (p && cJSON_IsString(p)) strncpy(password, p->valuestring, sizeof(password) - 1);
+        cJSON_Delete(root);
+    }
+    if (ssid[0] == '\0') {
+        return send_json(req, "{\"ok\":false,\"error\":\"missing_ssid\"}", "400 Bad Request");
+    }
+    /* Only persist if the device is actually connected to this SSID */
+    if (!wifi_manager_is_sta_connected() ||
+        strcmp(wifi_manager_get_sta_ssid(), ssid) != 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"not_connected\"}", "200 OK");
+    }
+    bool ok = nvs_store_save_wifi_profile(ssid, password);
+    ESP_LOGI(TAG, "Saved Wi-Fi profile: SSID=%s ok=%d", ssid, ok);
+    /* Also update legacy store so old boot path still works as fallback */
+    if (ok) nvs_store_save_wifi(ssid, password);
+    return send_json(req, ok ? "{\"ok\":true}" : "{\"ok\":false,\"error\":\"save_failed\"}", "200 OK");
 }
 
 /* POST /api/wifi/disconnect - protected, disconnect STA */
@@ -2812,6 +2979,10 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan },
     { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect },
     { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect },
+    { .uri = "/api/wifi/profiles", .method = HTTP_GET,  .handler = handle_api_wifi_profiles },
+    { .uri = "/api/wifi/profiles/forget", .method = HTTP_POST, .handler = handle_api_wifi_profiles_forget },
+    { .uri = "/api/wifi/profiles/setauto", .method = HTTP_POST, .handler = handle_api_wifi_profiles_setauto },
+    { .uri = "/api/wifi/profiles/save", .method = HTTP_POST, .handler = handle_api_wifi_profiles_save },
     { .uri = "/api/status",    .method = HTTP_GET,  .handler = handle_api_status },
     { .uri = "/api/hardware/map", .method = HTTP_GET,  .handler = handle_api_hardware_map_get },
     { .uri = "/api/hardware/map", .method = HTTP_POST, .handler = handle_api_hardware_map_post },

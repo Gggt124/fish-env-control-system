@@ -601,6 +601,29 @@ void app_main(void)
     }
     ESP_LOGI(TAG, "AP SSID: %s, IP: %s", APP_TEMPLATE_AP_SSID, wifi_manager_get_ap_ip());
 
+    /* 3a. Migrate legacy single-credential to multi-profile store (one-time, idempotent) */
+    nvs_store_migrate_legacy_wifi();
+
+    /* 3b. Auto-connect to the designated profile if one is configured */
+    {
+        wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+        int prof_count = 0, auto_idx = -1;
+        nvs_store_load_wifi_profiles(profiles, &prof_count, &auto_idx);
+        if (auto_idx >= 0 && auto_idx < prof_count && profiles[auto_idx].ssid[0]) {
+            ESP_LOGI(TAG, "Auto-connect to Wi-Fi profile[%d]: %s", auto_idx, profiles[auto_idx].ssid);
+            wifi_manager_connect_sta(profiles[auto_idx].ssid, profiles[auto_idx].pass, NULL);
+        } else {
+            /* Fallback: try legacy sta_ssid if no profile auto-connect configured */
+            char sta_ssid[33] = {0}, sta_pass[65] = {0};
+            if (nvs_store_load_wifi(sta_ssid, sizeof(sta_ssid), sta_pass, sizeof(sta_pass)) && sta_ssid[0]) {
+                ESP_LOGI(TAG, "Auto-connect to legacy saved SSID: %s", sta_ssid);
+                wifi_manager_connect_sta(sta_ssid, sta_pass, NULL);
+            } else {
+                ESP_LOGI(TAG, "No saved Wi-Fi credential; staying in AP-only mode");
+            }
+        }
+    }
+
     /* 4. Start HTTP server */
     if (!web_server_start()) {
         ESP_LOGE(TAG, "HTTP server start failed — will retry");

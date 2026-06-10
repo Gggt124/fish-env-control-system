@@ -31,6 +31,8 @@ static bool s_scan_cancel_pending = false;
 static bool s_ap_configured = false;
 static char s_sta_ssid[33] = {0};
 static char s_sta_target_ssid[33] = {0};
+static char s_sta_target_password[65] = {0};
+static bool s_sta_pending_save = false;
 static char s_ap_ip[16] = "192.168.4.1";
 static char s_sta_ip[16] = {0};
 static int64_t s_boot_time_ms = 0;
@@ -383,8 +385,36 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 ESP_LOGI(TAG, "Scheduling requested STA connect after disconnect");
                 schedule_sta_connect();
             } else if (retry_limit_reached) {
-                ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
-                ensure_ap_started();
+                bool was_pending_save = s_sta_pending_save;
+                s_sta_pending_save = false;
+
+                if (was_pending_save) {
+                    ESP_LOGI(TAG, "New Wi-Fi failed. Reverting to NVS fallback.");
+                    char saved_ssid[33] = {0};
+                    char saved_pass[65] = {0};
+                    if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid), saved_pass, sizeof(saved_pass))) {
+                        ESP_LOGI(TAG, "Found fallback STA credentials for: %s", saved_ssid);
+                        wifi_config_t sta_cfg = {0};
+                        strncpy((char *)sta_cfg.sta.ssid, saved_ssid, 32);
+                        if (saved_pass[0]) strncpy((char *)sta_cfg.sta.password, saved_pass, 64);
+                        sta_cfg.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+                        esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
+                        
+                        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+                        s_sta_configured = true;
+                        s_sta_retry_count = 0;
+                        s_sta_retry_blocked = false;
+                        xSemaphoreGive(s_wifi_mutex);
+                        
+                        schedule_sta_connect();
+                    } else {
+                        ensure_ap_started();
+                    }
+                } else {
+                    ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
+                    ensure_ap_started();
+                }
             } else if (sta_configured && !scan_in_progress) {
                 schedule_sta_connect();
             } else if (!scan_in_progress) {
@@ -516,10 +546,23 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 s_sta_ssid[32] = '\0';
             }
 
+            bool pending_save = s_sta_pending_save;
+            char target_ssid[33];
+            char target_pass[65];
+            strlcpy(target_ssid, s_sta_target_ssid, sizeof(target_ssid));
+            strlcpy(target_pass, s_sta_target_password, sizeof(target_pass));
+            s_sta_pending_save = false;
+
             bool ap_enabled = s_ap_enabled;
             bool ap_auto_stop = s_ap_auto_stop;
             uint32_t ap_stop_timeout_ms = s_ap_stop_timeout_ms;
             xSemaphoreGive(s_wifi_mutex);
+
+            if (pending_save) {
+                ESP_LOGI(TAG, "Connection successful, saving to NVS");
+                nvs_store_save_wifi_profile(target_ssid, target_pass);
+                nvs_store_save_wifi(target_ssid, target_pass);
+            }
 
             if (ap_enabled && ap_auto_stop && s_ap_stop_timer) {
                 ESP_LOGI(TAG, "Starting AP auto-stop timer (%lu ms)", (unsigned long)ap_stop_timeout_ms);
@@ -732,8 +775,6 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         return same_target;
     }
 
-    nvs_store_save_wifi(ssid, password);
-
     /* Save and apply static IP config if provided, otherwise clear it */
     if (ip_config && ip_config->ip[0]) {
         if (!apply_static_ip(ip_config)) {
@@ -756,6 +797,9 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
     s_sta_ip[0] = '\0';
     s_sta_ssid[0] = '\0';
     strlcpy(s_sta_target_ssid, ssid, sizeof(s_sta_target_ssid));
+    if (password) strlcpy(s_sta_target_password, password, sizeof(s_sta_target_password));
+    else s_sta_target_password[0] = '\0';
+    s_sta_pending_save = true;
     xSemaphoreGive(s_wifi_mutex);
 
     esp_err_t disconnect_err = esp_wifi_disconnect();

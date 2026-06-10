@@ -65,6 +65,12 @@ Last activity: 2026-06-08 - Completed 22-uat-bug-fixes-03-PLAN.md
 
 - Start the next milestone with /gsd-new-milestone
 
+## Session Continuity
+
+Last session: 2026-06-10T00:14:26+07:00
+Stopped at: Session resumed, proceeding to check user feedback on text sizes.
+Resume file: .planning/.continue-here.md
+
 ## Quick Tasks Completed
 
 | Date | Slug | Description |

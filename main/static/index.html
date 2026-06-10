@@ -36,6 +36,11 @@
 </style>
 </head>
 <body>
+<script>
+    if (!document.cookie.match(/session=([^;]+)/)) {
+        document.body.classList.add('login-active');
+    }
+</script>
 <!-- Mobile Top Bar -->
 <header class="mobile-topbar">
     <span class="brand">Fish Pump Control</span>
@@ -594,6 +599,17 @@
             </div>
         </div>
     </div>
+
+    <!-- Saved Profiles Card -->
+    <div class="card" style="margin-top: var(--sp-md);" id="saved-profiles-card">
+        <div class="card-header">
+            <h3>เครือข่ายที่บันทึกไว้</h3>
+        </div>
+        <div id="profile-list" aria-live="polite">
+            <div class="profile-empty">กำลังโหลด...</div>
+        </div>
+    </div>
+
 </section>
     <section id="view-hardware" class="view hidden">
 <div class="page-header">
@@ -809,7 +825,17 @@
             <div class="selected-ssid-display" id="modal-wifi-ssid" style="font-weight:600; padding:10px 14px; background:var(--surface-container); border-radius:var(--radius-md); border:1px solid var(--outline-variant); color:var(--on-surface);">---</div>
         </div>
         
-        <div class="form-group">
+        <div id="wifi-saved-msg" style="display:none; padding:12px 14px; background:var(--primary-container); color:var(--on-primary-container); border-radius:var(--radius-md); margin-bottom:16px; font-size:14px; line-height:1.5;">
+            <div style="display:flex; align-items:flex-start; gap:8px;">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="flex-shrink:0; margin-top:2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <div>คุณเคยบันทึกรหัสผ่านสำหรับเครือข่ายนี้ไว้แล้ว ระบบจะดึงรหัสผ่านเดิมมาใช้เชื่อมต่ออัตโนมัติ</div>
+            </div>
+            <div style="margin-top:8px; font-size:12px; opacity:0.8; cursor:pointer; text-decoration:underline;" onclick="showSavedPasswordInput()">
+                คลิกที่นี่หากต้องการกรอกรหัสผ่านใหม่
+            </div>
+        </div>
+        
+        <div class="form-group" id="wifi-password-group">
             <label for="wifi-password">รหัสผ่าน (Password)</label>
             <div class="input-wrapper">
                 <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>

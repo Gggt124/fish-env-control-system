@@ -75,6 +75,58 @@ bool nvs_store_save_wifi(const char *ssid, const char *password);
 bool nvs_store_load_wifi(char *ssid_out, size_t ssid_len, char *pass_out, size_t pass_len);
 bool nvs_store_clear_wifi(void);
 
+/* ---- Multi-profile Wi-Fi credential management ---- */
+
+/** Maximum number of saved Wi-Fi profiles. */
+#define WIFI_PROFILE_MAX 5
+
+/**
+ * One saved Wi-Fi credential entry.
+ * ssid: null-terminated, max 32 chars.
+ * pass: null-terminated, max 64 chars (empty string = open network).
+ */
+typedef struct {
+    char ssid[33];
+    char pass[65];
+} wifi_profile_t;
+
+/**
+ * Load all saved profiles from NVS (namespace "wifi_prof").
+ * profiles: caller-allocated array of WIFI_PROFILE_MAX entries.
+ * count_out: number of valid profiles stored (0..WIFI_PROFILE_MAX).
+ * auto_idx_out: index of the auto-connect profile, or -1 if none.
+ * Returns true on success (even when count is 0).
+ */
+bool nvs_store_load_wifi_profiles(wifi_profile_t *profiles, int *count_out, int *auto_idx_out);
+
+/**
+ * Add or update a profile (upsert by SSID).
+ * If SSID already exists, update the password.
+ * If array is full, the oldest entry (index 0) is evicted and entries are shifted.
+ * Does NOT write NVS when connect fails — caller decides when to call this.
+ */
+bool nvs_store_save_wifi_profile(const char *ssid, const char *password);
+
+/**
+ * Remove the profile matching ssid and compact the array.
+ * The auto-connect index is adjusted to remain consistent.
+ * Returns true on success (including when the SSID was not found).
+ */
+bool nvs_store_forget_wifi_profile(const char *ssid);
+
+/**
+ * Set which profile index is the auto-connect target.
+ * Pass -1 to disable auto-connect.
+ */
+bool nvs_store_set_wifi_auto_connect(int profile_index);
+
+/**
+ * One-time migration: if legacy sta_ssid / sta_pass exist in "wifi_cfg"
+ * and there are no profiles yet in "wifi_prof", copy them to profile 0
+ * and set auto_idx = 0.  Safe to call on every boot.
+ */
+bool nvs_store_migrate_legacy_wifi(void);
+
 bool nvs_store_save_ap_config(uint32_t stop_timeout_ms, bool auto_stop);
 bool nvs_store_load_ap_config(uint32_t *stop_timeout_ms, bool *auto_stop);
 
