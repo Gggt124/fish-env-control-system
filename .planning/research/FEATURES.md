@@ -1,69 +1,49 @@
-# Feature Research
+# Feature Landscape
 
-**Domain:** Embedded offline ESP32 owner dashboard UI polish
-**Researched:** 2026-06-02
-**Confidence:** HIGH
+**Domain:** Authentication & Recovery in ESP-IDF
+**Researched:** 2026-06-11
 
 ## Table Stakes
 
+Features users expect. Missing = product feels incomplete.
+
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Dashboard state hierarchy | Owner must recognize whether pump and cooling are safe and active within seconds. | MEDIUM | Promote current state and primary actions; reduce equal-weight status noise. |
-| Explicit loading, error, and empty states | APSTA and sensor/network operations can be temporarily unavailable. | MEDIUM | Use existing alert and renderer patterns; preserve last-known state only when clearly labeled. |
-| Mobile-first responsive flow | Installer may use a phone while wiring or configuring Wi-Fi. | MEDIUM | Verify narrow viewport reflow and touch-friendly controls. |
-| Accessible controls and status updates | Buttons, forms, and live feedback must be understandable beyond visual color changes. | MEDIUM | Add visible labels, focus treatment, and programmatically recognizable status messages. |
-| Guided Hardware/Install readiness | Installer needs active vs pending map clarity, reboot warning, and DS18B20 pull-up guidance. | MEDIUM | Keep safe dropdown enums and pending reboot contract unchanged. |
-| Screenshot verification | Visual polish is not validated by firmware build alone. | LOW | Capture desktop and mobile states for affected pages. |
+| Change Password | Default admin/admin123 must be changeable. | Low | Requires UI form with confirmation, and API endpoint to update NVS. |
+| Logout / Session Invalidation | Clicking Logout must explicitly destroy the active token. | Low | Must invalidate both the browser cookie and the persistent token in NVS. |
+| Hardware Reset | Users forget passwords. Physical access should grant recovery. | Med | Requires reading a GPIO for X seconds and selectively clearing NVS. |
 
 ## Differentiators
 
-| Feature | Value | Complexity | Notes |
-|---------|-------|------------|-------|
-| Owner-first operational confidence | Daily dashboard clearly separates "what is happening now" from settings and diagnostics. | MEDIUM | Aligns with local appliance use rather than generic admin UI. |
-| Installer-safe wiring confidence | Hardware page explains the external `4.7 kOhm` DS18B20 pull-up before the next hardware cycle. | LOW | Documentation and UI guidance only. |
-| Stable-baseline discipline | UI quality improves without rewriting relay/timer/cooling state machines. | LOW | Explicit roadmap constraint and review gate. |
+Features that set product apart. Not expected, but valued.
+
+| Feature | Value Proposition | Complexity | Notes |
+|---------|-------------------|------------|-------|
+| "Remember Me" Checkbox | Bypass login on trusted personal devices for 30+ days. | Med | Requires generating and storing a long-lived cryptographically secure token. |
 
 ## Anti-Features
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Dashboard charts and history | Looks more advanced. | Adds scope, payload, rendering work, and storage questions without improving immediate control. | Clear current-state presentation. |
-| Large UI framework migration | Promises reusable components. | Adds tooling and flash cost and risks offline behavior. | Focused shared CSS and renderer cleanup. |
-| New control modes during polish | Seems convenient while editing UI. | Risks stable hardware behavior and expands hardware validation burden. | Preserve v1.1 behavior. |
-| Treat scanner bookkeeping rows as firmware work | Rows remain visible in state. | Mis-scopes completed quick tasks as missing features. | Keep them documented as bookkeeping debt only. |
+Features to explicitly NOT build.
 
-## Dependencies
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Multi-user Roles | Too complex for a local fish pump controller. | Stick to a single Admin user. |
+| Email / SMS Password Reset | Device is local-only and offline (SoftAP). | Use a physical hardware button for credential recovery. |
 
-```text
-Visual hierarchy
-    -> requires existing runtime state inventory
-    -> guides loading/error/empty presentation
+## Feature Dependencies
 
-Responsive layout
-    -> requires screenshot verification at desktop and mobile widths
+Change Password → Logout/Session Invalidation (Changing password must log out other sessions)
+"Remember Me" → Logout/Session Invalidation (Logout must clear the persistent token)
 
-Hardware readiness guidance
-    -> requires DS18B20 pull-up documentation
-    -> preserves active/pending GPIO and reboot safety flow
-```
+## MVP Recommendation
 
-## Priority
+Prioritize:
+1. Change Password
+2. Logout / Session Invalidation
+3. Hardware Reset
 
-| Feature | Priority |
-|---------|----------|
-| Dashboard hierarchy and operator confidence | P1 |
-| Hardware/Install setup guidance and pull-up documentation | P1 |
-| Responsive, accessible, loading/error/empty states | P1 |
-| Screenshot verification and ESP32 build regression | P1 |
-| Event logging, export, charts, and analytics | Deferred |
+Defer: Multi-user Roles: Unnecessary complexity for the local use case.
 
 ## Sources
 
-- Local UI shape note: `.planning/notes/owner-installer-ui-shape.md`
-- W3C WAI Understanding Status Messages: https://www.w3.org/WAI/WCAG22/Understanding/status-messages
-- W3C WAI Understanding Labels or Instructions: https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions
-- W3C WAI Understanding Target Size Minimum: https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
-
----
-*Feature research for: embedded offline ESP32 owner dashboard UI polish*
-*Researched: 2026-06-02*
+- ESP-IDF offline capabilities
