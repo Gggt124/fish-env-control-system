@@ -1,5 +1,15 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.6 Modern Web UI Optimization (Shipped: 2026-06-10)
+
+**Phases completed:** 5 phases, 10 plans, 2 tasks
+
+**Key accomplishments:**
+
+- (none recorded)
+
+---
+
 ## v1.5 TFT Display Integration (Shipped: 2026-06-06)
 
 **Phases completed:** 1 phases, 5 plans, 8 tasks
