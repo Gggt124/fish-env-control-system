@@ -2407,51 +2407,67 @@ function pollWifiConnection(attempt) {
         var cancelBtn = document.getElementById('cancel-btn');
         var statusEl = document.getElementById('connect-status');
 
-        if (!err && data && data.ok && data.sta_connected) {
-            wifiConnectPollTimer = null;
-            if (connectBtn) setLoading(connectBtn, false);
-            if (cancelBtn) cancelBtn.disabled = false;
-            if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
-
-            var banner = document.getElementById('reconnect-banner');
-            if (banner) banner.style.display = 'none';
-
-            updateStepper(3, true);
-            updateConnectionStatus();
-            updateApPill();
-
-            /* Mark the connected network in the list */
-            var connSsid = data.sta_ssid || selectedSsid;
-            
-            if (connSsid && connSsid !== selectedSsid) {
-                /* Fallback detected! We are back on the old Wi-Fi */
+        if (!err && data && data.ok) {
+            if (data.sta_connected) {
                 wifiConnectPollTimer = null;
                 if (connectBtn) setLoading(connectBtn, false);
                 if (cancelBtn) cancelBtn.disabled = false;
-                if (statusEl) { 
-                    statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: \u0e23\u0e30\u0e1a\u0e1a\u0e44\u0e14\u0e49\u0e14\u0e36\u0e07\u0e04\u0e38\u0e13\u0e01\u0e25\u0e31\u0e1a\u0e21\u0e32\u0e22\u0e31\u0e07 Wi-Fi \u0e40\u0e14\u0e34\u0e21'; 
-                    statusEl.style.color = 'var(--error)'; 
-                }
-                updateStepper(2);
+                if (statusEl) { statusEl.textContent = 'เชื่อมต่อสำเร็จ! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
+
                 var banner = document.getElementById('reconnect-banner');
                 if (banner) banner.style.display = 'none';
+
+                updateStepper(3, true);
+                updateConnectionStatus();
+                updateApPill();
+
+                /* Mark the connected network in the list */
+                var connSsid = data.sta_ssid || selectedSsid;
+                
+                if (connSsid && connSsid !== selectedSsid) {
+                    /* Fallback detected! We are back on the old Wi-Fi */
+                    wifiConnectPollTimer = null;
+                    if (connectBtn) setLoading(connectBtn, false);
+                    if (cancelBtn) cancelBtn.disabled = false;
+                    if (statusEl) { 
+                        statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ระบบได้ดึงคุณกลับมายัง Wi-Fi เดิม'; 
+                        statusEl.style.color = 'var(--error)'; 
+                    }
+                    updateStepper(2);
+                    var banner = document.getElementById('reconnect-banner');
+                    if (banner) banner.style.display = 'none';
+                    return;
+                }
+
+                markNetworkConnected(connSsid);
+
+                /* Persist the credential to NVS (only on confirmed connect success) */
+                saveWifiProfile(connSsid, wifiLastPassword || '');
+
+                /* Keep stepper green after modal closes */
+                wifiJustConnected = true;
+                wifiConnectedSsid = connSsid;
+
+                /* Auto close modal after 2 seconds, keep stepper at step 3 done */
+                setTimeout(function() {
+                    clearSelection();
+                }, 2000);
                 return;
             }
 
-            markNetworkConnected(connSsid);
-
-            /* Persist the credential to NVS (only on confirmed connect success) */
-            saveWifiProfile(connSsid, wifiLastPassword || '');
-
-            /* Keep stepper green after modal closes */
-            wifiJustConnected = true;
-            wifiConnectedSsid = connSsid;
-
-            /* Auto close modal after 2 seconds, keep stepper at step 3 done */
-            setTimeout(function() {
-                clearSelection();
-            }, 2000);
-            return;
+            if (data.sta_retry_blocked) {
+                wifiConnectPollTimer = null;
+                if (connectBtn) setLoading(connectBtn, false);
+                if (cancelBtn) cancelBtn.disabled = false;
+                if (statusEl) {
+                    statusEl.textContent = '❌ การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
+                    statusEl.style.color = 'var(--error)';
+                }
+                var banner = document.getElementById('reconnect-banner');
+                if (banner) banner.style.display = 'none';
+                updateStepper(2);
+                return;
+            }
         }
 
         if (attempt >= 15) {
@@ -2459,17 +2475,25 @@ function pollWifiConnection(attempt) {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
             
-            /* If we timeout without falling back, assume success (device moved to new network) */
-            if (statusEl) { 
-                statusEl.textContent = '\u2705 \u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c\u0e22\u0e49\u0e32\u0e22\u0e44\u0e1b\u0e22\u0e31\u0e07\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e2b\u0e21\u0e48\u0e41\u0e25\u0e49\u0e27 \u0e01\u0e23\u0e38\u0e13\u0e32\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19 Wi-Fi \u0e1a\u0e19\u0e21\u0e37\u0e2d\u0e16\u0e37\u0e2d\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19\u0e15\u0e48\u0e2d'; 
-                statusEl.style.color = 'var(--secondary)'; 
-            }
-            
             var banner = document.getElementById('reconnect-banner');
             if (banner) banner.style.display = 'none';
-            
-            updateStepper(3, true);
-            updateConnectionStatus();
+
+            if (!err && data && data.ok && !data.sta_connected) {
+                /* We are still connected to SoftAP, and connection to STA failed/timed out */
+                if (statusEl) {
+                    statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ: หมดเวลาการเชื่อมต่อ';
+                    statusEl.style.color = 'var(--error)';
+                }
+                updateStepper(2);
+            } else {
+                /* Connection to SoftAP lost, assume device moved to new network */
+                if (statusEl) { 
+                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ'; 
+                    statusEl.style.color = 'var(--secondary)'; 
+                }
+                updateStepper(3, true);
+                updateConnectionStatus();
+            }
             return;
         }
 

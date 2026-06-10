@@ -2928,6 +2928,8 @@ static esp_err_t handle_api_status(httpd_req_t *req)
 
     /* STA info */
     cJSON_AddBoolToObject(root, "sta_connected", sta_conn);
+    cJSON_AddBoolToObject(root, "sta_connecting", wifi_manager_is_sta_connecting());
+    cJSON_AddBoolToObject(root, "sta_retry_blocked", wifi_manager_is_sta_retry_blocked());
     cJSON_AddStringToObject(root, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
     cJSON_AddStringToObject(root, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
 

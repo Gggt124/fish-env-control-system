@@ -1007,6 +1007,22 @@ bool wifi_manager_is_sta_connected(void)
     return v;
 }
 
+bool wifi_manager_is_sta_connecting(void)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool v = s_sta_connecting || s_sta_manual_connect_pending;
+    xSemaphoreGive(s_wifi_mutex);
+    return v;
+}
+
+bool wifi_manager_is_sta_retry_blocked(void)
+{
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool v = s_sta_retry_blocked;
+    xSemaphoreGive(s_wifi_mutex);
+    return v;
+}
+
 char* wifi_manager_get_ap_ip(void)
 {
     return s_ap_ip;

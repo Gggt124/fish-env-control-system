@@ -40,6 +40,8 @@ void wifi_manager_cancel_scan(void);
 
 bool wifi_manager_is_ap_enabled(void);
 bool wifi_manager_is_sta_connected(void);
+bool wifi_manager_is_sta_connecting(void);
+bool wifi_manager_is_sta_retry_blocked(void);
 char* wifi_manager_get_ap_ip(void);
 char* wifi_manager_get_sta_ip(void);
 char* wifi_manager_get_sta_ssid(void);
