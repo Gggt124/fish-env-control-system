@@ -1878,6 +1878,12 @@ function renderSavedProfiles() {
     if (!el) return;
     
     var profiles = window.savedWifiProfiles || [];
+    /* Sort by connected first */
+    profiles.sort(function(a, b) {
+        if (a.connected && !b.connected) return -1;
+        if (!a.connected && b.connected) return 1;
+        return 0;
+    });
     if (profiles.length === 0) {
         el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span style="font-size:12px;color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
         return;
@@ -2078,8 +2084,12 @@ function doScan() {
             return;
         }
 
-        /* Sort by RSSI (strongest first) */
-        nets.sort(function(a, b) { return b.rssi - a.rssi; });
+        /* Sort by connected first, then RSSI (strongest first) */
+        nets.sort(function(a, b) {
+            if (a.connected && !b.connected) return -1;
+            if (!a.connected && b.connected) return 1;
+            return b.rssi - a.rssi;
+        });
         
         window.lastScanResults = nets;
         if (window.savedWifiProfiles) renderSavedProfiles();
