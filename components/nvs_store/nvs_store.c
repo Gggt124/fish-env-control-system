@@ -16,6 +16,9 @@ static const char *TAG = "nvs_store";
 #define NVS_KEY_MASK     "sta_netmask"
 #define NVS_KEY_DNS      "sta_dns"
 
+#define NVS_SESSION_NAMESPACE "session"
+#define NVS_KEY_JWT_SECRET "jwt_secret"
+
 #define NVS_PUMP_NAMESPACE       "pump_cfg"
 #define NVS_PUMP_KEY_T1_ON       "t1_on"
 #define NVS_PUMP_KEY_T1_OFF      "t1_off"
@@ -150,6 +153,36 @@ bool nvs_store_init(void)
 #endif
     }
     return ret == ESP_OK;
+}
+
+bool nvs_store_set_jwt_secret(const uint8_t secret[32])
+{
+    if (!secret) return false;
+    nvs_handle_t handle;
+    if (nvs_open(NVS_SESSION_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (nvs_set_blob(handle, NVS_KEY_JWT_SECRET, secret, 32) != ESP_OK) {
+        ok = false;
+    }
+    if (ok && nvs_commit(handle) != ESP_OK) {
+        ok = false;
+    }
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_get_jwt_secret(uint8_t secret[32])
+{
+    if (!secret) return false;
+    nvs_handle_t handle;
+    if (nvs_open(NVS_SESSION_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) return false;
+
+    size_t required_size = 32;
+    esp_err_t ret = nvs_get_blob(handle, NVS_KEY_JWT_SECRET, secret, &required_size);
+    nvs_close(handle);
+
+    return (ret == ESP_OK && required_size == 32);
 }
 
 bool nvs_store_save_wifi(const char *ssid, const char *password)
