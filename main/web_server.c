@@ -276,10 +276,18 @@ static bool get_session_from_request(httpd_req_t *req, char *token_out, size_t t
 static bool require_auth(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
-    if (!get_session_from_request(req, token, sizeof(token))) return false;
+    if (!get_session_from_request(req, token, sizeof(token))) {
+        ESP_LOGW(TAG, "AUTH: no session cookie in request uri=%s", req->uri);
+        return false;
+    }
     char client_ip[64] = {0};
     get_client_ip(req, client_ip, sizeof(client_ip));
-    return session_validate(token, client_ip);
+    bool valid = session_validate(token, client_ip);
+    if (!valid) {
+        ESP_LOGW(TAG, "AUTH: session invalid uri=%s ip='%s' token_len=%d",
+                 req->uri, client_ip, (int)strlen(token));
+    }
+    return valid;
 }
 
 /* Convert chip model enum to string */

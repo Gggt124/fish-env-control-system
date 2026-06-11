@@ -41,6 +41,21 @@ function checkAuth() {
 
 var API_TIMEOUT_MS = 8000;
 
+var s_handlingUnauthorized = false;
+
+function isUnauthorizedError(err) {
+    return err && err.message === 'HTTP 401';
+}
+
+function handleUnauthorized() {
+    if (s_handlingUnauthorized) return;
+    s_handlingUnauthorized = true;
+    cleanupCurrentView();
+    document.cookie = 'session=; Path=/; Max-Age=0';
+    navigateTo('/login');
+    s_handlingUnauthorized = false;
+}
+
 function apiGet(url, cb, customTimeout) {
     var xhr = new XMLHttpRequest();
     var done = false;
@@ -55,6 +70,8 @@ function apiGet(url, cb, customTimeout) {
         if (xhr.status === 200) {
             try { finish(null, JSON.parse(xhr.responseText)); }
             catch(e) { finish(e, null); }
+        } else if (xhr.status === 401 && window.location.pathname !== '/login') {
+            handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
@@ -77,6 +94,10 @@ function apiPost(url, body, cb) {
     xhr.timeout = API_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function() {
+        if (xhr.status === 401 && window.location.pathname !== '/login') {
+            handleUnauthorized();
+            return;
+        }
         try {
             var parsed = JSON.parse(xhr.responseText);
             finish(null, parsed);
@@ -426,6 +447,7 @@ function loadPumpConfig() {
     setPumpAlert('pump-config-error', '');
     updatePumpConfigSaveButton();
     apiGet('/api/pump/config', function(err, data) {
+        if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
             setText('pump-config-state', 'โหลดค่าไม่สำเร็จ');
@@ -643,6 +665,7 @@ function syncPumpStatus(force) {
     pumpStatusRequestInFlight = true;
     apiGet('/api/pump/status', function(err, data) {
         pumpStatusRequestInFlight = false;
+        if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             handlePumpStatusFailure();
             return;
@@ -1034,6 +1057,7 @@ function loadCoolingConfig() {
     setCoolingAlert('');
     updateCoolingConfigSaveButton();
     apiGet('/api/cooling/config', function(err, data) {
+        if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
             setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
@@ -1185,6 +1209,7 @@ function syncCoolingStatus(force) {
     coolingStatusRequestInFlight = true;
     apiGet('/api/cooling/status', function(err, data) {
         coolingStatusRequestInFlight = false;
+        if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             handleCoolingStatusFailure();
             return;
