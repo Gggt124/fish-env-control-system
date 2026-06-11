@@ -3,6 +3,7 @@
 #include "esp_random.h"
 #include "esp_timer.h"
 #include "esp_log.h"
+#include "bootloader_random.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/md.h"
 #include <string.h>
@@ -72,9 +73,11 @@ bool session_init(void)
         s_secret_ready = true;
         ESP_LOGI(TAG, "Loaded JWT secret from NVS");
     } else {
+        bootloader_random_enable();
         for (int i = 0; i < sizeof(s_jwt_secret); i++) {
             s_jwt_secret[i] = esp_random() & 0xFF;
         }
+        bootloader_random_disable();
         if (nvs_store_set_jwt_secret(s_jwt_secret)) {
             s_secret_ready = true;
             ESP_LOGI(TAG, "Generated and saved new JWT secret to NVS");
