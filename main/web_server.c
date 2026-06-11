@@ -372,19 +372,17 @@ static bool header_matches_allowed_origin(const char *header)
 /* Check Origin/Referer to prevent cross-site POST (CSRF mitigation) */
 static bool is_same_origin(httpd_req_t *req, bool allow_missing_header)
 {
-    size_t buf_len = httpd_req_get_hdr_value_len(req, "Origin");
+    size_t origin_len = httpd_req_get_hdr_value_len(req, "Origin");
+    size_t referer_len = httpd_req_get_hdr_value_len(req, "Referer");
     char buf[128] = {0};
 
-    if (buf_len > 0 && buf_len < sizeof(buf) - 1) {
+    if (origin_len > 0) {
+        if (origin_len >= sizeof(buf)) return false;
         httpd_req_get_hdr_value_str(req, "Origin", buf, sizeof(buf));
+    } else if (referer_len > 0) {
+        if (referer_len >= sizeof(buf)) return false;
+        httpd_req_get_hdr_value_str(req, "Referer", buf, sizeof(buf));
     } else {
-        buf_len = httpd_req_get_hdr_value_len(req, "Referer");
-        if (buf_len > 0 && buf_len < sizeof(buf) - 1) {
-            httpd_req_get_hdr_value_str(req, "Referer", buf, sizeof(buf));
-        }
-    }
-
-    if (buf[0] == '\0') {
         ESP_LOGW(TAG, "POST request without Origin/Referer header");
         return allow_missing_header;
     }
