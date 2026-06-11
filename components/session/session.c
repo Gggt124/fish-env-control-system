@@ -145,13 +145,19 @@ bool session_validate(const char *token, const char *client_ip)
         return false;
     }
 
+    size_t expected_len = strlen(expected_sig_b64);
+    size_t in_len = strlen(signature_b64_in);
+    
+    if (in_len != expected_len) {
+        return false;
+    }
+
     // Constant-time string comparison to mitigate HMAC timing attacks
     volatile int diff = 0;
-    for (int i = 0; i < 44; i++) {
-        if (expected_sig_b64[i] == '\0' && signature_b64_in[i] == '\0') break;
+    for (size_t i = 0; i < expected_len; i++) {
         diff |= (expected_sig_b64[i] ^ signature_b64_in[i]);
     }
-    if (diff != 0 || strlen(signature_b64_in) != strlen(expected_sig_b64)) {
+    if (diff != 0) {
         return false; // Signature mismatch
     }
 
