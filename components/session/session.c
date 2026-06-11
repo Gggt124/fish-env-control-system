@@ -179,7 +179,8 @@ bool session_validate(const char *token, const char *client_ip)
             iat_start += strlen(iat_key);
             int64_t iat = atoll(iat_start);
             int64_t now = esp_timer_get_time() / 1000000;
-            if (now - iat > SESSION_MAX_AGE_SEC) {
+            // Reject if token is from the future (previous boot) or expired
+            if (now < iat || now - iat > SESSION_MAX_AGE_SEC) {
                 return false; // Expired
             }
         }
