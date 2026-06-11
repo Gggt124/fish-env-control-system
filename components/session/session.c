@@ -94,7 +94,7 @@ bool session_create(const char *username, const char *client_ip, char token_out[
     const char *header_json = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
     char payload_json[256];
     int64_t now = esp_timer_get_time() / 1000000;
-    snprintf(payload_json, sizeof(payload_json), "{\"sub\":\"%s\",\"ip\":\"%s\",\"iat\":%lld}", username, client_ip, (long long)now);
+    snprintf(payload_json, sizeof(payload_json), "{\"sub\":\"%s\",\"ip\":\"%s\"}", username, client_ip);
 
     char header_b64[40];
     char payload_b64[384];
@@ -183,19 +183,7 @@ bool session_validate(const char *token, const char *client_ip)
         return false; // IP mismatch
     }
 
-    // Verify expiration
-    if (SESSION_MAX_AGE_SEC > 0) {
-        char iat_key[8] = "\"iat\":";
-        char *iat_start = strstr((char *)payload_json, iat_key);
-        if (!iat_start) return false; // Fail securely if iat is missing
-        iat_start += strlen(iat_key);
-        int64_t iat = atoll(iat_start);
-        int64_t now = esp_timer_get_time() / 1000000;
-        // Reject if token is from the future (previous boot) or expired
-        if (now < iat || now - iat > SESSION_MAX_AGE_SEC) {
-            return false; // Expired
-        }
-    }
+    // Verify expiration removed to allow persistent sessions across reboots
 
     return true;
 }
