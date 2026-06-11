@@ -24,10 +24,10 @@
   3. System gracefully recovers if NVS partition is corrupted or needs an upgrade.
   4. Oldest sessions are cleanly evicted if user logs in on more than 5 devices.
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 - [x] 01-01-PLAN.md — Core NVS Storage Foundation
-- [ ] 01-02-PLAN.md — Stateless JWT Crypto
+- [x] 01-02-PLAN.md — Stateless JWT Crypto
 - [ ] 01-03-PLAN.md — "Remember Me" Integration
 
 ### Phase 2: Credential Management UI & Logic
@@ -65,6 +65,6 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Persistent Sessions & Storage Foundation | v1.7 | 1/3 | In Progress|  |
+| 1. Persistent Sessions & Storage Foundation | v1.7 | 2/3 | In Progress|  |
 | 2. Credential Management UI & Logic | v1.7 | 0/0 | Not started | - |
 | 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/0 | Not started | - |

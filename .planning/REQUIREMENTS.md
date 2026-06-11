@@ -38,9 +38,9 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
 | AUTH-05 | Phase 2 | Pending |
 | AUTH-06 | Phase 2 | Pending |
 | AUTH-07 | Phase 2 | Pending |
