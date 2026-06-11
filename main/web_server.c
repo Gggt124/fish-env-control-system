@@ -2081,7 +2081,7 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
     }
 
     char ssid[64] = {0};
-    char password[64] = {0};
+    char password[65] = {0};
     wifi_sta_ip_config_t ip_cfg = {0};
     bool has_static_ip = false;
 
