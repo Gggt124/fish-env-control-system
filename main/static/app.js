@@ -2546,6 +2546,11 @@ function handleRoute() {
         history.replaceState(null, '', path);
     }
     
+    if (path === '/login' && isAuthenticated()) {
+        navigateTo('/dashboard');
+        return;
+    }
+    
     var views = document.querySelectorAll('.view');
     for (var i = 0; i < views.length; i++) {
         views[i].classList.add('hidden');
