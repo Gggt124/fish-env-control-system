@@ -1796,6 +1796,15 @@ static esp_err_t handle_root(httpd_req_t *req)
 /* GET /login */
 static esp_err_t handle_get_login(httpd_req_t *req)
 {
+    char token[SESSION_TOKEN_LEN] = {0};
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token, client_ip)) {
+        set_no_store_response_headers(req);
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/dashboard");
+        return httpd_resp_send(req, NULL, 0);
+    }
     return serve_static(req,
         _binary_index_html_start, _binary_index_html_end,
         "text/html; charset=utf-8");
