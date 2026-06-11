@@ -1,25 +1,48 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-10T20:02:16.618Z",
+  "timestamp": "2026-06-11T11:59:02.342Z",
   "phase": "01",
-  "phase_name": "Persistent Sessions & Storage Foundation",
+  "phase_name": "persistent-sessions-storage-foundation",
   "phase_dir": ".planning/phases/01-persistent-sessions-storage-foundation",
-  "plan": 0,
-  "task": 0,
-  "total_tasks": 0,
+  "plan": 3,
+  "task": "UAT",
+  "total_tasks": 2,
   "status": "paused",
-  "completed_tasks": [],
-  "remaining_tasks": [],
-  "blockers": [],
-  "human_actions_pending": [],
-  "decisions": [
-    {"decision": "Use JWT generated/verified on ESP32", "rationale": "Avoids NVS write wear on sessions", "phase": "1"},
-    {"decision": "Waive 5-device limit", "rationale": "100% NVS wear mitigation for sessions", "phase": "1"},
-    {"decision": "No session expiration", "rationale": "Maximum convenience for Koi pond owners", "phase": "1"},
-    {"decision": "IP Binding", "rationale": "Mitigate HTTP sniffing risks on local Wi-Fi", "phase": "1"},
-    {"decision": "Client-side only logout", "rationale": "Accepted risk to avoid NVS writes", "phase": "1"}
+  "completed_tasks": [
+    {"id": 1, "name": "\"Remember Me\" UI and Client Logic", "status": "done"},
+    {"id": 2, "name": "Web Server Cookie Management and Session Integration", "status": "done"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Run /gsd-plan-phase 1 to begin planning",
-  "context_notes": "Phase 1 context gathered via gsd-discuss-phase. User chose to use stateless JWTs with IP binding and no expiration."
+  "remaining_tasks": [],
+  "blockers": [
+    {
+      "description": "Login authentication is failing (redirects back to login page with 401 Unauthorized for status/config APIs) when using JWT/HMAC token implementation.",
+      "type": "technical",
+      "workaround": "Working copy of session.c has been temporarily reverted/rewritten to use in-memory slot-based session token storage to isolate/bypass unreliable mbedtls setup producing stack junk signature mismatches."
+    }
+  ],
+  "human_actions_pending": [
+    {
+      "action": "Flash the new slot-based session storage firmware to the device (COM5) and re-test login / redirect behavior.",
+      "context": "To verify if the slot-based session storage bypasses the login issue.",
+      "blocking": true
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Temporarily rewrite session.c in working copy to use stateful in-memory slot-based session token store instead of stateless JWT.",
+      "rationale": "Unreliable mbedtls setup on ESP-IDF was producing signature mismatches (uninitialized memory stack junk), blocking the login flow.",
+      "phase": "01"
+    }
+  ],
+  "uncommitted_files": [
+    "components/session/session.c",
+    "components/session/CMakeLists.txt",
+    ".planning/phases/01-persistent-sessions-storage-foundation/01-01-PLAN.md",
+    ".planning/phases/01-persistent-sessions-storage-foundation/01-02-PLAN.md",
+    ".planning/phases/01-persistent-sessions-storage-foundation/01-03-PLAN.md",
+    ".planning/phases/01-persistent-sessions-storage-foundation/01-RESEARCH.md",
+    ".planning/STATE.md"
+  ],
+  "next_action": "Flash the slot-based session storage firmware to COM5 and run UAT Test 1 again to verify redirection.",
+  "context_notes": "We are pausing in the middle of Phase 01 UAT. The JWT implementation has signature verification issues because mbedtls_md_setup was failing/returning stack junk. We have written a slot-based session store in the working copy. We need to flash this and see if it fixes the user's login blocker."
 }
