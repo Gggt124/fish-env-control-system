@@ -71,6 +71,10 @@ typedef enum {
 } nvs_store_cooling_settings_load_status_t;
 
 bool nvs_store_init(void);
+
+bool nvs_store_get_jwt_secret(uint8_t secret[32]);
+bool nvs_store_set_jwt_secret(const uint8_t secret[32]);
+
 bool nvs_store_save_wifi(const char *ssid, const char *password);
 bool nvs_store_load_wifi(char *ssid_out, size_t ssid_len, char *pass_out, size_t pass_len);
 bool nvs_store_clear_wifi(void);

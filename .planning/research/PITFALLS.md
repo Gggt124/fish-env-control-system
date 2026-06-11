@@ -1,74 +1,174 @@
 # Pitfalls Research
 
-**Domain:** Embedded offline ESP32 owner dashboard UI polish
-**Researched:** 2026-06-02
+**Domain:** Authentication & Recovery in ESP-IDF Firmware
+**Researched:** 2026-06-11
 **Confidence:** HIGH
 
 ## Critical Pitfalls
 
-### Rewriting Stable Runtime During Cosmetic Work
+### Pitfall 1: NVS Flash Wear from Token Rotation
 
-**What goes wrong:** relay, timer, cooling, Wi-Fi polling, or APSTA behavior regresses during a UI milestone.
+**What goes wrong:**
+The device flash memory degrades rapidly, eventually causing NVS write failures, random crashes, or boot loops. 
 
-**Avoidance:** keep changes in static assets and docs by default. Allow firmware edits only for a verified UI state bug. Run `idf.py build` and preserve the passed `13:38:10` soak assumptions.
+**Why it happens:**
+Developers implement "rolling sessions" (where the persistent session token is regenerated and saved on every request or every login) directly into NVS without realizing that ESP32 flash has a limited number of erase cycles (typically 100k).
 
-### Equal-Weight Dashboard Noise
+**How to avoid:**
+Do not write to NVS on every request. Issue a single, long-lived "Remember Me" token that is saved in NVS once upon login. For active session tracking, keep ephemeral tokens in RAM (using the existing `session.c` component) and only validate the NVS token when the RAM session expires or the device reboots.
 
-**What goes wrong:** the owner sees many cards but cannot quickly answer whether the pump and cooling system are safe.
+**Warning signs:**
+High frequency of `nvs_set_str()` calls in the logs; `ESP_ERR_NVS_NOT_ENOUGH_SPACE` errors appearing during uptime.
 
-**Avoidance:** prioritize running/stopped state, active timer/relay, countdown, float state, temperature, cooling mode, and faults. Move configuration and diagnostics below operational state.
+**Phase to address:**
+Phase 1: Persistent Sessions ("Remember Me")
 
-### Color-Only Or Visual-Only State
+---
 
-**What goes wrong:** status changes, errors, and focus are difficult to perceive with keyboard use or assistive technology.
+### Pitfall 2: "Nuke the World" Recovery Button
 
-**Avoidance:** combine text with color, provide visible focus treatment, preserve labels/instructions, and expose dynamic status messages programmatically.
+**What goes wrong:**
+The user presses the hardware recovery button intending to reset their forgotten password, but the device also forgets its Wi-Fi configuration, pump timer settings, and cooling parameters.
 
-### Mobile Wiring Flow That Only Works On Desktop
+**Why it happens:**
+It is easier to call `nvs_flash_erase()` on the entire partition than it is to surgically remove specific keys or namespaces.
 
-**What goes wrong:** installer cannot read wiring guidance or safely save pending GPIO changes while holding a phone near the board.
+**How to avoid:**
+The recovery mechanism must specifically target only the authentication NVS keys (e.g., deleting or resetting the `admin_user` and `admin_pass` keys in the `app_config` namespace). Do not erase the `wifi_cfg` or `pump_cfg` namespaces.
 
-**Avoidance:** verify narrow viewport reflow, comfortable controls, readable summaries, and clear reboot confirmation.
+**Warning signs:**
+The recovery function calls `nvs_flash_erase()` instead of `nvs_erase_key()` or `nvs_set_str()` for just the credentials.
 
-### Missing DS18B20 Pull-Up Hardware Readiness
+**Phase to address:**
+Phase 3: Credential Recovery Mechanism
 
-**What goes wrong:** the next hardware cycle starts without the required external resistor, producing unreliable or missing temperature readings.
+---
 
-**Avoidance:** document and surface the external `4.7 kOhm` pull-up between DS18B20 DQ and `3.3 V`.
+### Pitfall 3: Offline Time Drift Breaking Expirations
 
-### Polished Happy Path, Weak Edge States
+**What goes wrong:**
+Persistent sessions immediately expire upon reboot, or never expire, making the "Remember Me" feature either useless or a permanent security risk.
 
-**What goes wrong:** loading, error, empty scan results, disconnected Wi-Fi, unavailable sensor, and pending reboot states appear accidental or ambiguous.
+**Why it happens:**
+ESP32 lacks a battery-backed RTC. When operating offline (e.g., in SoftAP mode or without SNTP), the system time resets to the UNIX epoch on every boot. Using absolute wall-clock time (`time_t`) to validate token expiration will fail.
 
-**Avoidance:** define a state matrix and screenshot representative non-happy-path states.
+**How to avoid:**
+For a local, offline device, do not rely on absolute timestamps for token expiration. Instead, treat the "Remember Me" token as valid until explicitly revoked (Logout or Password Change), or use uptime (`esp_timer_get_time()`) combined with an active session window rather than absolute wall-clock expiration.
+
+**Warning signs:**
+Cookie attributes using `Expires=` or code checking `time(NULL)` against a saved timestamp.
+
+**Phase to address:**
+Phase 1: Persistent Sessions ("Remember Me")
+
+---
+
+### Pitfall 4: Weak Entropy for Persistent Tokens
+
+**What goes wrong:**
+An attacker can easily guess valid session tokens and bypass the login screen without credentials.
+
+**Why it happens:**
+The developer uses the standard C `rand()` function (which is predictable) or unseeded logic to generate the long-lived token.
+
+**How to avoid:**
+Always use `esp_random()` to generate token bytes. Ensure Wi-Fi/RF is enabled before calling it to guarantee cryptographic entropy, then encode it to hex or base64.
+
+**Warning signs:**
+Calls to `rand()` or predictable timestamps used as token values.
+
+**Phase to address:**
+Phase 1: Persistent Sessions ("Remember Me")
+
+---
+
+## Technical Debt Patterns
+
+Shortcuts that seem reasonable but create long-term problems.
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Plaintext Credentials in NVS | Faster implementation, no hashing library needed. | Flash dumps expose the password. | Acceptable in MVP if flash encryption is planned later, but must be documented. |
+| Non-HttpOnly Persistent Cookie | Easier JS interaction. | High risk of XSS stealing the long-lived token. | Never acceptable for *persistent* tokens. Only for ephemeral UI state. |
+| Hardcoded Recovery GPIO | Quick hardware hookup. | Inflexible if the board layout changes. | Only acceptable if defined in `app_config.h` alongside other GPIOs. |
+
+## Integration Gotchas
+
+Common mistakes when connecting to external services (or in this case, internal modules).
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| NVS Storage | Calling NVS APIs from HTTP request context without mutexes. | NVS is thread-safe, but concurrent reads/writes of interdependent keys should be atomic or guarded. |
+| HTTP Server | Storing the persistent token validation in every route handler. | Implement auth validation as middleware or a central helper before route logic. |
+| UI Forms | Changing password with `type="text"`. | Use `type="password"` with a toggle visibility button and a "Confirm Password" field. |
 
 ## Performance Traps
 
-| Trap | Symptoms | Prevention |
-|------|----------|------------|
-| Adding a frontend framework | Larger embedded assets and new tooling | Keep plain HTML/CSS/JS. |
-| Adding aggressive polling | More HTTP traffic and possible long-uptime regression | Preserve existing intervals unless evidence requires a change. |
-| Unbounded generated DOM | Increasing browser memory and sluggish updates | Replace bounded regions; keep lists bounded by API results. |
-| Decorative assets and animation | Flash growth and lower-end rendering cost | Prefer CSS hierarchy and minimal motion. |
+Patterns that work at small scale but fail as usage grows (or on embedded hardware).
 
-## Looks Done But Is Not
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Large Token Strings | Stack overflow in HTTP handlers when parsing cookies. | Keep persistent tokens short (e.g., 32 hex chars / 16 bytes). | If token exceeds 128 bytes. |
+| NVS Read on Every HTTP Request | Latency spikes on dashboard load. | Load the expected persistent token hash into RAM on boot; compare against RAM. | On heavy polling (e.g., `/api/status`). |
 
-- [ ] Dashboard screenshot shows a clear primary state within three seconds.
-- [ ] Dashboard and Hardware/Install screenshots pass at desktop and narrow mobile widths.
-- [ ] Loading, error, empty, disabled, and pending reboot states are intentionally presented.
-- [ ] Keyboard focus remains visible and controls have understandable labels.
-- [ ] DS18B20 wiring documentation explicitly shows DQ -> `4.7 kOhm` pull-up -> `3.3 V`.
-- [ ] `idf.py build` succeeds and embedded asset changes remain memory/performance safe.
-- [ ] No firmware runtime behavior changed without a verified UI state bug.
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Incomplete Revocation | Clicking "Logout" deletes the client cookie but leaves the token valid in NVS. | Logout must invalidate the NVS token (e.g., zeroing it out or rotating it). |
+| Predictable Session Fixation | Issuing the same persistent token across password changes. | Changing the password MUST invalidate all existing persistent and ephemeral tokens. |
+| Boot-time GPIO Recovery Vulnerability | Any noise on the recovery GPIO triggers a password reset. | Require a long press (e.g., 5-10 seconds) during uptime, with debouncing and visual confirmation. |
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Silent "Remember Me" Failure | User checks the box, but is logged out anyway on reboot. | Show an error if NVS write fails, and ensure the UI reflects the actual saved state. |
+| No Feedback on Recovery | User holds the recovery button but doesn't know if it worked until they try to log in. | Use the device status LED (or TFT display) to visually blink/confirm when credentials are reset. |
+| Confusing Login Error | Generic "Error" message when credentials are changed on another device. | Provide clear "Session expired, please log in again" messaging if the persistent token is revoked. |
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Persistent Session:** Often missing complete revocation — verify that clicking "Logout" actually destroys the token in NVS, not just the browser cookie.
+- [ ] **Change Password:** Often missing active session invalidation — verify that changing the password immediately logs out any other active sessions.
+- [ ] **Recovery Mechanism:** Often missing debounce/time-delay — verify that a quick accidental bump of the recovery button does not reset credentials.
+- [ ] **UI Sync:** Often missing Remember Me checkbox state — verify that if a user has a persistent session, the login UI properly bypasses or pre-checks the box if shown.
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| NVS Wear / Corruption | HIGH | Re-flash device with `idf.py erase-flash`. Lose all settings. |
+| Forgotten Plaintext Password | LOW | Use the implemented hardware recovery button. |
+| Stolen Persistent Cookie | MEDIUM | Administrator must trigger "Change Password" to invalidate tokens. |
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| NVS Flash Wear from Token Rotation | Phase 1: Persistent Sessions | Code review confirms NVS write only happens on initial login with "Remember Me" checked. |
+| Offline Time Drift Breaking Expirations | Phase 1: Persistent Sessions | Unplug device, reboot, verify persistent login still works without internet. |
+| Incomplete Revocation | Phase 1: Persistent Sessions & Phase 2: Credential UI | Test that clicking Logout or changing the password prevents the old token from working. |
+| "Nuke the World" Recovery Button | Phase 3: Recovery Mechanism | Trigger recovery, then verify Wi-Fi connects and Pump Settings remain intact. |
+| Boot-time GPIO Recovery Vulnerability | Phase 3: Recovery Mechanism | Tap the button briefly; verify password is NOT reset. Hold for 10s; verify reset. |
 
 ## Sources
 
-- W3C WCAG 2.2: https://www.w3.org/TR/WCAG22/
-- W3C WAI Understanding Status Messages: https://www.w3.org/WAI/WCAG22/Understanding/status-messages
-- W3C WAI Understanding Focus Visible: https://www.w3.org/WAI/WCAG22/Understanding/focus-visible
-- W3C WAI Understanding Error Identification: https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html
-- Local v1.1 soak record: `.planning/STATE.md`
+- ESP-IDF NVS Documentation (Flash wear limitations)
+- OWASP Session Management Cheat Sheet
+- Hardware debouncing and user feedback best practices
+- Project Context: Offline requirements, SoftAP fallback, lack of RTC
 
 ---
-*Pitfalls research for: embedded offline ESP32 owner dashboard UI polish*
-*Researched: 2026-06-02*
+*Pitfalls research for: Authentication & Recovery in ESP-IDF Firmware*
+*Researched: 2026-06-11*

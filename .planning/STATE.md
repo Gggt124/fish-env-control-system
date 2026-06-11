@@ -1,91 +1,92 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: Modern Web UI Optimization
-status: Awaiting next milestone
-stopped_at: Session resumed, proceeding to check user feedback on text sizes.
-last_updated: "2026-06-10T11:04:02.909Z"
-last_activity: 2026-06-10 — Milestone v1.6 completed and archived
+milestone: v1.7
+milestone_name: milestone
+status: completed
+stopped_at: Phase 1 complete, ready to plan Phase 2
+last_updated: "2026-06-11T12:40:54.485Z"
+last_activity: 2026-06-11
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_phases: 3
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-06-05)
+See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
-**Current focus:** Milestone complete
-
-## Workflow
-
-- Mode: yolo
-- Granularity: standard
-- Parallelization: enabled
-- Research: enabled
-- Plan check: enabled
-- Verifier: enabled
-- Project structure: vertical MVP
-
-## Artifacts
-
-- Codebase map: `.planning/codebase/`
-- Project context: `.planning/PROJECT.md`
-- Config: `.planning/config.json`
-- Research: `.planning/research/`
-- Latest archived requirements: `.planning/milestones/v1.3-REQUIREMENTS.md`
-- Roadmap: `.planning/ROADMAP.md`
+**Current focus:** Phase 02 — credential-management-ui-&-logic
 
 ## Current Position
 
-Phase: Milestone v1.6 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-06-10 — Milestone v1.6 completed and archived
+Phase: 2
+Plan: Not started
+Status: Phase 01 shipped
+Last activity: 2026-06-11 - Shipped Phase 1: Persistent Sessions & Storage Foundation
 
-## Notes
+Progress: [███░░░░░░░] 33%
 
-- User confirmed ESP32 DevKit V1 30-pin.
-- Recommended float switch wiring: GPIO32 input pull-up, switch closes to GND.
-- Recommended relay default: GPIO26 output, polarity configurable.
-- Auto-start defaults disabled but must be persisted and user-toggleable.
-- Hardware validation passed on the user's real ESP32/relay/float setup; latest quick task is smoothing countdown UI and changing safer defaults.
-- Flash layout now uses dual OTA app slots sized `0x1F0000` each on the 4MB ESP32 flash.
-- v1.1 planning preserves v1.0 phase directories and continues phase numbering from P6.
-- v1.1 supersedes the old one-relay pump mapping with Float ON -> Timer 1/Relay 1 and Float OFF -> Timer 2/Relay 2.
-- The P6 GPIO and cooling hardware contract TODO was moved to completed on 2026-06-02.
-- v1.4 Phase 16: Used sequential opacity fade swapping (fade out, hide, show, reflow, fade in) in app.js and CSS transitions with a min-height: 300px styling constraint to polish the Wi-Fi setup page and avoid backdrop-filter compositing overhead on low-power devices.
+## Performance Metrics
 
-## Operator Next Steps
+**Velocity:**
 
-- Start the next milestone with /gsd-new-milestone
+- Total plans completed: 3
+- Average duration: 0 min
+- Total execution time: 0 hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 01 | 3 | - | - |
+
+**Recent Trend:**
+
+- Last 5 plans: N/A
+- Trend: Stable
+
+| Phase 01-persistent-sessions-storage-foundation P02 | 10m | 3 tasks | 4 files |
+
+## Accumulated Context
+
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [Phase 1]: Decided to use stateful in-memory slot-based session store instead of stateless JWT.
+- [Phase 1]: Removed IP binding from session validation to prevent connection drops.
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+None yet.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260611-r91 | เวลา login แล้ว ถ้าเรา /login มันไม่เข้ามาที่หน้าlogin แล้วควรไปที่ dashboard เลยหรือป่าว | 2026-06-11 | 8450681 | [260611-r91-login-login-login-dashboard](./quick/260611-r91-login-login-login-dashboard/) |
+
+## Deferred Items
+
+Items acknowledged and carried forward from previous milestone close:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| *(none)* | | | |
 
 ## Session Continuity
 
-Last session: 2026-06-10T00:14:26+07:00
-Stopped at: Session resumed, proceeding to check user feedback on text sizes.
-Resume file: .planning/.continue-here.md
-
-## Quick Tasks Completed
-
-| Date | Slug | Description |
-|---|---|---|
-| 2026-06-08 | 260608-wifi-off-svg-fix | Fix wifi-off SVG paths to use official Feather icons format |
-| 2026-06-08 | 260608-wifi-modal-styling-fixes | Restore white card container and apply greyish icon color for disconnected status |
-| 2026-06-08 | 260608-wifi-modal-refinements | Refine Wi-Fi Settings page styling (transparent disconnected card, larger checkboxes, direct connection trigger) |
-| 2026-06-08 | 260608-wifi-modal-layout | Refactor Wi-Fi Settings page styling and modal-based connection dialog |
-| 2026-06-06 | hardware-ui-tweak | Changed "Fixed SPI Pinout" to neutral and "Active map loaded" to green |
-| 2026-06-06 | 260607-157 | Redesign TFT Dashboard Layout |
-| 2026-06-07 | tft-label-cleanup | Removed redundant labels from TFT display |
-| 2026-06-07 | tft-scale-values | Scaled up TFT dynamic values to x2 size for clarity |
-| 2026-06-07 | tft-modern-card-redesign | Refactored TFT dashboard layout to modern card design |
-| 2026-06-07 | tft-fix-rgb-order-overlap | Fixed RGB/BGR inversion, top bar overlapping, and temp colors |
-
-- Wrapped dashboard runtime cards in a CSS grid with 1fr columns on mobile and 1fr 1fr on desktop to maximize screen space.
-- Used pseudo-elements (:before) to style standard checkboxes into animated iOS-style pill switches, avoiding extra JS overhead.
+Last session: 2026-06-11T12:40:54.467Z
+Stopped at: Phase 1 complete, ready to plan Phase 2
+Resume file: None

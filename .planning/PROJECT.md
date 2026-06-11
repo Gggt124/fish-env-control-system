@@ -14,17 +14,14 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 **Latest shipped:** v1.5 TFT Display Integration on 2026-06-06
 
-## Current Milestone: v1.6 Modern Web UI Optimization
+## Current Milestone: v1.7 Authentication & Recovery
 
-**Goal:** Overhaul the Web UI (Dashboard, Status, Wi-Fi, Hardware) to a Modern UI (Soft UI, Card-based) with improved UX, retaining offline capabilities and existing hardware logic.
+**Goal:** Improve access control by adding persistent sessions, user credential management, and a recovery mechanism for forgotten credentials.
 
 **Target features:**
-- UI-01: Single Page Application (SPA) architecture layout.
-- UI-02: Zero External Dependencies (inline SVG, system fonts, CSS vars).
-- UI-03: Modern card-based layout for Pump, Timer, and Cooling control.
-- UI-04: Stepper and loading states for Wi-Fi Setup.
-- UI-05: Redesign System Status and Hardware/Install.
-- UI-06: Loading spinners, debouncing, and modal popups.
+- AUTH-01: "Remember Me" persistent session to bypass login on trusted devices.
+- AUTH-02: User interface to change Username & Password.
+- AUTH-03: Credential Recovery mechanism (e.g., hardware button reset or fallback) to prevent lockout.
 
 ## Requirements
 
@@ -93,15 +90,18 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ TFT-02: Implement a lightweight display rendering module for custom fonts and shapes. — v1.5
 - ✓ TFT-03: Render the landscape dashboard showing pump state, active timer, countdown, temperature, cooling relay state, float switch, and Wi-Fi IP. — v1.5
 - ✓ TFT-04: Update the screen periodically (e.g., every 500ms or on state change) without blocking the main event loop or watchdog. — v1.5
+- ✓ UI-01: Implement Single Page Application (SPA) architecture for smoother transitions. — v1.6
+- ✓ UI-02: Update styles with HSL color system, system fonts, and inline SVG icons (Zero External Dependencies). — v1.6
+- ✓ UI-03: Redesign Pump Control, Timer Settings, and Cooling Control dashboards to a modern card-based layout. — v1.6
+- ✓ UI-04: Overhaul Wi-Fi Setup page with stepper, loading states, and modal popups. — v1.6
+- ✓ UI-05: Redesign System Status and Hardware/Install pages for better readability and UX. — v1.6
+- ✓ UI-06: Add UI feedback mechanisms (loading spinners, debouncing, modal confirmation). — v1.6
+- ✓ AUTH-01: Implement "Remember Me" persistent session system. — v1.7
 
 ### Active
 
-- [ ] UI-01: Implement Single Page Application (SPA) architecture for smoother transitions.
-- [ ] UI-02: Update styles with HSL color system, system fonts, and inline SVG icons (Zero External Dependencies).
-- [ ] UI-03: Redesign Pump Control, Timer Settings, and Cooling Control dashboards to a modern card-based layout.
-- [ ] UI-04: Overhaul Wi-Fi Setup page with stepper, loading states, and modal popups.
-- [ ] UI-05: Redesign System Status and Hardware/Install pages for better readability and UX.
-- [ ] UI-06: Add UI feedback mechanisms (loading spinners, debouncing, modal confirmation).
+- [ ] AUTH-02: Implement change Username & Password functionality.
+- [ ] AUTH-03: Implement Credential Recovery mechanism.
 
 ### Out of Scope
 
@@ -192,6 +192,8 @@ Recommended hardware contract (validated):
 | Isolate Auto mode demand tracking using a dedicated s_auto_demand variable | Ensures mode transitions (like from Test ON back to Auto) immediately evaluate conditions without being biased by the physical relay's prior state | ✓ Good |
 | Replace CPU-heavy backdrop blur panel with Empty State Card and sequential fade transitions | Solves low-power GPU repaint issues and improves UX visual clarity | ✓ Good |
 | Align task watchdog timeout default to 10s and feed loop at 5s | Resolves configuration comment drift and provides conservative CPU starvation protection | ✓ Good |
+| Use stateful in-memory slot-based session store instead of stateless JWT | Unreliable mbedtls setup on ESP-IDF was producing signature mismatches (uninitialized memory stack junk), blocking the login flow. | ✓ Good |
+| Remove IP binding from session validation | Ensures connectivity is not dropped during SoftAP/STA fallback routing and offline operations. | ✓ Good |
 
 ## Evolution
 
@@ -211,4 +213,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 for active milestone v1.6 initiation*
+*Last updated: 2026-06-11 after Phase 1*

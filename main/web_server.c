@@ -223,6 +223,22 @@ static bool is_valid_utf8_printable(const char *s, size_t max_len)
     return true;
 }
 
+static void get_client_ip(httpd_req_t *req, char *ipstr, size_t ipstr_len)
+{
+    ipstr[0] = '\0';
+    int sockfd = httpd_req_to_sockfd(req);
+    struct sockaddr_in6 addr;
+    socklen_t addr_size = sizeof(addr);
+    if (getpeername(sockfd, (struct sockaddr *)&addr, &addr_size) == 0) {
+        if (addr.sin6_family == AF_INET) {
+            struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
+            inet_ntop(AF_INET, &addr4->sin_addr, ipstr, ipstr_len);
+        } else if (addr.sin6_family == AF_INET6) {
+            inet_ntop(AF_INET6, &addr.sin6_addr, ipstr, ipstr_len);
+        }
+    }
+}
+
 /* Extract session token from Cookie header.
    WARNING: This is a local-prototype auth scheme.
    Session tokens are random but transmitted as plain cookies.
@@ -261,7 +277,9 @@ static bool require_auth(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
     if (!get_session_from_request(req, token, sizeof(token))) return false;
-    return session_validate(token);
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+    return session_validate(token, client_ip);
 }
 
 /* Convert chip model enum to string */
@@ -359,19 +377,17 @@ static bool header_matches_allowed_origin(const char *header)
 /* Check Origin/Referer to prevent cross-site POST (CSRF mitigation) */
 static bool is_same_origin(httpd_req_t *req, bool allow_missing_header)
 {
-    size_t buf_len = httpd_req_get_hdr_value_len(req, "Origin");
+    size_t origin_len = httpd_req_get_hdr_value_len(req, "Origin");
+    size_t referer_len = httpd_req_get_hdr_value_len(req, "Referer");
     char buf[128] = {0};
 
-    if (buf_len > 0 && buf_len < sizeof(buf) - 1) {
+    if (origin_len > 0) {
+        if (origin_len >= sizeof(buf)) return false;
         httpd_req_get_hdr_value_str(req, "Origin", buf, sizeof(buf));
+    } else if (referer_len > 0) {
+        if (referer_len >= sizeof(buf)) return false;
+        httpd_req_get_hdr_value_str(req, "Referer", buf, sizeof(buf));
     } else {
-        buf_len = httpd_req_get_hdr_value_len(req, "Referer");
-        if (buf_len > 0 && buf_len < sizeof(buf) - 1) {
-            httpd_req_get_hdr_value_str(req, "Referer", buf, sizeof(buf));
-        }
-    }
-
-    if (buf[0] == '\0') {
         ESP_LOGW(TAG, "POST request without Origin/Referer header");
         return allow_missing_header;
     }
@@ -1763,7 +1779,9 @@ static esp_err_t serve_static(httpd_req_t *req, const uint8_t *start, const uint
 static esp_err_t handle_root(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
-    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token)) {
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token, client_ip)) {
         set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/dashboard");
@@ -1778,6 +1796,15 @@ static esp_err_t handle_root(httpd_req_t *req)
 /* GET /login */
 static esp_err_t handle_get_login(httpd_req_t *req)
 {
+    char token[SESSION_TOKEN_LEN] = {0};
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token, client_ip)) {
+        set_no_store_response_headers(req);
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/dashboard");
+        return httpd_resp_send(req, NULL, 0);
+    }
     return serve_static(req,
         _binary_index_html_start, _binary_index_html_end,
         "text/html; charset=utf-8");
@@ -1862,20 +1889,64 @@ static esp_err_t handle_captive_probe(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
+#define LOGIN_LRU_SIZE 16
+
+typedef struct {
+    char ip[64];
+    int attempts;
+    int64_t block_until;
+} login_rate_limit_t;
+
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
-    static int s_login_attempts = 0;
-    static int64_t s_login_block_until = 0;
+    static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
+
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    login_rate_limit_t *rl = NULL;
+    int target_idx = -1;
+    for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+        if (strcmp(s_rate_limits[i].ip, client_ip) == 0) {
+            rl = &s_rate_limits[i];
+            target_idx = i;
+            break;
+        }
+    }
+
+    if (!rl) {
+        int evict_idx = 0;
+        int64_t oldest = s_rate_limits[0].block_until;
+        for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+            if (s_rate_limits[i].ip[0] == '\0') {
+                evict_idx = i;
+                break;
+            }
+            if (s_rate_limits[i].block_until < oldest) {
+                oldest = s_rate_limits[i].block_until;
+                evict_idx = i;
+            }
+        }
+        rl = &s_rate_limits[evict_idx];
+        target_idx = evict_idx;
+        strncpy(rl->ip, client_ip, sizeof(rl->ip));
+        rl->attempts = 0;
+        rl->block_until = 0;
+    }
+    
+    int64_t block_until = rl->block_until;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
 
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
     int64_t now = esp_timer_get_time() / 1000000;
-    if (s_login_block_until > now) {
+    if (block_until > now) {
         char resp[128];
-        int remaining = (int)(s_login_block_until - now);
+        int remaining = (int)(block_until - now);
         snprintf(resp, sizeof(resp), "{\"ok\":false,\"error\":\"rate_limited\",\"retry_after\":%d}", remaining);
         return send_json(req, resp, "429 Too Many Requests");
     }
@@ -1887,6 +1958,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     char username[64] = {0};
     char password[64] = {0};
+    bool remember = false;
 
     const char *user_start = strstr(body, "username=");
     if (user_start) {
@@ -1919,15 +1991,21 @@ static esp_err_t handle_api_login(httpd_req_t *req)
             if (p && cJSON_IsString(p)) {
                 strncpy(password, p->valuestring, sizeof(password) - 1);
             }
+            cJSON *r = cJSON_GetObjectItem(root, "remember");
+            if (r && cJSON_IsTrue(r)) {
+                remember = true;
+            }
             cJSON_Delete(root);
         }
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        s_login_attempts++;
-        if (s_login_attempts >= RATE_LIMIT_MAX) {
-            s_login_block_until = now + RATE_LIMIT_WINDOW;
+        taskENTER_CRITICAL(&s_web_diag_lock);
+        s_rate_limits[target_idx].attempts++;
+        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
+            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
         }
+        taskEXIT_CRITICAL(&s_web_diag_lock);
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
@@ -1938,20 +2016,24 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
         ESP_LOGW(TAG, "Login failed");
-        s_login_attempts++;
-        if (s_login_attempts >= RATE_LIMIT_MAX) {
-            s_login_block_until = now + RATE_LIMIT_WINDOW;
+        taskENTER_CRITICAL(&s_web_diag_lock);
+        s_rate_limits[target_idx].attempts++;
+        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
+            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
         }
+        taskEXIT_CRITICAL(&s_web_diag_lock);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
     char token[SESSION_TOKEN_LEN] = {0};
-    if (!session_create(username, token)) {
+    if (!session_create(username, client_ip, token)) {
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    s_login_attempts = 0;
-    s_login_block_until = 0;
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    s_rate_limits[target_idx].attempts = 0;
+    s_rate_limits[target_idx].block_until = 0;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
@@ -1959,8 +2041,12 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);
 
-    char cookie[128];
-    snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
+    char cookie[384];
+    if (remember) {
+        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax; Max-Age=31536000", token);
+    } else {
+        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
+    }
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
 
     ESP_LOGI(TAG, "Login success");
@@ -1974,11 +2060,6 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
 {
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
-    }
-
-    char token[SESSION_TOKEN_LEN] = {0};
-    if (get_session_from_request(req, token, sizeof(token))) {
-        session_destroy(token);
     }
 
     /* Clear cookie */
@@ -2062,7 +2143,7 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
     }
 
     char ssid[64] = {0};
-    char password[64] = {0};
+    char password[65] = {0};
     wifi_sta_ip_config_t ip_cfg = {0};
     bool has_static_ip = false;
 
