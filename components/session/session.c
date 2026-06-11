@@ -97,14 +97,14 @@ bool session_create(const char *username, const char *client_ip, char token_out[
     snprintf(payload_json, sizeof(payload_json), "{\"sub\":\"%s\",\"ip\":\"%s\",\"iat\":%lld}", username, client_ip, (long long)now);
 
     char header_b64[40];
-    char payload_b64[128];
+    char payload_b64[256];
 
     if (!base64url_encode((const unsigned char *)header_json, strlen(header_json), header_b64, sizeof(header_b64)) ||
         !base64url_encode((const unsigned char *)payload_json, strlen(payload_json), payload_b64, sizeof(payload_b64))) {
         return false;
     }
 
-    char signing_input[180];
+    char signing_input[384];
     int len = snprintf(signing_input, sizeof(signing_input), "%s.%s", header_b64, payload_b64);
     if (len >= sizeof(signing_input)) return false;
 
