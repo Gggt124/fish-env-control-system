@@ -1,6 +1,6 @@
 ---
 phase: 01-persistent-sessions-storage-foundation
-reviewed: 2024-06-11T10:16:00Z
+reviewed: 2026-06-11T10:35:00Z
 depth: standard
 files_reviewed: 8
 files_reviewed_list:
@@ -13,101 +13,94 @@ files_reviewed_list:
   - main/static/index.html
   - main/static/app.js
 findings:
-  critical: 3
-  warning: 2
-  info: 1
-  total: 6
+  critical: 0
+  warning: 3
+  info: 2
+  total: 5
 status: issues_found
 ---
 
 # Phase 01: Code Review Report
 
-**Reviewed:** 2024-06-11T10:16:00Z
+**Reviewed:** 2026-06-11T10:35:00Z
 **Depth:** standard
 **Files Reviewed:** 8
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the implementation of the new stateless JWT session system and NVS storage extensions. While the JWT and mbedtls integration is functionally well-structured, several significant bugs and security issues were identified. 
+The review focused on the session storage and NVS persistence mechanisms. The foundation uses a stateless JWT system with a 32-byte secret persisted in NVS across reboots. The NVS interaction wrappers and cryptographic implementations are robust and handle fallback generation properly if the secret is corrupted or missing. 
 
-The most critical issues involve a logical flaw in session expiration that breaks persistence across reboots, a stack memory disclosure vulnerability in client IP parsing, and predictable JWT secret generation due to premature `esp_random()` usage before Wi-Fi initialization.
-
-## Critical Issues
-
-### CR-01: JWT `iat` claim uses uptime, breaking persistent sessions across reboots
-
-**File:** `components/session/session.c:193`
-**Issue:** `session_validate` rejects tokens if `now < iat`, where `now` is `esp_timer_get_time() / 1000000`. Since `esp_timer_get_time()` resets to 0 on reboot, any valid session from a previous boot will have a much larger `iat` than the newly reset `now`. The token will be immediately rejected. This fundamentally breaks the "persistent sessions" requirement, as sessions cannot survive a reboot despite the secret being stored in NVS.
-**Fix:** Since the device lacks an RTC, time-since-boot cannot be used for `iat` if sessions must survive reboots. Remove the `iat` claim and expiration check from the JWT validation for this local prototype, relying only on client-side cookie clearing, OR generate an abstract epoch counter persisted in NVS.
-```c
-// Remove the 'iat' generation in session_create and the validation block in session_validate:
-// if (SESSION_MAX_AGE_SEC > 0) { ... } 
-```
-
-### CR-02: Predictable JWT Secret Generation (Pseudo-RNG)
-
-**File:** `components/session/session.c:76`
-**Issue:** `session_init()` generates a new JWT secret using `esp_random()`. However, `session_init()` is called in `app_main.c` *before* `wifi_manager_init()`. The ESP32 hardware RNG requires the RF subsystem (Wi-Fi or Bluetooth) to be active. If called before Wi-Fi is initialized, `esp_random()` returns predictable pseudo-random numbers, compromising the security of all future session tokens.
-**Fix:** Temporarily enable the hardware RNG during secret generation.
-```c
-#include "bootloader_random.h"
-
-// Inside session_init():
-        bootloader_random_enable();
-        for (int i = 0; i < sizeof(s_jwt_secret); i++) {
-            s_jwt_secret[i] = esp_random() & 0xFF;
-        }
-        bootloader_random_disable();
-```
-
-### CR-03: Stack Memory Disclosure / Invalid IP Parsing
-
-**File:** `main/web_server.c:233`
-**Issue:** `get_client_ip` assumes `getpeername` always populates a `struct sockaddr_in6`. If the client connects over IPv4, `getpeername` populates a `struct sockaddr_in` (16 bytes). `inet_ntop(AF_INET6, &addr.sin6_addr...)` then reads 16 bytes of uninitialized stack memory immediately following the IPv4 address. This results in garbage IPv6 addresses, causing unpredictable rate-limiting failures, session validation failures (`ip` claim mismatch), and potential stack data leakage.
-**Fix:**
-```c
-    if (getpeername(sockfd, (struct sockaddr *)&addr, &addr_size) == 0) {
-        if (addr.sin6_family == AF_INET) {
-            struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
-            inet_ntop(AF_INET, &addr4->sin_addr, ipstr, ipstr_len);
-        } else if (addr.sin6_family == AF_INET6) {
-            inet_ntop(AF_INET6, &addr.sin6_addr, ipstr, ipstr_len);
-        }
-    }
-```
+However, several warnings were identified, primarily regarding logic flaws in token expiration, rate limiting, and cookie parsing boundaries that could cause degraded functionality or localized Denial of Service conditions. No critical blockers (RCE, data loss, etc.) were found, but the warnings should be addressed before considering the auth mechanism hardened.
 
 ## Warnings
 
-### WR-01: Potential Null Pointer Dereferences in NVS Getters
+### WR-01: Non-expiring JWT tokens pose security risk
 
-**File:** `components/nvs_store/nvs_store.c:217`
-**Issue:** `nvs_get_str(handle, NVS_KEY_SSID, ssid_out, &len) == ESP_OK && ssid_out[0]` is unsafe if `ssid_out` is `NULL`. `nvs_get_str` handles `NULL` output gracefully, returning `ESP_OK` and the required length. However, the subsequent check `ssid_out[0]` will dereference `NULL` and crash. The same issue exists on line 220 (`ssid_out[0] = '\0'`) and in `nvs_store_load_sta_ip` for `ip_out[0]`.
-**Fix:** Add `NULL` checks before dereferencing array indices.
+**File:** `components/session/session.c:182`
+**Issue:** JWT expiration verification was completely removed to allow persistent sessions across reboots. This means a compromised session token remains valid indefinitely unless the underlying device NVS JWT secret is forcefully rotated, violating standard security principles.
+**Fix:** Instead of disabling expiration, add a long-lived `exp` claim based on device uptime (`esp_timer_get_time`), and implement a sliding window or silent refresh. Alternatively, if strict persistence across device restarts without RTC is required, bind the token more tightly to client footprint or enforce periodic re-authentication.
+
 ```c
-    if (nvs_get_str(handle, NVS_KEY_SSID, ssid_out, &len) == ESP_OK && ssid_out && ssid_out[0]) {
-        has_ssid = true;
-    } else if (ssid_out) {
-        ssid_out[0] = '\0';
+// components/session/session.c
+// Example: Re-enable expiration checking, perhaps with a 30-day window
+int64_t now = esp_timer_get_time() / 1000000;
+// Verify token expiration logic here rather than skipping it.
+```
+
+### WR-02: Rate limit lockout logic does not reset attempt counter on expiration
+
+**File:** `main/web_server.c:1937`
+**Issue:** When an IP hits the login rate limit, `block_until` is set. After the lockout window expires (`block_until <= now`), the `attempts` counter is never reset. A single subsequent failed login will push `attempts` above `RATE_LIMIT_MAX` again, instantly re-applying the full lockout penalty rather than granting the user a fresh set of attempts.
+**Fix:** Reset the `attempts` counter to `0` when a block has naturally expired before processing the current login attempt.
+
+```c
+    int64_t now = esp_timer_get_time() / 1000000;
+    if (block_until > now) {
+        char resp[128];
+        int remaining = (int)(block_until - now);
+        snprintf(resp, sizeof(resp), "{\"ok\":false,\"error\":\"rate_limited\",\"retry_after\":%d}", remaining);
+        return send_json(req, resp, "429 Too Many Requests");
+    } else if (rl->attempts >= RATE_LIMIT_MAX) {
+        /* Reset attempts because the block period has expired */
+        rl->attempts = 0;
     }
 ```
 
-### WR-02: Rate Limiting Array Thread-Safety and LRU Evasion
+### WR-03: Insecure cookie parsing causes potential Denial of Service
 
-**File:** `main/web_server.c:1882`
-**Issue:** The `s_rate_limits` LRU cache tracks login attempts per IP. The size `LOGIN_LRU_SIZE` is very small (4). An attacker rotating 5 different IPs can flush the LRU queue and bypass the rate limit. Additionally, the array is not protected by a mutex, leading to potential race conditions if multiple login requests are handled concurrently.
-**Fix:** Increase `LOGIN_LRU_SIZE` to 16, and wrap access with `taskENTER_CRITICAL(&s_web_diag_lock)` / `taskEXIT_CRITICAL` (or a dedicated mutex).
+**File:** `main/web_server.c:260` and `main/static/app.js:24`
+**Issue:** Both the server backend (`strstr(cookie_buf, "session=")`) and the frontend JS (`match(/session=([^;]+)/)`) use loose boundary checks when parsing the `session` cookie. If a user has another cookie whose name ends with "session" (e.g., `mysession=123`), the parsers will incorrectly extract `123` as the token. This results in an immediate authentication failure (DoS) for the valid user.
+**Fix:** Enforce word boundaries when parsing the cookie string.
+
+```c
+// main/web_server.c
+    const char *start = strstr(cookie_buf, "session=");
+    while (start && start > cookie_buf && *(start - 1) != ' ' && *(start - 1) != ';') {
+        start = strstr(start + 1, "session=");
+    }
+```
+```javascript
+// main/static/app.js
+    var c = document.cookie.match(/(?:^|;\s*)session=([^;]+)/);
+```
 
 ## Info
 
-### IN-01: Unnecessary base64 padding calculation
+### IN-01: Silent password truncation during Wi-Fi connect
 
-**File:** `components/session/session.c:46`
-**Issue:** Manual padding calculation loop for base64 decoding could be simplified, though it functions correctly as written.
-**Fix:** Keep as is if it passes validation, but consider optimizing using standard URL-safe decoding logic.
+**File:** `main/web_server.c:2149`
+**Issue:** `strncpy(password, p->valuestring, sizeof(password) - 1)` silently truncates a password longer than 64 characters. The subsequent check `if (strlen(password) > 64)` will never trigger because the string is already truncated, leading to an opaque authentication failure rather than a clear 400 Bad Request error.
+**Fix:** Check the length of `p->valuestring` directly before copying it to the local buffer.
+
+### IN-02: Missing explicit null-termination after strncpy
+
+**File:** `main/web_server.c:1925`
+**Issue:** `strncpy(rl->ip, client_ip, sizeof(rl->ip));` does not explicitly null-terminate `rl->ip` if `client_ip` happens to be exactly 64 characters long. While IPv4/IPv6 strings are practically shorter than 64 bytes in ESP-IDF, relying on this assumption without forced null-termination is an anti-pattern.
+**Fix:** Add `rl->ip[sizeof(rl->ip) - 1] = '\0';` immediately after the `strncpy`.
 
 ---
 
-_Reviewed: 2024-06-11T10:16:00Z_
+_Reviewed: 2026-06-11T10:35:00Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
