@@ -222,7 +222,9 @@ bool nvs_store_load_wifi(char *ssid_out, size_t ssid_len, char *pass_out, size_t
 
     len = pass_len;
     if (nvs_get_str(handle, NVS_KEY_PASS, pass_out, &len) != ESP_OK) {
-        pass_out[0] = '\0';
+        if (pass_out) {
+            pass_out[0] = '\0';
+        }
     }
 
     nvs_close(handle);
