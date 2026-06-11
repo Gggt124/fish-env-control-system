@@ -191,6 +191,8 @@ function initLogin() {
         e.preventDefault();
         var username = document.getElementById('username').value.trim();
         var password = document.getElementById('password').value;
+        var rememberEl = document.getElementById('remember-me');
+        var remember = rememberEl ? rememberEl.checked : false;
 
         if (!username || !password) {
             errEl.style.display = 'block';
@@ -201,7 +203,7 @@ function initLogin() {
         setLoading(btn, true);
         errEl.style.display = 'none';
 
-        apiPost('/api/login', { username: username, password: password }, function(err, data) {
+        apiPost('/api/login', { username: username, password: password, remember: remember }, function(err, data) {
             setLoading(btn, false);
 
             if (err || !data || !data.ok) {
