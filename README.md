@@ -206,6 +206,7 @@ This is a local setup template, not production internet-facing security.
 
 - HTTP only, no TLS
 - Cookie session is intentionally readable by JavaScript
+- Global rate limit for login failures allows a trivial Denial of Service (DoS) attack if an attacker spams incorrect credentials, locking out legitimate users.
 - Default credentials are compile-time constants
 - Wi-Fi credentials are stored in NVS without encryption in development
 - Flash encryption and secure boot are disabled in `sdkconfig.defaults`
