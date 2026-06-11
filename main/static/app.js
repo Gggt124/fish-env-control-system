@@ -2114,7 +2114,7 @@ function doScan() {
             var isConnected = nets[i].connected === true;
             html += '<div class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
                     'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                    (isConnected ? '' : 'onclick=\"selectNetwork(\'' + escJs(nets[i].ssid) + '\')\" style="cursor:pointer;"') + '>' +
+                    (isConnected ? '' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
                 '<div class=\"network-item-left\">' +
                     '<div class=\"network-icon' + (isConnected ? ' connected-icon' : '') + '\">' +
                         '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>' +
