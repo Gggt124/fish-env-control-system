@@ -214,9 +214,9 @@ bool nvs_store_load_wifi(char *ssid_out, size_t ssid_len, char *pass_out, size_t
 
     bool has_ssid = false;
     size_t len = ssid_len;
-    if (nvs_get_str(handle, NVS_KEY_SSID, ssid_out, &len) == ESP_OK && ssid_out[0]) {
+    if (nvs_get_str(handle, NVS_KEY_SSID, ssid_out, &len) == ESP_OK && ssid_out && ssid_out[0]) {
         has_ssid = true;
-    } else {
+    } else if (ssid_out) {
         ssid_out[0] = '\0';
     }
 
@@ -541,7 +541,7 @@ bool nvs_store_load_sta_ip(char *ip_out, size_t ip_len, char *gw_out, size_t gw_
 
     bool has_ip = false;
     size_t len = ip_len;
-    if (nvs_get_str(handle, NVS_KEY_IP, ip_out, &len) == ESP_OK && ip_out[0]) {
+    if (nvs_get_str(handle, NVS_KEY_IP, ip_out, &len) == ESP_OK && ip_out && ip_out[0]) {
         has_ip = true;
     } else if (ip_out) {
         ip_out[0] = '\0';
