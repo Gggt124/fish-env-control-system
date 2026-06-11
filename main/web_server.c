@@ -223,6 +223,17 @@ static bool is_valid_utf8_printable(const char *s, size_t max_len)
     return true;
 }
 
+static void get_client_ip(httpd_req_t *req, char *ipstr, size_t ipstr_len)
+{
+    ipstr[0] = '\0';
+    int sockfd = httpd_req_to_sockfd(req);
+    struct sockaddr_in6 addr;
+    socklen_t addr_size = sizeof(addr);
+    if (getpeername(sockfd, (struct sockaddr *)&addr, &addr_size) == 0) {
+        inet_ntop(AF_INET6, &addr.sin6_addr, ipstr, ipstr_len);
+    }
+}
+
 /* Extract session token from Cookie header.
    WARNING: This is a local-prototype auth scheme.
    Session tokens are random but transmitted as plain cookies.
@@ -261,7 +272,9 @@ static bool require_auth(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
     if (!get_session_from_request(req, token, sizeof(token))) return false;
-    return session_validate(token);
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+    return session_validate(token, client_ip);
 }
 
 /* Convert chip model enum to string */
@@ -1763,7 +1776,9 @@ static esp_err_t serve_static(httpd_req_t *req, const uint8_t *start, const uint
 static esp_err_t handle_root(httpd_req_t *req)
 {
     char token[SESSION_TOKEN_LEN] = {0};
-    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token)) {
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token, client_ip)) {
         set_no_store_response_headers(req);
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/dashboard");
@@ -1945,8 +1960,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
     char token[SESSION_TOKEN_LEN] = {0};
-    if (!session_create(username, token)) {
+    if (!session_create(username, client_ip, token)) {
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
@@ -1959,7 +1976,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);
 
-    char cookie[128];
+    char cookie[384];
     snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
 
