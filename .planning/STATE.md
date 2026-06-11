@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 Phase: 2
 Plan: Not started
-Status: Phase 01 complete
-Last activity: 2026-06-11 - Completed quick task 260611-r91: เวลา login แล้ว ถ้าเรา /login มันไม่เข้ามาที่หน้าlogin แล้วควรไปที่ dashboard เลยหรือป่าว
+Status: Phase 01 shipped
+Last activity: 2026-06-11 - Shipped Phase 1: Persistent Sessions & Storage Foundation
 
 Progress: [███░░░░░░░] 33%
 
