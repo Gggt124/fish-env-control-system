@@ -230,7 +230,12 @@ static void get_client_ip(httpd_req_t *req, char *ipstr, size_t ipstr_len)
     struct sockaddr_in6 addr;
     socklen_t addr_size = sizeof(addr);
     if (getpeername(sockfd, (struct sockaddr *)&addr, &addr_size) == 0) {
-        inet_ntop(AF_INET6, &addr.sin6_addr, ipstr, ipstr_len);
+        if (addr.sin6_family == AF_INET) {
+            struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
+            inet_ntop(AF_INET, &addr4->sin_addr, ipstr, ipstr_len);
+        } else if (addr.sin6_family == AF_INET6) {
+            inet_ntop(AF_INET6, &addr.sin6_addr, ipstr, ipstr_len);
+        }
     }
 }
 
@@ -1875,7 +1880,7 @@ static esp_err_t handle_captive_probe(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
-#define LOGIN_LRU_SIZE 4
+#define LOGIN_LRU_SIZE 16
 
 typedef struct {
     char ip[64];
@@ -1891,10 +1896,13 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     char client_ip[64] = {0};
     get_client_ip(req, client_ip, sizeof(client_ip));
 
+    taskENTER_CRITICAL(&s_web_diag_lock);
     login_rate_limit_t *rl = NULL;
+    int target_idx = -1;
     for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
         if (strcmp(s_rate_limits[i].ip, client_ip) == 0) {
             rl = &s_rate_limits[i];
+            target_idx = i;
             break;
         }
     }
@@ -1913,19 +1921,23 @@ static esp_err_t handle_api_login(httpd_req_t *req)
             }
         }
         rl = &s_rate_limits[evict_idx];
+        target_idx = evict_idx;
         strncpy(rl->ip, client_ip, sizeof(rl->ip));
         rl->attempts = 0;
         rl->block_until = 0;
     }
+    
+    int64_t block_until = rl->block_until;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
 
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
     int64_t now = esp_timer_get_time() / 1000000;
-    if (rl->block_until > now) {
+    if (block_until > now) {
         char resp[128];
-        int remaining = (int)(rl->block_until - now);
+        int remaining = (int)(block_until - now);
         snprintf(resp, sizeof(resp), "{\"ok\":false,\"error\":\"rate_limited\",\"retry_after\":%d}", remaining);
         return send_json(req, resp, "429 Too Many Requests");
     }
@@ -1979,10 +1991,12 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        rl->attempts++;
-        if (rl->attempts >= RATE_LIMIT_MAX) {
-            rl->block_until = now + RATE_LIMIT_WINDOW;
+        taskENTER_CRITICAL(&s_web_diag_lock);
+        s_rate_limits[target_idx].attempts++;
+        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
+            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
         }
+        taskEXIT_CRITICAL(&s_web_diag_lock);
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
@@ -1993,10 +2007,12 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
         ESP_LOGW(TAG, "Login failed");
-        rl->attempts++;
-        if (rl->attempts >= RATE_LIMIT_MAX) {
-            rl->block_until = now + RATE_LIMIT_WINDOW;
+        taskENTER_CRITICAL(&s_web_diag_lock);
+        s_rate_limits[target_idx].attempts++;
+        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
+            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
         }
+        taskEXIT_CRITICAL(&s_web_diag_lock);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
@@ -2005,8 +2021,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    rl->attempts = 0;
-    rl->block_until = 0;
+    taskENTER_CRITICAL(&s_web_diag_lock);
+    s_rate_limits[target_idx].attempts = 0;
+    s_rate_limits[target_idx].block_until = 0;
+    taskEXIT_CRITICAL(&s_web_diag_lock);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
