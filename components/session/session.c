@@ -92,19 +92,19 @@ bool session_create(const char *username, const char *client_ip, char token_out[
     if (!s_secret_ready || !username || !client_ip || !token_out) return false;
 
     const char *header_json = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-    char payload_json[128];
+    char payload_json[256];
     int64_t now = esp_timer_get_time() / 1000000;
     snprintf(payload_json, sizeof(payload_json), "{\"sub\":\"%s\",\"ip\":\"%s\",\"iat\":%lld}", username, client_ip, (long long)now);
 
     char header_b64[40];
-    char payload_b64[256];
+    char payload_b64[384];
 
     if (!base64url_encode((const unsigned char *)header_json, strlen(header_json), header_b64, sizeof(header_b64)) ||
         !base64url_encode((const unsigned char *)payload_json, strlen(payload_json), payload_b64, sizeof(payload_b64))) {
         return false;
     }
 
-    char signing_input[384];
+    char signing_input[512];
     int len = snprintf(signing_input, sizeof(signing_input), "%s.%s", header_b64, payload_b64);
     if (len >= sizeof(signing_input)) return false;
 
@@ -157,7 +157,7 @@ bool session_validate(const char *token, const char *client_ip)
 
     // Decode payload to verify IP and expiration
     const char *payload_b64 = dot1 + 1;
-    unsigned char payload_json[128];
+    unsigned char payload_json[256];
     size_t payload_len;
     if (!base64url_decode(payload_b64, payload_json, sizeof(payload_json) - 1, &payload_len)) {
         return false;
@@ -181,14 +181,13 @@ bool session_validate(const char *token, const char *client_ip)
     if (SESSION_MAX_AGE_SEC > 0) {
         char iat_key[8] = "\"iat\":";
         char *iat_start = strstr((char *)payload_json, iat_key);
-        if (iat_start) {
-            iat_start += strlen(iat_key);
-            int64_t iat = atoll(iat_start);
-            int64_t now = esp_timer_get_time() / 1000000;
-            // Reject if token is from the future (previous boot) or expired
-            if (now < iat || now - iat > SESSION_MAX_AGE_SEC) {
-                return false; // Expired
-            }
+        if (!iat_start) return false; // Fail securely if iat is missing
+        iat_start += strlen(iat_key);
+        int64_t iat = atoll(iat_start);
+        int64_t now = esp_timer_get_time() / 1000000;
+        // Reject if token is from the future (previous boot) or expired
+        if (now < iat || now - iat > SESSION_MAX_AGE_SEC) {
+            return false; // Expired
         }
     }
 
