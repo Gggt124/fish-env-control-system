@@ -1902,6 +1902,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     char username[64] = {0};
     char password[64] = {0};
+    bool remember = false;
 
     const char *user_start = strstr(body, "username=");
     if (user_start) {
@@ -1933,6 +1934,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
             }
             if (p && cJSON_IsString(p)) {
                 strncpy(password, p->valuestring, sizeof(password) - 1);
+            }
+            cJSON *r = cJSON_GetObjectItem(root, "remember");
+            if (r && cJSON_IsTrue(r)) {
+                remember = true;
             }
             cJSON_Delete(root);
         }
@@ -1977,7 +1982,11 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     cJSON_Delete(resp);
 
     char cookie[384];
-    snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
+    if (remember) {
+        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax; Max-Age=31536000", token);
+    } else {
+        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
+    }
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
 
     ESP_LOGI(TAG, "Login success");
@@ -1991,11 +2000,6 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
 {
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
-    }
-
-    char token[SESSION_TOKEN_LEN] = {0};
-    if (get_session_from_request(req, token, sizeof(token))) {
-        session_destroy(token);
     }
 
     /* Clear cookie */
