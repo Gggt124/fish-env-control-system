@@ -145,7 +145,13 @@ bool session_validate(const char *token, const char *client_ip)
         return false;
     }
 
-    if (strcmp(signature_b64_in, expected_sig_b64) != 0) {
+    // Constant-time string comparison to mitigate HMAC timing attacks
+    volatile int diff = 0;
+    for (int i = 0; i < 44; i++) {
+        if (expected_sig_b64[i] == '\0' && signature_b64_in[i] == '\0') break;
+        diff |= (expected_sig_b64[i] ^ signature_b64_in[i]);
+    }
+    if (diff != 0 || strlen(signature_b64_in) != strlen(expected_sig_b64)) {
         return false; // Signature mismatch
     }
 
