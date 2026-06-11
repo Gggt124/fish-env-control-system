@@ -1875,20 +1875,57 @@ static esp_err_t handle_captive_probe(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
+#define LOGIN_LRU_SIZE 4
+
+typedef struct {
+    char ip[64];
+    int attempts;
+    int64_t block_until;
+} login_rate_limit_t;
+
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
-    static int s_login_attempts = 0;
-    static int64_t s_login_block_until = 0;
+    static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
+
+    char client_ip[64] = {0};
+    get_client_ip(req, client_ip, sizeof(client_ip));
+
+    login_rate_limit_t *rl = NULL;
+    for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+        if (strcmp(s_rate_limits[i].ip, client_ip) == 0) {
+            rl = &s_rate_limits[i];
+            break;
+        }
+    }
+
+    if (!rl) {
+        int evict_idx = 0;
+        int64_t oldest = s_rate_limits[0].block_until;
+        for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+            if (s_rate_limits[i].ip[0] == '\0') {
+                evict_idx = i;
+                break;
+            }
+            if (s_rate_limits[i].block_until < oldest) {
+                oldest = s_rate_limits[i].block_until;
+                evict_idx = i;
+            }
+        }
+        rl = &s_rate_limits[evict_idx];
+        strncpy(rl->ip, client_ip, sizeof(rl->ip));
+        rl->attempts = 0;
+        rl->block_until = 0;
+    }
 
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
     int64_t now = esp_timer_get_time() / 1000000;
-    if (s_login_block_until > now) {
+    if (rl->block_until > now) {
         char resp[128];
-        int remaining = (int)(s_login_block_until - now);
+        int remaining = (int)(rl->block_until - now);
         snprintf(resp, sizeof(resp), "{\"ok\":false,\"error\":\"rate_limited\",\"retry_after\":%d}", remaining);
         return send_json(req, resp, "429 Too Many Requests");
     }
@@ -1942,9 +1979,9 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        s_login_attempts++;
-        if (s_login_attempts >= RATE_LIMIT_MAX) {
-            s_login_block_until = now + RATE_LIMIT_WINDOW;
+        rl->attempts++;
+        if (rl->attempts >= RATE_LIMIT_MAX) {
+            rl->block_until = now + RATE_LIMIT_WINDOW;
         }
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
@@ -1956,22 +1993,20 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
         ESP_LOGW(TAG, "Login failed");
-        s_login_attempts++;
-        if (s_login_attempts >= RATE_LIMIT_MAX) {
-            s_login_block_until = now + RATE_LIMIT_WINDOW;
+        rl->attempts++;
+        if (rl->attempts >= RATE_LIMIT_MAX) {
+            rl->block_until = now + RATE_LIMIT_WINDOW;
         }
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
-    char client_ip[64] = {0};
-    get_client_ip(req, client_ip, sizeof(client_ip));
     char token[SESSION_TOKEN_LEN] = {0};
     if (!session_create(username, client_ip, token)) {
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    s_login_attempts = 0;
-    s_login_block_until = 0;
+    rl->attempts = 0;
+    rl->block_until = 0;
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
