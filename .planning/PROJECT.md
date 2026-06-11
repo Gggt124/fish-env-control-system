@@ -96,10 +96,10 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ UI-04: Overhaul Wi-Fi Setup page with stepper, loading states, and modal popups. — v1.6
 - ✓ UI-05: Redesign System Status and Hardware/Install pages for better readability and UX. — v1.6
 - ✓ UI-06: Add UI feedback mechanisms (loading spinners, debouncing, modal confirmation). — v1.6
+- ✓ AUTH-01: Implement "Remember Me" persistent session system. — v1.7
 
 ### Active
 
-- [ ] AUTH-01: Implement "Remember Me" persistent session system.
 - [ ] AUTH-02: Implement change Username & Password functionality.
 - [ ] AUTH-03: Implement Credential Recovery mechanism.
 
@@ -192,6 +192,8 @@ Recommended hardware contract (validated):
 | Isolate Auto mode demand tracking using a dedicated s_auto_demand variable | Ensures mode transitions (like from Test ON back to Auto) immediately evaluate conditions without being biased by the physical relay's prior state | ✓ Good |
 | Replace CPU-heavy backdrop blur panel with Empty State Card and sequential fade transitions | Solves low-power GPU repaint issues and improves UX visual clarity | ✓ Good |
 | Align task watchdog timeout default to 10s and feed loop at 5s | Resolves configuration comment drift and provides conservative CPU starvation protection | ✓ Good |
+| Use stateful in-memory slot-based session store instead of stateless JWT | Unreliable mbedtls setup on ESP-IDF was producing signature mismatches (uninitialized memory stack junk), blocking the login flow. | ✓ Good |
+| Remove IP binding from session validation | Ensures connectivity is not dropped during SoftAP/STA fallback routing and offline operations. | ✓ Good |
 
 ## Evolution
 
@@ -211,4 +213,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-11 for active milestone v1.7 initiation*
+*Last updated: 2026-06-11 after Phase 1*

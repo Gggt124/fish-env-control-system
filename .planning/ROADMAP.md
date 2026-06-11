@@ -65,6 +65,6 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete   | 2026-06-11 |
+| 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
 | 2. Credential Management UI & Logic | v1.7 | 0/0 | Not started | - |
 | 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/0 | Not started | - |

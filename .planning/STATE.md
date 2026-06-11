@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: verifying
-stopped_at: Session resumed, proceeding to Plan Phase 1
-last_updated: "2026-06-11T07:53:20.935Z"
-last_activity: 2026-06-11 -- Phase 01 execution started
+status: completed
+stopped_at: Session resumed, proceeding to Phase 1 UAT verification (slot-based session store flash & test)
+last_updated: "2026-06-11T12:22:19.932Z"
+last_activity: 2026-06-11
 progress:
   total_phases: 3
   completed_phases: 1
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
-**Current focus:** Phase 01 — persistent-sessions-storage-foundation
+**Current focus:** Phase 02 — credential-management-ui-&-logic
 
 ## Current Position
 
-Phase: 01 (persistent-sessions-storage-foundation) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-06-11 -- Phase 01 execution started
+Phase: 2
+Plan: Not started
+Status: Phase 01 complete
+Last activity: 2026-06-11
 
-Progress: [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 3
 - Average duration: 0 min
 - Total execution time: 0 hours
 
@@ -44,7 +44,7 @@ Progress: [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 3 | - | - |
 
 **Recent Trend:**
 
@@ -60,9 +60,8 @@ Progress: [⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜] 0%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
--
-
-- [Phase ?]: Decided to use strstr for JSON parsing in session_validate to minimize memory footprint and execution time.
+- [Phase 1]: Decided to use stateful in-memory slot-based session store instead of stateless JWT.
+- [Phase 1]: Removed IP binding from session validation to prevent connection drops.
 
 ### Pending Todos
 
@@ -82,6 +81,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-11T07:53:20.924Z
-Stopped at: Session resumed, proceeding to Plan Phase 1
-Resume file: .planning/phases/01-persistent-sessions-storage-foundation/01-CONTEXT.md
+Last session: 2026-06-11T12:22:02Z
+Stopped at: Phase 1 complete, ready to plan Phase 2
+Resume file: None

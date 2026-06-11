@@ -198,9 +198,9 @@ void sign_jwt(const char *key, size_t key_len, const char *payload, size_t paylo
 |---|-------|---------|---------------|
 | A1 | `mbedtls` includes Base64 encoding | Standard Stack | High. We would need to implement Base64 manually if omitted from the IDF build. (Verified visually, generally true in ESP-IDF). |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **IPv6 Support**
+1. **IPv6 Support** - RESOLVED
    - What we know: ESP-IDF HTTP server uses IPv6 sockets internally.
    - What's unclear: Does the project have IPv6 enabled globally, or will it only see IPv4-mapped IPv6 addresses?
    - Recommendation: Store the IP string exactly as `inet_ntop` formats it (e.g. `::ffff:192.168.4.2`), as string comparison will still work regardless of the presentation format.
