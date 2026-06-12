@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: complete
 phase: 02-credential-management-ui-logic
 source: [02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md, 02-04-SUMMARY.md]
 started: 2026-06-12T17:20:02+07:00
@@ -26,22 +26,20 @@ result: pass
 
 ### 4. Invalid Current Password
 expected: In the Change Password modal, entering an incorrect current password shows an error message and does not change the credentials.
-result: issue
-reported: "ลองใส่รหัสผ่านผิด แล้วกดเปลี่ยน มันเป็นแบบนี้ loading state ค้างแล้วก็เด้งมาหน้า login อีก"
-severity: major
+result: pass
 
 ## Summary
 
 total: 4
-passed: 3
-issues: 1
+passed: 4
+issues: 0
 pending: 0
 skipped: 0
 
 ## Gaps
 
 - truth: "In the Change Password modal, entering an incorrect current password shows an error message and does not change the credentials."
-  status: failed
+  status: resolved
   reason: "User reported: ลองใส่รหัสผ่านผิด แล้วกดเปลี่ยน มันเป็นแบบนี้ loading state ค้างแล้วก็เด้งมาหน้า login อีก"
   severity: major
   test: 4
