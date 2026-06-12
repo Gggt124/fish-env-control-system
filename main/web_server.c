@@ -1904,6 +1904,7 @@ typedef struct {
     char ip[64];
     int attempts;
     int64_t block_until;
+    int64_t last_seen;
 } login_rate_limit_t;
 
 /* POST /api/login */
@@ -1914,11 +1915,13 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     char client_ip[64] = {0};
     get_client_ip(req, client_ip, sizeof(client_ip));
 
+    int64_t now = esp_timer_get_time() / 1000000;
+
     taskENTER_CRITICAL(&s_web_diag_lock);
     login_rate_limit_t *rl = NULL;
     int target_idx = -1;
     for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
-        if (strcmp(s_rate_limits[i].ip, client_ip) == 0) {
+        if (s_rate_limits[i].ip[0] != '\0' && strcmp(s_rate_limits[i].ip, client_ip) == 0) {
             rl = &s_rate_limits[i];
             target_idx = i;
             break;
@@ -1927,14 +1930,14 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (!rl) {
         int evict_idx = 0;
-        int64_t oldest = s_rate_limits[0].block_until;
+        int64_t oldest = INT64_MAX;
         for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
             if (s_rate_limits[i].ip[0] == '\0') {
                 evict_idx = i;
                 break;
             }
-            if (s_rate_limits[i].block_until < oldest) {
-                oldest = s_rate_limits[i].block_until;
+            if (s_rate_limits[i].last_seen < oldest) {
+                oldest = s_rate_limits[i].last_seen;
                 evict_idx = i;
             }
         }
@@ -1945,6 +1948,8 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         rl->block_until = 0;
     }
     
+    rl->last_seen = now;
+    
     int64_t block_until = rl->block_until;
     taskEXIT_CRITICAL(&s_web_diag_lock);
 
@@ -1952,7 +1957,6 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
-    int64_t now = esp_timer_get_time() / 1000000;
     if (block_until > now) {
         char resp[128];
         int remaining = (int)(block_until - now);
@@ -2160,7 +2164,7 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"store_failed\"}", "500 Internal Server Error");
     }
 
-    session_regenerate_secret();
+    session_invalidate_all();
 
     cJSON_Delete(root);
     return send_json(req, "{\"ok\":true}", "200 OK");
