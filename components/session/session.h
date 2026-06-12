@@ -19,6 +19,7 @@ bool session_init(void);
 bool session_create(const char *username, const char *client_ip, char token_out[SESSION_TOKEN_LEN]);
 bool session_validate(const char *token, const char *client_ip);
 void session_destroy(const char *token);
+void session_regenerate_secret(void);
 
 #ifdef __cplusplus
 }

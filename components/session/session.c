@@ -237,3 +237,18 @@ void session_destroy(const char *token)
     // JWT is stateless; destruction is handled client-side by deleting the cookie.
     (void)token;
 }
+
+void session_regenerate_secret(void)
+{
+    bootloader_random_enable();
+    for (int i = 0; i < sizeof(s_jwt_secret); i++) {
+        s_jwt_secret[i] = esp_random() & 0xFF;
+    }
+    bootloader_random_disable();
+    if (nvs_store_set_jwt_secret(s_jwt_secret)) {
+        ESP_LOGI(TAG, "session_regenerate_secret: new JWT secret generated and saved");
+        s_secret_ready = true;
+    } else {
+        ESP_LOGE(TAG, "session_regenerate_secret: failed to save new JWT secret to NVS");
+    }
+}
