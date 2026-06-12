@@ -44,9 +44,9 @@
 
 **Plans**: 3 plans
 
-- [ ] 02-01-PLAN.md — Core Backend (NVS & Session)
-- [ ] 02-02-PLAN.md — API Integration
-- [ ] 02-03-PLAN.md — Frontend Integration
+- [x] 02-01-PLAN.md — Core Backend (NVS & Session)
+- [x] 02-02-PLAN.md — API Integration
+- [x] 02-03-PLAN.md — Frontend Integration
 
 ### Phase 3: Hardware Recovery & Anti-Lockout
 
@@ -69,5 +69,5 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
-| 2. Credential Management UI & Logic | v1.7 | 0/0 | Not started | - |
+| 2. Credential Management UI & Logic | v1.7 | 3/3 | Complete | 2026-06-12 |
 | 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/0 | Not started | - |
