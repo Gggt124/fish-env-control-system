@@ -2079,6 +2079,11 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
 
+    char token[SESSION_TOKEN_LEN] = {0};
+    if (get_session_from_request(req, token, sizeof(token))) {
+        session_destroy(token);
+    }
+
     /* Clear cookie */
     httpd_resp_set_hdr(req, "Set-Cookie",
         "session=; Path=/; Max-Age=0; SameSite=Lax");
