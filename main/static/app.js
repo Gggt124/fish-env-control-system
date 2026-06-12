@@ -302,6 +302,11 @@ var HARDWARE_FIELDS = [
 function initDashboard() {
     initPumpDashboard();
     initCoolingDashboard();
+    
+    var pwdForm = document.getElementById('password-form');
+    if (pwdForm) {
+        pwdForm.onsubmit = doChangePassword;
+    }
 }
 
 function initPumpDashboard() {
@@ -2554,6 +2559,82 @@ function escJs(str) {
     return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+
+/* ======== Change Password ======== */
+
+function openPasswordModal() {
+    var modal = document.getElementById('password-modal');
+    if (modal) {
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-username').value = '';
+        document.getElementById('new-password').value = '';
+        var errEl = document.getElementById('password-error');
+        if (errEl) {
+            errEl.classList.add('hidden');
+            errEl.textContent = '';
+        }
+        modal.classList.remove('hidden');
+    }
+}
+
+function closePasswordModal() {
+    var modal = document.getElementById('password-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function doChangePassword(e) {
+    if (e) e.preventDefault();
+    var currentPassword = document.getElementById('current-password').value;
+    var newUsername = document.getElementById('new-username').value.trim();
+    var newPassword = document.getElementById('new-password').value;
+    var errEl = document.getElementById('password-error');
+    var btn = document.getElementById('password-save-btn');
+
+    if (errEl) errEl.classList.add('hidden');
+    setLoading(btn, true);
+
+    apiGet('/api/auth/nonce', function(err, data) {
+        if (err || !data || !data.ok || !data.nonce) {
+            setLoading(btn, false);
+            if (errEl) {
+                errEl.classList.remove('hidden');
+                errEl.textContent = 'ไม่สามารถดึงข้อมูล nonce ได้ กรุณาลองใหม่';
+            }
+            return;
+        }
+
+        var payload = {
+            nonce: data.nonce,
+            current_password: currentPassword,
+            new_password: newPassword
+        };
+        if (newUsername) {
+            payload.new_username = newUsername;
+        }
+
+        apiPost('/api/auth/credentials', payload, function(err2, data2) {
+            setLoading(btn, false);
+            if (err2 || !data2 || !data2.ok) {
+                if (errEl) {
+                    errEl.classList.remove('hidden');
+                    if (data2 && data2.error === 'invalid_credentials') {
+                        errEl.textContent = 'รหัสผ่านเดิมไม่ถูกต้อง';
+                    } else {
+                        errEl.textContent = 'เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่';
+                    }
+                }
+                return;
+            }
+
+            closePasswordModal();
+            showToast('เปลี่ยนรหัสผ่านเรียบร้อย ระบบจะนำคุณออกเพื่อล็อกอินใหม่', 'success');
+            setTimeout(function() {
+                document.cookie = 'session=; Path=/; Max-Age=0';
+                navigateTo('/login');
+            }, 2500);
+        });
+    });
+}
 
 /* ======== SPA Routing ======== */
 

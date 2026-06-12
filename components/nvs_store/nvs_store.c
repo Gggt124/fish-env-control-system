@@ -185,6 +185,52 @@ bool nvs_store_get_jwt_secret(uint8_t secret[32])
     return (ret == ESP_OK && required_size == 32);
 }
 
+bool nvs_store_get_credentials(char *username_out, size_t user_len, char *password_out, size_t pass_len)
+{
+    if (!username_out || !password_out || user_len == 0 || pass_len == 0) return false;
+
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle);
+    bool loaded = false;
+
+    if (err == ESP_OK) {
+        size_t u_len = user_len;
+        size_t p_len = pass_len;
+        if (nvs_get_str(handle, "admin_user", username_out, &u_len) == ESP_OK &&
+            nvs_get_str(handle, "admin_pass", password_out, &p_len) == ESP_OK) {
+            loaded = true;
+        }
+        nvs_close(handle);
+    }
+
+    if (!loaded) {
+        strncpy(username_out, APP_TEMPLATE_DEFAULT_USERNAME, user_len);
+        username_out[user_len - 1] = '\0';
+        strncpy(password_out, APP_TEMPLATE_DEFAULT_PASSWORD, pass_len);
+        password_out[pass_len - 1] = '\0';
+    }
+
+    return true;
+}
+
+bool nvs_store_set_credentials(const char *username, const char *password)
+{
+    if (!username || !password || username[0] == '\0' || password[0] == '\0') return false;
+
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+
+    bool ok = true;
+    if (nvs_set_str(handle, "admin_user", username) != ESP_OK) ok = false;
+    if (nvs_set_str(handle, "admin_pass", password) != ESP_OK) ok = false;
+
+    if (ok && nvs_commit(handle) != ESP_OK) {
+        ok = false;
+    }
+    nvs_close(handle);
+    return ok;
+}
+
 bool nvs_store_save_wifi(const char *ssid, const char *password)
 {
     nvs_handle_t handle;
