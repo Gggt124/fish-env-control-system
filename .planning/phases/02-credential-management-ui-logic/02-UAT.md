@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-credential-management-ui-logic
 source: [02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md, 02-04-SUMMARY.md]
 started: 2026-06-12T17:20:02+07:00
@@ -45,6 +45,13 @@ skipped: 0
   reason: "User reported: ลองใส่รหัสผ่านผิด แล้วกดเปลี่ยน มันเป็นแบบนี้ loading state ค้างแล้วก็เด้งมาหน้า login อีก"
   severity: major
   test: 4
-  artifacts: []
-  missing: []
+  root_cause: "When a user enters an incorrect current password, backend returns 401 Unauthorized, which triggers frontend's global interceptor to clear session and redirect to /login."
+  artifacts:
+    - path: "main/web_server.c"
+      issue: "Returns 401 Unauthorized for invalid_credentials"
+    - path: "main/static/app.js"
+      issue: "Global 401 interceptor catches this and aborts modal flow"
+  missing:
+    - "Change HTTP status code from 401 to 400 in backend when current password does not match"
+  debug_session: ".planning/debug/auth-invalid-current-password.md"
 
