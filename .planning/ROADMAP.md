@@ -42,8 +42,11 @@
   3. Changing password immediately invalidates all active sessions (user is forced to log in again).
   4. System rejects replay attacks during credential change.
 
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+- [ ] 02-01-PLAN.md — Core Backend (NVS & Session)
+- [ ] 02-02-PLAN.md — API Integration
+- [ ] 02-03-PLAN.md — Frontend Integration
 
 ### Phase 3: Hardware Recovery & Anti-Lockout
 
