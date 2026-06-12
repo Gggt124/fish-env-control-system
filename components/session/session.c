@@ -104,8 +104,14 @@ bool session_validate(const char *token, const char *client_ip)
         if (s_slots[i].active && 
             strcmp(s_slots[i].token, token) == 0 && 
             strcmp(s_slots[i].ip, client_ip) == 0) {
-            s_slots[i].last_used = esp_timer_get_time();
-            valid = true;
+            int64_t now = esp_timer_get_time();
+            if ((now - s_slots[i].last_used) > (int64_t)SESSION_MAX_AGE_SEC * 1000000) {
+                s_slots[i].active = false;
+                valid = false;
+            } else {
+                s_slots[i].last_used = now;
+                valid = true;
+            }
             break;
         }
     }
