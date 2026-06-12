@@ -14,6 +14,7 @@ static const char *TAG = "session";
 
 typedef struct {
     char token[SESSION_TOKEN_LEN];
+    char username[32];
     char ip[64];
     bool active;
     int64_t last_used;
@@ -37,6 +38,7 @@ bool session_init(void)
         s_slots[i].active = false;
         s_slots[i].last_used = 0;
         memset(s_slots[i].token, 0, sizeof(s_slots[i].token));
+        memset(s_slots[i].username, 0, sizeof(s_slots[i].username));
         memset(s_slots[i].ip, 0, sizeof(s_slots[i].ip));
     }
     xSemaphoreGive(s_session_mutex);
@@ -77,6 +79,9 @@ bool session_create(const char *username, const char *client_ip, char token_out[
         strncpy(s_slots[target_idx].token, hex_token, sizeof(s_slots[target_idx].token) - 1);
         s_slots[target_idx].token[sizeof(s_slots[target_idx].token) - 1] = '\0';
         
+        strncpy(s_slots[target_idx].username, username, sizeof(s_slots[target_idx].username) - 1);
+        s_slots[target_idx].username[sizeof(s_slots[target_idx].username) - 1] = '\0';
+
         strncpy(s_slots[target_idx].ip, client_ip, sizeof(s_slots[target_idx].ip) - 1);
         s_slots[target_idx].ip[sizeof(s_slots[target_idx].ip) - 1] = '\0';
         
