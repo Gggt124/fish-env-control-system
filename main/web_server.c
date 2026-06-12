@@ -258,16 +258,19 @@ static bool get_session_from_request(httpd_req_t *req, char *token_out, size_t t
     }
 
     /* Simple parse: find "session=" */
-    const char *start = strstr(cookie_buf, "session=");
-    if (start) {
-        start += 8; /* skip "session=" */
-        const char *end = strchr(start, ';');
-        size_t len = end ? (size_t)(end - start) : strlen(start);
-        if (len >= token_len) len = token_len - 1;
-        memcpy(token_out, start, len);
-        token_out[len] = '\0';
-        free(cookie_buf);
-        return true;
+    const char *start = cookie_buf;
+    while ((start = strstr(start, "session=")) != NULL) {
+        if (start == cookie_buf || *(start - 1) == ' ' || *(start - 1) == ';') {
+            start += 8; /* skip "session=" */
+            const char *end = strchr(start, ';');
+            size_t len = end ? (size_t)(end - start) : strlen(start);
+            if (len >= token_len) len = token_len - 1;
+            memcpy(token_out, start, len);
+            token_out[len] = '\0';
+            free(cookie_buf);
+            return true;
+        }
+        start += 8;
     }
     free(cookie_buf);
     return false;
