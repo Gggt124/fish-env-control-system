@@ -49,9 +49,7 @@ bool session_create(const char *username, const char *client_ip, char token_out[
 
     // Generate 32 random bytes (64 hex chars)
     uint8_t rand_bytes[32];
-    for (int i = 0; i < 32; i++) {
-        rand_bytes[i] = esp_random() & 0xFF;
-    }
+    esp_fill_random(rand_bytes, sizeof(rand_bytes));
 
     char hex_token[SESSION_TOKEN_LEN];
     for (int i = 0; i < 32; i++) {
