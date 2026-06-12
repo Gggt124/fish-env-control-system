@@ -53,6 +53,7 @@ extern const uint8_t _binary_app_js_end[]   asm("_binary_app_js_end");
 static bool s_wifi_disconnect_task_pending = false;
 static portMUX_TYPE s_wifi_disconnect_task_lock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE s_web_diag_lock = portMUX_INITIALIZER_UNLOCKED;
+static char s_auth_nonce[33] = {0};
 static httpd_handle_t s_server = NULL;
 static uint32_t s_json_send_failures = 0;
 static uint32_t s_static_send_failures = 0;
@@ -2022,7 +2023,11 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
     }
 
-    if (strcmp(username, DEFAULT_USERNAME) != 0 || strcmp(password, DEFAULT_PASSWORD) != 0) {
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass));
+
+    if (strcmp(username, stored_user) != 0 || strcmp(password, stored_pass) != 0) {
         ESP_LOGW(TAG, "Login failed");
         taskENTER_CRITICAL(&s_web_diag_lock);
         s_rate_limits[target_idx].attempts++;
@@ -2074,6 +2079,90 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
     httpd_resp_set_hdr(req, "Set-Cookie",
         "session=; Path=/; Max-Age=0; SameSite=Lax");
 
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
+/* GET /api/auth/nonce */
+static esp_err_t handle_api_auth_nonce(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    uint8_t rand_bytes[16];
+    esp_fill_random(rand_bytes, sizeof(rand_bytes));
+    for (int i = 0; i < 16; i++) {
+        sprintf(&s_auth_nonce[i * 2], "%02x", rand_bytes[i]);
+    }
+    s_auth_nonce[32] = '\0';
+
+    char resp[128];
+    snprintf(resp, sizeof(resp), "{\"ok\":true,\"nonce\":\"%s\"}", s_auth_nonce);
+    return send_json(req, resp, "200 OK");
+}
+
+/* POST /api/auth/credentials */
+static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, false)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    char body[512] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
+    }
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_json\"}", "400 Bad Request");
+    }
+
+    cJSON *n = cJSON_GetObjectItem(root, "nonce");
+    cJSON *cp = cJSON_GetObjectItem(root, "current_password");
+    cJSON *nu = cJSON_GetObjectItem(root, "new_username");
+    cJSON *np = cJSON_GetObjectItem(root, "new_password");
+
+    if (!n || !cJSON_IsString(n) || !cp || !cJSON_IsString(cp) || !np || !cJSON_IsString(np)) {
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "400 Bad Request");
+    }
+
+    if (s_auth_nonce[0] == '\0' || strcmp(n->valuestring, s_auth_nonce) != 0) {
+        s_auth_nonce[0] = '\0';
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_nonce\"}", "400 Bad Request");
+    }
+    s_auth_nonce[0] = '\0'; // prevent replay
+
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass));
+
+    if (strcmp(cp->valuestring, stored_pass) != 0) {
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
+    }
+
+    const char *new_user_str = (nu && cJSON_IsString(nu) && strlen(nu->valuestring) > 0) ? nu->valuestring : stored_user;
+    const char *new_pass_str = np->valuestring;
+
+    if (!is_valid_utf8_printable(new_user_str, 64) || !is_valid_utf8_printable(new_pass_str, 64)) {
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
+    }
+
+    if (!nvs_store_set_credentials(new_user_str, new_pass_str)) {
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"store_failed\"}", "500 Internal Server Error");
+    }
+
+    session_regenerate_secret();
+
+    cJSON_Delete(root);
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
 
@@ -3067,6 +3156,8 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/ncsi.txt",       .method = HTTP_GET,  .handler = handle_captive_probe },
     { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login },
     { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout },
+    { .uri = "/api/auth/nonce",.method = HTTP_GET,  .handler = handle_api_auth_nonce },
+    { .uri = "/api/auth/credentials", .method = HTTP_POST, .handler = handle_api_auth_credentials },
     { .uri = "/api/wifi/scan", .method = HTTP_GET,  .handler = handle_api_wifi_scan },
     { .uri = "/api/wifi/connect", .method = HTTP_POST, .handler = handle_api_wifi_connect },
     { .uri = "/api/wifi/disconnect", .method = HTTP_POST, .handler = handle_api_wifi_disconnect },
