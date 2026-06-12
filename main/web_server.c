@@ -2156,7 +2156,7 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
 
     if (strcmp(cp->valuestring, stored_pass) != 0) {
         cJSON_Delete(root);
-        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "400 Bad Request");
     }
 
     const char *new_user_str = (nu && cJSON_IsString(nu) && strlen(nu->valuestring) > 0) ? nu->valuestring : stored_user;
