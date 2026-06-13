@@ -2773,12 +2773,12 @@ window.addEventListener('popstate', handleRoute);
 function confirmStaging() {
     apiPost('/api/confirm', {}, function(err, data) {
         if (err) {
-            alert('ยืนยันไม่สำเร็จ: ' + err.message);
+            showToast('ยืนยันไม่สำเร็จ: ' + err.message, 'error');
         } else if (data && data.ok) {
-            alert('ยืนยันการตั้งค่าสำเร็จ');
-            window.location.reload();
+            showToast('ยืนยันการตั้งค่าสำเร็จ', 'success');
+            setTimeout(function() { window.location.reload(); }, 1500);
         } else {
-            alert('ยืนยันไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'));
+            showToast('ยืนยันไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'), 'error');
         }
     });
 }
@@ -2786,12 +2786,12 @@ function confirmStaging() {
 function cancelStaging() {
     apiDelete('/api/confirm', function(err, data) {
         if (err) {
-            alert('ยกเลิกไม่สำเร็จ: ' + err.message);
+            showToast('ยกเลิกไม่สำเร็จ: ' + err.message, 'error');
         } else if (data && data.ok) {
-            alert('ยกเลิกการตั้งค่าเรียบร้อยแล้ว อุปกรณ์กำลังรีบูตเพื่อย้อนกลับ...');
-            window.location.reload();
+            showToast('ยกเลิกการตั้งค่าเรียบร้อยแล้ว อุปกรณ์กำลังรีบูตเพื่อย้อนกลับ...', 'success');
+            setTimeout(function() { window.location.reload(); }, 1500);
         } else {
-            alert('ยกเลิกไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'));
+            showToast('ยกเลิกไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'), 'error');
         }
     });
 }
