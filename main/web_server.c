@@ -3194,6 +3194,7 @@ static web_route_diag_t s_routes[] = {
 
 static esp_err_t handle_instrumented_route(httpd_req_t *req)
 {
+    wifi_manager_reset_ap_timeout();
     web_route_diag_t *route = (web_route_diag_t *)req->user_ctx;
     if (!route || !route->handler) {
         ESP_LOGE(TAG, "[HTTP_REQ] missing route context uri=%s fd=%d",
