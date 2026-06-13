@@ -15,6 +15,11 @@ static const char *TAG = "nvs_store";
 #define NVS_KEY_GW       "sta_gw"
 #define NVS_KEY_MASK     "sta_netmask"
 #define NVS_KEY_DNS      "sta_dns"
+#define NVS_KEY_STG_TYPE      "stg_type"
+#define NVS_KEY_STG_SSID      "stg_sta_ssid"
+#define NVS_KEY_STG_PASS      "stg_sta_pass"
+#define NVS_KEY_STG_USER      "stg_admin_user"
+#define NVS_KEY_STG_CRED_PASS "stg_admin_pass"
 
 #define NVS_SESSION_NAMESPACE "session"
 #define NVS_KEY_JWT_SECRET "jwt_secret"
@@ -194,11 +199,23 @@ bool nvs_store_get_credentials(char *username_out, size_t user_len, char *passwo
     bool loaded = false;
 
     if (err == ESP_OK) {
-        size_t u_len = user_len;
-        size_t p_len = pass_len;
-        if (nvs_get_str(handle, "admin_user", username_out, &u_len) == ESP_OK &&
-            nvs_get_str(handle, "admin_pass", password_out, &p_len) == ESP_OK) {
-            loaded = true;
+        uint8_t stg_type = 0;
+        esp_err_t stg_err = nvs_get_u8(handle, NVS_KEY_STG_TYPE, &stg_type);
+        if (stg_err == ESP_OK && stg_type == 2) {
+            size_t u_len = user_len;
+            size_t p_len = pass_len;
+            if (nvs_get_str(handle, NVS_KEY_STG_USER, username_out, &u_len) == ESP_OK &&
+                nvs_get_str(handle, NVS_KEY_STG_CRED_PASS, password_out, &p_len) == ESP_OK) {
+                loaded = true;
+            }
+        }
+        if (!loaded) {
+            size_t u_len = user_len;
+            size_t p_len = pass_len;
+            if (nvs_get_str(handle, "admin_user", username_out, &u_len) == ESP_OK &&
+                nvs_get_str(handle, "admin_pass", password_out, &p_len) == ESP_OK) {
+                loaded = true;
+            }
         }
         nvs_close(handle);
     }
@@ -322,6 +339,29 @@ bool nvs_store_load_wifi_profiles(wifi_profile_t *profiles, int *count_out, int 
     memset(profiles, 0, sizeof(wifi_profile_t) * WIFI_PROFILE_MAX);
     *count_out   = 0;
     *auto_idx_out = -1;
+
+    uint8_t stg_type = 0;
+    if (nvs_store_get_staging_type(&stg_type) && stg_type == 1) {
+        nvs_handle_t handle;
+        if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle) == ESP_OK) {
+            char ssid[33] = {0};
+            char pass[65] = {0};
+            size_t ssid_len = sizeof(ssid);
+            size_t pass_len = sizeof(pass);
+            esp_err_t err_ssid = nvs_get_str(handle, NVS_KEY_STG_SSID, ssid, &ssid_len);
+            esp_err_t err_pass = nvs_get_str(handle, NVS_KEY_STG_PASS, pass, &pass_len);
+            nvs_close(handle);
+            if (err_ssid == ESP_OK) {
+                strncpy(profiles[0].ssid, ssid, sizeof(profiles[0].ssid) - 1);
+                if (err_pass == ESP_OK) {
+                    strncpy(profiles[0].pass, pass, sizeof(profiles[0].pass) - 1);
+                }
+                *count_out = 1;
+                *auto_idx_out = 0;
+                return true;
+            }
+        }
+    }
 
     nvs_handle_t h;
     esp_err_t ret = nvs_open(NVS_PROF_NAMESPACE, NVS_READONLY, &h);
@@ -1120,6 +1160,120 @@ bool nvs_store_clear_cooling_settings(void)
     if (ok && nvs_commit(handle) != ESP_OK) ok = false;
     nvs_close(handle);
     return ok;
+}
+
+bool nvs_store_get_staging_type(uint8_t *type)
+{
+    if (!type) return false;
+    *type = 0;
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) {
+        return false;
+    }
+    uint8_t val = 0;
+    esp_err_t err = nvs_get_u8(handle, NVS_KEY_STG_TYPE, &val);
+    nvs_close(handle);
+    if (err == ESP_OK) {
+        *type = val;
+        return true;
+    } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+        *type = 0;
+        return true;
+    }
+    return false;
+}
+
+bool nvs_store_stage_wifi(const char *ssid, const char *pass)
+{
+    if (!ssid || ssid[0] == '\0') return false;
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+    bool ok = true;
+    if (nvs_set_u8(handle, NVS_KEY_STG_TYPE, 1) != ESP_OK) ok = false;
+    if (nvs_set_str(handle, NVS_KEY_STG_SSID, ssid) != ESP_OK) ok = false;
+    if (pass) {
+        if (nvs_set_str(handle, NVS_KEY_STG_PASS, pass) != ESP_OK) ok = false;
+    } else {
+        if (nvs_erase_key(handle, NVS_KEY_STG_PASS) != ESP_OK) ok = false;
+    }
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_stage_creds(const char *user, const char *pass)
+{
+    if (!user || user[0] == '\0' || !pass || pass[0] == '\0') return false;
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+    bool ok = true;
+    if (nvs_set_u8(handle, NVS_KEY_STG_TYPE, 2) != ESP_OK) ok = false;
+    if (nvs_set_str(handle, NVS_KEY_STG_USER, user) != ESP_OK) ok = false;
+    if (nvs_set_str(handle, NVS_KEY_STG_CRED_PASS, pass) != ESP_OK) ok = false;
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+bool nvs_store_rollback_staging(void)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
+    bool ok = true;
+    if (nvs_set_u8(handle, NVS_KEY_STG_TYPE, 0) != ESP_OK) ok = false;
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
+uint8_t nvs_store_commit_staging(void)
+{
+    uint8_t type = 0;
+    if (!nvs_store_get_staging_type(&type) || type == 0) {
+        return 0;
+    }
+
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) {
+        return 0;
+    }
+
+    if (type == 1) {
+        char ssid[33] = {0};
+        char pass[65] = {0};
+        size_t ssid_len = sizeof(ssid);
+        size_t pass_len = sizeof(pass);
+        esp_err_t err_ssid = nvs_get_str(handle, NVS_KEY_STG_SSID, ssid, &ssid_len);
+        esp_err_t err_pass = nvs_get_str(handle, NVS_KEY_STG_PASS, pass, &pass_len);
+        nvs_close(handle);
+
+        if (err_ssid == ESP_OK) {
+            nvs_store_save_wifi_profile(ssid, (err_pass == ESP_OK) ? pass : "");
+        }
+    } else if (type == 2) {
+        char user[33] = {0};
+        char pass[65] = {0};
+        size_t user_len = sizeof(user);
+        size_t pass_len = sizeof(pass);
+        esp_err_t err_user = nvs_get_str(handle, NVS_KEY_STG_USER, user, &user_len);
+        esp_err_t err_pass = nvs_get_str(handle, NVS_KEY_STG_CRED_PASS, pass, &pass_len);
+        
+        if (err_user == ESP_OK && err_pass == ESP_OK) {
+            nvs_set_str(handle, "admin_user", user);
+            nvs_set_str(handle, "admin_pass", pass);
+        }
+        nvs_close(handle);
+    } else {
+        nvs_close(handle);
+    }
+
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) == ESP_OK) {
+        nvs_set_u8(handle, NVS_KEY_STG_TYPE, 0);
+        nvs_commit(handle);
+        nvs_close(handle);
+    }
+
+    return type;
 }
 
 
