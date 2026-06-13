@@ -59,7 +59,12 @@
   2. SoftAP fallback only opens when user physically presses the recovery button.
   3. If new credentials or Wi-Fi settings fail validation, the device reboots and rolls back to previous known-good settings.
 
-**Plans**: TBD
+**Plans**: 4 plans
+
+- [ ] 03-01-PLAN.md — SoftAP manual trigger and timeout
+- [ ] 03-02-PLAN.md — NVS staging and factory reset
+- [ ] 03-03-PLAN.md — API integration and confirm endpoint
+- [ ] 03-04-PLAN.md — Hardware button UI and boot coordination
 
 ## Progress
 
@@ -70,4 +75,4 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 |-------|-----------|----------------|--------|-----------|
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
 | 2. Credential Management UI & Logic | v1.7 | 3/3 | Complete | 2026-06-12 |
-| 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/0 | Not started | - |
+| 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/4 | Not started | - |
