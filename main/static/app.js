@@ -68,7 +68,20 @@ function apiGet(url, cb, customTimeout) {
     xhr.timeout = customTimeout || API_TIMEOUT_MS;
     xhr.onload = function() {
         if (xhr.status === 200) {
-            try { finish(null, JSON.parse(xhr.responseText)); }
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (url === '/api/status' && data && data.ok) {
+                    var banners = document.querySelectorAll('.staging-banner');
+                    for (var i = 0; i < banners.length; i++) {
+                        if (data.stg_type > 0) {
+                            banners[i].classList.remove('hidden');
+                        } else {
+                            banners[i].classList.add('hidden');
+                        }
+                    }
+                }
+                finish(null, data);
+            }
             catch(e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
@@ -113,6 +126,32 @@ function apiPost(url, body, cb) {
     xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
     xhr.onabort = function() { finish(new Error('Request aborted'), null); };
     xhr.send(JSON.stringify(body));
+}
+
+function apiDelete(url, cb) {
+    var xhr = new XMLHttpRequest();
+    var done = false;
+    function finish(err, data) {
+        if (done) return;
+        done = true;
+        cb(err, data);
+    }
+    xhr.open('DELETE', url, true);
+    xhr.timeout = API_TIMEOUT_MS;
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try { finish(null, JSON.parse(xhr.responseText)); }
+            catch(e) { finish(e, null); }
+        } else if (xhr.status === 401 && window.location.pathname !== '/login') {
+            handleUnauthorized();
+        } else {
+            finish(new Error('HTTP ' + xhr.status), null);
+        }
+    };
+    xhr.onerror = function() { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.send();
 }
 
 /* ======== Toast Notifications ======== */
@@ -2730,4 +2769,30 @@ window.addEventListener('popstate', handleRoute);
 
     handleRoute();
 })();
+
+function confirmStaging() {
+    apiPost('/api/confirm', {}, function(err, data) {
+        if (err) {
+            alert('ยืนยันไม่สำเร็จ: ' + err.message);
+        } else if (data && data.ok) {
+            alert('ยืนยันการตั้งค่าสำเร็จ');
+            window.location.reload();
+        } else {
+            alert('ยืนยันไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'));
+        }
+    });
+}
+
+function cancelStaging() {
+    apiDelete('/api/confirm', function(err, data) {
+        if (err) {
+            alert('ยกเลิกไม่สำเร็จ: ' + err.message);
+        } else if (data && data.ok) {
+            alert('ยกเลิกการตั้งค่าเรียบร้อยแล้ว อุปกรณ์กำลังรีบูตเพื่อย้อนกลับ...');
+            window.location.reload();
+        } else {
+            alert('ยกเลิกไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'));
+        }
+    });
+}
 
