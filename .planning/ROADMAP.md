@@ -7,7 +7,7 @@
 ## Phases
 
 - [x] **Phase 1: Persistent Sessions & Storage Foundation** - Establish the core security token architecture required for authentication (completed 2026-06-11)
-- [ ] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password
+- [x] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password (completed 2026-06-13)
 - [x] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss (completed 2026-06-13)
 
 ## Phase Details
@@ -58,7 +58,7 @@
   1. User can hold the recovery button to reset credentials to `admin`/`admin123` without losing other settings.
   2. SoftAP fallback only opens when user physically presses the recovery button.
   3. If new credentials or Wi-Fi settings fail validation, the device reboots and rolls back to previous known-good settings.
-**Plans**: 4 plans
+**Plans**: 5 plans
 **Wave 1**
 
 - [x] 03-01-PLAN.md — SoftAP manual trigger and timeout
@@ -68,6 +68,7 @@
 
 - [x] 03-03-PLAN.md — API integration and confirm endpoint
 - [x] 03-04-PLAN.md — Hardware button UI and boot coordination
+- [x] 03-05-PLAN.md — Fix UX issues in the confirmation flow and skip staging for known Wi-Fi profiles
 
 ## Progress
 
@@ -77,5 +78,5 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
-| 2. Credential Management UI & Logic | v1.7 | 3/3 | Complete | 2026-06-12 |
-| 3. Hardware Recovery & Anti-Lockout | v1.7 | 4/4 | Complete   | 2026-06-13 |
+| 2. Credential Management UI & Logic | v1.7 | 5/5 | Complete    | 2026-06-13 |
+| 3. Hardware Recovery & Anti-Lockout | v1.7 | 5/5 | Complete   | 2026-06-14 |

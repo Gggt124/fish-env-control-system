@@ -4,14 +4,14 @@ milestone: v1.7
 milestone_name: milestone
 status: executing
 stopped_at: Completed 03-hardware-recovery-anti-lockout-03-04-PLAN.md
-last_updated: "2026-06-13T13:30:20.088Z"
-last_activity: 2026-06-13 -- Phase 03 Plan 01 execution completed
+last_updated: "2026-06-13T15:09:14.217Z"
+last_activity: 2026-06-13
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 11
-  percent: 67
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 ## Current Position
 
-Phase: 03 (hardware-recovery-anti-lockout)
-Plan: 4 of 4
+Phase: 03
+Plan: Not started
 Status: Ready to execute 03-02-PLAN.md
-Last activity: 2026-06-13 -- Phase 03 Plan 01 execution completed
+Last activity: 2026-06-13
 
 Progress: [███████░░░] 70%
 
@@ -36,7 +36,7 @@ Progress: [███████░░░] 70%
 
 **Velocity:**
 
-- Total plans completed: 3
+- Total plans completed: 8
 - Average duration: 0 min
 - Total execution time: 0 hours
 
@@ -45,6 +45,7 @@ Progress: [███████░░░] 70%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3 | - | - |
+| 02 | 5 | - | - |
 
 **Recent Trend:**
 
@@ -55,7 +56,7 @@ Progress: [███████░░░] 70%
 | Phase 03 P01 | 15 | 3 tasks | 4 files |
 | Phase 03-hardware-recovery-anti-lockout P02 | 10 | 2 tasks | 2 files |
 | Phase 03 P03 | 10m | 4 tasks | 5 files |
-| Phase 03-hardware-recovery-anti-lockout P04 | 20 | 2 tasks | 2 files |
+| Phase 03-hardware-recovery-anti-lockout P05 | 5 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Implemented software bootloader veto on strapping GPIO 0 to prevent download-mode holds from causing factory resets.
 - [Phase 03]: Used software mutual exclusion to ignore simultaneous presses on internal and external recovery buttons.
 - [Phase 03]: Leveraged dual LEDs to display multi-modal status: solid ON, slow blink, fast blink, and double-blink.
+- [Phase 03]: Replaced blocking alert() calls with non-blocking showToast() for confirmation/rollback flows.
+- [Phase 03]: Removed unconditional session invalidation upon staging confirmation to prevent double redirects.
+- [Phase 03]: Skipped staging for Wi-Fi profiles that match existing credentials in NVS.
 
 ### Pending Todos
 
@@ -100,6 +104,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T13:30:20.063Z
-Stopped at: Completed 03-hardware-recovery-anti-lockout-03-04-PLAN.md
+Last session: 2026-06-14T06:18:02.000Z
+Stopped at: Completed 03-05-PLAN.md
 Resume file: None
