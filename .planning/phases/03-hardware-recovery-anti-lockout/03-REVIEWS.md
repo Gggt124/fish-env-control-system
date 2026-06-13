@@ -1,122 +1,92 @@
 ---
-phase: 03
-reviewers: [gemini, opencode, antigravity]
-reviewed_at: 2026-06-13T12:05:00Z
+phase: 3
+reviewers: [gemini, antigravity, opencode]
+reviewed_at: 2026-06-13T12:33:00Z
 plans_reviewed: [03-01-PLAN.md, 03-02-PLAN.md, 03-03-PLAN.md, 03-04-PLAN.md]
 ---
 
-# Cross-AI Plan Review — Phase 03
+# Cross-AI Plan Review — Phase 3
 
 ## Gemini Review
 
 This review evaluates the four implementation plans for **Phase 3: Hardware Recovery & Anti-Lockout**.
 
 ### 1. Summary
-The overall plan is technically sound and demonstrates a high degree of maturity, particularly in its approach to **NVS staging** and **hardware-software coordination**. The use of a temporary staging namespace in NVS (`stg_` prefix) is a robust pattern for implementing "try-before-you-commit" logic. The plans successfully address the core requirements of physical recovery (RECOV-01, RECOV-02) and autonomous rollback (RECOV-03). The client-aware SoftAP timeout and the mutual exclusion logic for hardware buttons show attention to real-world edge cases.
+The implementation plans are technically mature and demonstrate a deep understanding of the ESP-IDF framework and hardware constraints. The architecture for **NVS Staging** (Plan 02) is particularly well-conceived, providing a robust "sandbox" for configuration changes. The plans successfully address the "Anti-Lockout" requirement by separating the acquisition of connectivity (STA GOT_IP) from the commitment of credentials, ensuring the user can always reach the management interface before changes become permanent. The inclusion of a "Bootloader Veto" for GPIO 0 and the delegation of system-level actions (NVS writes, reboots) to the main loop context are excellent defensive programming practices.
 
 ### 2. Strengths
-*   **Robust Staging Pattern:** Implementing a dedicated `staging_type` and prefixed keys ensures that the system always knows whether it's running on a "trial" configuration or a "trusted" one.
-*   **Client-Aware Timeout:** In Plan 01, checking for active clients (`esp_wifi_ap_get_sta_list`) before shutting down the SoftAP prevents a poor user experience where the setup portal disappears while a user is actively typing.
-*   **Hardware-Software Synergy:** The integration of LED feedback (Blink codes) with internal system states (AP active, Recovery triggered) provides essential "blind" UI for a headless device.
-*   **Clean API Separation:** New APIs like `wifi_manager_start_recovery_ap()` and `nvs_store_factory_reset_credentials()` keep the `app_main` logic clean and delegative.
+*   **Defensive Staging Pattern:** The use of `stg_` prefixed keys in NVS (Plan 02) ensures that a device rebooting after a credential change is still "aware" it is in a trial state, allowing for reliable autonomous rollback.
+*   **Context-Safe Execution:** Plan 03 correctly avoids performing NVS operations or calling `esp_restart()` within `esp_timer` callbacks (daemon task). Delegating these to the `app_main` loop via the `s_trigger_rollback` flag is a best practice.
+*   **Hardware Constraint Awareness:** The "Bootloader Veto" logic in Plan 04 shows critical awareness of the ESP32's strapping pins (GPIO 0). This prevents a user holding the button during power-on (entering Download Mode) from accidentally triggering a factory reset upon subsequent boot.
+*   **Rich Visual Feedback:** The LED state machine (Plan 04) provides essential "blind" UI for a headless device, especially the "Double Blink" pattern to signal a pending staging confirmation.
+*   **Client-Aware AP Timeout:** Resetting the AP timer on client connection (Plan 01) ensures a smooth user experience where the setup portal doesn't disappear while a user is actively configuring the device.
 
 ### 3. Concerns
-*   **Requirement Deviation (RECOV-03) [MEDIUM]:** Plan 01 Task 2 states that `nvs_store_commit()` is called immediately upon `WIFI_EVENT_STA_GOT_IP`. However, **RECOV-03** explicitly requires the device to wait 3 minutes for a user **"Confirm" API call** for *both* Credentials and Wi-Fi updates. Auto-committing on IP acquisition bypasses this manual confirmation step. If the user gets an IP on a network they cannot actually route to, they could still be "locked out" of the management interface.
-*   **GPIO 0 Strapping Conflict [LOW]:** D-01 correctly identifies GPIO 0 (BOOT button). However, since this is an ESP32 strapping pin, if the user holds the button *while* powering on or resetting, the device will enter "Download Mode" instead of booting the application. The `recovery_task` only runs after boot. This should be documented or noted in the code as a known hardware limitation.
-*   **Timer Race Conditions [LOW]:** In Plan 03, a 500ms timer is used to trigger `esp_restart()` after an API call. While usually sufficient, if the network is slow or the response is large, the socket might close before the client receives the `200 OK`.
-*   **Session Invalidation [LOW]:** Plan 02 mentions incrementing `session_gen` for factory resets. Ensure this logic is also applied during `nvs_store_commit()` for credential updates to ensure old sessions are purged once new credentials are confirmed.
+*   **HTTP Response Race Condition [MEDIUM]:** Plan 03 Task 1 mentions scheduling reboots after API calls. If the `esp_restart()` or Wi-Fi disconnection happens too quickly, the HTTP client (browser) may receive a "Network Error" or "Connection Reset" before it can process the `200 OK` response. 
+*   **Rollback Timer Cancellation Race [LOW]:** In Plan 03 Task 2, the `s_cancel_rollback` flag is checked in the main loop. There is a tiny race window where the timer fires and sets `s_trigger_rollback = true` just as the user hits "Confirm". The plan addresses this by resetting `s_trigger_rollback` when `s_cancel_rollback` is detected, which is good, but the logic should be atomic or use a mutex if flags are accessed across tasks.
+*   **GPIO 2 Strapping Behavior [LOW]:** Plan 04 uses GPIO 2 for LED feedback. On many ESP32 modules, GPIO 2 is a strapping pin (MTDI) that must be LOW during boot to enter the correct flash voltage mode. While most DevKits have internal pull-downs, using it as an output is safe only if the external LED circuit doesn't pull the pin HIGH at boot.
+*   **Session Generation Invalidation [LOW]:** When credentials are factory reset (Plan 04), `session_invalidate_all()` is called. Ensure this logic is also triggered when a rollback occurs to prevent "stale" sessions from being valid against the restored older credentials.
 
 ### 4. Suggestions
-*   **Unify the Confirmation Flow:** Modify Plan 01 Task 2 to **not** auto-commit on `GOT_IP`. Instead, let both Wi-Fi and Credential staging rely on the 3-minute "Confirm" timer. Getting an IP should simply be a prerequisite for the user to reach the `/api/confirm` endpoint.
-*   **Add "Staging" LED State:** Consider adding a unique LED pattern (e.g., a "Double Blink") that activates when `nvs_store_get_staging_type() > 0`. This tells the user: *"The device is in a temporary test state; please confirm settings in the UI or I will rollback."*
-*   **AP Timeout Reset on Activity:** In Plan 01 Task 1, ensure that the `s_ap_timeout_timer` is **reset** every time a new client connects to the SoftAP, not just checked at the end of 10 minutes.
-*   **Improve Reboot Reliability:** Instead of a simple timer for `esp_restart()`, consider using the HTTP server's "Post-registration" or "Cleanup" hooks if available, or simply increase the delay to 1000ms to ensure the TCP stack has flushed the response.
+*   **Ensure Reboot Delay:** Explicitly use a `vTaskDelay(pdMS_TO_TICKS(1000))` before calling `esp_restart()` in reboot tasks to allow the TCP stack to flush the response buffers to the client.
+*   **AP Activity Heartbeat:** In Plan 01, consider resetting the `s_ap_timeout_timer` not just on `STACONNECTED`, but also on any successful HTTP request to the web server. This ensures the AP stays open even if a user stays connected but takes a long time between configuration steps.
+*   **Staging LED Priority:** In the `hardware_ui_task`, ensure the "Double Blink" staging pattern takes precedence over the "Solid ON" AP active state. A user needs to know their changes are temporary more than they need to know the AP is simply "on."
+*   **Document GPIO Constraints:** Add a comment in `app_config.h` regarding the strapping nature of GPIO 0 and GPIO 2 to warn future developers against adding heavy pull-up resistors to these lines.
 
 ### 5. Risk Assessment
 **Overall Risk: LOW**
 
-The logic is highly defensive. Even if the web-based "Confirm" mechanism fails, the hardware button provides a guaranteed "escape hatch" to restore access. The staging mechanism protects the device from the most common failure mode: a mistyped Wi-Fi password or forgotten new admin credentials.
-
----
-
-## OpenCode Review
-
-### 1. Summary
-
-The four plans collectively define a coherent hardware-assisted recovery system that successfully addresses all three requirements (RECOV-01, RECOV-02, RECOV-03). The architecture correctly priorities physical input, uses NVS as a staging sandbox, and prevents the most common lockout scenarios via automatic rollback. The plans are well-modularized across components, and the APIs introduced for staging, recovery AP, and the hardware task are appropriately scoped. However, the risk is classified **MEDIUM** because the current codebase has an aggressively simple Wi-Fi retry logic (`STA_MAX_RETRY=1`), automatically starts AP at boot, and does not reboot on Wi-Fi changes. The gap between the current "non-rebooting" state and the planned " reboot-on-change" and "rollback" state machine requires careful sequencing to avoid orphaned NVS staging keys or boot loops.
-
-### 2. Strengths
-
-- **Clear Separation of Concerns:** `wifi_manager` manages network state, `nvs_store` manages data persistence, and `main/` handles web/physical signals. This matches the existing codebase architecture.
-- **Defensive by Design:** The 10-minute SoftAP timeout and 30-second IP-check / 3-minute credential-rollback timers prevent the device from remaining in a partially-secure state indefinitely.
-- **User-friendly Hardware HMI:** The LED feedback mapping (solid, slow blink, fast blink) provides clear, multi-modal physical feedback without requiring a display.
-- **Fail-closed Security:** SoftAP only opens when *physically* demanded; it doesn't expose an open network automatically.
-- **Session Invalidation:** The credential reset correctly triggers a `session_gen` bump (reusing Phase 2 consecrated patterns) to kill stale sessions, preventing a remote attacker from maintaining access after recovery.
-
-### 3. Concerns
-
-- **HIGH — Boot Lockup on Unconfirmed Staging:** If the user stages Wi-Fi or credential changes but reboots happens due to another reason (e.g. brownout, WDT, watchdog), boot will see `staging_type != 0` and start the 30s or 3-minute rollback timers. If the user has no network access (e.g. they are locked out of their Wi-Fi), they cannot reach `/api/confirm`. This can create a boot loop if a power glitch happens during the rollback/deadline period, potentially corrupting the NVS subsystem.
-- **HIGH — "No Free Pages" or NVS Corruption under Stress:** The 10-minute SoftAP timer with re-checking client count, combined with the potential rapid `esp_restart()` calls, could lead to a race condition where NVS commit happens at the same time as an unexpected reset. A `nvs_commit()` or `esp_restart()` during a flash write can corrupt the NVS partition.
-- **MEDIUM — GPIO 0 is BOOT Button:** The plans use `GPIO 0` as `APP_CONFIG_BOOT_BTN_GPIO`. On classic ESP32 DevKit V1, GPIO 0 is a strapping pin. Holding it low on boot puts the chip into download mode, not flashed firmware. The intent in 03-04 is a *press during runtime*. While possible, code must verify that the CPU is not booting into download mode. If the device boots *while* the recovery button is accidentally held, the boot will fail. This is a hardware pitfall.
-- **MEDIUM — LED Output: GPIO 2 and 5 Conflict Assumptions:** GPIO 2 is fine (commonly onboard Blue LED on DevKits, but also something to be aware of as it is connected to the flash chip on some boards). However, the assumption that GPIO 5 is free is good, yet unverified against the existing `docs/hardware.md` pinout. The pump/cooling hardware map currently occupies GPIO 25, 26, 27, 32, and 33. There is no collision on 5, but a formal check should happen.
-- **MEDIUM — No Way to Cancel Rollback Pre-Reboot:** If a user stages changes via the web UI but changes their mind *before* the reboot, there is no `DELETE /api/stage` or cancel mechanism in the plans. They must either reboot and wait for rollback, or reboot and confirm.
-- **LOW — "Confirm" API is a New Surface:** The new `/api/confirm` endpoint introduces another authenticated state change API. The web server must ensure the `Origin`/`Referer` check is also applied to this new POST endpoint.
-
-### 4. Suggestions
-
-- **Suggestion 1: Add Staging Cancel API:** Add a `DELETE /api/confirm` (or `POST /api/rollback`) to the API surface in `03-03-PLAN.md` so the user can clean up a staged change without rebooting.
-- **Suggestion 2: Bootloader Veto on GPIO 0:** In `03-04-PLAN.md`, document or implement a check. If `GPIO 0` is held at boot, explicitly do a `esp_reset_reason_t` check and if it's `ESP_RST_POWERON` or `ESP_RST_EXT` with BOOT button held, skip credentials and just boot. Alternatively, do not rely on `GPIO 0`; use only `GPIO 4` for the recovery button. This avoids the boot/download ambiguity.
-- **Suggestion 3: Single-Source-of-Truth Constant for Timeouts:** Many constants are hardcoded across tasks (10 min, 5 min, 30 sec, 3 min). Consolidate these into `app_config.h` with clear names like `APP_CONFIG_ROLLBACK_TIMEOUT_MS_WIFI`, `APP_CONFIG_ROLLBACK_TIMEOUT_MS_CREDS`, etc.
-- **Suggestion 4: Circuit Breaker for Rollbacks:** In `03-01-PLAN.md` and `03-04-PLAN.md`, add logic into the boot sequence to check consecutive rollback counts. If the device restarts more than, say, 3 times in a row without a successful confirmation, auto-clear all pending staging and revert to fully safe defaults.
-- **Suggestion 5: Confirmation via SoftAP in Wi-Fi Staging Scenario:** In `03-01-PLAN.md`, when `staging_type == 1` (Wi-Fi), if the new Wi-Fi fails but the SoftAP fallback is *not* manually open, the user is "soft-locked" out. Either document that the user must manually trigger SoftAP during the 30s period, or temporarily enable SoftAP in `wifi_manager_begin_staged_ip_check()` to guarantee a confirmation path.
-
-### 5. Risk Assessment
-
-**Overall Risk Level: MEDIUM**
+The design is highly defensive and prioritizes system availability. The combination of hardware-based recovery (Physical Button) and software-based recovery (Rollback Timer) creates a "failsafe-on-failsafe" architecture. The isolation of staging logic within the `nvs_store` component minimizes the footprint of these changes on the core pump control logic.
 
 ---
 
 ## Antigravity Review
 
-**1. Summary**
-The plans provide a robust hardware recovery mechanism, leveraging NVS staging, physical button interactions, and Wi-Fi SoftAP fallback. The architecture successfully isolates risky changes and ensures the device will autonomously recover if misconfigured.
+### 1. Summary
+The plans for Phase 3 outline a highly defensive and resilient approach to hardware recovery and anti-lockout. The introduction of an NVS staging namespace provides a robust "try-before-you-commit" workflow, isolating potentially fatal credential and Wi-Fi changes until they are verified. The hardware button interactions and SoftAP timeouts effectively balance recovery access with security, while preventing issues such as active client drops.
 
-**2. Strengths**
-- Decoupling the physical button task from the NVS update logic ensures safety and modularity.
-- The 30-second IP wait and 3-minute `/api/confirm` checks provide layered protection against being disconnected forever.
-- Hardware feedback via LEDs provides immediate, readable status to the user during recovery.
+### 2. Strengths
+- The staging namespace (`stg_type`) correctly sandboxes volatile settings, protecting the core device access loop.
+- Bootloader veto logic (requiring GPIO 0 to transition from HIGH to LOW) effectively avoids conflicts with ESP32 Download Mode if the button is held during power-up.
+- Client-aware SoftAP timeouts (`esp_wifi_ap_get_sta_list`) prevent the access point from dropping users actively engaged in setup.
+- Explicit `s_trigger_rollback` delegation to the main loop properly isolates FreeRTOS daemon contexts from blocking NVS operations.
 
-**3. Concerns**
-- **HIGH:** NVS Flash Operations inside FreeRTOS Timers. The rollback loops use `nvs_store_rollback()` inside a FreeRTOS timer callback (Plan 01 Task 2 and Plan 04 Task 2). Timer callbacks run in the context of the FreeRTOS timer daemon task. NVS operations are blocking and can be slow; executing flash writes inside the timer daemon can crash or block the entire system timer tick mechanism. This must be deferred to a proper task.
-- **HIGH:** The credentials factory reset (Plan 02 Task 1) is invoked directly upon button release in the polling task. If the button task has a high priority and another task is holding an NVS lock, this could cause priority inversion or watchdog timeouts.
-- **MEDIUM:** Repeated invocation of `wifi_manager_start_recovery_ap()`. If the button task continuously calls this function while the button is held between 2-5 seconds, it may leak memory or crash the Wi-Fi stack. The API must be idempotent.
+### 3. Concerns
+- **Lack of Auto-Commits for Wi-Fi Connectivity in Validation [HIGH]:** In Plan 03-03 Task 2, `APP_CONFIG_ROLLBACK_WIFI_TIMEOUT_MS` rolls back if `wifi_manager_is_sta_connected()` is false. However, if it *is* true (device connected to STA), it never auto-commits or disables the 3-minute `APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS`. A user setting Wi-Fi credentials won't be able to "Confirm" them via API if the device leaves the SoftAP mode to join the STA network and the user doesn't know its new IP. The Wi-Fi staging should auto-commit upon successful STA connection and IP acquisition, or SoftAP must remain open.
+- **Timer Race Conditions with Cancel/Confirm [MEDIUM]:** Plan 03-03 Task 2 handles `s_cancel_rollback`, but setting `s_cancel_rollback` from the HTTP handler might race with the timer firing and setting `s_trigger_rollback`. A strict mutex or atomic operation should be specified to prevent the device from rolling back immediately after a successful commit.
+- **NVS Write Wear on Timers [LOW]:** Ensure the `nvs_store_rollback_staging()` is only called if staging was actually present to avoid unnecessary NVS erase/write cycles during every boot.
 
-**4. Suggestions**
-- Modify the 30-second and 3-minute FreeRTOS timer callbacks to merely set an event group bit or push to a queue, and have a dedicated task (or the main task loop) handle the actual `nvs_store_rollback()` and `esp_restart()`.
-- Ensure the button polling task tracks state transitions so `wifi_manager_start_recovery_ap()` is only called once when the duration threshold is crossed, not continuously.
+### 4. Suggestions
+- Add an automatic `nvs_store_commit_staging()` call when `WIFI_EVENT_STA_GOT_IP` is triggered and `stg_type == 1`, because reaching the network validates the Wi-Fi credentials.
+- In `03-03-PLAN.md`, specify the use of atomics (`stdatomic.h`) or a FreeRTOS mutex for `s_trigger_rollback` and `s_cancel_rollback` flag interactions.
+- Provide a clear JSON response payload or HTTP 202 Accepted status for the `/api/confirm` endpoint so the frontend knows the timer was definitely canceled before reloading.
 
-**5. Risk Assessment**
-**HIGH**
-The logic correctly addresses the requirements, but executing slow, blocking NVS writes and flash erases from inside a FreeRTOS timer daemon task is a severe architectural flaw that will likely cause Guru Meditation panics in ESP-IDF. Moving these operations to a standard task context will reduce the overall risk to LOW.
+### 5. Risk Assessment
+**Overall Risk: MEDIUM**
+
+The logic is largely sound and well-segmented, but the interaction between the Wi-Fi staging rollback timer and the user's ability to reach the `/api/confirm` endpoint introduces a risk of "infinite rollback loops" if the device connects to the STA network but the user cannot locate it to send the confirmation API call. Modifying the Wi-Fi verification to auto-commit on successful connection lowers this risk.
+
+---
+
+## OpenCode Review
+
+OpenCode review failed or timed out.
 
 ---
 
 ## Consensus Summary
 
-The reviewers agree that the implementation of physical recovery flows and NVS staging is robust and correctly fulfills the hardware recovery and anti-lockout requirements. The modularization across `wifi_manager`, `nvs_store`, and `main/` accurately reflects the project's existing architecture.
+The reviewers agree that the implementation plans are mature, defensive, and well-designed. The NVS staging architecture, main-loop NVS execution delegation, and SoftAP timeout safety mechanisms are noted as significant strengths. 
 
 ### Agreed Strengths
-- **Safe Sandboxing:** The NVS staging pattern safely isolates unconfirmed credentials and Wi-Fi configurations.
-- **Physical Safety Net:** Physical access recovery via hardware buttons is correctly prioritized as an ultimate fail-safe.
-- **Layered Timeout Protection:** The implementation of 10-minute SoftAP timeouts, 30-second IP limits, and 3-minute `/api/confirm` windows prevent indefinite lockout.
-- **Hardware Feedback:** Mapping device states to solid, slow, and fast LED blinks provides critical feedback for headless operation.
+- **Staging Namespace Logic:** Isolating settings correctly ensures robust autonomous rollback if changes fail validation.
+- **Context-Safe Operations:** Delegating NVS operations to the main loop instead of ESP Timer contexts avoids potential crashes.
+- **Hardware/User Fallbacks:** Client-aware SoftAP timeouts and Bootloader Veto features improve both UX and system safety.
 
 ### Agreed Concerns
-- **HIGH — Unconfirmed Staging Confirmation Flow:** The plans currently try to auto-commit on `GOT_IP`, violating the explicit RECOV-03 requirement that a user must call `/api/confirm`. Without SoftAP active during the 30s Wi-Fi wait, the user may be soft-locked out if the new IP is inaccessible.
-- **HIGH — NVS Corruption / Timer Context Operations:** Executing `nvs_store_rollback()` and `esp_restart()` from within FreeRTOS Timer callbacks or executing factory resets directly within the button polling task carries a high risk of NVS corruption, race conditions, and system crashes due to blocking operations in high-priority/daemon tasks.
-- **MEDIUM — GPIO 0 Boot Strapping:** Utilizing GPIO 0 for the recovery button introduces a physical pitfall where holding the button during device reset or power-on enters Download Mode instead of running the firmware.
+- **Race conditions with HTTP/Timers [MEDIUM]:** Both reviewers identified race conditions: either with the `esp_restart()` executing before HTTP `200 OK` is flushed, or `s_cancel_rollback` racing against `s_trigger_rollback` when the user confirms.
+- **Wi-Fi Connectivity Auto-Commit Gap [HIGH]:** A crucial flaw is that Wi-Fi validation doesn't auto-commit or lock open the SoftAP upon successful STA connection, which could lock a user out if they can't find the new STA IP within the 3-minute confirm timer.
+- **Strapping Pin/Session Invalidation [LOW]:** GPIO 2 is a strapping pin and needs caution. Session invalidation shouldn't be missed on rollback events.
 
 ### Divergent Views
-- **Session Management:** Gemini explicitly highlighted verifying that session generation invalidation (`session_gen`) is also applied correctly during `nvs_store_commit()` for staged updates, not just factory resets.
-- **Cancel Staging API:** OpenCode suggested adding an explicit `DELETE /api/confirm` route so users can cancel staged updates without rebooting.
-- **Circuit Breakers:** OpenCode suggested tracking consecutive rollback/reboot counts as a circuit breaker, which goes beyond the standard timeout rollback logic.
+- None. Reviewers aligned perfectly on the strengths of the architecture and flagged different but complementary edge cases in state transitions and networking.
