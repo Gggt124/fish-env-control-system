@@ -3183,9 +3183,6 @@ static esp_err_t handle_api_confirm_post(httpd_req_t *req)
 
     uint8_t committed_type = nvs_store_commit_staging();
     ESP_LOGI(TAG, "Committed staged changes type=%d", committed_type);
-    if (committed_type == 2) {
-        session_invalidate_all();
-    }
 
     g_cancel_rollback_timer = true;
 
