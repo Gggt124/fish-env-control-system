@@ -92,6 +92,11 @@ extern "C" {
 // Enable ST7789 panel driver instead of ILI9341 driver
 #define APP_TEMPLATE_TFT_PANEL_ST7789
 
+// SoftAP recovery and rollback timing constants
+#define APP_CONFIG_AP_RECOVERY_TIMEOUT_MS         300000
+#define APP_CONFIG_AP_IDLE_TIMEOUT_MS             600000
+#define APP_CONFIG_ROLLBACK_WIFI_TIMEOUT_MS       30000
+#define APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS    180000
 
 #ifdef __cplusplus
 }
