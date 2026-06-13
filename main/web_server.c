@@ -2540,6 +2540,24 @@ static esp_err_t handle_api_wifi_profiles_save(httpd_req_t *req)
         strcmp(wifi_manager_get_sta_ssid(), ssid) != 0) {
         return send_json(req, "{\"ok\":false,\"error\":\"not_connected\"}", "200 OK");
     }
+
+    wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+    int count = 0, auto_idx = -1;
+    bool exists = false;
+    if (nvs_store_load_wifi_profiles(profiles, &count, &auto_idx)) {
+        for (int i = 0; i < count; i++) {
+            if (strcmp(profiles[i].ssid, ssid) == 0 && strcmp(profiles[i].pass, password) == 0) {
+                exists = true;
+                break;
+            }
+        }
+    }
+
+    if (exists) {
+        ESP_LOGI(TAG, "Wi-Fi profile already exists for SSID=%s, skipping staging", ssid);
+        return send_json(req, "{\"ok\":true,\"reboot_pending\":false}", "200 OK");
+    }
+
     bool ok = nvs_store_stage_wifi(ssid, password);
     ESP_LOGI(TAG, "Staged Wi-Fi profile: SSID=%s ok=%d", ssid, ok);
     if (!ok) {
