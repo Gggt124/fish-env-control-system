@@ -58,11 +58,14 @@
   1. User can hold the recovery button to reset credentials to `admin`/`admin123` without losing other settings.
   2. SoftAP fallback only opens when user physically presses the recovery button.
   3. If new credentials or Wi-Fi settings fail validation, the device reboots and rolls back to previous known-good settings.
-
-**Plans**: 4 plans
+**Plans**: 4 plans
+**Wave 1**
 
 - [ ] 03-01-PLAN.md — SoftAP manual trigger and timeout
 - [ ] 03-02-PLAN.md — NVS staging and factory reset
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 03-03-PLAN.md — API integration and confirm endpoint
 - [ ] 03-04-PLAN.md — Hardware button UI and boot coordination
 
