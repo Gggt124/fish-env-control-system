@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-hardware-recovery-anti-lockout-03-03-PLAN.md
-last_updated: "2026-06-13T13:27:12.158Z"
+stopped_at: Completed 03-hardware-recovery-anti-lockout-03-04-PLAN.md
+last_updated: "2026-06-13T13:30:20.088Z"
 last_activity: 2026-06-13 -- Phase 03 Plan 01 execution completed
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 12
-  completed_plans: 10
-  percent: 33
+  completed_plans: 11
+  percent: 67
 ---
 
 # Project State
@@ -55,6 +55,7 @@ Progress: [███████░░░] 70%
 | Phase 03 P01 | 15 | 3 tasks | 4 files |
 | Phase 03-hardware-recovery-anti-lockout P02 | 10 | 2 tasks | 2 files |
 | Phase 03 P03 | 10m | 4 tasks | 5 files |
+| Phase 03-hardware-recovery-anti-lockout P04 | 20 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Staged configuration parameters must be confirmed within 3 minutes by calling POST /api/confirm, or the device will roll back and reboot.
 - [Phase 03]: Wi-Fi staging timeout is 30 seconds if the device does not acquire an IP.
 - [Phase 03]: SoftAP fallback remains open during staging validation to prevent locking out the user.
+- [Phase ?]: Implemented software bootloader veto on strapping GPIO 0 to prevent download-mode holds from causing factory resets.
+- [Phase 03]: Used software mutual exclusion to ignore simultaneous presses on internal and external recovery buttons.
+- [Phase 03]: Leveraged dual LEDs to display multi-modal status: solid ON, slow blink, fast blink, and double-blink.
 
 ### Pending Todos
 
@@ -96,6 +100,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T13:27:12.141Z
-Stopped at: Completed 03-hardware-recovery-anti-lockout-03-03-PLAN.md
+Last session: 2026-06-13T13:30:20.063Z
+Stopped at: Completed 03-hardware-recovery-anti-lockout-03-04-PLAN.md
 Resume file: None

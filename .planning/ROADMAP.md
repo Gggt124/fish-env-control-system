@@ -8,7 +8,7 @@
 
 - [x] **Phase 1: Persistent Sessions & Storage Foundation** - Establish the core security token architecture required for authentication (completed 2026-06-11)
 - [ ] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password
-- [ ] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss
+- [x] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss (completed 2026-06-13)
 
 ## Phase Details
 
@@ -67,7 +67,7 @@
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 03-03-PLAN.md — API integration and confirm endpoint
-- [ ] 03-04-PLAN.md — Hardware button UI and boot coordination
+- [x] 03-04-PLAN.md — Hardware button UI and boot coordination
 
 ## Progress
 
@@ -78,4 +78,4 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 |-------|-----------|----------------|--------|-----------|
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
 | 2. Credential Management UI & Logic | v1.7 | 3/3 | Complete | 2026-06-12 |
-| 3. Hardware Recovery & Anti-Lockout | v1.7 | 3/4 | In Progress|  |
+| 3. Hardware Recovery & Anti-Lockout | v1.7 | 4/4 | Complete   | 2026-06-13 |

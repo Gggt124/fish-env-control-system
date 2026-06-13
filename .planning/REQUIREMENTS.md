@@ -45,7 +45,7 @@
 | AUTH-06 | Phase 2 | Pending |
 | AUTH-07 | Phase 2 | Pending |
 | RECOV-01 | Phase 3 | Complete |
-| RECOV-02 | Phase 3 | Pending |
+| RECOV-02 | Phase 3 | Complete |
 | RECOV-03 | Phase 3 | Complete |
 | SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Complete |
