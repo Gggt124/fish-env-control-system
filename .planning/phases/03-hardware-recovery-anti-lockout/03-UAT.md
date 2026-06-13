@@ -71,9 +71,18 @@ skipped: 0
 ## Gaps
 
 - truth: "Verify Staging Confirmation UI Banner"
-  status: failed
+  status: diagnosed
   reason: "User reported: ปัญหา 1.เวลา ล็อคอินหลังจากเปลี่ยนรหัสแล้วขึ้น ให้ยืนยันตามปกติ แต่ กดยืนยันที่ปุ่มที่แถบแจ้งเตือนแล้วมันขึ้น ยืนยันของ brownser มาอีก ทำให้ UX แย่ลง /// 2.  ล็อคอินหลังจากเปลี่ยนรหัสแล้วขึ้น ให้ยืนยันตามปกติ แต่พอยืนยันเรียบร้อยแล้วมันก็เด้งไปหน้าล็อกอินอีกรอบ ทำให้โดยรวมมันเด้งไป 2 รอบเลย /// 3. กดเชื่อมต่อไวไฟที่บันทึก ไว้แล้วมันก็ยังขึ้นให้ยืนยัน แถมกดยืนยันแล้วไม่หายทันที ต้องรีโหลดหน้าจอ ถึงจะหาย น่าจะเพราะ ap ถูกปิดในทันทีเลยยืนยันไม่ได้ แต่ผมคิดว่าในด้าน UX มันควรจะไม่ต้องยืนยันถ้าเป็น wifi เดิมที่บันทึกแล้ว"
   severity: major
   test: 2
-  artifacts: []
-  missing: []
+  root_cause: "1. `app.js` uses `alert()` instead of `showToast()`. 2. `web_server.c` unconditionally invalidates the session upon confirm. 3. `web_server.c` forces staging and reboot for known/saved Wi-Fi profiles without checking the saved list."
+  artifacts:
+    - path: "main/static/app.js"
+      issue: "Uses `alert()` which creates a blocking browser popup."
+    - path: "main/web_server.c"
+      issue: "Forces session invalidation on confirm, and bypasses saved profile checks causing redundant staging."
+  missing:
+    - "Replace `alert()` with `showToast()` in `confirmStaging()`"
+    - "Remove `session_invalidate_all()` from `handle_api_confirm_post()`"
+    - "Add check for existing profiles in `handle_api_wifi_profiles_save()` to skip staging if SSID is already saved"
+  debug_session: ".planning/debug/staging-ui-banner.md"
