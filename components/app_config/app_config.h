@@ -98,6 +98,13 @@ extern "C" {
 #define APP_CONFIG_ROLLBACK_WIFI_TIMEOUT_MS       30000
 #define APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS    180000
 
+// Hardware recovery buttons and LEDs GPIO mapping
+#define APP_CONFIG_BOOT_BTN_GPIO                  0   // Strapping pin, MUST NOT be held LOW during power-on unless entering Download Mode. Bootloader veto in software will ignore holds that start before app boot.
+#define APP_CONFIG_EXT_BTN_GPIO                   4
+#define APP_CONFIG_LED_GPIO                       2   // Strapping pin, avoid external pull-ups that might affect boot mode.
+#define APP_CONFIG_EXT_LED_GPIO                   5
+
 #ifdef __cplusplus
 }
 #endif
+
