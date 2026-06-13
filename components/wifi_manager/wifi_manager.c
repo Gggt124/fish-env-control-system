@@ -1,5 +1,6 @@
 #include "wifi_manager.h"
 #include "nvs_store.h"
+#include "nvs.h"
 #include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -327,6 +328,13 @@ static void ap_stop_timer_cb(void *arg)
 
 static void ap_timeout_timer_cb(void *arg)
 {
+    uint8_t stg_type = 0;
+    if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
+        ESP_LOGI(TAG, "AP timeout expired, but staging is active (type=%d). Keeping AP active.", stg_type);
+        wifi_manager_reset_ap_timeout();
+        return;
+    }
+
     wifi_sta_list_t clients = {0};
     esp_err_t err = esp_wifi_ap_get_sta_list(&clients);
     if (err == ESP_OK && clients.num > 0) {
@@ -641,7 +649,14 @@ bool wifi_manager_init(void)
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID,
                         &wifi_event_handler, NULL, NULL));
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    uint8_t init_stg_type = 0;
+    if (nvs_store_get_staging_type(&init_stg_type) && init_stg_type > 0) {
+        ESP_LOGW(TAG, "Staging active during Wi-Fi init (type=%d). Starting SoftAP.", init_stg_type);
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+        s_ap_enabled = true;
+    } else {
+        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    }
 
     s_wifi_mutex = xSemaphoreCreateMutex();
     if (!s_wifi_mutex) {
@@ -667,9 +682,29 @@ bool wifi_manager_init(void)
     /* Load saved STA credentials and attempt connect */
     char saved_ssid[33] = {0};
     char saved_pass[65] = {0};
-    if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
-                            saved_pass, sizeof(saved_pass))) {
-        ESP_LOGI(TAG, "Found saved STA credentials for SSID: %s", saved_ssid);
+    bool has_creds = false;
+    uint8_t wifi_stg_type = 0;
+    if (nvs_store_get_staging_type(&wifi_stg_type) && wifi_stg_type == 1) {
+        nvs_handle_t handle;
+        if (nvs_open("wifi_cfg", NVS_READONLY, &handle) == ESP_OK) {
+            size_t len = sizeof(saved_ssid);
+            if (nvs_get_str(handle, "stg_sta_ssid", saved_ssid, &len) == ESP_OK) {
+                len = sizeof(saved_pass);
+                nvs_get_str(handle, "stg_sta_pass", saved_pass, &len);
+                has_creds = true;
+                ESP_LOGI(TAG, "Found staged STA credentials for SSID: %s", saved_ssid);
+            }
+            nvs_close(handle);
+        }
+    }
+    if (!has_creds) {
+        if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
+                                saved_pass, sizeof(saved_pass))) {
+            has_creds = true;
+            ESP_LOGI(TAG, "Found saved STA credentials for SSID: %s", saved_ssid);
+        }
+    }
+    if (has_creds) {
 
         /* Load optional static IP config and apply before connecting */
         wifi_sta_ip_config_t saved_ip = {0};
