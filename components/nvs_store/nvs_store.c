@@ -1276,4 +1276,19 @@ uint8_t nvs_store_commit_staging(void)
     return type;
 }
 
+bool nvs_store_factory_reset_credentials(void)
+{
+    nvs_handle_t handle;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) {
+        return false;
+    }
+    bool ok = true;
+    if (nvs_set_str(handle, "admin_user", APP_TEMPLATE_DEFAULT_USERNAME) != ESP_OK) ok = false;
+    if (nvs_set_str(handle, "admin_pass", APP_TEMPLATE_DEFAULT_PASSWORD) != ESP_OK) ok = false;
+    if (nvs_set_u8(handle, NVS_KEY_STG_TYPE, 0) != ESP_OK) ok = false;
+    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    nvs_close(handle);
+    return ok;
+}
+
 

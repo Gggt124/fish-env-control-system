@@ -165,6 +165,7 @@ bool nvs_store_stage_wifi(const char *ssid, const char *pass);
 bool nvs_store_stage_creds(const char *user, const char *pass);
 bool nvs_store_rollback_staging(void);
 uint8_t nvs_store_commit_staging(void);
+bool nvs_store_factory_reset_credentials(void);
 
 #ifdef __cplusplus
 }
