@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 context gathered (grill-me session)
-last_updated: "2026-06-13T12:52:24.507Z"
-last_activity: 2026-06-12 -- Phase 02 Plan 04 execution completed
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-06-13T13:12:40.847Z"
+last_activity: 2026-06-13 -- Phase 03 Plan 01 execution completed
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 7
-  percent: 33
+  completed_phases: 2
+  total_plans: 12
+  completed_plans: 8
+  percent: 67
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
-**Current focus:** Phase 02 — credential-management-ui-logic
+**Current focus:** Phase 03 — hardware-recovery-anti-lockout
 
 ## Current Position
 
-Phase: 02 (credential-management-ui-logic) — VERIFYING
-Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-06-12 -- Phase 02 Plan 04 execution completed
+Phase: 03 (hardware-recovery-anti-lockout)
+Plan: 2 of 4
+Status: Ready to execute 03-02-PLAN.md
+Last activity: 2026-06-13 -- Phase 03 Plan 01 execution completed
 
-Progress: [█████░░░░░] 57%
+Progress: [███████░░░] 70%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [█████░░░░░] 57%
 - Trend: Stable
 
 | Phase 01-persistent-sessions-storage-foundation P02 | 10m | 3 tasks | 4 files |
+| Phase 03 P01 | 15 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ Recent decisions affecting current work:
 
 - [Phase 1]: Decided to use stateful in-memory slot-based session store instead of stateless JWT.
 - [Phase 1]: Removed IP binding from session validation to prevent connection drops.
+- [Phase 03]: Default Wi-Fi mode to STA on boot to prevent SoftAP fallback unless manually triggered.
+- [Phase 03]: Implement idempotent recovery AP startup using a mutex-protected wrapper and a 5-minute timeout.
+- [Phase 03]: Restructure HTTP route wrapper to trigger AP idle timeout resets on any request (heartbeat).
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-13T10:38:38.160Z
-Stopped at: Phase 3 context gathered (grill-me session)
-Resume file: .planning/phases/03-hardware-recovery-anti-lockout/03-CONTEXT.md
+Last session: 2026-06-13T13:12:36.364Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None

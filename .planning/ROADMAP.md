@@ -61,7 +61,7 @@
 **Plans**: 4 plans
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — SoftAP manual trigger and timeout
+- [x] 03-01-PLAN.md — SoftAP manual trigger and timeout
 - [ ] 03-02-PLAN.md — NVS staging and factory reset
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -78,4 +78,4 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3
 |-------|-----------|----------------|--------|-----------|
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
 | 2. Credential Management UI & Logic | v1.7 | 3/3 | Complete | 2026-06-12 |
-| 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/4 | Not started | - |
+| 3. Hardware Recovery & Anti-Lockout | v1.7 | 1/4 | In Progress|  |
