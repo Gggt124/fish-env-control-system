@@ -19,6 +19,7 @@
 #include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "esp_task_wdt.h"
+#include "driver/gpio.h"
 #include <stdatomic.h>
 
 static const char *TAG = "app_main";
@@ -26,6 +27,8 @@ static const char *TAG = "app_main";
 atomic_bool s_trigger_rollback = ATOMIC_VAR_INIT(false);
 atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
 #define s_cancel_rollback g_cancel_rollback_timer
+
+static volatile bool s_trigger_factory_reset = false;
 
 static esp_timer_handle_t s_confirm_timer = NULL;
 static esp_timer_handle_t s_wifi_timer = NULL;
@@ -486,6 +489,128 @@ static void apply_cooling_settings_to_config(cooling_control_config_t *config,
     config->compressor_min_off_sec = settings->compressor_min_off_sec;
 }
 
+static void set_leds(int level)
+{
+    gpio_set_level(APP_CONFIG_LED_GPIO, level);
+    gpio_set_level(APP_CONFIG_EXT_LED_GPIO, level);
+}
+
+static void hardware_ui_task(void *pvParameters)
+{
+    (void)pvParameters;
+    
+    // Initialize button GPIOs as inputs with internal pull-ups
+    gpio_config_t btn_cfg = {
+        .pin_bit_mask = (1ULL << APP_CONFIG_BOOT_BTN_GPIO) | (1ULL << APP_CONFIG_EXT_BTN_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&btn_cfg);
+
+    // Initialize LED GPIOs as outputs
+    gpio_config_t led_cfg = {
+        .pin_bit_mask = (1ULL << APP_CONFIG_LED_GPIO) | (1ULL << APP_CONFIG_EXT_LED_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&led_cfg);
+
+    // Initial read to set up bootloader veto
+    bool boot_btn_veto = (gpio_get_level(APP_CONFIG_BOOT_BTN_GPIO) == 0);
+    bool ext_btn_veto = (gpio_get_level(APP_CONFIG_EXT_BTN_GPIO) == 0);
+
+    if (boot_btn_veto) {
+        ESP_LOGW(TAG, "Boot button active on boot; vetoing holds until released");
+    }
+    if (ext_btn_veto) {
+        ESP_LOGW(TAG, "External button active on boot; vetoing holds until released");
+    }
+
+    uint32_t press_duration_ms = 0;
+    bool recovery_ap_triggered = false;
+    bool factory_reset_triggered = false;
+    uint32_t release_ticks = 0;
+
+    while (1) {
+        int boot_level = gpio_get_level(APP_CONFIG_BOOT_BTN_GPIO);
+        int ext_level = gpio_get_level(APP_CONFIG_EXT_BTN_GPIO);
+
+        // Clear vetoes when buttons are released (level goes HIGH)
+        if (boot_level == 1) {
+            boot_btn_veto = false;
+        }
+        if (ext_level == 1) {
+            ext_btn_veto = false;
+        }
+
+        bool boot_pressed = (boot_level == 0) && !boot_btn_veto;
+        bool ext_pressed = (ext_level == 0) && !ext_btn_veto;
+
+        // Mutual exclusion: if both are low, ignore both
+        if (boot_pressed && ext_pressed) {
+            boot_pressed = false;
+            ext_pressed = false;
+        }
+
+        bool any_pressed = boot_pressed || ext_pressed;
+
+        if (any_pressed) {
+            press_duration_ms += 50;
+            release_ticks = 0;
+
+            if (press_duration_ms < 2000) {
+                set_leds(1);
+            } else if (press_duration_ms < 5000) {
+                if (!recovery_ap_triggered) {
+                    wifi_manager_start_recovery_ap();
+                    recovery_ap_triggered = true;
+                    ESP_LOGI(TAG, "Recovery AP triggered by button hold");
+                }
+                set_leds(((press_duration_ms / 500) % 2) == 0 ? 1 : 0);
+            } else {
+                if (!factory_reset_triggered) {
+                    s_trigger_factory_reset = true;
+                    factory_reset_triggered = true;
+                    ESP_LOGI(TAG, "Factory reset triggered by button hold");
+                }
+                set_leds(((press_duration_ms / 100) % 2) == 0 ? 1 : 0);
+            }
+        } else {
+            press_duration_ms = 0;
+            recovery_ap_triggered = false;
+            factory_reset_triggered = false;
+            release_ticks++;
+
+            uint8_t stg_type = 0;
+            nvs_store_get_staging_type(&stg_type);
+            if (stg_type > 0) {
+                uint32_t phase = release_ticks % 20;
+                if (phase < 2) {
+                    set_leds(1);
+                } else if (phase < 4) {
+                    set_leds(0);
+                } else if (phase < 6) {
+                    set_leds(1);
+                } else {
+                    set_leds(0);
+                }
+            } else {
+                if (wifi_manager_is_ap_active()) {
+                    set_leds(1);
+                } else {
+                    set_leds(0);
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
 void app_main(void)
 {
     ESP_LOGI(TAG, "========================================");
@@ -707,6 +832,9 @@ void app_main(void)
     /* Start background TFT status update task */
     tft_display_start_task();
 
+    // Start hardware UI/recovery task
+    xTaskCreate(hardware_ui_task, "hardware_ui_task", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
+
     /* 8. Initialize task watchdog (10s timeout with panic) */
     esp_task_wdt_config_t wdt_config = {
         .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
@@ -771,6 +899,17 @@ void app_main(void)
                 esp_restart();
             }
             s_trigger_rollback = false;
+        }
+
+        if (s_trigger_factory_reset) {
+            ESP_LOGW(TAG, "Factory reset requested by button hold. Resetting credentials...");
+            if (nvs_store_factory_reset_credentials()) {
+                ESP_LOGI(TAG, "Credentials reset to defaults successful");
+            } else {
+                ESP_LOGE(TAG, "Credentials reset to defaults failed");
+            }
+            session_invalidate_all();
+            s_trigger_factory_reset = false;
         }
 
         if (s_http_server_retry) {
