@@ -19,8 +19,33 @@
 #include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "esp_task_wdt.h"
+#include <stdatomic.h>
 
 static const char *TAG = "app_main";
+
+atomic_bool s_trigger_rollback = ATOMIC_VAR_INIT(false);
+atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
+#define s_cancel_rollback g_cancel_rollback_timer
+
+static esp_timer_handle_t s_confirm_timer = NULL;
+static esp_timer_handle_t s_wifi_timer = NULL;
+
+static void confirm_timer_cb(void *arg)
+{
+    (void)arg;
+    s_trigger_rollback = true;
+    ESP_LOGW(TAG, "Rollback confirm timer expired!");
+}
+
+static void wifi_timer_cb(void *arg)
+{
+    (void)arg;
+    if (!wifi_manager_is_sta_connected()) {
+        s_trigger_rollback = true;
+        ESP_LOGW(TAG, "Wi-Fi connection staging timeout! Triggering rollback.");
+    }
+}
+
 static bool s_http_server_retry = false;
 static int64_t s_last_board_diag_us = 0;
 static uint32_t s_last_idle_runtime[portNUM_PROCESSORS] = {0};
@@ -477,6 +502,32 @@ void app_main(void)
     }
     ESP_LOGI(TAG, "NVS initialized");
 
+    uint8_t stg_type = 0;
+    nvs_store_get_staging_type(&stg_type);
+    if (stg_type > 0) {
+        ESP_LOGW(TAG, "Staging configuration active (type=%d). Starting rollback timers.", stg_type);
+
+        esp_timer_create_args_t confirm_args = {
+            .callback = &confirm_timer_cb,
+            .name = "confirm_timer"
+        };
+        if (esp_timer_create(&confirm_args, &s_confirm_timer) == ESP_OK) {
+            esp_timer_start_once(s_confirm_timer, (uint64_t)APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS * 1000);
+            ESP_LOGI(TAG, "Rollback confirmation timer started for %d ms", APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS);
+        }
+
+        if (stg_type == 1) {
+            esp_timer_create_args_t wifi_args = {
+                .callback = &wifi_timer_cb,
+                .name = "wifi_timer"
+            };
+            if (esp_timer_create(&wifi_args, &s_wifi_timer) == ESP_OK) {
+                esp_timer_start_once(s_wifi_timer, (uint64_t)APP_CONFIG_ROLLBACK_WIFI_TIMEOUT_MS * 1000);
+                ESP_LOGI(TAG, "Rollback Wi-Fi validation timer started for %d ms", APP_CONFIG_ROLLBACK_WIFI_TIMEOUT_MS);
+            }
+        }
+    }
+
     /* Initialize TFT display */
     if (tft_display_init() == ESP_OK) {
         tft_clear(TFT_COLOR_BLACK);
@@ -693,6 +744,34 @@ void app_main(void)
     uint32_t loop_counter = 0;
     while (1) {
         esp_task_wdt_reset();
+
+        if (s_cancel_rollback) {
+            ESP_LOGI(TAG, "Staging confirmed. Stopping rollback timers.");
+            if (s_confirm_timer) {
+                esp_timer_stop(s_confirm_timer);
+                esp_timer_delete(s_confirm_timer);
+                s_confirm_timer = NULL;
+            }
+            if (s_wifi_timer) {
+                esp_timer_stop(s_wifi_timer);
+                esp_timer_delete(s_wifi_timer);
+                s_wifi_timer = NULL;
+            }
+            s_cancel_rollback = false;
+            s_trigger_rollback = false;
+        }
+
+        if (s_trigger_rollback) {
+            uint8_t stg_type = 0;
+            if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
+                ESP_LOGW(TAG, "Staged config timeout! Rolling back changes type=%d", stg_type);
+                nvs_store_rollback_staging();
+                session_invalidate_all();
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                esp_restart();
+            }
+            s_trigger_rollback = false;
+        }
 
         if (s_http_server_retry) {
             if (web_server_start()) {
