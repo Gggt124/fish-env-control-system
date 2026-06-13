@@ -652,11 +652,11 @@ bool wifi_manager_init(void)
     uint8_t init_stg_type = 0;
     if (nvs_store_get_staging_type(&init_stg_type) && init_stg_type > 0) {
         ESP_LOGW(TAG, "Staging active during Wi-Fi init (type=%d). Starting SoftAP.", init_stg_type);
-        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-        s_ap_enabled = true;
     } else {
-        ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+        ESP_LOGI(TAG, "Normal boot. Starting SoftAP fallback.");
     }
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    s_ap_enabled = true;
 
     s_wifi_mutex = xSemaphoreCreateMutex();
     if (!s_wifi_mutex) {

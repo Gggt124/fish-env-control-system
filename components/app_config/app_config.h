@@ -100,9 +100,9 @@ extern "C" {
 
 // Hardware recovery buttons and LEDs GPIO mapping
 #define APP_CONFIG_BOOT_BTN_GPIO                  0   // Strapping pin, MUST NOT be held LOW during power-on unless entering Download Mode. Bootloader veto in software will ignore holds that start before app boot.
-#define APP_CONFIG_EXT_BTN_GPIO                   4
+#define APP_CONFIG_EXT_BTN_GPIO                   14
 #define APP_CONFIG_LED_GPIO                       2   // Strapping pin, avoid external pull-ups that might affect boot mode.
-#define APP_CONFIG_EXT_LED_GPIO                   5
+#define APP_CONFIG_EXT_LED_GPIO                   13
 
 #ifdef __cplusplus
 }
