@@ -1,7 +1,7 @@
 ---
 phase: 3
-reviewers: [gemini, antigravity, opencode]
-reviewed_at: 2026-06-13T12:33:00Z
+reviewers: [gemini, opencode, antigravity]
+reviewed_at: 2026-06-13T12:44:00Z
 plans_reviewed: [03-01-PLAN.md, 03-02-PLAN.md, 03-03-PLAN.md, 03-04-PLAN.md]
 ---
 
@@ -22,7 +22,7 @@ The implementation plans are technically mature and demonstrate a deep understan
 *   **Client-Aware AP Timeout:** Resetting the AP timer on client connection (Plan 01) ensures a smooth user experience where the setup portal doesn't disappear while a user is actively configuring the device.
 
 ### 3. Concerns
-*   **HTTP Response Race Condition [MEDIUM]:** Plan 03 Task 1 mentions scheduling reboots after API calls. If the `esp_restart()` or Wi-Fi disconnection happens too quickly, the HTTP client (browser) may receive a "Network Error" or "Connection Reset" before it can process the `200 OK` response. 
+*   **HTTP Response Race Condition [MEDIUM]:** Plan 03 Task 1 mentions scheduling reboots after API calls. If the `esp_restart()` or Wi-Fi disconnection happens too quickly, the HTTP client (browser) may receive a "Network Error" or "Connection Reset" before it can process the `200 OK` response.
 *   **Rollback Timer Cancellation Race [LOW]:** In Plan 03 Task 2, the `s_cancel_rollback` flag is checked in the main loop. There is a tiny race window where the timer fires and sets `s_trigger_rollback = true` just as the user hits "Confirm". The plan addresses this by resetting `s_trigger_rollback` when `s_cancel_rollback` is detected, which is good, but the logic should be atomic or use a mutex if flags are accessed across tasks.
 *   **GPIO 2 Strapping Behavior [LOW]:** Plan 04 uses GPIO 2 for LED feedback. On many ESP32 modules, GPIO 2 is a strapping pin (MTDI) that must be LOW during boot to enter the correct flash voltage mode. While most DevKits have internal pull-downs, using it as an output is safe only if the external LED circuit doesn't pull the pin HIGH at boot.
 *   **Session Generation Invalidation [LOW]:** When credentials are factory reset (Plan 04), `session_invalidate_all()` is called. Ensure this logic is also triggered when a rollback occurs to prevent "stale" sessions from being valid against the restored older credentials.
@@ -40,53 +40,67 @@ The design is highly defensive and prioritizes system availability. The combinat
 
 ---
 
-## Antigravity Review
+## OpenCode Review
 
 ### 1. Summary
-The plans for Phase 3 outline a highly defensive and resilient approach to hardware recovery and anti-lockout. The introduction of an NVS staging namespace provides a robust "try-before-you-commit" workflow, isolating potentially fatal credential and Wi-Fi changes until they are verified. The hardware button interactions and SoftAP timeouts effectively balance recovery access with security, while preventing issues such as active client drops.
+The implementation plans are structurally robust and leverage FreeRTOS concurrency and ESP-IDF NVS correctly to achieve safe configuration staging. The approach of using a daemon task for hardware UI and delegating system-critical resets to the main loop demonstrates high-quality embedded design.
 
 ### 2. Strengths
-- The staging namespace (`stg_type`) correctly sandboxes volatile settings, protecting the core device access loop.
-- Bootloader veto logic (requiring GPIO 0 to transition from HIGH to LOW) effectively avoids conflicts with ESP32 Download Mode if the button is held during power-up.
-- Client-aware SoftAP timeouts (`esp_wifi_ap_get_sta_list`) prevent the access point from dropping users actively engaged in setup.
-- Explicit `s_trigger_rollback` delegation to the main loop properly isolates FreeRTOS daemon contexts from blocking NVS operations.
+*   **Staging Isolation:** Isolating Wi-Fi and credentials in `stg_` keys ensures zero corruption risk to the active profile during try-outs.
+*   **Thread Safety Mindset:** Using `atomic_bool` for `s_trigger_rollback` across tasks prevents the most common concurrency bugs when dealing with `esp_timer` callbacks.
 
 ### 3. Concerns
-- **Lack of Auto-Commits for Wi-Fi Connectivity in Validation [HIGH]:** In Plan 03-03 Task 2, `APP_CONFIG_ROLLBACK_WIFI_TIMEOUT_MS` rolls back if `wifi_manager_is_sta_connected()` is false. However, if it *is* true (device connected to STA), it never auto-commits or disables the 3-minute `APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS`. A user setting Wi-Fi credentials won't be able to "Confirm" them via API if the device leaves the SoftAP mode to join the STA network and the user doesn't know its new IP. The Wi-Fi staging should auto-commit upon successful STA connection and IP acquisition, or SoftAP must remain open.
-- **Timer Race Conditions with Cancel/Confirm [MEDIUM]:** Plan 03-03 Task 2 handles `s_cancel_rollback`, but setting `s_cancel_rollback` from the HTTP handler might race with the timer firing and setting `s_trigger_rollback`. A strict mutex or atomic operation should be specified to prevent the device from rolling back immediately after a successful commit.
-- **NVS Write Wear on Timers [LOW]:** Ensure the `nvs_store_rollback_staging()` is only called if staging was actually present to avoid unnecessary NVS erase/write cycles during every boot.
+*   **HTTP Response Delivery Race [HIGH]:** In `03-03-PLAN.md`, sending an HTTP response and then calling `esp_restart()` via a short timer often results in the client receiving a socket hangup before the TCP packet is fully ACK'd. The reboot must either happen via the `esp_http_server`'s close hook, or explicitly delay long enough (e.g. `vTaskDelay(pdMS_TO_TICKS(1000))`) to flush the socket.
+*   **Mutex Acquisition in AP Start [HIGH]:** In `03-04-PLAN.md`, `wifi_manager_start_recovery_ap()` is called from the `hardware_ui_task`. Because `wifi_manager` state transitions are asynchronous, this function MUST acquire `s_wifi_mutex` to safely interact with Wi-Fi event state.
+*   **Factory Reset Scope [MEDIUM]:** `03-02-PLAN.md` implements `nvs_store_factory_reset_credentials()`. This is good, but does it clear the current Wi-Fi STA credentials? The requirements explicitly say "without affecting Wi-Fi or pump configurations", so the plan is correct, but users might expect a full factory reset to also wipe Wi-Fi.
 
 ### 4. Suggestions
-- Add an automatic `nvs_store_commit_staging()` call when `WIFI_EVENT_STA_GOT_IP` is triggered and `stg_type == 1`, because reaching the network validates the Wi-Fi credentials.
-- In `03-03-PLAN.md`, specify the use of atomics (`stdatomic.h`) or a FreeRTOS mutex for `s_trigger_rollback` and `s_cancel_rollback` flag interactions.
-- Provide a clear JSON response payload or HTTP 202 Accepted status for the `/api/confirm` endpoint so the frontend knows the timer was definitely canceled before reloading.
+*   Explicitly mention `s_wifi_mutex` in the `wifi_manager_start_recovery_ap()` implementation steps to prevent concurrency bugs.
+*   Increase the reboot delay to at least 1-2 seconds after HTTP endpoints that return `reboot_pending`.
 
 ### 5. Risk Assessment
-**Overall Risk: MEDIUM**
-
-The logic is largely sound and well-segmented, but the interaction between the Wi-Fi staging rollback timer and the user's ability to reach the `/api/confirm` endpoint introduces a risk of "infinite rollback loops" if the device connects to the STA network but the user cannot locate it to send the confirmation API call. Modifying the Wi-Fi verification to auto-commit on successful connection lowers this risk.
+**Overall Risk: LOW**
+The architecture is solid and the requirements are well mapped.
 
 ---
 
-## OpenCode Review
+## Antigravity Review
 
-OpenCode review failed or timed out.
+### 1. Summary
+The Phase 3 plans provide strong autonomous recovery features, ensuring physical override and secure configuration staging. The use of deferred execution via the main loop is an excellent pattern for embedded resilience and aligns with best practices for FreeRTOS architectures.
+
+### 2. Strengths
+*   **Deferred Execution Pattern:** Correctly moving `esp_restart()` and heavy NVS operations out of the timer/interrupt contexts into the `while(1)` `app_main` loop significantly improves runtime stability.
+*   **Bootloader Veto:** The logic to ignore GPIO 0 drops that originated before boot resolves a very common physical edge case with ESP32 DevKits.
+
+### 3. Concerns
+*   **Staging Profile Emulation [HIGH]:** In `03-02-PLAN.md`, `nvs_store_load_wifi_profiles` artificially returns a single profile when `stg_type == 1`. This could cause `wifi_manager` to misbehave if it expects to manage or cycle through standard multiple networks. The plan must ensure that `auto_idx` cleanly overrides without corrupting the active profile search logic.
+*   **HTTP AP Timeout Reset Overhead [MEDIUM]:** `03-01-PLAN.md` suggests calling `wifi_manager_reset_ap_timeout()` on every HTTP request. If the web server handles many rapid requests (like status polling every 1 second), repeatedly resetting the timer could cause unnecessary overhead. It should only restart if the remaining time is below a certain threshold or be rate-limited.
+*   **Cancel Rollback Ordering [LOW]:** In `03-03-PLAN.md`, setting `s_cancel_rollback` must happen atomically and before any NVS commits to ensure that the `app_main` task doesn't trigger rollback simultaneously.
+
+### 4. Suggestions
+*   Add a rate-limit or minimum threshold check in `wifi_manager_reset_ap_timeout()` to avoid resetting the esp_timer on every single polling request.
+*   Ensure that all atomic variables use proper memory ordering (e.g. `memory_order_relaxed` or `memory_order_seq_cst`) when checked/set in the `while(1)` loop.
+
+### 5. Risk Assessment
+**Overall Risk: LOW**
+The recovery mechanics are deeply integrated and well-isolated, reducing the risk of side-effects on the core pump control logic.
 
 ---
 
 ## Consensus Summary
 
-The reviewers agree that the implementation plans are mature, defensive, and well-designed. The NVS staging architecture, main-loop NVS execution delegation, and SoftAP timeout safety mechanisms are noted as significant strengths. 
+The plans are highly robust and defensive, employing strong patterns like NVS staging, deferred execution to the main loop, and bootstrapping constraints awareness.
 
 ### Agreed Strengths
-- **Staging Namespace Logic:** Isolating settings correctly ensures robust autonomous rollback if changes fail validation.
-- **Context-Safe Operations:** Delegating NVS operations to the main loop instead of ESP Timer contexts avoids potential crashes.
-- **Hardware/User Fallbacks:** Client-aware SoftAP timeouts and Bootloader Veto features improve both UX and system safety.
+*   **Defensive Staging:** Using `stg_` keys isolates trial configurations cleanly.
+*   **Safe Task Contexts:** Delegating system actions (reboots, NVS commits) to `app_main` instead of executing them inside timer or HTTP callbacks.
+*   **Hardware Awareness:** Implementing Bootloader Veto for GPIO 0 strapping.
 
 ### Agreed Concerns
-- **Race conditions with HTTP/Timers [MEDIUM]:** Both reviewers identified race conditions: either with the `esp_restart()` executing before HTTP `200 OK` is flushed, or `s_cancel_rollback` racing against `s_trigger_rollback` when the user confirms.
-- **Wi-Fi Connectivity Auto-Commit Gap [HIGH]:** A crucial flaw is that Wi-Fi validation doesn't auto-commit or lock open the SoftAP upon successful STA connection, which could lock a user out if they can't find the new STA IP within the 3-minute confirm timer.
-- **Strapping Pin/Session Invalidation [LOW]:** GPIO 2 is a strapping pin and needs caution. Session invalidation shouldn't be missed on rollback events.
+*   **HTTP Response Delivery Race [HIGH]**: (Gemini, OpenCode) Rebooting immediately after an API call can cause socket closure before the client receives the `200 OK`.
+*   **Mutex Acquisition in AP Start [HIGH]**: (OpenCode) Calling `wifi_manager_start_recovery_ap()` from the new `hardware_ui_task` might cause race conditions if `s_wifi_mutex` isn't acquired properly.
+*   **Staging Profile Emulation [HIGH]**: (Antigravity) Modifying `nvs_store_load_wifi_profiles` to artificially return a single profile might break `wifi_manager` iteration logic.
 
 ### Divergent Views
-- None. Reviewers aligned perfectly on the strengths of the architecture and flagged different but complementary edge cases in state transitions and networking.
+*   OpenCode notes that factory reset scope strictly preserving Wi-Fi is correct per requirements but might be unexpected by users. Gemini and Antigravity accept this boundary as stated.
