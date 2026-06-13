@@ -1,8 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "ตัว AP ไม่ถูกเปิด หลัง boot ///  ไฟสถานะ แสดงปกติ แต่ใน tft ขึ้น disconnect /// ทดลองใช้ปุ่ม boot เปด AP ไฟก็ขึ้น แต่ tft ก็ขึ้น disconnect แล้วพอแสกนก็ไม่เจอ fish pump ap"
 created: "2026-06-13T20:57:02+07:00"
-updated: "2026-06-13T20:57:02+07:00"
+updated: "2026-06-13T22:15:40+07:00"
 ---
 
 ## Current Focus
