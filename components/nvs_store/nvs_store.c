@@ -1261,6 +1261,7 @@ uint8_t nvs_store_commit_staging(void)
         if (err_user == ESP_OK && err_pass == ESP_OK) {
             nvs_set_str(handle, "admin_user", user);
             nvs_set_str(handle, "admin_pass", pass);
+            nvs_commit(handle);
         }
         nvs_close(handle);
     } else {
