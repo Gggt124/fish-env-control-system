@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Quick Task Summary: Wi-Fi Card and Icon Style Refinements
 
 ## Objective

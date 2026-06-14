@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # 260608-wifi-modal-refinements: Wi-Fi Settings Layout Refinements
 
 ## Summary

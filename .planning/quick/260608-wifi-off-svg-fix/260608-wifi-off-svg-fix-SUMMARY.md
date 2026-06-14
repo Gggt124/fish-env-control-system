@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # Quick Task Summary: Wi-Fi Off SVG Icon Path Fix
 
 ## Objective

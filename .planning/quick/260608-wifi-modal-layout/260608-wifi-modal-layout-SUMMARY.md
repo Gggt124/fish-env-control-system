@@ -1,3 +1,6 @@
+---
+status: complete
+---
 # 260608-wifi-modal-layout: Wi-Fi Settings Page Styling and Modal Connection Dialog
 
 ## Summary
