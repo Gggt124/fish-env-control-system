@@ -2543,28 +2543,29 @@ static esp_err_t handle_api_wifi_profiles_save(httpd_req_t *req)
 
     wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
     int count = 0, auto_idx = -1;
-    bool exists = false;
+    bool exists_unchanged = false;
     if (nvs_store_load_wifi_profiles(profiles, &count, &auto_idx)) {
         for (int i = 0; i < count; i++) {
-            if (strcmp(profiles[i].ssid, ssid) == 0 && strcmp(profiles[i].pass, password) == 0) {
-                exists = true;
-                break;
+            if (strcmp(profiles[i].ssid, ssid) == 0) {
+                if (password[0] == '\0' || strcmp(profiles[i].pass, password) == 0) {
+                    exists_unchanged = true;
+                    break;
+                }
             }
         }
     }
 
-    if (exists) {
-        ESP_LOGI(TAG, "Wi-Fi profile already exists for SSID=%s, skipping staging", ssid);
+    if (exists_unchanged) {
+        ESP_LOGI(TAG, "Wi-Fi profile already exists and is unchanged for SSID=%s", ssid);
         return send_json(req, "{\"ok\":true,\"reboot_pending\":false}", "200 OK");
     }
 
-    bool ok = nvs_store_stage_wifi(ssid, password);
-    ESP_LOGI(TAG, "Staged Wi-Fi profile: SSID=%s ok=%d", ssid, ok);
+    bool ok = nvs_store_save_wifi_profile(ssid, password);
+    ESP_LOGI(TAG, "Saved Wi-Fi profile: SSID=%s ok=%d", ssid, ok);
     if (!ok) {
         return send_json(req, "{\"ok\":false,\"error\":\"save_failed\"}", "200 OK");
     }
-    schedule_delayed_reboot();
-    return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
+    return send_json(req, "{\"ok\":true,\"reboot_pending\":false}", "200 OK");
 }
 
 /* POST /api/wifi/disconnect - protected, disconnect STA */
@@ -3201,6 +3202,15 @@ static esp_err_t handle_api_confirm_post(httpd_req_t *req)
 
     uint8_t committed_type = nvs_store_commit_staging();
     ESP_LOGI(TAG, "Committed staged changes type=%d", committed_type);
+
+    if (committed_type == 2) {
+        char token[SESSION_TOKEN_LEN] = {0};
+        if (get_session_from_request(req, token, sizeof(token))) {
+            session_invalidate_others(token);
+        } else {
+            session_invalidate_others(NULL);
+        }
+    }
 
     g_cancel_rollback_timer = true;
 
