@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: planning
+status: completed
 stopped_at: Phase 03.1 planned
-last_updated: "2026-06-14T09:51:58.195Z"
-last_activity: 2026-06-14
+last_updated: "2026-06-14T10:04:43.291Z"
+last_activity: 2026-06-14 -- Phase 03.1 marked complete
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
-  percent: 75
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 ## Current Position
 
-Phase: 03.1 (Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations)
+Phase: 03.1 — COMPLETE
 Plan: TBD
-Status: Ready to plan
-Last activity: 2026-06-14
+Status: Phase 03.1 complete
+Last activity: 2026-06-14 -- Phase 03.1 marked complete
 
-Progress: [███████░░░] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [███████░░░] 75%
 | Phase 03-hardware-recovery-anti-lockout P02 | 10 | 2 tasks | 2 files |
 | Phase 03 P03 | 10m | 4 tasks | 5 files |
 | Phase 03-hardware-recovery-anti-lockout P05 | 5 | 3 tasks | 2 files |
+| Phase 03.1 P01 | 10m | 5 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Removed unconditional session invalidation upon staging confirmation to prevent double redirects.
 - [Phase 03]: Skipped staging for Wi-Fi profiles that match existing credentials in NVS.
 - [Phase 03]: Removed staging and confirmation banner for Wi-Fi profile saves entirely, making updates instant and direct.
+- [Phase ?]: Remove client IP match logic from session_validate() to support SoftAP/STA routing handovers.
+- [Phase ?]: Invalidate all session slots except the user's current token on credential confirmation.
+- [Phase ?]: Add nvs_commit to staging credential verification to ensure the credentials change survives boot cycles.
 
 ### Roadmap Evolution
 
@@ -109,6 +113,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-14T09:51:58.186Z
+Last session: 2026-06-14T10:04:36.075Z
 Stopped at: Phase 03.1 planned
 Resume file: .planning/phases/03.1-close-gap-recov-03-auth-04-auth-06-integration-remediations/03.1-01-PLAN.md

@@ -9,7 +9,7 @@
 - [x] **Phase 1: Persistent Sessions & Storage Foundation** - Establish the core security token architecture required for authentication (completed 2026-06-11)
 - [x] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password (completed 2026-06-13)
 - [x] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss (completed 2026-06-13)
-- [ ] **Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations** - Close remaining integration and security gaps in the v1.7 milestone audit (inserted)
+- [x] **Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations** - Close remaining integration and security gaps in the v1.7 milestone audit (inserted) (completed 2026-06-14)
 
 ## Phase Details
 
@@ -81,15 +81,15 @@ Phases execute in numeric order: 1 ➔ 2 ➔ 3 ➔ 3.1
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
 | 2. Credential Management UI & Logic | v1.7 | 5/5 | Complete    | 2026-06-13 |
 | 3. Hardware Recovery & Anti-Lockout | v1.7 | 5/5 | Complete   | 2026-06-14 |
-| 03.1. Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations | v1.7 | 0/1 | Not started | - |
+| 03.1. Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations | v1.7 | 1/1 | Complete   | 2026-06-14 |
 
 ### Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations (INSERTED)
 
 **Goal:** Close remaining integration, session validation, and configuration staging gaps from the v1.7 milestone audit (specifically closing gaps in RECOV-03, AUTH-04, AUTH-06), and add the missing verification report for Phase 2.
 **Requirements**: AUTH-04, AUTH-06, RECOV-03
 **Depends on:** Phase 3
-**Plans:** 1 plans
+**Plans:** 1/1 plans complete
 
 Plans:
 
-- [ ] 03.1-01-PLAN.md — Integration remediations for session IP check, global invalidation, NVS staging commit, and Phase 2 verification.
+- [x] 03.1-01-PLAN.md — Integration remediations for session IP check, global invalidation, NVS staging commit, and Phase 2 verification.
