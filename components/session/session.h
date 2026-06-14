@@ -20,6 +20,7 @@ bool session_create(const char *username, const char *client_ip, char token_out[
 bool session_validate(const char *token, const char *client_ip);
 void session_destroy(const char *token);
 void session_invalidate_all(void);
+void session_invalidate_others(const char *current_token);
 
 #ifdef __cplusplus
 }

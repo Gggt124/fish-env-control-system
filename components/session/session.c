@@ -146,3 +146,18 @@ void session_invalidate_all(void)
     }
     xSemaphoreGive(s_session_mutex);
 }
+
+void session_invalidate_others(const char *current_token)
+{
+    if (!s_session_mutex) return;
+
+    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    for (int i = 0; i < NUM_SLOTS; i++) {
+        if (s_slots[i].active) {
+            if (current_token == NULL || strcmp(s_slots[i].token, current_token) != 0) {
+                s_slots[i].active = false;
+            }
+        }
+    }
+    xSemaphoreGive(s_session_mutex);
+}
