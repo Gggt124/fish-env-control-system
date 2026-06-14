@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-hardware-recovery-anti-lockout-03-04-PLAN.md
-last_updated: "2026-06-13T15:09:14.217Z"
-last_activity: 2026-06-13
+status: planning
+stopped_at: Phase 03.1 context gathered
+last_updated: "2026-06-14T09:47:45.169Z"
+last_activity: 2026-06-14
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_plans: 13
+  completed_plans: 13
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-11)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
-**Current focus:** Phase 03 — hardware-recovery-anti-lockout
+**Current focus:** Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations
 
 ## Current Position
 
-Phase: 03
-Plan: Not started
-Status: Ready to execute 03-02-PLAN.md
-Last activity: 2026-06-13
+Phase: 03.1 (Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations)
+Plan: TBD
+Status: Ready to plan
+Last activity: 2026-06-14
 
-Progress: [███████░░░] 70%
+Progress: [███████░░░] 75%
 
 ## Performance Metrics
 
@@ -79,6 +79,11 @@ Recent decisions affecting current work:
 - [Phase 03]: Replaced blocking alert() calls with non-blocking showToast() for confirmation/rollback flows.
 - [Phase 03]: Removed unconditional session invalidation upon staging confirmation to prevent double redirects.
 - [Phase 03]: Skipped staging for Wi-Fi profiles that match existing credentials in NVS.
+- [Phase 03]: Removed staging and confirmation banner for Wi-Fi profile saves entirely, making updates instant and direct.
+
+### Roadmap Evolution
+
+- [Phase 03.1] (URGENT): Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations (inserted after Phase 3)
 
 ### Pending Todos
 
@@ -104,6 +109,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-14T06:18:02.000Z
-Stopped at: Completed 03-05-PLAN.md
-Resume file: None
+Last session: 2026-06-14T09:47:45.154Z
+Stopped at: Phase 03.1 context gathered
+Resume file: .planning/phases/03.1-close-gap-recov-03-auth-04-auth-06-integration-remediations/03.1-CONTEXT.md
