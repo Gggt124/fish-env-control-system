@@ -7,8 +7,9 @@
 ## Phases
 
 - [x] **Phase 1: Persistent Sessions & Storage Foundation** - Establish the core security token architecture required for authentication (completed 2026-06-11)
-- [ ] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password
-- [ ] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss
+- [x] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password (completed 2026-06-13)
+- [x] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss (completed 2026-06-13)
+- [x] **Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations** - Close remaining integration and security gaps in the v1.7 milestone audit (inserted) (completed 2026-06-14)
 
 ## Phase Details
 
@@ -58,16 +59,37 @@
   1. User can hold the recovery button to reset credentials to `admin`/`admin123` without losing other settings.
   2. SoftAP fallback only opens when user physically presses the recovery button.
   3. If new credentials or Wi-Fi settings fail validation, the device reboots and rolls back to previous known-good settings.
+**Plans**: 5 plans
+**Wave 1**
 
-**Plans**: TBD
+- [x] 03-01-PLAN.md — SoftAP manual trigger and timeout
+- [x] 03-02-PLAN.md — NVS staging and factory reset
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 03-03-PLAN.md — API integration and confirm endpoint
+- [x] 03-04-PLAN.md — Hardware button UI and boot coordination
+- [x] 03-05-PLAN.md — Fix UX issues in the confirmation flow and skip staging for known Wi-Fi profiles
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 ➔ 2 ➔ 3
+Phases execute in numeric order: 1 ➔ 2 ➔ 3 ➔ 3.1
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
-| 2. Credential Management UI & Logic | v1.7 | 3/3 | Complete | 2026-06-12 |
-| 3. Hardware Recovery & Anti-Lockout | v1.7 | 0/0 | Not started | - |
+| 2. Credential Management UI & Logic | v1.7 | 5/5 | Complete    | 2026-06-13 |
+| 3. Hardware Recovery & Anti-Lockout | v1.7 | 5/5 | Complete   | 2026-06-14 |
+| 03.1. Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations | v1.7 | 1/1 | Complete   | 2026-06-14 |
+
+### Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations (INSERTED)
+
+**Goal:** Close remaining integration, session validation, and configuration staging gaps from the v1.7 milestone audit (specifically closing gaps in RECOV-03, AUTH-04, AUTH-06), and add the missing verification report for Phase 2.
+**Requirements**: AUTH-04, AUTH-06, RECOV-03
+**Depends on:** Phase 3
+**Plans:** 1/1 plans complete
+
+Plans:
+
+- [x] 03.1-01-PLAN.md — Integration remediations for session IP check, global invalidation, NVS staging commit, and Phase 2 verification.

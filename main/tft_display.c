@@ -331,7 +331,7 @@ static void tft_display_task(void *pvParameters) {
     tft_display_draw_dashboard_skeleton();
     
     static struct {
-        char wifi[16];
+        char wifi[24];
         uint32_t uptime_sec;
         
         bool pump_running;
@@ -513,8 +513,8 @@ static void tft_display_task(void *pvParameters) {
     }
 }
 void tft_display_start_task(void) {
-    ESP_LOGI(TAG, "Creating TFT display background update task (stack=8192, prio=4)");
-    BaseType_t created = xTaskCreate(tft_display_task, "tft_display_task", 8192, NULL, 4, NULL);
+    ESP_LOGI(TAG, "Creating TFT display background update task (stack=4096, prio=4)");
+    BaseType_t created = xTaskCreate(tft_display_task, "tft_display_task", 4096, NULL, 4, NULL);
     if (created != pdPASS) {
         ESP_LOGE(TAG, "Failed to create tft_display_task: ret=%d", (int)created);
     } else {

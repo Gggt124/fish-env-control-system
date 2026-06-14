@@ -160,7 +160,12 @@ void nvs_store_cooling_settings_defaults(nvs_store_cooling_settings_t *out);
 nvs_store_cooling_settings_load_status_t nvs_store_load_cooling_settings(nvs_store_cooling_settings_t *out);
 bool nvs_store_save_cooling_settings(const nvs_store_cooling_settings_t *settings);
 bool nvs_store_clear_cooling_settings(void);
-
+bool nvs_store_get_staging_type(uint8_t *type);
+bool nvs_store_stage_wifi(const char *ssid, const char *pass);
+bool nvs_store_stage_creds(const char *user, const char *pass);
+bool nvs_store_rollback_staging(void);
+uint8_t nvs_store_commit_staging(void);
+bool nvs_store_factory_reset_credentials(void);
 
 #ifdef __cplusplus
 }

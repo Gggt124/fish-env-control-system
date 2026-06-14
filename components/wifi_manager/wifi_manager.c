@@ -1,5 +1,6 @@
 #include "wifi_manager.h"
 #include "nvs_store.h"
+#include "nvs.h"
 #include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -51,6 +52,8 @@ static int s_scan_count = 0;
 
 static esp_timer_handle_t s_ap_stop_timer = NULL;
 static esp_timer_handle_t s_sta_connect_timer = NULL;
+static esp_timer_handle_t s_ap_timeout_timer = NULL;
+static int64_t s_ap_timeout_deadline_ms = 0;
 
 static SemaphoreHandle_t s_wifi_mutex;
 static portMUX_TYPE s_wifi_diag_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -306,6 +309,12 @@ static bool configure_ap(void)
 
 static void ap_stop_timer_cb(void *arg)
 {
+    uint8_t stg_type = 0;
+    if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
+        ESP_LOGI(TAG, "AP auto-stop timer expired, but staging is active (type=%d). Keeping AP active.", stg_type);
+        return;
+    }
+
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (!s_sta_connected) {
         ESP_LOGI(TAG, "Skipping AP auto-stop because STA is disconnected");
@@ -319,6 +328,49 @@ static void ap_stop_timer_cb(void *arg)
         s_ap_enabled = false;
     } else {
         ESP_LOGW(TAG, "Failed to stop AP after timeout: %s", esp_err_to_name(err));
+    }
+    xSemaphoreGive(s_wifi_mutex);
+}
+
+static void ap_timeout_timer_cb(void *arg)
+{
+    uint8_t stg_type = 0;
+    if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
+        ESP_LOGI(TAG, "AP timeout expired, but staging is active (type=%d). Keeping AP active.", stg_type);
+        wifi_manager_reset_ap_timeout();
+        return;
+    }
+
+    wifi_sta_list_t clients = {0};
+    esp_err_t err = esp_wifi_ap_get_sta_list(&clients);
+    if (err == ESP_OK && clients.num > 0) {
+        ESP_LOGI(TAG, "AP timeout expired but %d clients connected, resetting timeout", clients.num);
+        wifi_manager_reset_ap_timeout();
+    } else {
+        ESP_LOGI(TAG, "AP timeout expired with 0 clients, shutting down AP");
+        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+        esp_err_t ret = esp_wifi_set_mode(WIFI_MODE_STA);
+        if (ret == ESP_OK) {
+            s_ap_enabled = false;
+        } else {
+            ESP_LOGE(TAG, "Failed to stop AP after timeout: %s", esp_err_to_name(ret));
+        }
+        xSemaphoreGive(s_wifi_mutex);
+    }
+}
+
+void wifi_manager_reset_ap_timeout(void)
+{
+    if (!s_wifi_mutex) return;
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    wifi_mode_t mode = WIFI_MODE_NULL;
+    esp_wifi_get_mode(&mode);
+    bool is_ap_active = (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) && s_ap_enabled;
+    if (is_ap_active && s_ap_timeout_timer) {
+        esp_timer_stop(s_ap_timeout_timer);
+        esp_timer_start_once(s_ap_timeout_timer, (uint64_t)APP_CONFIG_AP_IDLE_TIMEOUT_MS * 1000);
+        s_ap_timeout_deadline_ms = (esp_timer_get_time() / 1000) + APP_CONFIG_AP_IDLE_TIMEOUT_MS;
+        ESP_LOGD(TAG, "SoftAP idle timeout reset to 10 minutes");
     }
     xSemaphoreGive(s_wifi_mutex);
 }
@@ -425,11 +477,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         case WIFI_EVENT_AP_STACONNECTED: {
             uint32_t events = diag_increment(&s_wifi_diag.ap_client_connected_events);
             ESP_LOGI(TAG, "[WIFI_EVENT] ap_client_connected events=%lu", (unsigned long)events);
+            wifi_manager_reset_ap_timeout();
             break;
         }
         case WIFI_EVENT_AP_STADISCONNECTED: {
             uint32_t events = diag_increment(&s_wifi_diag.ap_client_disconnected_events);
             ESP_LOGI(TAG, "[WIFI_EVENT] ap_client_disconnected events=%lu", (unsigned long)events);
+            wifi_manager_reset_ap_timeout();
             break;
         }
         case WIFI_EVENT_SCAN_DONE: {
@@ -601,7 +655,14 @@ bool wifi_manager_init(void)
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, ESP_EVENT_ANY_ID,
                         &wifi_event_handler, NULL, NULL));
 
+    uint8_t init_stg_type = 0;
+    if (nvs_store_get_staging_type(&init_stg_type) && init_stg_type > 0) {
+        ESP_LOGW(TAG, "Staging active during Wi-Fi init (type=%d). Starting SoftAP.", init_stg_type);
+    } else {
+        ESP_LOGI(TAG, "Normal boot. Starting SoftAP fallback.");
+    }
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    s_ap_enabled = true;
 
     s_wifi_mutex = xSemaphoreCreateMutex();
     if (!s_wifi_mutex) {
@@ -627,9 +688,29 @@ bool wifi_manager_init(void)
     /* Load saved STA credentials and attempt connect */
     char saved_ssid[33] = {0};
     char saved_pass[65] = {0};
-    if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
-                            saved_pass, sizeof(saved_pass))) {
-        ESP_LOGI(TAG, "Found saved STA credentials for SSID: %s", saved_ssid);
+    bool has_creds = false;
+    uint8_t wifi_stg_type = 0;
+    if (nvs_store_get_staging_type(&wifi_stg_type) && wifi_stg_type == 1) {
+        nvs_handle_t handle;
+        if (nvs_open("wifi_cfg", NVS_READONLY, &handle) == ESP_OK) {
+            size_t len = sizeof(saved_ssid);
+            if (nvs_get_str(handle, "stg_sta_ssid", saved_ssid, &len) == ESP_OK) {
+                len = sizeof(saved_pass);
+                nvs_get_str(handle, "stg_sta_pass", saved_pass, &len);
+                has_creds = true;
+                ESP_LOGI(TAG, "Found staged STA credentials for SSID: %s", saved_ssid);
+            }
+            nvs_close(handle);
+        }
+    }
+    if (!has_creds) {
+        if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
+                                saved_pass, sizeof(saved_pass))) {
+            has_creds = true;
+            ESP_LOGI(TAG, "Found saved STA credentials for SSID: %s", saved_ssid);
+        }
+    }
+    if (has_creds) {
 
         /* Load optional static IP config and apply before connecting */
         wifi_sta_ip_config_t saved_ip = {0};
@@ -674,9 +755,14 @@ bool wifi_manager_init(void)
         s_ap_stop_timer = NULL;
     }
 
-    /* Start AP immediately */
-    if (!wifi_manager_start_ap()) {
-        ESP_LOGE(TAG, "Failed to start SoftAP");
+    /* Create AP recovery timeout timer */
+    esp_timer_create_args_t timeout_timer_args = {
+        .callback = &ap_timeout_timer_cb,
+        .arg = NULL,
+        .name = "ap_timeout_timer"
+    };
+    if (esp_timer_create(&timeout_timer_args, &s_ap_timeout_timer) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create AP timeout timer");
         return false;
     }
 
@@ -744,6 +830,56 @@ bool wifi_manager_stop_ap(void)
     ESP_LOGI(TAG, "SoftAP stopped");
     xSemaphoreGive(s_wifi_mutex);
     return true;
+}
+
+void wifi_manager_start_recovery_ap(void)
+{
+    if (!s_wifi_mutex) return;
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    
+    wifi_mode_t mode = WIFI_MODE_NULL;
+    esp_err_t err = esp_wifi_get_mode(&mode);
+    bool mode_changed = err != ESP_OK || mode != WIFI_MODE_APSTA;
+    
+    if (mode_changed) {
+        err = esp_wifi_set_mode(WIFI_MODE_APSTA);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set APSTA mode for recovery: %s", esp_err_to_name(err));
+            xSemaphoreGive(s_wifi_mutex);
+            return;
+        }
+        configure_radio_stability("recovery_ap");
+    }
+    
+    if (!s_ap_configured) {
+        configure_ap();
+    }
+    
+    bool log_started = !s_ap_enabled || mode_changed;
+    s_ap_enabled = true;
+    if (log_started) {
+        ESP_LOGI(TAG, "SoftAP (Recovery) started: SSID=%s, IP=%s", AP_SSID, s_ap_ip);
+    }
+    
+    if (s_ap_timeout_timer) {
+        esp_timer_stop(s_ap_timeout_timer);
+        esp_timer_start_once(s_ap_timeout_timer, (uint64_t)APP_CONFIG_AP_RECOVERY_TIMEOUT_MS * 1000);
+        s_ap_timeout_deadline_ms = (esp_timer_get_time() / 1000) + APP_CONFIG_AP_RECOVERY_TIMEOUT_MS;
+        ESP_LOGI(TAG, "Recovery AP timeout started: %d ms", APP_CONFIG_AP_RECOVERY_TIMEOUT_MS);
+    }
+    
+    xSemaphoreGive(s_wifi_mutex);
+}
+
+bool wifi_manager_is_ap_active(void)
+{
+    if (!s_wifi_mutex) return false;
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    wifi_mode_t mode = WIFI_MODE_NULL;
+    esp_wifi_get_mode(&mode);
+    bool active = (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) && s_ap_enabled;
+    xSemaphoreGive(s_wifi_mutex);
+    return active;
 }
 
 /* --------------- STA --------------- */
