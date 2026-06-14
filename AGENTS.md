@@ -375,6 +375,17 @@ Use these entry points:
 - `/gsd-execute-phase` for planned phase work
 
 Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+
+## Graphify Usage
+
+When working on tasks that require editing multiple files, making structural/architectural changes, or interacting with hardware management code, you **MUST** use `graphify` (via the `/gsd-graphify` skill) to query and inspect the project's knowledge graph.
+
+This ensures a complete understanding of structure and component relationships, reducing widespread errors such as:
+- **Pin conflicts:** Reusing an already assigned GPIO pin.
+- **Inconsistent Configurations:** e.g., Setting Wi-Fi connection to AP mode when other parts of the system expect APSTA mode.
+- **Resource Exhaustion:** Exceeding memory limits because the overall structure and resource allocations were not evaluated.
+
+Use `/gsd-graphify query <term>` to search for relevant components, `/gsd-graphify status` to check freshness, and `/gsd-graphify build` to rebuild the graph if necessary.
 <!-- GSD:workflow-end -->
 
 ## GSD Subagent Integration Protocol

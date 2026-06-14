@@ -309,6 +309,12 @@ static bool configure_ap(void)
 
 static void ap_stop_timer_cb(void *arg)
 {
+    uint8_t stg_type = 0;
+    if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
+        ESP_LOGI(TAG, "AP auto-stop timer expired, but staging is active (type=%d). Keeping AP active.", stg_type);
+        return;
+    }
+
     xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
     if (!s_sta_connected) {
         ESP_LOGI(TAG, "Skipping AP auto-stop because STA is disconnected");
