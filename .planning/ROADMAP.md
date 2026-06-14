@@ -2,94 +2,27 @@
 
 ## Milestones
 
-- 🟡 **v1.7 Authentication & Recovery** - Phases 1-3 (planned)
+- ✅ **v1.7 Authentication & Recovery** — Phases 1–3.1 (shipped 2026-06-14)
 
 ## Phases
 
-- [x] **Phase 1: Persistent Sessions & Storage Foundation** - Establish the core security token architecture required for authentication (completed 2026-06-11)
-- [x] **Phase 2: Credential Management UI & Logic** - Allow users to securely update the default password (completed 2026-06-13)
-- [x] **Phase 3: Hardware Recovery & Anti-Lockout** - Provide physical fail-safes for lost credentials and connectivity loss (completed 2026-06-13)
-- [x] **Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations** - Close remaining integration and security gaps in the v1.7 milestone audit (inserted) (completed 2026-06-14)
+<details>
+<summary>✅ v1.7 Authentication & Recovery (Phases 1–3.1) — SHIPPED 2026-06-14</summary>
 
-## Phase Details
+- [x] Phase 1: Persistent Sessions & Storage Foundation (3/3 plans) — completed 2026-06-11
+- [x] Phase 2: Credential Management UI & Logic (5/5 plans) — completed 2026-06-13
+- [x] Phase 3: Hardware Recovery & Anti-Lockout (5/5 plans) — completed 2026-06-13
+- [x] Phase 03.1: Integration Remediations — RECOV-03, AUTH-04, AUTH-06 (1/1 plan) — completed 2026-06-14
 
-### Phase 1: Persistent Sessions & Storage Foundation
+Full phase details → [v1.7-ROADMAP.md](milestones/v1.7-ROADMAP.md)
 
-**Goal**: Establish secure, persistent session token architecture to support "Remember Me" without NVS wear.
-**Depends on**: Nothing (first phase of v1.7)
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, SEC-01, SEC-02
-**Success Criteria** (what must be TRUE):
-
-  1. User can check "Remember Me" during login to stay authenticated across device reboots.
-  2. User session remains valid despite offline time drift.
-  3. System gracefully recovers if NVS partition is corrupted or needs an upgrade.
-  4. Oldest sessions are cleanly evicted if user logs in on more than 5 devices.
-
-**Plans:** 3/3 plans complete
-
-- [x] 01-01-PLAN.md — Core NVS Storage Foundation
-- [x] 01-02-PLAN.md — Stateless JWT Crypto
-- [x] 01-03-PLAN.md — "Remember Me" Integration
-
-### Phase 2: Credential Management UI & Logic
-
-**Goal**: Users can securely change the default administrator credentials and invalidate old sessions.
-**Depends on**: Phase 1
-**Requirements**: AUTH-05, AUTH-06, AUTH-07
-**Success Criteria** (what must be TRUE):
-
-  1. User can access a "Change Password" UI from the dashboard.
-  2. User can successfully change the username and password, requiring the old password.
-  3. Changing password immediately invalidates all active sessions (user is forced to log in again).
-  4. System rejects replay attacks during credential change.
-
-**Plans**: 3 plans
-
-- [x] 02-01-PLAN.md — Core Backend (NVS & Session)
-- [x] 02-02-PLAN.md — API Integration
-- [x] 02-03-PLAN.md — Frontend Integration
-
-### Phase 3: Hardware Recovery & Anti-Lockout
-
-**Goal**: Provide physical hardware fail-safes for lost credentials and connectivity loss.
-**Depends on**: Phase 2
-**Requirements**: RECOV-01, RECOV-02, RECOV-03
-**Success Criteria** (what must be TRUE):
-
-  1. User can hold the recovery button to reset credentials to `admin`/`admin123` without losing other settings.
-  2. SoftAP fallback only opens when user physically presses the recovery button.
-  3. If new credentials or Wi-Fi settings fail validation, the device reboots and rolls back to previous known-good settings.
-**Plans**: 5 plans
-**Wave 1**
-
-- [x] 03-01-PLAN.md — SoftAP manual trigger and timeout
-- [x] 03-02-PLAN.md — NVS staging and factory reset
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 03-03-PLAN.md — API integration and confirm endpoint
-- [x] 03-04-PLAN.md — Hardware button UI and boot coordination
-- [x] 03-05-PLAN.md — Fix UX issues in the confirmation flow and skip staging for known Wi-Fi profiles
+</details>
 
 ## Progress
 
-**Execution Order:**
-Phases execute in numeric order: 1 ➔ 2 ➔ 3 ➔ 3.1
-
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete    | 2026-06-11 |
-| 2. Credential Management UI & Logic | v1.7 | 5/5 | Complete    | 2026-06-13 |
-| 3. Hardware Recovery & Anti-Lockout | v1.7 | 5/5 | Complete   | 2026-06-14 |
-| 03.1. Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations | v1.7 | 1/1 | Complete   | 2026-06-14 |
-
-### Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations (INSERTED)
-
-**Goal:** Close remaining integration, session validation, and configuration staging gaps from the v1.7 milestone audit (specifically closing gaps in RECOV-03, AUTH-04, AUTH-06), and add the missing verification report for Phase 2.
-**Requirements**: AUTH-04, AUTH-06, RECOV-03
-**Depends on:** Phase 3
-**Plans:** 1/1 plans complete
-
-Plans:
-
-- [x] 03.1-01-PLAN.md — Integration remediations for session IP check, global invalidation, NVS staging commit, and Phase 2 verification.
+| 1. Persistent Sessions & Storage Foundation | v1.7 | 3/3 | Complete | 2026-06-11 |
+| 2. Credential Management UI & Logic | v1.7 | 5/5 | Complete | 2026-06-13 |
+| 3. Hardware Recovery & Anti-Lockout | v1.7 | 5/5 | Complete | 2026-06-13 |
+| 03.1. Integration Remediations | v1.7 | 1/1 | Complete | 2026-06-14 |

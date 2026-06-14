@@ -12,16 +12,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Milestone Status
 
-**Latest shipped:** v1.5 TFT Display Integration on 2026-06-06
-
-## Current Milestone: v1.7 Authentication & Recovery
-
-**Goal:** Improve access control by adding persistent sessions, user credential management, and a recovery mechanism for forgotten credentials.
-
-**Target features:**
-- AUTH-01: "Remember Me" persistent session to bypass login on trusted devices.
-- AUTH-02: User interface to change Username & Password.
-- AUTH-03: Credential Recovery mechanism (e.g., hardware button reset or fallback) to prevent lockout.
+**Latest shipped:** v1.7 Authentication & Recovery on 2026-06-14
 
 ## Requirements
 
@@ -96,12 +87,23 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 - ✓ UI-04: Overhaul Wi-Fi Setup page with stepper, loading states, and modal popups. — v1.6
 - ✓ UI-05: Redesign System Status and Hardware/Install pages for better readability and UX. — v1.6
 - ✓ UI-06: Add UI feedback mechanisms (loading spinners, debouncing, modal confirmation). — v1.6
-- ✓ AUTH-01: Implement "Remember Me" persistent session system. — v1.7
+- ✓ AUTH-01: Persistent "Remember Me" session system (Cookie Max-Age 1 year, 4-slot RAM store). — v1.7
+- ✓ AUTH-02: Stateful slot-based session validation in RAM, replaces stateless JWT. — v1.7
+- ✓ AUTH-03: Non-expiring tokens valid until logout or password change. — v1.7
+- ✓ AUTH-04: IP binding removed from session validation — prevents drops during SoftAP/STA routing. — v1.7
+- ✓ AUTH-05: Credential Management UI — change username and password from web dashboard. — v1.7
+- ✓ AUTH-06: Global session invalidation on password change (session_invalidate_others). — v1.7
+- ✓ AUTH-07: Challenge-response nonce prevents replay attacks on credential change. — v1.7
+- ✓ RECOV-01: Hardware factory reset via 5s GPIO button hold to admin/admin123. — v1.7
+- ✓ RECOV-02: SoftAP fallback only via 2s GPIO button press, 5-minute inactivity timeout. — v1.7
+- ✓ RECOV-03: Anti-lockout staging rollback — 3-minute confirmation window, nvs_commit on confirm. — v1.7
+- ✓ SEC-01: NVS corruption recovery on boot (erase and re-init). — v1.7
+- ✓ SEC-02: Safe NVS flash commits for credentials and staging operations. — v1.7
 
 ### Active
 
-- [ ] AUTH-02: Implement change Username & Password functionality.
-- [ ] AUTH-03: Implement Credential Recovery mechanism.
+- [ ] FUT-01: MbedTLS SHA-256 hashing for NVS passwords (deferred — security hardening).
+- [ ] FUT-02: Flash Encryption & Secure Boot v2 integration (deferred).
 
 ### Out of Scope
 
@@ -115,7 +117,7 @@ The pump must switch reliably between Timer 1 and Timer 2 based on the float swi
 
 ## Current State
 
-**Shipped:** v1.5 TFT Display Integration on 2026-06-06
+**Shipped:** v1.7 Authentication & Recovery on 2026-06-14
 
 The firmware is a complete local ESP32 pump and cooling controller with:
 - GPIO32 float input selecting GPIO26 Relay 1 or GPIO27 Relay 2 timer channels
@@ -124,16 +126,17 @@ The firmware is a complete local ESP32 pump and cooling controller with:
 - Professional, accessible Thai-language owner dashboard with operator-first hierarchy
 - Consistent mobile-responsive app shell with drawer navigation
 - Hardware/Install page with active/pending GPIO map and DS18B20 pull-up guidance
-- Wi-Fi setup page polished with a CSS-styled Empty State Card and sequential 0.2s fade-in/fade-out panel switching (with instant transition for prefers-reduced-motion)
 - SoftAP fallback, STA configuration, captive DNS, and bounded long-uptime diagnostics
-- Interactive forms dirty checking, Thai confirmation dialogs, and simplified buttons to improve UX
-- Duration-based Test ON countdown timer that pauses during active compressor protection lockout
-- Isolated Auto mode demand state using s_auto_demand to prevent stuck cooling relay on transitions
-- Code reviewed, warning-free build, aligned task watchdog configuration and comments (10s watchdog timeout fed every 5s)
-- Real-board hardware UAT and a `13:38:10` soak with no reboot, watchdog trip, or monotonic heap loss
+- Code reviewed, warning-free build, aligned task watchdog configuration (10s timeout fed every 5s)
+- **Persistent login sessions** — 4-slot stateful RAM store, "Remember Me" cookie Max-Age 1 year
+- **Credential management UI** — username/password change with challenge-response nonce and staging rollback
+- **Hardware recovery** — 2s button → SoftAP 5-min fallback; 5s button → factory credential reset
+- **Anti-lockout staging** — 3-minute confirmation window with automatic NVS rollback on reboot
+- **IP-independent sessions** — removed IP binding to prevent drops during SoftAP/STA handover
+- **Targeted session invalidation** — `session_invalidate_others()` on credential confirmation
 
 **Codebase:** ESP-IDF C firmware with embedded HTML, CSS, JS, CMake, and docs. Build-valid with ESP-IDF 6.0.1.
-**Partition usage:** 44% free in dual OTA app slots (`0x1F0000` each on 4MB flash).
+**Partition usage:** ~44% free in dual OTA app slots (`0x1F0000` each on 4MB flash).
 **Binary:** `build/fish_pump_relay_timer_control.bin` generates successfully.
 
 ## Context
@@ -213,4 +216,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-11 after Phase 1*
+*Last updated: 2026-06-14 after v1.7 milestone*

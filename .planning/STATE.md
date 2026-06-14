@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.7
-milestone_name: milestone
-status: "Phase 03.1 shipped — PR #4"
-stopped_at: Phase 03.1 planned
-last_updated: "2026-06-14T10:32:48.527Z"
+milestone_name: Authentication & Recovery
+status: "SHIPPED — v1.7 archived 2026-06-14"
+stopped_at: Milestone complete
+last_updated: "2026-06-14T18:20:00+07:00"
 last_activity: 2026-06-14
 progress:
   total_phases: 4
@@ -18,16 +18,15 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-11)
+See: .planning/PROJECT.md (updated 2026-06-14 after v1.7 milestone)
 
 **Core value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
-**Current focus:** Phase 03.1: Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations
+**Current focus:** v1.7 SHIPPED — planning next milestone
 
 ## Current Position
 
-Phase: 03.1 — COMPLETE
-Plan: TBD
-Status: Phase 03.1 shipped — PR #4
+Phase: — (milestone complete)
+Status: v1.7 Authentication & Recovery — SHIPPED 2026-06-14
 Last activity: 2026-06-14
 
 Progress: [██████████] 100%
@@ -36,66 +35,47 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 8
-- Average duration: 0 min
-- Total execution time: 0 hours
+- Total plans completed: 14
+- Timeline: 3 days (2026-06-11 → 2026-06-14)
+- Files changed: 122
+- Lines: +7,409 / -549
 
 **By Phase:**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01 | 3 | - | - |
-| 02 | 5 | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: N/A
-- Trend: Stable
-
-| Phase 01-persistent-sessions-storage-foundation P02 | 10m | 3 tasks | 4 files |
-| Phase 03 P01 | 15 | 3 tasks | 4 files |
-| Phase 03-hardware-recovery-anti-lockout P02 | 10 | 2 tasks | 2 files |
-| Phase 03 P03 | 10m | 4 tasks | 5 files |
-| Phase 03-hardware-recovery-anti-lockout P05 | 5 | 3 tasks | 2 files |
-| Phase 03.1 P01 | 10m | 5 tasks | 5 files |
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 01 | 3 | Complete |
+| 02 | 5 | Complete |
+| 03 | 5 | Complete |
+| 03.1 | 1 | Complete |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
 
-- [Phase 1]: Decided to use stateful in-memory slot-based session store instead of stateless JWT.
-- [Phase 1]: Removed IP binding from session validation to prevent connection drops.
-- [Phase 03]: Default Wi-Fi mode to STA on boot to prevent SoftAP fallback unless manually triggered.
-- [Phase 03]: Implement idempotent recovery AP startup using a mutex-protected wrapper and a 5-minute timeout.
-- [Phase 03]: Restructure HTTP route wrapper to trigger AP idle timeout resets on any request (heartbeat).
-- [Phase 03]: Staged configuration parameters must be confirmed within 3 minutes by calling POST /api/confirm, or the device will roll back and reboot.
-- [Phase 03]: Wi-Fi staging timeout is 30 seconds if the device does not acquire an IP.
-- [Phase 03]: SoftAP fallback remains open during staging validation to prevent locking out the user.
-- [Phase ?]: Implemented software bootloader veto on strapping GPIO 0 to prevent download-mode holds from causing factory resets.
-- [Phase 03]: Used software mutual exclusion to ignore simultaneous presses on internal and external recovery buttons.
-- [Phase 03]: Leveraged dual LEDs to display multi-modal status: solid ON, slow blink, fast blink, and double-blink.
-- [Phase 03]: Replaced blocking alert() calls with non-blocking showToast() for confirmation/rollback flows.
-- [Phase 03]: Removed unconditional session invalidation upon staging confirmation to prevent double redirects.
-- [Phase 03]: Skipped staging for Wi-Fi profiles that match existing credentials in NVS.
-- [Phase 03]: Removed staging and confirmation banner for Wi-Fi profile saves entirely, making updates instant and direct.
-- [Phase ?]: Remove client IP match logic from session_validate() to support SoftAP/STA routing handovers.
-- [Phase ?]: Invalidate all session slots except the user's current token on credential confirmation.
-- [Phase ?]: Add nvs_commit to staging credential verification to ensure the credentials change survives boot cycles.
+Key decisions from v1.7:
+
+- [Phase 1]: Use stateful in-memory slot-based session store instead of stateless JWT (mbedtls HMAC-SHA256 caused signature mismatches).
+- [Phase 1]: Remove IP binding from session validation to prevent connection drops on SoftAP/STA transitions.
+- [Phase 2]: Challenge-response nonce for credential change to prevent replay attacks.
+- [Phase 3]: SoftAP fallback only via physical button press (2s) — never auto-opens on STA failure.
+- [Phase 3]: 3-minute anti-lockout staging window with automatic NVS rollback on reboot.
+- [Phase 03.1]: `session_invalidate_others()` — invalidate all sessions except current on credential confirm.
+- [Phase 03.1]: `nvs_commit()` added to staging credentials verification to survive boot cycles.
 
 ### Roadmap Evolution
 
-- [Phase 03.1] (URGENT): Close gap: RECOV-03 & AUTH-04 & AUTH-06 — Integration remediations (inserted after Phase 3)
+v1.7 complete. ROADMAP.md collapsed. Ready for `/gsd-new-milestone`.
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ### Quick Tasks Completed
 
@@ -105,14 +85,14 @@ None yet.
 
 ## Deferred Items
 
-Items acknowledged and carried forward from previous milestone close:
+Items acknowledged at v1.7 milestone close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| tech_debt | Orphaned `nvs_store_stage_wifi` export in nvs_store.c — unused, no functional impact | carry-forward | 2026-06-14 |
 
 ## Session Continuity
 
-Last session: 2026-06-14T10:04:36.075Z
-Stopped at: Phase 03.1 planned
-Resume file: .planning/phases/03.1-close-gap-recov-03-auth-04-auth-06-integration-remediations/03.1-01-PLAN.md
+Last session: 2026-06-14T18:20:00+07:00
+Stopped at: Milestone v1.7 complete — archived
+Resume: Run `/gsd-new-milestone` to start v1.8

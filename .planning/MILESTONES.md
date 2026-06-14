@@ -1,5 +1,33 @@
 # Milestones: Fish Pump Relay Timer Control
 
+## v1.7 Authentication & Recovery (Shipped: 2026-06-14)
+
+**Phases completed:** 4 phases (1, 2, 3, 03.1), 14 plans, ~94 commits
+
+**Git stats:** 94 commits, 122 files changed, +7,409 / -549 lines, 2026-06-11 → 2026-06-14 (3 days)
+
+**Requirements:** 12/12 complete
+
+**Key accomplishments:**
+
+1. Stateful slot-based 4-slot session store replacing stateless JWT — eliminates NVS wear and mbedtls signature mismatches that blocked the login flow.
+2. Persistent "Remember Me" sessions with Cookie Max-Age 1 year — sessions survive device reboots without NVS writes.
+3. Full credential change flow with challenge-response nonce, staged NVS writes, and confirmation rollback protection (3-minute anti-lockout timer).
+4. Hardware GPIO recovery: 2-second press opens SoftAP fallback for 5 minutes; 5-second press factory-resets credentials to `admin`/`admin123`.
+5. IP-independent session validation — removed IP binding from `session_validate()` to prevent connectivity drops during SoftAP/STA routing handovers.
+6. Targeted session invalidation — `session_invalidate_others()` logs out all other devices while keeping the credential-changing user's session active.
+
+**Tech debt noted:** Orphaned `nvs_store_stage_wifi` export — unused, no functional impact.
+
+### Archives
+
+- Roadmap: `.planning/milestones/v1.7-ROADMAP.md`
+- Requirements: `.planning/milestones/v1.7-REQUIREMENTS.md`
+- Audit: `.planning/milestones/v1.7-MILESTONE-AUDIT.md`
+- Phases: `.planning/milestones/v1.7-phases/`
+
+---
+
 ## v1.6 Modern Web UI Optimization (Shipped: 2026-06-10)
 
 **Phases completed:** 5 phases, 10 plans, 2 tasks
