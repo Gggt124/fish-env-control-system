@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: milestone
-status: completed
+status: "Phase 03.1 shipped — PR #4"
 stopped_at: Phase 03.1 planned
-last_updated: "2026-06-14T10:04:43.291Z"
-last_activity: 2026-06-14 -- Phase 03.1 marked complete
+last_updated: "2026-06-14T10:32:48.527Z"
+last_activity: 2026-06-14
 progress:
   total_phases: 4
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-11)
 
 Phase: 03.1 — COMPLETE
 Plan: TBD
-Status: Phase 03.1 complete
-Last activity: 2026-06-14 -- Phase 03.1 marked complete
+Status: Phase 03.1 shipped — PR #4
+Last activity: 2026-06-14
 
 Progress: [██████████] 100%
 
