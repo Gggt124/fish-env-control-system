@@ -31,6 +31,31 @@
     --on-error: #ffffff;
     --error-container: rgba(239, 68, 68, 0.08);
 
+    /* High-contrast text variants for semantic states (WCAG AA compliant >4.5:1) */
+    --secondary-text: #006e28;
+    --tertiary-text: #9e3d00;
+    --error-text: #ba1a1a;
+
+    /* Eyebrow Tokens */
+    --eyebrow-good-bg: rgba(16, 185, 129, 0.1);
+    --eyebrow-good-text: var(--secondary-text);
+    --eyebrow-good-border: rgba(16, 185, 129, 0.2);
+
+    --eyebrow-warn-bg: rgba(245, 158, 11, 0.1);
+    --eyebrow-warn-text: var(--tertiary-text);
+    --eyebrow-warn-border: rgba(245, 158, 11, 0.2);
+
+    --eyebrow-error-bg: rgba(239, 68, 68, 0.1);
+    --eyebrow-error-text: var(--error-text);
+    --eyebrow-error-border: rgba(239, 68, 68, 0.2);
+
+    /* Connection Status Tokens */
+    --connection-connected-bg: #ecfdf5;
+    --connection-connected-border: #a7f3d0;
+    --connection-connected-text: #065f46;
+    --connection-connected-subtext: #056e4f;
+    --connection-connected-icon: var(--secondary-text);
+
     /* Base Colors - Neutral & Layout Palette */
     --bg-body: #f1f5f9;
     --surface: #ffffff;
@@ -236,7 +261,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
 }
 
 .login-error {
-    color: var(--error);
+    color: var(--error-text);
     font-size: var(--text-sm);
     margin-bottom: var(--sp-base);
     display: none;
@@ -345,15 +370,15 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
 }
 .connection-status.connected {
     padding: 12px 16px;
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #065f46;
+    background: var(--connection-connected-bg);
+    border-color: var(--connection-connected-border);
+    color: var(--connection-connected-text);
 }
 .connection-status.connected .status-sub {
-    color: #047857;
+    color: var(--connection-connected-subtext);
 }
 .connection-status.connected .status-icon {
-    color: #10b981;
+    color: var(--connection-connected-icon);
 }
 @media (max-width: 576px) {
     .connection-status {
@@ -421,7 +446,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
 
 .sidebar-node-info .node-name { font-size: var(--text-xs); font-weight: 600; line-height: 16px; }
 .sidebar-node-info .node-status {
-    font-size: var(--text-sm); color: var(--secondary);
+    font-size: var(--text-sm); color: var(--secondary-text);
     display: flex; align-items: center; gap: 4px;
 }
 
@@ -607,8 +632,8 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     display: flex; align-items: center; gap: 4px;
 }
 
-.card-sub.good { color: var(--secondary); }
-.card-sub.warn { color: var(--tertiary); }
+.card-sub.good { color: var(--secondary-text); }
+.card-sub.warn { color: var(--tertiary-text); }
 .card-sub.neutral { color: var(--outline); }
 
 /* Info table for status page */
@@ -764,21 +789,21 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
 }
 
 .runtime-eyebrow.good {
-    background: rgba(16, 185, 129, 0.1);
-    color: #059669;
-    border-color: rgba(16, 185, 129, 0.2);
+    background: var(--eyebrow-good-bg);
+    color: var(--eyebrow-good-text);
+    border-color: var(--eyebrow-good-border);
 }
 
 .runtime-eyebrow.warn {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-    border-color: rgba(245, 158, 11, 0.2);
+    background: var(--eyebrow-warn-bg);
+    color: var(--eyebrow-warn-text);
+    border-color: var(--eyebrow-warn-border);
 }
 
 .runtime-eyebrow.error {
-    background: rgba(239, 68, 68, 0.1);
-    color: #dc2626;
-    border-color: rgba(239, 68, 68, 0.2);
+    background: var(--eyebrow-error-bg);
+    color: var(--eyebrow-error-text);
+    border-color: var(--eyebrow-error-border);
 }
 
 .runtime-eyebrow:not(.good):not(.warn):not(.error) {
@@ -906,7 +931,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     padding: 10px 12px;
     border-radius: var(--radius-md);
     background: var(--error-container);
-    color: var(--error);
+    color: var(--error-text);
     font-size: var(--text-sm); font-weight: 600;
 }
 
@@ -1027,7 +1052,7 @@ select:disabled {
 .field-error {
     min-height: 18px;
     font-size: var(--text-xs); font-weight: 600;
-    color: var(--error);
+    color: var(--error-text);
 }
 
 .settings-actions {
@@ -1105,7 +1130,7 @@ select:disabled {
     color: var(--on-surface-variant);
 }
 
-.unsaved-warning { color: var(--tertiary); }
+.unsaved-warning { color: var(--tertiary-text); }
 
 .quick-links {
     display: flex; gap: var(--sp-sm); flex-wrap: wrap;
@@ -1175,7 +1200,7 @@ select:disabled {
 }
 
 .hardware-status-banner strong {
-    color: var(--tertiary);
+    color: var(--tertiary-text);
 }
 
 .hardware-wiring-grid,
@@ -1281,13 +1306,13 @@ select:disabled {
 }
 
 .form-warning {
-    color: var(--tertiary);
+    color: var(--tertiary-text);
     font-size: var(--text-sm);
 }
 
 .form-error {
     min-height: 20px;
-    color: var(--error);
+    color: var(--error-text);
     font-size: var(--text-sm);
 }
 
@@ -1388,7 +1413,7 @@ select:disabled {
 }
 
 .step.active .step-label { color: var(--primary); }
-.step.done .step-label { color: var(--secondary); }
+.step.done .step-label { color: var(--secondary-text); }
 
 /* Wi-Fi grid */
 .wifi-grid {
@@ -1436,7 +1461,7 @@ select:disabled {
     font-size: var(--text-lg); color: var(--on-surface-variant);
 }
 .network-icon.connected-icon, .network-item.connected .network-icon {
-    color: var(--secondary);
+    color: var(--secondary-text);
     background: var(--secondary-container);
 }
 
@@ -1454,22 +1479,22 @@ select:disabled {
 
 .network-item-right { display: flex; align-items: center; gap: var(--sp-md); flex-shrink: 0; }
 .network-connected-label {
-    color: var(--secondary); font-size: var(--text-sm); font-weight: 500;
+    color: var(--secondary-text); font-size: var(--text-sm); font-weight: 500;
     display: flex; align-items: center;
     white-space: nowrap;
 }
 .net-signal { text-align: right; display: flex; flex-direction: column; gap: 4px; }
 .net-signal .sig-label { font-size: var(--text-xs); font-weight: 500; }
-.net-signal .sig-label.strong { color: var(--secondary); }
+.net-signal .sig-label.strong { color: var(--secondary-text); }
 .net-signal .sig-label.good { color: var(--primary); }
 .net-signal .sig-label.fair { color: var(--on-surface-variant); }
-.net-signal .sig-label.weak { color: var(--tertiary); }
+.net-signal .sig-label.weak { color: var(--tertiary-text); }
 .network-empty {
     padding: 32px;
     text-align: center;
     color: var(--on-surface-variant);
 }
-.network-empty.error { color: var(--error); }
+.network-empty.error { color: var(--error-text); }
 
 /* ---- Saved Wi-Fi Profiles ---- */
 .profile-list {
@@ -1501,13 +1526,13 @@ select:disabled {
     padding: 2px 8px;
     border-radius: 12px;
     background: var(--secondary-container);
-    color: var(--secondary);
+    color: var(--secondary-text);
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
 }
 
-.text-success { color: var(--secondary); }
+.text-success { color: var(--secondary-text); }
 
 .profile-actions {
     display: flex;
@@ -1551,7 +1576,7 @@ select:disabled {
 }
 
 .btn-icon-text:hover {
-    color: var(--error);
+    color: var(--error-text);
     background: rgba(186, 26, 26, 0.08);
 }
 
@@ -1812,9 +1837,9 @@ body.login-active #app-content {
     max-width: none !important;
 }
 
-.status-success { color: var(--secondary) !important; }
-.status-danger { color: var(--error) !important; }
-.status-warning { color: var(--tertiary) !important; }
+.status-success { color: var(--secondary-text) !important; }
+.status-danger { color: var(--error-text) !important; }
+.status-warning { color: var(--tertiary-text) !important; }
 
 /* Staging Banner */
 .staging-banner {
@@ -1856,10 +1881,10 @@ body.login-active #app-content {
     letter-spacing: 0.05em;
 }
 .hardware-summary-card.active-map .summary-label {
-    color: var(--secondary);
+    color: var(--secondary-text);
 }
 .hardware-summary-card.pending-map .summary-label {
-    color: var(--tertiary);
+    color: var(--tertiary-text);
 }
 .hardware-summary-list {
     font-family: var(--font-mono);
