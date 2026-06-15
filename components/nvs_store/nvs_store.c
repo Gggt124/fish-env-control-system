@@ -502,6 +502,18 @@ bool nvs_store_forget_wifi_profile(const char *ssid)
     if (nvs_open(NVS_PROF_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return false;
     bool ok = prof_write_all(h, profiles, count, auto_idx);
     nvs_close(h);
+
+    /* Clear legacy Wi-Fi credential if it matches the forgotten SSID */
+    if (ok) {
+        char legacy_ssid[33] = {0};
+        char legacy_pass[65] = {0};
+        if (nvs_store_load_wifi(legacy_ssid, sizeof(legacy_ssid), legacy_pass, sizeof(legacy_pass))) {
+            if (strcmp(legacy_ssid, ssid) == 0) {
+                nvs_store_clear_wifi();
+            }
+        }
+    }
+
     return ok;
 }
 
