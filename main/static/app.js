@@ -66,32 +66,32 @@ function apiGet(url, cb, customTimeout) {
     }
     xhr.open('GET', url, true);
     xhr.timeout = customTimeout || API_TIMEOUT_MS;
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             try {
                 var data = JSON.parse(xhr.responseText);
                 if (url === '/api/status' && data && data.ok) {
-                    var banners = document.querySelectorAll('.staging-banner');
-                    for (var i = 0; i < banners.length; i++) {
+                    var banner = document.getElementById('staging-banner');
+                    if (banner) {
                         if (data.stg_type > 0) {
-                            banners[i].classList.remove('hidden');
+                            banner.classList.remove('hidden');
                         } else {
-                            banners[i].classList.add('hidden');
+                            banner.classList.add('hidden');
                         }
                     }
                 }
                 finish(null, data);
             }
-            catch(e) { finish(e, null); }
+            catch (e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function() { finish(new Error('Network error'), null); };
-    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
@@ -106,7 +106,7 @@ function apiPost(url, body, cb) {
     xhr.open('POST', url, true);
     xhr.timeout = API_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
             return;
@@ -114,7 +114,7 @@ function apiPost(url, body, cb) {
         try {
             var parsed = JSON.parse(xhr.responseText);
             finish(null, parsed);
-        } catch(e) {
+        } catch (e) {
             if (xhr.status === 200) {
                 finish(e, null);
             } else {
@@ -122,9 +122,9 @@ function apiPost(url, body, cb) {
             }
         }
     };
-    xhr.onerror = function() { finish(new Error('Network error'), null); };
-    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
     xhr.send(JSON.stringify(body));
 }
 
@@ -138,19 +138,19 @@ function apiDelete(url, cb) {
     }
     xhr.open('DELETE', url, true);
     xhr.timeout = API_TIMEOUT_MS;
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             try { finish(null, JSON.parse(xhr.responseText)); }
-            catch(e) { finish(e, null); }
+            catch (e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function() { finish(new Error('Network error'), null); };
-    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
@@ -162,10 +162,10 @@ function showToast(msg, type) {
     el.className = 'toast ' + type;
     el.textContent = msg;
     document.body.appendChild(el);
-    setTimeout(function() {
+    setTimeout(function () {
         el.style.opacity = '0';
         el.style.transition = 'opacity 0.3s';
-        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
     }, 3000);
 }
 
@@ -214,27 +214,27 @@ function showConfirmModal(title, message, onConfirm, isDangerous) {
     var msgEl = document.getElementById('modal-message');
     var cancelBtn = document.getElementById('modal-cancel');
     var confirmBtn = document.getElementById('modal-confirm');
-    
+
     if (!container || !titleEl || !msgEl || !cancelBtn || !confirmBtn) return;
-    
+
     titleEl.textContent = title;
     msgEl.textContent = message;
-    
+
     if (isDangerous) {
         confirmBtn.className = 'btn btn-danger';
     } else {
         confirmBtn.className = 'btn btn-primary';
     }
-    
+
     function cleanup() {
         container.classList.add('hidden');
         cancelBtn.onclick = null;
         confirmBtn.onclick = null;
     }
-    
-    cancelBtn.onclick = function() { cleanup(); };
-    confirmBtn.onclick = function() { cleanup(); if (onConfirm) onConfirm(); };
-    
+
+    cancelBtn.onclick = function () { cleanup(); };
+    confirmBtn.onclick = function () { cleanup(); if (onConfirm) onConfirm(); };
+
     container.classList.remove('hidden');
 }
 
@@ -247,7 +247,7 @@ function initLogin() {
     var btn = document.getElementById('login-btn');
     var errEl = document.getElementById('login-error');
 
-    form.onsubmit = function(e) {
+    form.onsubmit = function (e) {
         e.preventDefault();
         var username = document.getElementById('username').value.trim();
         var password = document.getElementById('password').value;
@@ -263,7 +263,7 @@ function initLogin() {
         setLoading(btn, true);
         errEl.style.display = 'none';
 
-        apiPost('/api/login', { username: username, password: password, remember: remember }, function(err, data) {
+        apiPost('/api/login', { username: username, password: password, remember: remember }, function (err, data) {
             setLoading(btn, false);
 
             if (err || !data || !data.ok) {
@@ -286,8 +286,8 @@ function initLogin() {
 /* ======== Logout ======== */
 
 function doLogout() {
-    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function() {
-        apiPost('/api/logout', {}, function() {
+    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function () {
+        apiPost('/api/logout', {}, function () {
             document.cookie = 'session=; Path=/; Max-Age=0';
             navigateTo('/login');
         });
@@ -341,7 +341,7 @@ var HARDWARE_FIELDS = [
 function initDashboard() {
     initPumpDashboard();
     initCoolingDashboard();
-    
+
     var pwdForm = document.getElementById('password-form');
     if (pwdForm) {
         pwdForm.onsubmit = doChangePassword;
@@ -396,7 +396,7 @@ function setCoolingAlert(message) {
 function wirePumpForm() {
     var form = pumpEl('pump-config-form');
     if (form) {
-        form.onsubmit = function(e) {
+        form.onsubmit = function (e) {
             e.preventDefault();
             savePumpConfig();
         };
@@ -490,7 +490,7 @@ function loadPumpConfig() {
     setText('pump-config-state', 'กำลังโหลดค่า...');
     setPumpAlert('pump-config-error', '');
     updatePumpConfigSaveButton();
-    apiGet('/api/pump/config', function(err, data) {
+    apiGet('/api/pump/config', function (err, data) {
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
@@ -540,7 +540,7 @@ function readDuration(prefix, label) {
     var errEl = pumpEl(prefix + '-error');
     var rawMin = minEl ? minEl.value.trim() : '';
     var rawSec = secEl ? secEl.value.trim() : '';
-    var fail = function(message) {
+    var fail = function (message) {
         if (errEl) errEl.textContent = message;
         if (minEl) minEl.classList.add('invalid');
         if (secEl) secEl.classList.add('invalid');
@@ -648,7 +648,7 @@ function savePumpConfig() {
     if (saveBtn) setLoading(saveBtn, true);
     setText('pump-config-state', 'กำลังบันทึก...');
 
-    apiPost('/api/pump/config', payload, function(err, data) {
+    apiPost('/api/pump/config', payload, function (err, data) {
         if (saveBtn) setLoading(saveBtn, false);
         if (err || !data || !data.ok) {
             setText('pump-config-state', 'บันทึกไม่สำเร็จ');
@@ -684,7 +684,7 @@ function requestPumpAction(url, pendingText, successText) {
     pumpPending = true;
     setText('pump-action-state', pendingText);
     updatePumpButtons();
-    apiPost(url, {}, function(err, data) {
+    apiPost(url, {}, function (err, data) {
         pumpPending = false;
         if (err || !data || !data.ok) {
             setText('pump-action-state', '');
@@ -707,7 +707,7 @@ function syncPumpStatus(force) {
     if (document.hidden && !force) return;
     if (pumpStatusRequestInFlight) return;
     pumpStatusRequestInFlight = true;
-    apiGet('/api/pump/status', function(err, data) {
+    apiGet('/api/pump/status', function (err, data) {
         pumpStatusRequestInFlight = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
@@ -776,7 +776,7 @@ function updatePumpButtons() {
 function startPumpLiveTimers() {
     stopPumpLiveTimers();
     if (document.hidden) return;
-    pumpPollTimer = setInterval(function() { syncPumpStatus(false); }, PUMP_STATUS_POLL_MS);
+    pumpPollTimer = setInterval(function () { syncPumpStatus(false); }, PUMP_STATUS_POLL_MS);
     pumpTickTimer = setInterval(tickPumpCountdown, PUMP_COUNTDOWN_TICK_MS);
 }
 
@@ -995,7 +995,7 @@ function renderSettingsStatus(value, autoStart) {
 function wireCoolingForm() {
     var form = pumpEl('cooling-config-form');
     if (form) {
-        form.onsubmit = function(e) {
+        form.onsubmit = function (e) {
             e.preventDefault();
             saveCoolingConfig();
         };
@@ -1020,9 +1020,9 @@ function wireCoolingActions() {
     var autoBtn = pumpEl('cooling-mode-auto');
     var forceBtn = pumpEl('cooling-mode-force-off');
     var testBtn = pumpEl('cooling-test-on');
-    if (autoBtn) autoBtn.onclick = function() { setCoolingMode('auto'); };
-    if (forceBtn) forceBtn.onclick = function() { setCoolingMode('force_off'); };
-    if (testBtn) testBtn.onclick = function() { setCoolingMode('test_on'); };
+    if (autoBtn) autoBtn.onclick = function () { setCoolingMode('auto'); };
+    if (forceBtn) forceBtn.onclick = function () { setCoolingMode('force_off'); };
+    if (testBtn) testBtn.onclick = function () { setCoolingMode('test_on'); };
 }
 
 function checkCoolingDirty() {
@@ -1100,7 +1100,7 @@ function loadCoolingConfig() {
     setText('cooling-config-state', 'กำลังโหลดค่า...');
     setCoolingAlert('');
     updateCoolingConfigSaveButton();
-    apiGet('/api/cooling/config', function(err, data) {
+    apiGet('/api/cooling/config', function (err, data) {
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
@@ -1166,10 +1166,10 @@ function readCoolingU32(id, label, minValue, maxValue) {
 
 function buildCoolingConfigPayload() {
     if (!coolingConfig) return null;
-    var threshold = readCoolingX10('cooling-threshold-input', 'Threshold', -550, 1250);
-    var hysteresis = readCoolingX10('cooling-hysteresis-input', 'Hysteresis', 1, 500);
-    var testTimeout = readCoolingU32('cooling-test-timeout', 'Test ON seconds', 1, 3600);
-    var minOff = readCoolingU32('cooling-min-off', 'Lockout seconds', 0, 86400);
+    var threshold = readCoolingX10('cooling-threshold-input', 'อุณหภูมิเป้าหมาย', -550, 1250);
+    var hysteresis = readCoolingX10('cooling-hysteresis-input', 'ช่วงอุณหภูมิเบี่ยงเบน', 1, 500);
+    var testTimeout = readCoolingU32('cooling-test-timeout', 'ระยะเวลาเปิดทดสอบ', 1, 3600);
+    var minOff = readCoolingU32('cooling-min-off', 'เวลาล็อกป้องกันซ้ำ', 0, 86400);
     if (!threshold.ok) return threshold;
     if (!hysteresis.ok) return hysteresis;
     if (!testTimeout.ok) return testTimeout;
@@ -1202,7 +1202,7 @@ function saveCoolingConfig() {
     setText('cooling-config-state', 'กำลังบันทึก cooling...');
     updateCoolingConfigSaveButton();
     updateCoolingButtons();
-    apiPost('/api/cooling/config', built.payload, function(err, data) {
+    apiPost('/api/cooling/config', built.payload, function (err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
             setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
@@ -1223,10 +1223,10 @@ function saveCoolingConfig() {
 function setCoolingMode(mode) {
     if (coolingPending) return;
     coolingPending = true;
-    var label = mode === 'auto' ? 'Auto' : (mode === 'test_on' ? 'Test ON' : 'Force OFF');
+    var label = mode === 'auto' ? 'อัตโนมัติ (Auto)' : (mode === 'test_on' ? 'เปิดทดสอบ (Test ON)' : 'บังคับปิด (Force OFF)');
     setText('cooling-mode-action-state', 'กำลังสั่ง ' + label + '...');
     updateCoolingButtons();
-    apiPost('/api/cooling/mode', { mode: mode }, function(err, data) {
+    apiPost('/api/cooling/mode', { mode: mode }, function (err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
             setText('cooling-mode-action-state', '');
@@ -1251,7 +1251,7 @@ function syncCoolingStatus(force) {
     if (document.hidden && !force) return;
     if (coolingStatusRequestInFlight) return;
     coolingStatusRequestInFlight = true;
-    apiGet('/api/cooling/status', function(err, data) {
+    apiGet('/api/cooling/status', function (err, data) {
         coolingStatusRequestInFlight = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
@@ -1284,8 +1284,8 @@ function applyCoolingStatus(status, authoritative) {
             ? 'runtime-eyebrow error'
             : (status.lockout_active || status.mode === 'test_on' ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
         sync.textContent = status.fault || status.sensor_state === 'fault'
-            ? 'Sensor fault: cooling relay forced OFF'
-            : (status.lockout_active ? 'Compressor lockout active' : 'ซิงค์ล่าสุดจาก cooling runtime');
+            ? 'เซนเซอร์ขัดข้อง: บังคับปิดรีเลย์ทำความเย็น'
+            : (status.lockout_active ? 'ระบบหน่วงคอมเพรสเซอร์ทำงานอยู่' : 'ซิงค์ล่าสุดจาก cooling runtime');
     }
     setCoolingAlert(status.fault ? 'พบ sensor fault ระบบบังคับปิด cooling relay แล้ว' : '');
     updateCoolingButtons();
@@ -1311,7 +1311,7 @@ function updateCoolingButtons() {
     var forceBtn = pumpEl('cooling-mode-force-off');
     var testBtn = pumpEl('cooling-test-on');
     var currentMode = coolingLastStatus ? coolingLastStatus.mode : null;
-    
+
     if (autoBtn) autoBtn.disabled = disabled || (currentMode === 'auto');
     if (forceBtn) forceBtn.disabled = disabled || (currentMode === 'force_off');
     if (testBtn) testBtn.disabled = disabled || (currentMode === 'test_on');
@@ -1321,7 +1321,7 @@ function updateCoolingButtons() {
 function startCoolingStatusTimer() {
     stopCoolingStatusTimer();
     if (document.hidden) return;
-    coolingPollTimer = setInterval(function() { syncCoolingStatus(false); }, COOLING_STATUS_POLL_MS);
+    coolingPollTimer = setInterval(function () { syncCoolingStatus(false); }, COOLING_STATUS_POLL_MS);
 }
 
 function stopCoolingStatusTimer() {
@@ -1350,30 +1350,30 @@ function renderCoolingCelsius(value) {
 }
 
 function renderCoolingMode(value) {
-    if (value === 'auto') return 'Auto';
-    if (value === 'test_on') return 'Test ON';
-    if (value === 'force_off') return 'Force OFF';
+    if (value === 'auto') return 'อัตโนมัติ (Auto)';
+    if (value === 'test_on') return 'เปิดทดสอบ (Test ON)';
+    if (value === 'force_off') return 'บังคับปิด (Force OFF)';
     return '--';
 }
 
 function renderCoolingSensor(value) {
     if (value === 'ok') return '<span class="status-success">OK</span>';
     if (value === 'fault') return '<span class="status-danger">FAULT</span>';
-    return 'unknown';
+    return 'ไม่ทราบ';
 }
 
 function renderCoolingFault(status) {
-    if (!status) return 'Fault: --';
-    if (!status.fault) return 'Fault: <span class="status-success">none</span>';
-    return 'Fault: <span class="status-danger">' + (status.fault_code || 'unknown') + '</span>';
+    if (!status) return 'ข้อผิดพลาด: --';
+    if (!status.fault) return 'ข้อผิดพลาด: <span class="status-success">ไม่มี</span>';
+    return 'ข้อผิดพลาด: <span class="status-danger">' + (status.fault_code || 'ไม่ทราบ') + '</span>';
 }
 
 function renderCoolingBlocked(value) {
     if (!value || value === 'none') return '--';
-    if (value === 'compressor_lockout') return 'Compressor lockout';
-    if (value === 'sensor_fault') return 'Sensor fault';
-    if (value === 'force_off') return 'Force OFF';
-    if (value === 'config_invalid') return 'Config invalid';
+    if (value === 'compressor_lockout') return 'หน่วงคอมเพรสเซอร์ (Compressor lockout)';
+    if (value === 'sensor_fault') return 'เซนเซอร์ขัดข้อง (Sensor fault)';
+    if (value === 'force_off') return 'บังคับปิด (Force OFF)';
+    if (value === 'config_invalid') return 'การตั้งค่าไม่ถูกต้อง (Config invalid)';
     return value;
 }
 
@@ -1393,7 +1393,7 @@ function hardwareEl(id) {
 function wireHardwareForm() {
     var form = hardwareEl('hardware-map-form');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             saveHardwareMap();
         });
@@ -1475,21 +1475,21 @@ function updateHardwareSaveButton() {
 }
 
 function loadHardwareMap() {
-    setHardwareState('Loading hardware map');
+    setHardwareState('กำลังโหลดผัง GPIO...');
     setHardwareError('');
-    apiGet('/api/hardware/map', function(err, data) {
+    apiGet('/api/hardware/map', function (err, data) {
         if (err) {
             if (err.message === 'HTTP 401') {
                 navigateTo('/login');
                 return;
             }
-            setHardwareState('Load failed');
-            setHardwareError('Could not load hardware map: ' + err.message);
+            setHardwareState('โหลดข้อมูลล้มเหลว');
+            setHardwareError('ไม่สามารถโหลดผัง GPIO ได้: ' + err.message);
             return;
         }
         if (!data || data.ok !== true) {
-            setHardwareState('Load failed');
-            setHardwareError('Hardware map API returned an invalid response.');
+            setHardwareState('โหลดข้อมูลล้มเหลว');
+            setHardwareError('เซิร์ฟเวอร์ตอบกลับผัง GPIO ไม่ถูกต้อง');
             return;
         }
         applyHardwareMap(data);
@@ -1508,7 +1508,7 @@ function applyHardwareMap(data) {
     renderHardwareTechnical(data.options || {});
 
     setHardwareClean();
-    setHardwareState(data.reboot_required ? 'Pending map saved - reboot required' : 'Active map loaded');
+    setHardwareState(data.reboot_required ? 'บันทึกผังใหม่แล้ว - จำเป็นต้องรีบูตระบบ' : 'โหลดผังปัจจุบันเรียบร้อย');
 }
 
 function renderHardwareBanner(data) {
@@ -1520,14 +1520,14 @@ function renderHardwareBanner(data) {
         return;
     }
     el.classList.remove('hidden');
-    el.innerHTML = '<strong>Reboot required</strong><span> A pending GPIO map is saved. Reboot the ESP32 before wiring behavior changes.</span>';
+    el.innerHTML = '<strong>จำเป็นต้องรีบูตระบบ</strong><span> บันทึกผัง GPIO ใหม่แล้ว กรุณารีบูตบอร์ด ESP32 เพื่อเริ่มใช้งานขาพินใหม่</span>';
 }
 
 function renderHardwareSummary(id, map, emptyLabel, activeMap) {
     var el = hardwareEl(id);
     if (!el) return;
     if (!map) {
-        el.innerHTML = '<div class="hardware-summary-empty">No ' + escHtml(emptyLabel) + ' changes</div>';
+        el.innerHTML = '<div class="hardware-summary-empty">ไม่มีการเปลี่ยนแปลงของผัง ' + (emptyLabel === 'active' ? 'ปัจจุบัน' : 'ใหม่') + '</div>';
         return;
     }
 
@@ -1546,7 +1546,7 @@ function renderHardwareSummary(id, map, emptyLabel, activeMap) {
     }
 
     if (activeMap && count === 0) {
-        el.innerHTML = '<div class="hardware-summary-empty">No ' + escHtml(emptyLabel) + ' changes</div>';
+        el.innerHTML = '<div class="hardware-summary-empty">ไม่มีการเปลี่ยนแปลงของผัง ' + (emptyLabel === 'active' ? 'ปัจจุบัน' : 'ใหม่') + '</div>';
     } else {
         el.innerHTML = html;
     }
@@ -1565,7 +1565,7 @@ function populateHardwareSelects(options, map) {
             var opt = roleOptions[j];
             var value = String(opt.gpio);
             var label = opt.label || ('GPIO ' + value);
-            if (opt.is_default) label += ' (default)';
+            if (opt.is_default) label += ' (ค่าเริ่มต้น)';
             html += '<option value="' + escHtml(value) + '"'
                 + (value === current ? ' selected' : '')
                 + '>' + escHtml(label) + '</option>';
@@ -1579,9 +1579,9 @@ function renderHardwareWiring(active, pending) {
     for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
         var field = HARDWARE_FIELDS[i];
         var activeValue = active && active[field.key] !== undefined ? active[field.key] : '--';
-        var text = 'Active GPIO ' + activeValue;
+        var text = 'พินปัจจุบัน GPIO ' + activeValue;
         if (pending && pending[field.key] !== undefined && String(pending[field.key]) !== String(activeValue)) {
-            text += ' / pending GPIO ' + pending[field.key];
+            text += ' / รอรีบูต GPIO ' + pending[field.key];
         }
         setText(field.wire, text);
     }
@@ -1610,10 +1610,10 @@ function renderHardwareTechnical(options) {
 
 function renderHardwareOption(opt) {
     var tags = [];
-    if (opt.input_capable) tags.push('Input');
-    if (opt.output_capable) tags.push('Output');
-    if (opt.internal_pull_capable) tags.push('Internal pull');
-    if (opt.is_default) tags.push('Default');
+    if (opt.input_capable) tags.push('อินพุต (Input)');
+    if (opt.output_capable) tags.push('เอาต์พุต (Output)');
+    if (opt.internal_pull_capable) tags.push('ดึงสัญญาณภายใน (Internal pull)');
+    if (opt.is_default) tags.push('ค่าเริ่มต้น (Default)');
 
     var tagHtml = '';
     for (var i = 0; i < tags.length; i++) {
@@ -1640,40 +1640,40 @@ function readHardwareMapForm() {
 function saveHardwareMap() {
     var confirm = hardwareEl('hardware-confirm-reboot');
     if (!confirm || !confirm.checked) {
-        setHardwareError('Confirm that a reboot is required before saving.');
+        setHardwareError('กรุณาทำเครื่องหมายยืนยันว่าเข้าใจว่าต้องรีบูตระบบก่อนบันทึก');
         updateHardwareSaveButton();
         return;
     }
 
     var map = readHardwareMapForm();
     if (!map) {
-        setHardwareError('Choose a GPIO for every hardware role.');
+        setHardwareError('กรุณาเลือกพิน GPIO สำหรับทุกหน้าที่การทำงาน');
         return;
     }
 
     hardwarePending = true;
     updateHardwareSaveButton();
     setHardwareError('');
-    setHardwareState('Saving pending map');
+    setHardwareState('กำลังบันทึกผัง GPIO ใหม่...');
 
     apiPost('/api/hardware/map', {
         map: map,
         confirm_reboot_required: true
-    }, function(err, data) {
+    }, function (err, data) {
         hardwarePending = false;
         updateHardwareSaveButton();
         if (err) {
-            setHardwareState('Save failed');
-            setHardwareError('Could not save hardware map: ' + err.message);
+            setHardwareState('บันทึกข้อมูลล้มเหลว');
+            setHardwareError('ไม่สามารถบันทึกผัง GPIO ได้: ' + err.message);
             return;
         }
         if (!data || data.ok !== true) {
-            setHardwareState('Save failed');
-            setHardwareError('Save rejected: ' + ((data && (data.message || data.error)) || 'invalid hardware map'));
+            setHardwareState('บันทึกข้อมูลล้มเหลว');
+            setHardwareError('การบันทึกถูกปฏิเสธ: ' + ((data && (data.message || data.error)) || 'ผัง GPIO ไม่ถูกต้อง'));
             return;
         }
         applyHardwareMap(data);
-        showToast('Pending hardware map saved', 'success');
+        showToast('บันทึกผัง GPIO รอการรีบูตเรียบร้อย', 'success');
     });
 }
 
@@ -1689,7 +1689,7 @@ function refreshFullStatus() {
     if (document.hidden) return;
     if (statusFullRequestInFlight) return;
     statusFullRequestInFlight = true;
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         statusFullRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
@@ -1710,9 +1710,9 @@ function refreshFullStatus() {
         var minKb = (data.min_free_heap / 1024).toFixed(0);
         var largestKb = (data.largest_free_block / 1024).toFixed(0);
         var totalKb = (data.total_heap / 1024).toFixed(0);
-        
+
         var pct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100) : 0;
-        
+
         setText('st-free-heap', freeKb + ' KB (' + pct.toFixed(1) + '% used)');
         setText('st-min-free-heap', minKb + ' KB');
         setText('st-largest-free-block', largestKb + ' KB');
@@ -1780,7 +1780,7 @@ function refreshStatus() {
     if (document.hidden) return;
     if (statusSummaryRequestInFlight) return;
     statusSummaryRequestInFlight = true;
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         statusSummaryRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
@@ -1894,7 +1894,7 @@ function initWifi() {
 }
 
 function updateConnectionStatus() {
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         var el = document.getElementById('connection-status');
         var icon = document.getElementById('conn-icon');
         var title = document.getElementById('conn-title');
@@ -1922,15 +1922,15 @@ function loadWifiProfiles(retryCount) {
     if (retryCount === undefined) retryCount = 0;
     var el = document.getElementById('profile-list');
     if (!el) return;
-    
+
     if (retryCount === 0) {
         el.innerHTML = '<div class="profile-empty">กำลังโหลด...</div>';
     }
-    
-    apiGet('/api/wifi/profiles', function(err, data) {
+
+    apiGet('/api/wifi/profiles', function (err, data) {
         if (err || !data || !data.ok) {
             if (retryCount < 1) {
-                setTimeout(function() {
+                setTimeout(function () {
                     loadWifiProfiles(retryCount + 1);
                 }, 1500);
             } else {
@@ -1947,10 +1947,10 @@ function loadWifiProfiles(retryCount) {
 function renderSavedProfiles() {
     var el = document.getElementById('profile-list');
     if (!el) return;
-    
+
     var profiles = window.savedWifiProfiles || [];
     /* Sort by connected first */
-    profiles.sort(function(a, b) {
+    profiles.sort(function (a, b) {
         if (a.connected && !b.connected) return -1;
         if (!a.connected && b.connected) return 1;
         return 0;
@@ -1959,12 +1959,12 @@ function renderSavedProfiles() {
         el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span style="font-size:12px;color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
         return;
     }
-    
+
     var html = '<div class="profile-list">';
     for (var i = 0; i < profiles.length; i++) {
         var p = profiles[i];
         var isConn = p.connected === true;
-        
+
         // Cross-reference with scan results
         var scanData = null;
         if (window.lastScanResults) {
@@ -1975,12 +1975,12 @@ function renderSavedProfiles() {
                 }
             }
         }
-        
+
         var iconClass = isConn ? ' connected-icon' : (scanData ? '' : ' inactive-icon');
         var iconStyle = scanData ? '' : 'opacity: 0.4;';
-        
+
         html += '<div class="profile-item' + (isConn ? ' connected' : '') + '">';
-        
+
         /* Left side */
         html += '<div class="profile-item-left">';
         html += '<div class="network-icon' + iconClass + '" style="' + iconStyle + '">';
@@ -1994,7 +1994,7 @@ function renderSavedProfiles() {
         }
         html += '</div>';
         html += '<div class="net-detail">';
-        
+
         if (scanData) {
             // Found in scan
             var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ';
@@ -2011,29 +2011,29 @@ function renderSavedProfiles() {
             html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> ';
             html += '<span style="opacity:0.6;">อยู่นอกระยะสัญญาณ</span>';
         }
-        
+
         if (isConn) {
             html += '<span class="text-success" style="margin-left:8px;">เชื่อมต่อแล้ว</span>';
         }
         html += '</div>';
         html += '</div>';
         html += '</div>';
-        
+
         /* Right side */
         html += '<div class="profile-actions">';
-        
+
         html += '<label class="toggle-row-inline">';
         html += '<span class="toggle-label-text">เชื่อมต่ออัตโนมัติ</span>';
         html += '<div class="toggle-switch"><input type="checkbox" onchange="toggleAutoProfile(\'' + escJs(p.ssid) + '\', this.checked, ' + (p.auto ? 'true' : 'false') + ')" ' + (p.auto ? 'checked' : '') + '><span class="toggle-slider"></span></div>';
         html += '</label>';
-        
+
         html += '<div class="action-divider"></div>';
-        
+
         html += '<button class="btn-icon-text btn-forget" onclick="forgetProfile(\'' + escJs(p.ssid) + '\')">';
         html += '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
         html += '<span class="hidden-mobile">ลืม</span>';
         html += '</button>';
-        
+
         html += '</div></div>';
     }
     html += '</div>';
@@ -2041,8 +2041,8 @@ function renderSavedProfiles() {
 }
 
 function forgetProfile(ssid) {
-    showConfirmModal('ลืมเครือข่าย', '\u0e25\u0e37\u0e21 "' + escHtml(ssid) + '" \u0e43\u0e0a\u0e48\u0e2b\u0e23\u0e37\u0e2d\u0e44\u0e21\u0e48?', function() {
-        apiPost('/api/wifi/profiles/forget', { ssid: ssid }, function(err, data) {
+    showConfirmModal('ลืมเครือข่าย', '\u0e25\u0e37\u0e21 "' + escHtml(ssid) + '" \u0e43\u0e0a\u0e48\u0e2b\u0e23\u0e37\u0e2d\u0e44\u0e21\u0e48?', function () {
+        apiPost('/api/wifi/profiles/forget', { ssid: ssid }, function (err, data) {
             if (err || !data || !data.ok) {
                 showToast('\u0e25\u0e37\u0e21\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
                 return;
@@ -2058,12 +2058,12 @@ function toggleAutoProfile(ssid, isChecked, initialState) {
     if (toggleAutoTimer) {
         clearTimeout(toggleAutoTimer);
     }
-    toggleAutoTimer = setTimeout(function() {
+    toggleAutoTimer = setTimeout(function () {
         if (isChecked === initialState) {
             return;
         }
         if (isChecked) {
-            apiPost('/api/wifi/profiles/setauto', { ssid: ssid }, function(err, data) {
+            apiPost('/api/wifi/profiles/setauto', { ssid: ssid }, function (err, data) {
                 if (err || !data || !data.ok) {
                     showToast('\u0e15\u0e31\u0e49\u0e07 Auto \u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
                     loadWifiProfiles(); // revert toggle
@@ -2073,7 +2073,7 @@ function toggleAutoProfile(ssid, isChecked, initialState) {
                 loadWifiProfiles();
             });
         } else {
-            apiPost('/api/wifi/profiles/setauto', { index: -1 }, function(err, data) {
+            apiPost('/api/wifi/profiles/setauto', { index: -1 }, function (err, data) {
                 if (err || !data || !data.ok) {
                     showToast('\u0e22\u0e01\u0e40\u0e25\u0e34\u0e01 Auto \u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
                     loadWifiProfiles(); // revert toggle
@@ -2087,7 +2087,7 @@ function toggleAutoProfile(ssid, isChecked, initialState) {
 }
 
 function saveWifiProfile(ssid, password) {
-    apiPost('/api/wifi/profiles/save', { ssid: ssid, password: password || '' }, function(err, data) {
+    apiPost('/api/wifi/profiles/save', { ssid: ssid, password: password || '' }, function (err, data) {
         if (!err && data && data.ok) {
             loadWifiProfiles();
         }
@@ -2095,15 +2095,15 @@ function saveWifiProfile(ssid, password) {
 }
 
 function doDisconnect() {
-    showConfirmModal('ตัดการเชื่อมต่อ', 'คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?', function() {
+    showConfirmModal('ตัดการเชื่อมต่อ', 'คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?', function () {
         var btn = document.getElementById('disconnect-btn');
         if (btn) { setLoading(btn, true); }
 
-        apiPost('/api/wifi/disconnect', {}, function(err, data) {
+        apiPost('/api/wifi/disconnect', {}, function (err, data) {
             if ((data && data.ok) || (err && !data)) {
                 showToast('ตัดการเชื่อมต่อเรียบร้อย', 'success');
                 clearSelection();
-                setTimeout(function() {
+                setTimeout(function () {
                     if (btn) {
                         setLoading(btn, false);
                     }
@@ -2121,7 +2121,7 @@ function doDisconnect() {
 }
 
 function updateApPill() {
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         if (!err && data && data.ok) {
             var ipEl = document.getElementById('ap-pill-ip');
             var pill = document.getElementById('ap-pill');
@@ -2136,7 +2136,7 @@ function doScan() {
     var list = document.getElementById('network-list');
 
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class=\"spinner\"></span> \u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e41\u0e01\u0e19...'; }
-    apiGet('/api/wifi/scan', function(err, data) {
+    apiGet('/api/wifi/scan', function (err, data) {
         if (btn) {
             setLoading(btn, false);
             btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right: 4px; vertical-align: middle;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path></svg> สแกนใหม่';
@@ -2156,12 +2156,12 @@ function doScan() {
         }
 
         /* Sort by connected first, then RSSI (strongest first) */
-        nets.sort(function(a, b) {
+        nets.sort(function (a, b) {
             if (a.connected && !b.connected) return -1;
             if (!a.connected && b.connected) return 1;
             return b.rssi - a.rssi;
         });
-        
+
         window.lastScanResults = nets;
         if (window.savedWifiProfiles) renderSavedProfiles();
 
@@ -2182,30 +2182,30 @@ function doScan() {
 
             var isConnected = nets[i].connected === true;
             html += '<div class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
-                    'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                    (isConnected ? '' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
+                'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
+                (isConnected ? '' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
                 '<div class=\"network-item-left\">' +
-                    '<div class=\"network-icon' + (isConnected ? ' connected-icon' : '') + '\">' +
-                        '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>' +
-                    '</div>' +
-                    '<div class=\"network-info\">' +
-                        '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
-                        '<div class=\"net-detail\">' +
-                            (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ') + escHtml(nets[i].auth) +
-                            ' &bull; Ch ' + nets[i].channel +
-                        '</div>' +
-                    '</div>' +
+                '<div class=\"network-icon' + (isConnected ? ' connected-icon' : '') + '\">' +
+                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>' +
+                '</div>' +
+                '<div class=\"network-info\">' +
+                '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
+                '<div class=\"net-detail\">' +
+                (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ') + escHtml(nets[i].auth) +
+                ' &bull; Ch ' + nets[i].channel +
+                '</div>' +
+                '</div>' +
                 '</div>' +
                 '<div class=\"network-item-right\">' +
-                    '<div class=\"net-signal\">' +
-                        '<div class=\"sig-label ' + sigClass + '\">' + sigLabel + '</div>' +
-                        '<div class=\"sig-dbm\">' + nets[i].rssi + ' dBm</div>' +
-                    '</div>' +
-                    (isConnected
-                        ? '<div class=\"network-connected-label\"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</div>'
-                        : '<div class=\"btn btn-outline btn-sm btn-select\">\u0e40\u0e25\u0e37\u0e2d\u0e01</div>') +
+                '<div class=\"net-signal\">' +
+                '<div class=\"sig-label ' + sigClass + '\">' + sigLabel + '</div>' +
+                '<div class=\"sig-dbm\">' + nets[i].rssi + ' dBm</div>' +
                 '</div>' +
-            '</div>';
+                (isConnected
+                    ? '<div class=\"network-connected-label\"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</div>'
+                    : '<div class=\"btn btn-outline btn-sm btn-select\">\u0e40\u0e25\u0e37\u0e2d\u0e01</div>') +
+                '</div>' +
+                '</div>';
         }
         if (list) list.innerHTML = html;
     });
@@ -2242,7 +2242,7 @@ function fadeSwap(toHide, toShow) {
         return;
     }
     toHide.style.opacity = '0';
-    setTimeout(function() {
+    setTimeout(function () {
         toHide.classList.add('hidden');
         toShow.style.opacity = '0';
         toShow.classList.remove('hidden');
@@ -2291,14 +2291,14 @@ function selectNetwork(ssid) {
         }
     }
 
-    if (pwInput) { 
-        pwInput.value = ''; 
-        pwInput.type = 'password'; 
-        pwInput.disabled = false; 
-        
+    if (pwInput) {
+        pwInput.value = '';
+        pwInput.type = 'password';
+        pwInput.disabled = false;
+
         var pwGroup = document.getElementById('wifi-password-group');
         var savedMsg = document.getElementById('wifi-saved-msg');
-        
+
         if (isSaved) {
             pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e16\u0e39\u0e01\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 (\u0e40\u0e27\u0e49\u0e19\u0e27\u0e48\u0e32\u0e07\u0e44\u0e14\u0e49)';
             if (pwGroup) pwGroup.style.display = 'none';
@@ -2400,7 +2400,7 @@ function markNetworkConnected(ssid) {
 
 function doConnect() {
     if (!selectedSsid) return;
-    
+
     var pwInput = document.getElementById('wifi-password');
     var password = pwInput ? pwInput.value : '';
 
@@ -2422,7 +2422,7 @@ function doConnect() {
         body.netmask = document.getElementById('static-netmask').value.trim();
     }
 
-    apiPost('/api/wifi/connect', body, function(err, data) {
+    apiPost('/api/wifi/connect', body, function (err, data) {
         if (err) {
             if (err.message && err.message.indexOf('HTTP') === 0) {
                 if (connectBtn) setLoading(connectBtn, false);
@@ -2435,19 +2435,19 @@ function doConnect() {
                 var banner = document.getElementById('reconnect-banner');
                 if (banner) banner.style.display = 'block';
                 if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
-                wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 2000);
+                wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(1); }, 2000);
             }
             return;
         }
 
         if (data && data.ok && data.connecting) {
             if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
-            
+
             var banner = document.getElementById('reconnect-banner');
             if (banner) banner.style.display = 'block';
-            
+
             if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
-            wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 1000);
+            wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(1); }, 1000);
         } else if (data && data.ok) {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
@@ -2457,7 +2457,7 @@ function doConnect() {
             /* Update AP pill */
             updateApPill();
             /* Auto close modal after 2 seconds */
-            setTimeout(function() {
+            setTimeout(function () {
                 clearSelection();
             }, 2000);
         } else {
@@ -2473,7 +2473,7 @@ function doConnect() {
 }
 
 function pollWifiConnection(attempt) {
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         var connectBtn = document.getElementById('connect-btn');
         var cancelBtn = document.getElementById('cancel-btn');
         var statusEl = document.getElementById('connect-status');
@@ -2494,15 +2494,15 @@ function pollWifiConnection(attempt) {
 
                 /* Mark the connected network in the list */
                 var connSsid = data.sta_ssid || selectedSsid;
-                
+
                 if (connSsid && connSsid !== selectedSsid) {
                     /* Fallback detected! We are back on the old Wi-Fi */
                     wifiConnectPollTimer = null;
                     if (connectBtn) setLoading(connectBtn, false);
                     if (cancelBtn) cancelBtn.disabled = false;
-                    if (statusEl) { 
-                        statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ระบบได้ดึงคุณกลับมายัง Wi-Fi เดิม'; 
-                        statusEl.style.color = 'var(--error)'; 
+                    if (statusEl) {
+                        statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ระบบได้ดึงคุณกลับมายัง Wi-Fi เดิม';
+                        statusEl.style.color = 'var(--error)';
                     }
                     updateStepper(2);
                     var banner = document.getElementById('reconnect-banner');
@@ -2520,7 +2520,7 @@ function pollWifiConnection(attempt) {
                 wifiConnectedSsid = connSsid;
 
                 /* Auto close modal after 2 seconds, keep stepper at step 3 done */
-                setTimeout(function() {
+                setTimeout(function () {
                     clearSelection();
                 }, 2000);
                 return;
@@ -2545,7 +2545,7 @@ function pollWifiConnection(attempt) {
             wifiConnectPollTimer = null;
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
-            
+
             var banner = document.getElementById('reconnect-banner');
             if (banner) banner.style.display = 'none';
 
@@ -2558,9 +2558,9 @@ function pollWifiConnection(attempt) {
                 updateStepper(2);
             } else {
                 /* Connection to SoftAP lost, assume device moved to new network */
-                if (statusEl) { 
-                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ'; 
-                    statusEl.style.color = 'var(--secondary)'; 
+                if (statusEl) {
+                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ';
+                    statusEl.style.color = 'var(--secondary)';
                 }
                 updateStepper(3, true);
                 updateConnectionStatus();
@@ -2571,7 +2571,7 @@ function pollWifiConnection(attempt) {
         var countdownEl = document.getElementById('reconnect-countdown');
         if (countdownEl) countdownEl.textContent = (15 - attempt);
 
-        wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(attempt + 1); }, 200);
+        wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(attempt + 1); }, 200);
     }, 800);
 }
 
@@ -2632,7 +2632,7 @@ function doChangePassword(e) {
     if (errEl) errEl.classList.add('hidden');
     setLoading(btn, true);
 
-    apiGet('/api/auth/nonce', function(err, data) {
+    apiGet('/api/auth/nonce', function (err, data) {
         if (err || !data || !data.ok || !data.nonce) {
             setLoading(btn, false);
             if (errEl) {
@@ -2651,7 +2651,7 @@ function doChangePassword(e) {
             payload.new_username = newUsername;
         }
 
-        apiPost('/api/auth/credentials', payload, function(err2, data2) {
+        apiPost('/api/auth/credentials', payload, function (err2, data2) {
             setLoading(btn, false);
             if (err2 || !data2 || !data2.ok) {
                 if (errEl) {
@@ -2667,7 +2667,7 @@ function doChangePassword(e) {
 
             closePasswordModal();
             showToast('เปลี่ยนรหัสผ่านเรียบร้อย ระบบจะนำคุณออกเพื่อล็อกอินใหม่', 'success');
-            setTimeout(function() {
+            setTimeout(function () {
                 document.cookie = 'session=; Path=/; Max-Age=0';
                 navigateTo('/login');
             }, 2500);
@@ -2685,39 +2685,39 @@ function navigateTo(path) {
 
 function handleRoute() {
     var path = window.location.pathname;
-    
+
     if (path === '/' || path === '') {
         path = isAuthenticated() ? '/dashboard' : '/login';
         history.replaceState(null, '', path);
     }
-    
+
     if (path === '/login' && isAuthenticated()) {
         navigateTo('/dashboard');
         return;
     }
-    
+
     var views = document.querySelectorAll('.view');
     for (var i = 0; i < views.length; i++) {
         views[i].classList.add('hidden');
     }
-    
+
     var viewId = 'view-login';
     if (path === '/dashboard') viewId = 'view-dashboard';
     else if (path === '/status') viewId = 'view-status';
     else if (path === '/wifi') viewId = 'view-wifi';
     else if (path === '/hardware') viewId = 'view-hardware';
-    
+
     var activeView = document.getElementById(viewId);
     if (activeView) {
         activeView.classList.remove('hidden');
     }
-    
+
     if (viewId === 'view-login') {
         document.body.classList.add('login-active');
     } else {
         document.body.classList.remove('login-active');
     }
-    
+
     var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
     for (var j = 0; j < navItems.length; j++) {
         navItems[j].classList.remove('active');
@@ -2725,11 +2725,19 @@ function handleRoute() {
             navItems[j].classList.add('active');
         }
     }
-    
+
+    var mNavItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item');
+    for (var k = 0; k < mNavItems.length; k++) {
+        mNavItems[k].classList.remove('active');
+        if (mNavItems[k].getAttribute('href') === path) {
+            mNavItems[k].classList.add('active');
+        }
+    }
+
     checkAuth();
-    
+
     cleanupCurrentView();
-    
+
     if (path === '/login') {
         if (typeof initLogin === 'function') initLogin();
     } else if (path === '/dashboard') {
@@ -2741,7 +2749,7 @@ function handleRoute() {
     } else if (path === '/hardware') {
         if (typeof initHardwareInstall === 'function') initHardwareInstall();
     }
-    
+
     if (typeof closeMobileNav === 'function') closeMobileNav();
 }
 
@@ -2749,14 +2757,14 @@ window.addEventListener('popstate', handleRoute);
 
 /* ======== Init ======== */
 
-(function() {
-    document.addEventListener('keydown', function(e) {
+(function () {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             if (typeof closeMobileNav === 'function') closeMobileNav();
         }
     });
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         var link = e.target.closest('a');
         if (link) {
             var href = link.getAttribute('href');
@@ -2771,12 +2779,12 @@ window.addEventListener('popstate', handleRoute);
 })();
 
 function confirmStaging() {
-    apiPost('/api/confirm', {}, function(err, data) {
+    apiPost('/api/confirm', {}, function (err, data) {
         if (err) {
             showToast('ยืนยันไม่สำเร็จ: ' + err.message, 'error');
         } else if (data && data.ok) {
             showToast('ยืนยันการตั้งค่าสำเร็จ', 'success');
-            setTimeout(function() { window.location.reload(); }, 1500);
+            setTimeout(function () { window.location.reload(); }, 1500);
         } else {
             showToast('ยืนยันไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'), 'error');
         }
@@ -2784,15 +2792,29 @@ function confirmStaging() {
 }
 
 function cancelStaging() {
-    apiDelete('/api/confirm', function(err, data) {
+    apiDelete('/api/confirm', function (err, data) {
         if (err) {
             showToast('ยกเลิกไม่สำเร็จ: ' + err.message, 'error');
         } else if (data && data.ok) {
             showToast('ยกเลิกการตั้งค่าเรียบร้อยแล้ว อุปกรณ์กำลังรีบูตเพื่อย้อนกลับ...', 'success');
-            setTimeout(function() { window.location.reload(); }, 1500);
+            setTimeout(function () { window.location.reload(); }, 1500);
         } else {
             showToast('ยกเลิกไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'), 'error');
         }
     });
+}
+
+function handleMobileSync() {
+    var path = window.location.pathname;
+    if (path === '/dashboard') {
+        if (typeof syncPumpStatus === 'function') syncPumpStatus(true);
+        if (typeof syncCoolingStatus === 'function') syncCoolingStatus(true);
+    } else if (path === '/status') {
+        if (typeof refreshFullStatus === 'function') refreshFullStatus();
+    } else if (path === '/hardware') {
+        if (typeof loadHardwareMap === 'function') loadHardwareMap();
+    } else if (path === '/wifi') {
+        if (typeof doScan === 'function') doScan();
+    }
 }
 

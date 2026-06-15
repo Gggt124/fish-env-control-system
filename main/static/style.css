@@ -230,6 +230,18 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
 
 .form-options a { font-size: var(--text-sm); }
 
+.form-group-checkbox {
+    margin-top: -8px;
+    margin-bottom: var(--sp-md);
+}
+
+.login-error {
+    color: var(--error);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-base);
+    display: none;
+}
+
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-base);
     padding: 10px 16px; border-radius: var(--radius-md);
@@ -827,6 +839,13 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
 }
 
 .pump-countdown-wrap .summary-label { color: var(--on-surface-variant); }
+
+.pump-countdown-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+}
 
 .pump-countdown {
     font-family: var(--font-mono);
@@ -1717,7 +1736,11 @@ select:disabled {
 /* === Utility === */
 .mt-auto { margin-top: auto; }
 .text-center { text-align: center; }
+.text-sm { font-size: var(--text-sm); }
+.text-xs { font-size: var(--text-xs); }
 .hidden { display: none !important; }
+.flex-col-1 { flex: 1; display: flex; flex-direction: column; }
+.block-helper { display: block; margin-top: 2px; font-weight: normal; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
@@ -1780,7 +1803,7 @@ select:disabled {
     gap: var(--sp-sm);
 }
 
-body.login-active #app-sidebar, body.login-active .mobile-topbar {
+body.login-active #app-sidebar, body.login-active .mobile-topbar, body.login-active #staging-banner {
     display: none !important;
 }
 body.login-active #app-content {
@@ -1792,4 +1815,189 @@ body.login-active #app-content {
 .status-success { color: var(--secondary) !important; }
 .status-danger { color: var(--error) !important; }
 .status-warning { color: var(--tertiary) !important; }
+
+/* Staging Banner */
+.staging-banner {
+    background-color: var(--tertiary-container);
+    color: var(--on-surface);
+    border: 1px solid var(--tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+.staging-banner.hidden {
+    display: none !important;
+}
+
+/* Hardware Summary Layout */
+.hardware-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--sp-md);
+    margin-bottom: var(--sp-xl);
+}
+.hardware-summary-card.active-map {
+    border-top: 4px solid var(--secondary);
+}
+.hardware-summary-card.pending-map {
+    border-top: 4px solid var(--tertiary);
+}
+.hardware-summary-card .summary-label {
+    font-weight: bold;
+    margin-bottom: 8px;
+    display: block;
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.hardware-summary-card.active-map .summary-label {
+    color: var(--secondary);
+}
+.hardware-summary-card.pending-map .summary-label {
+    color: var(--tertiary);
+}
+.hardware-summary-list {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.text-link-helper {
+    margin-top: 8px;
+    font-size: var(--text-xs);
+    opacity: 0.8;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.static-ip-fields {
+    margin-top: 12px;
+    border-top: 1px dashed var(--outline-variant);
+    padding-top: 12px;
+}
+
+.wifi-saved-msg {
+    padding: 12px var(--sp-md);
+    background: var(--primary-container);
+    color: var(--on-primary-container, #1e3a8a);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--sp-md);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.wifi-saved-msg-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.wifi-saved-msg svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* === Mobile Bottom Navigation === */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--outline-variant);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: var(--on-surface-variant);
+    font-size: 10px;
+    font-weight: 500;
+    text-decoration: none;
+    gap: 4px;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+    outline: none;
+}
+
+.mobile-nav-item svg {
+    width: 22px;
+    height: 22px;
+    transition: transform 0.15s;
+}
+
+.mobile-nav-item:active svg {
+    transform: scale(0.9);
+}
+
+.mobile-nav-item.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+@media (max-width: 1023px) {
+    .mobile-bottom-nav {
+        display: flex;
+    }
+    
+    /* Add padding to body to avoid overlapping bottom nav */
+    body {
+        padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+    }
+}
+
+body.login-active .mobile-bottom-nav {
+    display: none !important;
+}
+
+body.login-active {
+    padding-bottom: 0 !important;
+}
+
+@media (max-width: 640px) {
+    /* Touch target guidelines: minimum height of 44px for buttons, inputs, selects */
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    select,
+    .btn {
+        min-height: 44px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+    
+    /* Ensure padding adjustments match the increased height */
+    .btn {
+        padding: 8px 16px !important;
+    }
+    
+    /* Space inputs properly so they are not crowded */
+    .form-group {
+        margin-bottom: var(--space-4) !important;
+    }
+}
+
+
 
