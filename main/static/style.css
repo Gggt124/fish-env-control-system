@@ -651,6 +651,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     color: var(--outline); padding: 8px 8px 8px 0;
     white-space: nowrap; width: 1%;
     vertical-align: middle;
+    text-align: left;
 }
 
 .info-value {
@@ -989,7 +990,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     min-height: 44px;
 }
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
-    outline: 3px solid var(--primary);
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
@@ -1102,6 +1103,11 @@ select:disabled {
 
 .toggle-switch input:checked + .toggle-slider:before {
     transform: translateX(20px);
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+    outline: 3px solid var(--primary);
+    outline-offset: 3px;
 }
 
 .toggle-row span {
@@ -2059,6 +2065,31 @@ body.login-active {
     /* Space inputs properly so they are not crowded */
     .form-group {
         margin-bottom: var(--space-4) !important;
+    }
+}
+
+/* Accessibility hardening overrides */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+}
+
+@keyframes spinner-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner,
+    .btn.loading::after {
+        animation: spinner-pulse 1.5s ease-in-out infinite !important;
+        animation-duration: 1.5s !important;
+        animation-iteration-count: infinite !important;
     }
 }
 
