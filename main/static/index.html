@@ -137,10 +137,10 @@
 
     <!-- Main Content -->
     <main id="app-content" class="main-content">
-        <div id="staging-banner" class="staging-banner hidden">
+        <div id="staging-banner" class="alert-banner hidden">
             <span>⚠️ <strong>โหมดทดลองใช้การตั้งค่าใหม่:</strong> การตั้งค่านี้จะถูกยกเลิกภายใน 3 นาที
                 หากไม่ได้รับการยืนยัน</span>
-            <div style="display: flex; gap: var(--space-2);">
+            <div class="banner-actions">
                 <button class="btn btn-primary" onclick="confirmStaging()">ยืนยัน (Confirm)</button>
                 <button class="btn btn-danger" onclick="cancelStaging()">ยกเลิก (Cancel)</button>
             </div>
@@ -214,17 +214,17 @@
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)"><svg viewBox="0 0 24 24"
-                            width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"
+                            width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                             stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
-                        </svg> Sync</button>
+                        </svg> ซิงค์ค่า (Sync)</button>
                     <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
                             stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
                             <path
                                 d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
                             </path>
-                        </svg> Hardware</a>
+                        </svg> ฮาร์ดแวร์ (Hardware)</a>
                     <a href="/wifi" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
                             stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
@@ -232,7 +232,7 @@
                             <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
                             <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
                             <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
-                        </svg> Wi-Fi Setup</a>
+                        </svg> ตั้งค่า Wi-Fi (Wi-Fi Setup)</a>
                 </div>
             </div>
 
@@ -467,10 +467,9 @@
                         </div>
 
                         <div class="pump-runtime-actions cooling-actions">
-                            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>Auto</button>
-                            <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled>Force
-                                OFF</button>
-                            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>Test ON</button>
+                            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>อัตโนมัติ (Auto)</button>
+                            <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled>บังคับปิด (Force OFF)</button>
+                            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>เปิดทดสอบ (Test ON)</button>
                             <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
                         </div>
 
@@ -590,10 +589,10 @@
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="refreshStatus()"><svg viewBox="0 0 24 24" width="14"
-                            height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"
+                            height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
-                        </svg> Refresh</button>
+                        </svg> รีเฟรช (Refresh)</button>
                 </div>
             </div>
 
@@ -604,7 +603,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">System</span>
-                        <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18"
+                        <span class="text-lg" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -649,7 +648,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">Memory</span>
-                        <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18"
+                        <span class="text-lg" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -685,7 +684,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">Uptime</span>
-                        <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18"
+                        <span class="text-lg" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -700,7 +699,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">Wi-Fi Station</span>
-                        <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18"
+                        <span class="text-lg" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
@@ -745,7 +744,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">Access Point</span>
-                        <span style="color:var(--secondary);font-size:20px;"><svg viewBox="0 0 24 24" width="18"
+                        <span class="text-lg" style="color:var(--secondary);"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -781,7 +780,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">Services</span>
-                        <span style="color:var(--primary);font-size:20px;"><svg viewBox="0 0 24 24" width="18"
+                        <span class="text-lg" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <path
@@ -818,8 +817,8 @@
         <section id="view-wifi" class="view hidden">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>Wi-Fi Setup <span
-                            style="font-size:16px;font-weight:400;color:var(--on-surface-variant);">(การตั้งค่า
+                    <h1>Wi-Fi Setup <span class="text-base"
+                            style="font-weight:400;color:var(--on-surface-variant);">(การตั้งค่า
                             Wi-Fi)</span></h1>
                     <p>จัดการการเชื่อมต่อ Wi-Fi สำหรับอุปกรณ์</p>
                 </div>
@@ -872,11 +871,12 @@
             </div>
 
             <!-- Reconnection Helper Banner -->
-            <div id="reconnect-banner" role="alert"
-                style="display:none; padding:16px; margin-bottom:var(--sp-md); background:var(--tertiary-container); color:var(--on-surface); border-radius:var(--radius-md); border:1px solid var(--tertiary);">
-                <strong>กำลังเชื่อมต่อ...</strong> <span id="reconnect-countdown">15</span>s<br>
-                <span style="font-size:14px;">หากหลุด ให้ตรวจสอบ Wi-Fi มือถือว่าต่อกับ SoftAP IP
-                    <strong>192.168.4.1</strong> อีกครั้ง</span>
+            <div id="reconnect-banner" class="alert-banner" role="alert" style="display:none;">
+                <div>
+                    <strong>กำลังเชื่อมต่อ...</strong> <span id="reconnect-countdown">15</span>s<br>
+                    <span class="text-sm">หากหลุด ให้ตรวจสอบ Wi-Fi มือถือว่าต่อกับ SoftAP IP
+                        <strong>192.168.4.1</strong> อีกครั้ง</span>
+                </div>
             </div>
 
             <!-- Wi-Fi Grid -->
@@ -886,7 +886,7 @@
                     <div class="card-header">
                         <h3>เครือข่ายที่พบ</h3>
                         <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"><svg
-                                viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5"
+                                viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2"
                                 fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"
                                 style="margin-right: 4px; vertical-align: middle;">
                                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
@@ -915,23 +915,23 @@
         <section id="view-hardware" class="view hidden">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>ฮาร์ดแวร์และการติดตั้ง <span
-                            style="font-size:16px;font-weight:400;color:var(--on-surface-variant);">(Hardware/Install)</span>
+                    <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-base"
+                            style="font-weight:400;color:var(--on-surface-variant);">(Hardware/Install)</span>
                     </h1>
                     <p>การต่อสาย ขาใช้งาน GPIO ปัจจุบัน และการเปลี่ยนแปลงผังที่รอการรีบูต</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="loadHardwareMap()"><svg viewBox="0 0 24 24"
-                            width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"
+                            width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                             stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
-                        </svg> Refresh</button>
+                        </svg> รีเฟรช (Refresh)</button>
                     <a href="/dashboard" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="16" height="16"
-                            stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"
+                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;" class="svg-icon">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
-                        </svg> Dashboard</a>
+                        </svg> แดชบอร์ด (Dashboard)</a>
                 </div>
             </div>
 
@@ -944,7 +944,7 @@
                     </div>
                 </div>
 
-                <div class="hardware-status-banner hidden" id="hardware-reboot-banner"></div>
+                <div class="alert-banner hidden" id="hardware-reboot-banner"></div>
 
                 <div class="hardware-wiring-grid">
                     <article class="hardware-wire-item">
@@ -1111,7 +1111,7 @@
                     </div>
                 </div>
 
-                <div class="unsaved-banner hidden" id="hardware-unsaved-banner">
+                <div class="alert-banner hidden" id="hardware-unsaved-banner">
                     <div><strong>มีข้อมูลที่ยังไม่ได้บันทึก</strong><br>คุณมีการปรับเปลี่ยนผังพิน GPIO
                         ที่ยังไม่ได้ใช้จริง</div>
                     <button type="submit" form="hardware-map-form" class="btn btn-primary btn-sm" id="hardware-save-map"
@@ -1132,25 +1132,24 @@
                 <form id="hardware-map-form" class="hardware-map-form">
                     <div class="hardware-map-grid">
                         <label class="form-group hardware-role-field" for="hardware-float-input-gpio">
-                            <span>ขา GPIO ลูกลอย (Float Input)</span>
+                            <span>ขา GPIO ลูกลอย (Float Input) <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 32 (เฉพาะอินพุต)</small></span>
                             <select id="hardware-float-input-gpio" name="float_input_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-pump-relay1-gpio">
-                            <span>ขา GPIO รีเลย์ปั๊ม 1</span>
+                            <span>ขา GPIO รีเลย์ปั๊ม 1 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 26</small></span>
                             <select id="hardware-pump-relay1-gpio" name="pump_relay1_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-pump-relay2-gpio">
-                            <span>ขา GPIO รีเลย์ปั๊ม 2</span>
+                            <span>ขา GPIO รีเลย์ปั๊ม 2 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 27</small></span>
                             <select id="hardware-pump-relay2-gpio" name="pump_relay2_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-ds18b20-gpio">
                             <span>ขา GPIO วัดอุณหภูมิ (DS18B20) <small
-                                    class="text-xs status-warning block-helper">*ต้องการตัวต้านทาน Pull-up ขนาด
-                                    4.7k&Omega;</small></span>
+                                    class="text-xs status-warning block-helper">*ค่าเริ่มต้นพิน 33 (ต้องมีตัวต้านทาน Pull-up ขนาด 4.7k&Omega;)</small></span>
                             <select id="hardware-ds18b20-gpio" name="ds18b20_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-cooling-relay-gpio">
-                            <span>ขา GPIO รีเลย์ระบบความเย็น</span>
+                            <span>ขา GPIO รีเลย์ระบบความเย็น <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 25</small></span>
                             <select id="hardware-cooling-relay-gpio" name="cooling_relay_gpio" required></select>
                         </label>
                     </div>
@@ -1186,8 +1185,8 @@
             <h3 id="modal-title"></h3>
             <p id="modal-message"></p>
             <div class="modal-actions">
-                <button class="btn btn-danger" id="modal-confirm">Confirm</button>
-                <button class="btn btn-outline" id="modal-cancel">Cancel</button>
+                <button class="btn btn-danger" id="modal-confirm">ยืนยัน (Confirm)</button>
+                <button class="btn btn-outline" id="modal-cancel">ยกเลิก (Cancel)</button>
             </div>
         </div>
     </div>
@@ -1195,7 +1194,7 @@
     <!-- Change Password Modal -->
     <div id="password-modal" class="modal-overlay hidden">
         <div class="modal-card">
-            <h3>Change Password</h3>
+            <h3>เปลี่ยนรหัสผ่าน (Change Password)</h3>
             <p style="margin-bottom: var(--sp-md);">เปลี่ยนรหัสผ่านสำหรับเข้าสู่ระบบ</p>
 
             <form id="password-form">
@@ -1212,14 +1211,14 @@
                     <input type="password" id="new-password" class="input-field" required>
                 </div>
 
-                <p style="font-size: 0.85rem; color: var(--error); margin: var(--sp-sm) 0;">
-                    Note: Changing your password will log you out of all devices immediately.
+                <p class="text-sm" style="color: var(--error); margin: var(--sp-sm) 0;">
+                    หมายเหตุ: การเปลี่ยนรหัสผ่านจะทำให้ระบบออกจากระบบในทุกอุปกรณ์ทันที
                 </p>
                 <div id="password-error" class="pump-alert hidden" style="margin-top: 8px;"></div>
 
                 <div class="modal-actions" style="margin-top: 16px;">
-                    <button type="submit" class="btn btn-primary" id="password-save-btn">Change Password</button>
-                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="password-save-btn">เปลี่ยนรหัสผ่าน (Change Password)</button>
+                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">ยกเลิก (Cancel)</button>
                 </div>
             </form>
         </div>
@@ -1228,7 +1227,7 @@
     <!-- Wi-Fi Connect Modal -->
     <div id="wifi-connect-modal" class="modal-overlay hidden">
         <div class="modal-card" style="max-width: 480px;">
-            <h3 style="font-size:18px; display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
+            <h3 class="text-lg" style="display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                     stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="color:var(--primary);">
                     <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
@@ -1284,7 +1283,7 @@
 
             <div class="static-ip-fields" id="static-ip-fields" style="display:none;">
                 <div class="form-group">
-                    <label for="static-ip">IP Address</label>
+                    <label for="static-ip">หมายเลข IP (IP Address)</label>
                     <div class="input-wrapper">
                         <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
@@ -1299,7 +1298,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="static-gateway">Gateway</label>
+                    <label for="static-gateway">เกตเวย์ (Gateway)</label>
                     <div class="input-wrapper">
                         <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
@@ -1311,7 +1310,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="static-netmask">Netmask</label>
+                    <label for="static-netmask">เนตมาสก์ (Netmask)</label>
                     <div class="input-wrapper">
                         <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
@@ -1324,9 +1323,9 @@
                         <input type="text" id="static-netmask" placeholder="เช่น 255.255.255.0" value="255.255.255.0">
                     </div>
                 </div>
-                <div
-                    style="font-size:12px;color:var(--outline);margin-top:-4px;margin-bottom:12px; display:flex; align-items:center; gap:4px;">
-                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"
+                <div class="text-xs"
+                    style="color:var(--outline);margin-top:-4px;margin-bottom:12px; display:flex; align-items:center; gap:4px;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -1336,7 +1335,7 @@
                 </div>
             </div>
 
-            <div id="connect-status" style="font-size:14px; min-height:20px; margin-bottom: 16px; font-weight: 500;">
+            <div id="connect-status" class="text-sm" style="min-height:20px; margin-bottom: 16px; font-weight: 500;">
             </div>
 
             <div class="modal-actions" style="margin-top: 16px;">

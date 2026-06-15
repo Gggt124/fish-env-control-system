@@ -190,7 +190,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     width: 100%; max-width: 400px;
     background: var(--surface);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-login);
+    box-shadow: none;
     padding: var(--sp-xl);
     border: 1px solid var(--outline-variant);
 }
@@ -686,12 +686,6 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     background: var(--primary);
 }
 
-.unsaved-banner {
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--tertiary-container); border: 1px solid var(--tertiary);
-    color: var(--on-surface); padding: var(--sp-sm) var(--sp-md);
-    border-radius: var(--radius-md); margin-bottom: var(--sp-md);
-}
 
 /* Grid layouts */
 .status-grid {
@@ -1190,18 +1184,6 @@ select:disabled {
 }
 
 
-.hardware-status-banner {
-    display: flex; gap: var(--sp-sm); align-items: center; flex-wrap: wrap;
-    padding: var(--sp-md); margin: var(--sp-md) 0;
-    border: 1px solid var(--tertiary);
-    border-radius: var(--radius-md);
-    background: var(--tertiary-container);
-    color: var(--on-surface);
-}
-
-.hardware-status-banner strong {
-    color: var(--tertiary-text);
-}
 
 .hardware-wiring-grid,
 .hardware-summary-grid,
@@ -1675,11 +1657,46 @@ select:disabled {
 }
 
 .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid var(--outline);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
     cursor: pointer;
-    accent-color: var(--primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     margin: 0;
+    box-sizing: border-box;
+}
+
+.checkbox-label input[type="checkbox"]:hover {
+    border-color: var(--primary);
+    background-color: var(--primary-container);
+}
+
+.checkbox-label input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.checkbox-label input[type="checkbox"]:checked::after {
+    content: "";
+    display: block;
+    width: 5px;
+    height: 10px;
+    border: solid var(--on-primary);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) translate(-1px, -1px);
 }
 
 .password-visibility-toggle {
@@ -1761,8 +1778,15 @@ select:disabled {
 /* === Utility === */
 .mt-auto { margin-top: auto; }
 .text-center { text-align: center; }
-.text-sm { font-size: var(--text-sm); }
 .text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-muted { color: var(--on-surface-variant) !important; }
+.text-base { font-size: var(--text-base); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
+.text-2xl { font-size: var(--text-2xl); }
+.text-3xl { font-size: var(--text-3xl); }
+.text-4xl { font-size: var(--text-4xl); }
 .hidden { display: none !important; }
 .flex-col-1 { flex: 1; display: flex; flex-direction: column; }
 .block-helper { display: block; margin-top: 2px; font-weight: normal; }
@@ -1841,8 +1865,8 @@ body.login-active #app-content {
 .status-danger { color: var(--error-text) !important; }
 .status-warning { color: var(--tertiary-text) !important; }
 
-/* Staging Banner */
-.staging-banner {
+/* Reusable Alert / Notification Banner */
+.alert-banner {
     background-color: var(--tertiary-container);
     color: var(--on-surface);
     border: 1px solid var(--tertiary);
@@ -1855,8 +1879,16 @@ body.login-active #app-content {
     gap: var(--space-3);
     flex-wrap: wrap;
 }
-.staging-banner.hidden {
+.alert-banner.hidden {
     display: none !important;
+}
+.alert-banner strong {
+    color: var(--tertiary-text);
+    margin-right: 8px;
+}
+.alert-banner .banner-actions {
+    display: flex;
+    gap: var(--space-2);
 }
 
 /* Hardware Summary Layout */

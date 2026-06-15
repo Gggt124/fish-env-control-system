@@ -16,3 +16,4 @@ AGENTS.local.md
 managed_components/
 dependencies.lock
 logs/
+main/static_compressed/

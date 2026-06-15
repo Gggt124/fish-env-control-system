@@ -331,11 +331,11 @@ var hardwareMapData = null;
 var hardwareDirty = false;
 var hardwarePending = false;
 var HARDWARE_FIELDS = [
-    { key: 'float_input_gpio', select: 'hardware-float-input-gpio', wire: 'wire-float-input', label: 'Float Input' },
-    { key: 'pump_relay1_gpio', select: 'hardware-pump-relay1-gpio', wire: 'wire-pump-relay1', label: 'Pump Relay 1' },
-    { key: 'pump_relay2_gpio', select: 'hardware-pump-relay2-gpio', wire: 'wire-pump-relay2', label: 'Pump Relay 2' },
-    { key: 'ds18b20_gpio', select: 'hardware-ds18b20-gpio', wire: 'wire-ds18b20', label: 'DS18B20 Sensor' },
-    { key: 'cooling_relay_gpio', select: 'hardware-cooling-relay-gpio', wire: 'wire-cooling-relay', label: 'Cooling Relay' }
+    { key: 'float_input_gpio', select: 'hardware-float-input-gpio', wire: 'wire-float-input', label: 'ลูกลอย (Float Input)' },
+    { key: 'pump_relay1_gpio', select: 'hardware-pump-relay1-gpio', wire: 'wire-pump-relay1', label: 'รีเลย์ปั๊ม 1 (Pump Relay 1)' },
+    { key: 'pump_relay2_gpio', select: 'hardware-pump-relay2-gpio', wire: 'wire-pump-relay2', label: 'รีเลย์ปั๊ม 2 (Pump Relay 2)' },
+    { key: 'ds18b20_gpio', select: 'hardware-ds18b20-gpio', wire: 'wire-ds18b20', label: 'เซนเซอร์วัดอุณหภูมิ (DS18B20)' },
+    { key: 'cooling_relay_gpio', select: 'hardware-cooling-relay-gpio', wire: 'wire-cooling-relay', label: 'รีเลย์ระบบความเย็น (Cooling Relay)' }
 ];
 
 function initDashboard() {
@@ -1341,12 +1341,12 @@ function handleCoolingVisibilityChange() {
 function renderCoolingTemperature(status) {
     if (!status || !status.temperature_valid) return '--';
     var value = Number(status.temperature_c);
-    return isFinite(value) ? value.toFixed(1) + ' C' : '--';
+    return isFinite(value) ? value.toFixed(1) + ' °C' : '--';
 }
 
 function renderCoolingCelsius(value) {
     var num = Number(value);
-    return isFinite(num) ? num.toFixed(1) + ' C' : '--';
+    return isFinite(num) ? num.toFixed(1) + ' °C' : '--';
 }
 
 function renderCoolingMode(value) {
@@ -1598,7 +1598,7 @@ function renderHardwareTechnical(options) {
         html += '<div class="hardware-technical-group">'
             + '<h4>' + escHtml(field.label) + '</h4>';
         if (!roleOptions.length) {
-            html += '<p>No options reported by firmware.</p>';
+            html += '<p>ไม่มีพินตัวเลือกจากเฟิร์มแวร์</p>';
         }
         for (var j = 0; j < roleOptions.length; j++) {
             html += renderHardwareOption(roleOptions[j]);
@@ -1934,7 +1934,7 @@ function loadWifiProfiles(retryCount) {
                     loadWifiProfiles(retryCount + 1);
                 }, 1500);
             } else {
-                el.innerHTML = '<div class="profile-empty" style="cursor:pointer;" onclick="loadWifiProfiles()"><div style="color:var(--error);margin-bottom:8px;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div style="font-weight:600;margin-bottom:4px;color:var(--error);">ไม่สามารถดึงข้อมูลได้</div><div style="font-size:12px;color:var(--primary);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></div>';
+                el.innerHTML = '<div class="profile-empty" style="cursor:pointer;" onclick="loadWifiProfiles()"><div style="color:var(--error);margin-bottom:8px;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div style="font-weight:600;margin-bottom:4px;color:var(--error);">ไม่สามารถดึงข้อมูลได้</div><div class="text-xs" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></div>';
             }
             return;
         }
@@ -1956,7 +1956,7 @@ function renderSavedProfiles() {
         return 0;
     });
     if (profiles.length === 0) {
-        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span style="font-size:12px;color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
+        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span class="text-xs" style="color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
         return;
     }
 
@@ -2005,7 +2005,7 @@ function renderSavedProfiles() {
             html += '<span style="opacity:0.8;">กำลังใช้งาน</span>';
         } else if (typeof window.lastScanResults === 'undefined') {
             html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ';
-            html += '<span style="opacity:0.6; font-size:12px;">กดสแกนใหม่เพื่อตรวจสอบระยะ</span>';
+            html += '<span class="text-xs" style="opacity:0.6;">กดสแกนใหม่เพื่อตรวจสอบระยะ</span>';
         } else {
             // Scanned but not found
             html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> ';
