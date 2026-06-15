@@ -1934,7 +1934,7 @@ function loadWifiProfiles(retryCount) {
                     loadWifiProfiles(retryCount + 1);
                 }, 1500);
             } else {
-                el.innerHTML = '<div class="profile-empty" style="cursor:pointer;" onclick="loadWifiProfiles()"><div style="color:var(--error);margin-bottom:8px;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div style="font-weight:600;margin-bottom:4px;color:var(--error);">ไม่สามารถดึงข้อมูลได้</div><div class="text-xs" style="color:var(--primary);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></div>';
+                el.innerHTML = '<div class="profile-empty clickable" onclick="loadWifiProfiles()"><div class="profile-empty-error-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div class="profile-empty-error-text">ไม่สามารถดึงข้อมูลได้</div><div class="text-xs profile-empty-retry"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></div>';
             }
             return;
         }
@@ -1956,7 +1956,7 @@ function renderSavedProfiles() {
         return 0;
     });
     if (profiles.length === 0) {
-        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span class="text-xs" style="color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
+        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span class="text-xs profile-empty-hint">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
         return;
     }
 
