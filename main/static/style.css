@@ -2308,6 +2308,13 @@ textarea:focus-visible,
         animation: none !important;
         opacity: 0 !important;
     }
+    
+    /* 
+     * Spinner Exception:
+     * Pulsing opacity is acceptable for reduced-motion.
+     * We override the global kill above to restore a gentle pulse
+     * so loading states remain visible without spinning.
+     */
     .spinner,
     .btn.loading::after {
         animation: spinner-pulse 1.5s ease-in-out infinite !important;

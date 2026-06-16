@@ -227,7 +227,7 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">Pump Control</h1>
-                    <p>ควบคุม Timer 1 / Timer 2 และติดตามสถานะปั๊ม</p>
+                    <p>ควบคุม <span lang="en">Timer 1 / Timer 2</span> และติดตามสถานะปั๊ม</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)" aria-label="ซิงค์ข้อมูลปั๊ม"><svg viewBox="0 0 24 24"
@@ -272,33 +272,33 @@
                         </div>
                         <div class="pump-runtime-grid">
                             <div class="runtime-stat primary">
-                                <span class="summary-label">Timer</span>
+                                <span class="summary-label" lang="en">Timer</span>
                                 <strong id="pump-active-timer">--</strong>
                             </div>
                             <div class="runtime-stat primary">
-                                <span class="summary-label">Phase</span>
+                                <span class="summary-label" lang="en">Phase</span>
                                 <strong id="pump-phase">--</strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">Float Switch</span>
+                                <span class="summary-label" lang="en">Float Switch</span>
                                 <strong id="pump-float-state">--</strong>
                             </div>
                             <div class="runtime-stat primary">
-                                <span class="summary-label">Active Relay</span>
+                                <span class="summary-label" lang="en">Active Relay</span>
                                 <strong id="pump-relay-state">--</strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">Relay 1</span>
+                                <span class="summary-label" lang="en">Relay 1</span>
                                 <strong id="pump-relay-1-state">--</strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">Relay 2</span>
+                                <span class="summary-label" lang="en">Relay 2</span>
                                 <strong id="pump-relay-2-state">--</strong>
                             </div>
                         </div>
                         <div class="pump-runtime-actions">
-                            <button class="btn btn-primary" id="pump-start-btn" type="button" disabled>Start</button>
-                            <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled>Stop</button>
+                            <button class="btn btn-primary" id="pump-start-btn" type="button" disabled lang="en">Start</button>
+                            <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled lang="en">Stop</button>
                             <span class="runtime-action-state" id="pump-action-state" aria-live="polite"></span>
                         </div>
                         <div class="pump-alert hidden" id="pump-status-error"></div>
@@ -309,7 +309,7 @@
                     <section class="section-card pump-settings">
                         <div class="section-heading-row">
                             <div>
-                                <h3>ตั้งค่า Timer</h3>
+                                <h3>ตั้งค่า <span lang="en">Timer</span></h3>
                                 <p>Float OFF -> Timer 1 / Relay 1, Float ON -> Timer 2 / Relay 2</p>
                             </div>
                             <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
@@ -318,7 +318,7 @@
                         <form id="pump-config-form" novalidate>
                             <div class="timer-grid">
                                 <fieldset class="timer-card">
-                                    <legend>Timer 1 / Relay 1 - เมื่อลูกลอย OFF</legend>
+                                    <legend><span lang="en">Timer 1 / Relay 1</span> - เมื่อลูกลอย OFF</legend>
                                     <div class="duration-row">
                                         <div class="duration-field">
                                             <label for="timer1-on-min">ช่วงเปิด นาที</label>
@@ -356,7 +356,7 @@
                                 </fieldset>
 
                                 <fieldset class="timer-card">
-                                    <legend>Timer 2 / Relay 2 - เมื่อลูกลอย ON</legend>
+                                    <legend><span lang="en">Timer 2 / Relay 2</span> - เมื่อลูกลอย ON</legend>
                                     <div class="duration-row">
                                         <div class="duration-field">
                                             <label for="timer2-on-min">ช่วงเปิด นาที</label>
@@ -479,9 +479,9 @@
                         </div>
 
                         <div class="pump-runtime-actions cooling-actions">
-                            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>อัตโนมัติ (Auto)</button>
-                            <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled>บังคับปิด (Force OFF)</button>
-                            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>เปิดทดสอบ (Test ON)</button>
+                            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>อัตโนมัติ (<span lang="en">Auto</span>)</button>
+                            <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled>บังคับปิด (<span lang="en">Force OFF</span>)</button>
+                            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>เปิดทดสอบ (<span lang="en">Test ON</span>)</button>
                             <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
                         </div>
 
@@ -567,17 +567,17 @@
                     </div>
                 </div>
                 <div class="summary-grid mt-md">
-                    <div class="summary-item"><span class="summary-label">Chip</span><span class="summary-value"
+                    <div class="summary-item"><span class="summary-label" lang="en">Chip</span><span class="summary-value"
                             id="dash-chip">--</span></div>
-                    <div class="summary-item"><span class="summary-label">Heap Usage</span><span class="summary-value"
+                    <div class="summary-item"><span class="summary-label" lang="en">Heap Usage</span><span class="summary-value"
                             id="dash-heap-pct">--</span></div>
-                    <div class="summary-item"><span class="summary-label">STA RSSI</span><span class="summary-value"
+                    <div class="summary-item"><span class="summary-label" lang="en">STA RSSI</span><span class="summary-value"
                             id="dash-rssi">--</span></div>
-                    <div class="summary-item"><span class="summary-label">AP Clients</span><span class="summary-value"
+                    <div class="summary-item"><span class="summary-label" lang="en">AP Clients</span><span class="summary-value"
                             id="dash-ap-clients">--</span></div>
-                    <div class="summary-item"><span class="summary-label">Wi-Fi Mode</span><span class="summary-value"
+                    <div class="summary-item"><span class="summary-label" lang="en">Wi-Fi Mode</span><span class="summary-value"
                             id="dash-wifi-mode">--</span></div>
-                    <div class="summary-item"><span class="summary-label">Firmware</span><span class="summary-value"
+                    <div class="summary-item"><span class="summary-label" lang="en">Firmware</span><span class="summary-value"
                             id="dash-project-version">v1.0.0</span></div>
                 </div>
             </section>
@@ -608,7 +608,7 @@
                 <!-- System Card -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-label">System</span>
+                        <span class="card-label" lang="en">System</span>
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
@@ -621,31 +621,31 @@
                     <table class="info-table">
                         <tbody>
                             <tr>
-                                <th scope="row" class="info-label">Chip</th>
+                                <th scope="row" class="info-label" lang="en">Chip</th>
                                 <td class="info-value" id="st-chip-model">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Revision</th>
+                                <th scope="row" class="info-label" lang="en">Revision</th>
                                 <td class="info-value" id="st-chip-revision">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Cores</th>
+                                <th scope="row" class="info-label" lang="en">Cores</th>
                                 <td class="info-value" id="st-chip-cores">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">CPU Speed</th>
+                                <th scope="row" class="info-label" lang="en">CPU Speed</th>
                                 <td class="info-value" id="st-cpu-freq">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">IDF Version</th>
+                                <th scope="row" class="info-label" lang="en">IDF Version</th>
                                 <td class="info-value" id="st-idf-version">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Firmware</th>
+                                <th scope="row" class="info-label" lang="en">Firmware</th>
                                 <td class="info-value" id="st-project-version">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Reset Reason</th>
+                                <th scope="row" class="info-label" lang="en">Reset Reason</th>
                                 <td class="info-value" id="st-reset-reason">--</td>
                             </tr>
                         </tbody>
@@ -655,7 +655,7 @@
                 <!-- Memory Card -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-label">Memory</span>
+                        <span class="card-label" lang="en">Memory</span>
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
@@ -667,7 +667,7 @@
                     <table class="info-table">
                         <tbody>
                             <tr>
-                                <th scope="row" class="info-label">Free</th>
+                                <th scope="row" class="info-label" lang="en">Free</th>
                                 <td class="info-value"><span id="st-free-heap">--</span>
                                     <div class="progress-bar-inline">
                                         <div class="fill" id="st-heap-bar"></div>
@@ -675,15 +675,15 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Min Free</th>
+                                <th scope="row" class="info-label" lang="en">Min Free</th>
                                 <td class="info-value" id="st-min-free-heap">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Largest Block</th>
+                                <th scope="row" class="info-label" lang="en">Largest Block</th>
                                 <td class="info-value" id="st-largest-free-block">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Total DRAM</th>
+                                <th scope="row" class="info-label" lang="en">Total DRAM</th>
                                 <td class="info-value" id="st-total-heap">--</td>
                             </tr>
                         </tbody>
@@ -693,7 +693,7 @@
                 <!-- Uptime Card -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-label">Uptime</span>
+                        <span class="card-label" lang="en">Uptime</span>
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
@@ -708,7 +708,7 @@
                 <!-- Wi-Fi STA Card -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-label">Wi-Fi Station</span>
+                        <span class="card-label" lang="en">Wi-Fi Station</span>
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
@@ -718,31 +718,31 @@
                     <table class="info-table">
                         <tbody>
                             <tr>
-                                <th scope="row" class="info-label">Status</th>
+                                <th scope="row" class="info-label" lang="en">Status</th>
                                 <td class="info-value" id="st-sta-status">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">SSID</th>
+                                <th scope="row" class="info-label" lang="en">SSID</th>
                                 <td class="info-value" id="st-sta-ssid">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">IP</th>
+                                <th scope="row" class="info-label" lang="en">IP</th>
                                 <td class="info-value" id="st-sta-ip">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">RSSI</th>
+                                <th scope="row" class="info-label" lang="en">RSSI</th>
                                 <td class="info-value" id="st-sta-rssi">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Channel</th>
+                                <th scope="row" class="info-label" lang="en">Channel</th>
                                 <td class="info-value" id="st-sta-channel">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Auth</th>
+                                <th scope="row" class="info-label" lang="en">Auth</th>
                                 <td class="info-value" id="st-sta-auth">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">MAC</th>
+                                <th scope="row" class="info-label" lang="en">MAC</th>
                                 <td class="info-value mono" id="st-mac-sta">--</td>
                             </tr>
                         </tbody>
@@ -752,7 +752,7 @@
                 <!-- Wi-Fi AP Card -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-label">Access Point</span>
+                        <span class="card-label" lang="en">Access Point</span>
                         <span class="text-lg text-secondary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
@@ -764,23 +764,23 @@
                     <table class="info-table">
                         <tbody>
                             <tr>
-                                <th scope="row" class="info-label">SSID</th>
+                                <th scope="row" class="info-label" lang="en">SSID</th>
                                 <td class="info-value" id="st-ap-ssid">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">IP</th>
+                                <th scope="row" class="info-label" lang="en">IP</th>
                                 <td class="info-value" id="st-ap-ip">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Clients</th>
+                                <th scope="row" class="info-label" lang="en">Clients</th>
                                 <td class="info-value" id="st-ap-clients">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Weakest RSSI</th>
+                                <th scope="row" class="info-label" lang="en">Weakest RSSI</th>
                                 <td class="info-value" id="st-ap-client-rssi">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">MAC</th>
+                                <th scope="row" class="info-label" lang="en">MAC</th>
                                 <td class="info-value mono" id="st-mac-ap">--</td>
                             </tr>
                         </tbody>
@@ -790,7 +790,7 @@
                 <!-- Services Card -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-label">Services</span>
+                        <span class="card-label" lang="en">Services</span>
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
@@ -800,19 +800,19 @@
                     <table class="info-table">
                         <tbody>
                             <tr>
-                                <th scope="row" class="info-label">Wi-Fi Mode</th>
+                                <th scope="row" class="info-label" lang="en">Wi-Fi Mode</th>
                                 <td class="info-value" id="st-wifi-mode">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">DNS Server</th>
+                                <th scope="row" class="info-label" lang="en">DNS Server</th>
                                 <td class="info-value" id="st-dns-status">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">Static Send Errors</th>
+                                <th scope="row" class="info-label" lang="en">Static Send Errors</th>
                                 <td class="info-value" id="st-http-static-errors">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label">JSON Send Errors</th>
+                                <th scope="row" class="info-label" lang="en">JSON Send Errors</th>
                                 <td class="info-value" id="st-http-json-errors">--</td>
                             </tr>
                         </tbody>
