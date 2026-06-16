@@ -1975,32 +1975,36 @@ select:disabled {
 
 /* Removed prefers-reduced-motion block here to consolidate at the end of stylesheet */
 
-/* === Utility === */
-.mt-sm { margin-top: var(--sp-sm) !important; }
-.mt-md { margin-top: var(--sp-md) !important; }
-.mt-lg { margin-top: var(--sp-lg) !important; }
-.mb-md { margin-bottom: var(--sp-md) !important; }
-.my-sm { margin-top: var(--sp-sm) !important; margin-bottom: var(--sp-sm) !important; }
+/* === Utility — keep this block frozen; prefer component-level styling for new work === */
+
+/* Spacing overrides — !important needed to beat component margins */
+.mt-sm  { margin-top: var(--sp-sm) !important; }
+.mt-md  { margin-top: var(--sp-md) !important; }
+.mt-lg  { margin-top: var(--sp-lg) !important; }
+.mb-md  { margin-bottom: var(--sp-md) !important; }
+.my-sm  { margin-top: var(--sp-sm) !important; margin-bottom: var(--sp-sm) !important; }
 .mt-auto { margin-top: auto; }
+
+/* Typography scale — no !important; these never compete with inherited styles */
 .text-center { text-align: center; }
-.text-xs { font-size: var(--text-xs); }
-.text-sm { font-size: var(--text-sm); }
-.text-muted { color: var(--on-surface-variant) !important; }
-.text-base { font-size: var(--text-base); }
-.text-lg { font-size: var(--text-lg); }
-.text-xl { font-size: var(--text-xl); }
-.text-2xl { font-size: var(--text-2xl); }
-.text-3xl { font-size: var(--text-3xl); }
-.text-4xl { font-size: var(--text-4xl); }
+.text-xs  { font-size: var(--text-xs); }
+.text-sm  { font-size: var(--text-sm); }
+.text-lg  { font-size: var(--text-lg); }
 .text-normal { font-weight: 400 !important; }
-.text-primary { color: var(--primary) !important; }
+
+/* Semantic color overrides — !important needed to override component color tokens */
+/* .text-muted is the canonical alias; .text-on-surface-variant was a duplicate and has been removed */
+.text-muted     { color: var(--on-surface-variant) !important; }
+.text-primary   { color: var(--primary) !important; }
 .text-secondary { color: var(--secondary) !important; }
-.text-tertiary { color: var(--tertiary) !important; }
-.text-error { color: var(--error) !important; }
-.text-on-surface-variant { color: var(--on-surface-variant) !important; }
-.text-outline { color: var(--outline) !important; }
+.text-tertiary  { color: var(--tertiary) !important; }
+.text-error     { color: var(--error) !important; }
+
+/* Visibility — !important is correct here; JS toggles this class to show/hide elements */
 .hidden { display: none !important; }
-.flex-col-1 { flex: 1; display: flex; flex-direction: column; }
+
+/* Layout helpers */
+.flex-col-1   { flex: 1; display: flex; flex-direction: column; }
 .block-helper { display: block; margin-top: 2px; font-weight: normal; }
 
 /* Scrollbar */
