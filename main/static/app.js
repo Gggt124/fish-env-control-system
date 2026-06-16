@@ -158,10 +158,14 @@ function apiDelete(url, cb) {
 
 function showToast(msg, type) {
     type = type || 'info';
+    var container = document.getElementById('toast');
+    if (!container) {
+        container = document.body;
+    }
     var el = document.createElement('div');
-    el.className = 'toast ' + type;
+    el.className = 'toast-item ' + type;
     el.textContent = msg;
-    document.body.appendChild(el);
+    container.appendChild(el);
     setTimeout(function () {
         el.style.opacity = '0';
         el.style.transition = 'opacity 0.3s';
@@ -2699,6 +2703,7 @@ function handleRoute() {
     var views = document.querySelectorAll('.view');
     for (var i = 0; i < views.length; i++) {
         views[i].classList.add('hidden');
+        views[i].setAttribute('aria-hidden', 'true');
     }
 
     var viewId = 'view-login';
@@ -2710,6 +2715,7 @@ function handleRoute() {
     var activeView = document.getElementById(viewId);
     if (activeView) {
         activeView.classList.remove('hidden');
+        activeView.setAttribute('aria-hidden', 'false');
     }
 
     if (viewId === 'view-login') {
