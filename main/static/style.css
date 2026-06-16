@@ -123,6 +123,9 @@
     /* Fonts */
     --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-mono: "Courier New", Consolas, monospace;
+
+    /* Missing component tokens */
+    --on-primary-container: #1e3a8a;
 }
 
 
@@ -270,7 +273,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-base);
     padding: 10px 16px; border-radius: var(--radius-md);
     font-size: var(--text-base); font-weight: 600; line-height: 24px;
-    border: none; cursor: pointer; transition: background-color 0.2s, opacity 0.2s, color 0.2s;
+    border: none; cursor: pointer; transition: background-color 0.2s ease-out, opacity 0.2s ease-out, color 0.2s ease-out;
     text-decoration: none !important;
     white-space: nowrap;
     position: relative;
@@ -854,7 +857,7 @@ h3 { font-size: var(--text-base); font-weight: 600; line-height: 24px; }
     stroke-linecap: round;
     transform: rotate(-90deg);
     transform-origin: 50% 50%;
-    transition: stroke-dashoffset 0.25s linear;
+    transition: stroke-dashoffset 0.25s ease-out;
 }
 
 .pump-countdown-wrap .summary-label { color: var(--on-surface-variant); }
@@ -1079,7 +1082,7 @@ select:disabled {
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: var(--outline-variant);
-    transition: background-color 0.4s ease;
+    transition: background-color 0.2s ease-out;
     border-radius: 24px;
 }
 
@@ -1091,7 +1094,7 @@ select:disabled {
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
     border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
@@ -1820,6 +1823,11 @@ select:disabled {
     .empty-state-card, .input-panel {
         transition: none !important;
     }
+    /* Explicit guard: collapse AP pulse ring to a static dot */
+    .ap-pill .pulse-dot::after {
+        animation: none !important;
+        opacity: 0 !important;
+    }
 }
 
 /* === Utility === */
@@ -1864,7 +1872,6 @@ select:disabled {
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
     transition: opacity 0.2s ease-out;
     opacity: 1;
     pointer-events: auto;
@@ -1926,9 +1933,9 @@ body.login-active #app-content {
 
 /* Reusable Alert / Notification Banner */
 .alert-banner {
-    background-color: var(--tertiary-container);
-    color: var(--on-surface);
-    border: 1px solid var(--tertiary);
+    background-color: #fffbeb;
+    color: #78350f;
+    border: 1px solid #f59e0b;
     border-radius: var(--radius-md);
     padding: var(--space-4);
     margin-bottom: var(--space-5);
@@ -1942,7 +1949,7 @@ body.login-active #app-content {
     display: none !important;
 }
 .alert-banner strong {
-    color: var(--tertiary-text);
+    color: #92400e;
     margin-right: 8px;
 }
 .alert-banner .banner-actions {
