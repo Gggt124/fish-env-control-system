@@ -195,6 +195,12 @@
                         <use href="#icon-dashboard"></use>
                     </svg></span> <span lang="en">Dashboard</span>
             </a>
+            <a href="/cooling" class="nav-item" id="nav-cooling">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
+                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                        <use href="#icon-cooling"></use>
+                    </svg></span> <span lang="en">Cooling Control</span>
+            </a>
             <a href="/status" class="nav-item" id="nav-status">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><use href="#icon-gear"></use></svg></span> <span lang="en">System Status</span>
             </a>
@@ -356,124 +362,153 @@
 
 
                     <!-- Pump Settings -->
-                    <section class="section-card pump-settings">
-                        <div class="section-heading-row">
+                    <details class="settings-collapsible pump-settings">
+                        <summary>
                             <div>
-                                <h3>ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
-                                <p>ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (ลูกลอย <span lang="en">OFF</span> ใช้ <span lang="en">Timer 1</span> / ลูกลอย <span lang="en">ON</span> ใช้ <span lang="en">Timer 2</span>)</p>
+                                <h3 style="margin-bottom: 0;">ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
+                                <p style="font-size: var(--text-sm); color: var(--outline); margin-top: 4px; margin-bottom: 0;">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (ลูกลอย <span lang="en">OFF</span> ใช้ <span lang="en">Timer 1</span> / ลูกลอย <span lang="en">ON</span> ใช้ <span lang="en">Timer 2</span>)</p>
                             </div>
-                            <span class="settings-state" id="pump-config-state">กำลังโหลดการตั้งค่า...</span>
-                        </div>
+                            <span class="settings-state" id="pump-config-state" style="margin-left: auto; margin-right: var(--sp-md); font-size: var(--text-sm); white-space: nowrap;">กำลังโหลดการตั้งค่า...</span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </summary>
+                        <div class="settings-body">
+                            <form id="pump-config-form" novalidate style="margin-top: var(--sp-md);">
+                                <div class="timer-grid">
+                                    <fieldset class="timer-card">
+                                        <legend><span lang="en">Timer 1 / Relay 1</span> (เมื่อลูกลอย <span lang="en">OFF</span>)</legend>
+                                        <div class="duration-row">
+                                            <div class="duration-field">
+                                                <label for="timer1-on-min">ระยะเวลาทำงาน (นาที)</label>
+                                                <input id="timer1-on-min" type="number" min="0" step="1"
+                                                    inputmode="numeric">
+                                            </div>
+                                            <div class="duration-field">
+                                                <label for="timer1-on-sec">ระยะเวลาทำงาน (วินาที)</label>
+                                                <input id="timer1-on-sec" type="number" min="0" max="59" step="1"
+                                                    inputmode="numeric">
+                                            </div>
+                                        </div>
+                                        <div class="field-error" id="timer1-on-error"></div>
+                                        <div class="duration-row">
+                                            <div class="duration-field">
+                                                <label for="timer1-off-min">ระยะเวลาหยุดพัก (นาที)</label>
+                                                <input id="timer1-off-min" type="number" min="0" step="1"
+                                                    inputmode="numeric">
+                                            </div>
+                                            <div class="duration-field">
+                                                <label for="timer1-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
+                                                <input id="timer1-off-sec" type="number" min="0" max="59" step="1"
+                                                    inputmode="numeric">
+                                            </div>
+                                        </div>
+                                        <div class="field-error" id="timer1-off-error"></div>
+                                        <div class="duration-field start-phase-field">
+                                            <label for="timer1-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
+                                            <select id="timer1-start-phase" name="timer1_start_phase">
+                                                <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
+                                                <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
+                                            </select>
+                                        </div>
+                                        <div class="field-error" id="timer1-start-phase-error"></div>
+                                    </fieldset>
 
-                        <form id="pump-config-form" novalidate>
-                            <div class="timer-grid">
-                                <fieldset class="timer-card">
-                                    <legend><span lang="en">Timer 1 / Relay 1</span> (เมื่อลูกลอย <span lang="en">OFF</span>)</legend>
-                                    <div class="duration-row">
-                                        <div class="duration-field">
-                                            <label for="timer1-on-min">ระยะเวลาทำงาน (นาที)</label>
-                                            <input id="timer1-on-min" type="number" min="0" step="1"
-                                                inputmode="numeric">
+                                    <fieldset class="timer-card">
+                                        <legend><span lang="en">Timer 2 / Relay 2</span> (เมื่อลูกลอย <span lang="en">ON</span>)</legend>
+                                        <div class="duration-row">
+                                            <div class="duration-field">
+                                                <label for="timer2-on-min">ระยะเวลาทำงาน (นาที)</label>
+                                                <input id="timer2-on-min" type="number" min="0" step="1"
+                                                    inputmode="numeric">
+                                            </div>
+                                            <div class="duration-field">
+                                                <label for="timer2-on-sec">ระยะเวลาทำงาน (วินาที)</label>
+                                                <input id="timer2-on-sec" type="number" min="0" max="59" step="1"
+                                                    inputmode="numeric">
+                                            </div>
                                         </div>
-                                        <div class="duration-field">
-                                            <label for="timer1-on-sec">ระยะเวลาทำงาน (วินาที)</label>
-                                            <input id="timer1-on-sec" type="number" min="0" max="59" step="1"
-                                                inputmode="numeric">
+                                        <div class="field-error" id="timer2-on-error"></div>
+                                        <div class="duration-row">
+                                            <div class="duration-field">
+                                                <label for="timer2-off-min">ระยะเวลาหยุดพัก (นาที)</label>
+                                                <input id="timer2-off-min" type="number" min="0" step="1"
+                                                    inputmode="numeric">
+                                            </div>
+                                            <div class="duration-field">
+                                                <label for="timer2-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
+                                                <input id="timer2-off-sec" type="number" min="0" max="59" step="1"
+                                                    inputmode="numeric">
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="field-error" id="timer1-on-error"></div>
-                                    <div class="duration-row">
-                                        <div class="duration-field">
-                                            <label for="timer1-off-min">ระยะเวลาหยุดพัก (นาที)</label>
-                                            <input id="timer1-off-min" type="number" min="0" step="1"
-                                                inputmode="numeric">
+                                        <div class="field-error" id="timer2-off-error"></div>
+                                        <div class="duration-field start-phase-field">
+                                            <label for="timer2-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
+                                            <select id="timer2-start-phase" name="timer2_start_phase">
+                                                <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
+                                                <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
+                                            </select>
                                         </div>
-                                        <div class="duration-field">
-                                            <label for="timer1-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
-                                            <input id="timer1-off-sec" type="number" min="0" max="59" step="1"
-                                                inputmode="numeric">
-                                        </div>
-                                    </div>
-                                    <div class="field-error" id="timer1-off-error"></div>
-                                    <div class="duration-field start-phase-field">
-                                        <label for="timer1-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
-                                        <select id="timer1-start-phase" name="timer1_start_phase">
-                                            <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
-                                            <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
-                                        </select>
-                                    </div>
-                                    <div class="field-error" id="timer1-start-phase-error"></div>
-                                </fieldset>
-
-                                <fieldset class="timer-card">
-                                    <legend><span lang="en">Timer 2 / Relay 2</span> (เมื่อลูกลอย <span lang="en">ON</span>)</legend>
-                                    <div class="duration-row">
-                                        <div class="duration-field">
-                                            <label for="timer2-on-min">ระยะเวลาทำงาน (นาที)</label>
-                                            <input id="timer2-on-min" type="number" min="0" step="1"
-                                                inputmode="numeric">
-                                        </div>
-                                        <div class="duration-field">
-                                            <label for="timer2-on-sec">ระยะเวลาทำงาน (วินาที)</label>
-                                            <input id="timer2-on-sec" type="number" min="0" max="59" step="1"
-                                                inputmode="numeric">
-                                        </div>
-                                    </div>
-                                    <div class="field-error" id="timer2-on-error"></div>
-                                    <div class="duration-row">
-                                        <div class="duration-field">
-                                            <label for="timer2-off-min">ระยะเวลาหยุดพัก (นาที)</label>
-                                            <input id="timer2-off-min" type="number" min="0" step="1"
-                                                inputmode="numeric">
-                                        </div>
-                                        <div class="duration-field">
-                                            <label for="timer2-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
-                                            <input id="timer2-off-sec" type="number" min="0" max="59" step="1"
-                                                inputmode="numeric">
-                                        </div>
-                                    </div>
-                                    <div class="field-error" id="timer2-off-error"></div>
-                                    <div class="duration-field start-phase-field">
-                                        <label for="timer2-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
-                                        <select id="timer2-start-phase" name="timer2_start_phase">
-                                            <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
-                                            <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
-                                        </select>
-                                    </div>
-                                    <div class="field-error" id="timer2-start-phase-error"></div>
-                                </fieldset>
-                            </div>
-
-                            <div class="settings-actions">
-                                <label class="toggle-row" for="pump-auto-start">
-                                    <div class="toggle-switch"><input id="pump-auto-start" type="checkbox" role="switch"><span
-                                            class="toggle-slider"></span></div>
-                                    <span>
-                                        <strong>เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span lang="en">Auto-start</span>)</strong>
-                                        <small>ให้ระบบทำงานทันทีหลังจากป้อนไฟเข้าอุปกรณ์ โดยใช้รอบเวลาที่บันทึกไว้</small>
-                                    </span>
-                                </label>
-                                <div class="settings-button-row">
-                                    <span class="unsaved-warning hidden"
-                                        id="pump-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
-                                    <button class="btn btn-primary" id="pump-save-config" type="submit"
-                                        disabled>บันทึกการตั้งค่าปั๊มน้ำ</button>
+                                        <div class="field-error" id="timer2-start-phase-error"></div>
+                                    </fieldset>
                                 </div>
-                            </div>
-                            <div class="pump-alert hidden" id="pump-config-error"></div>
-                        </form>
-                    </section>
+
+                                <div class="settings-actions">
+                                    <label class="toggle-row" for="pump-auto-start">
+                                        <div class="toggle-switch"><input id="pump-auto-start" type="checkbox" role="switch"><span
+                                                class="toggle-slider"></span></div>
+                                        <span>
+                                            <strong>เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span lang="en">Auto-start</span>)</strong>
+                                            <small>ให้ระบบทำงานทันทีหลังจากป้อนไฟเข้าอุปกรณ์ โดยใช้รอบเวลาที่บันทึกไว้</small>
+                                        </span>
+                                    </label>
+                                    <div class="settings-button-row">
+                                        <span class="unsaved-warning hidden"
+                                            id="pump-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
+                                        <button class="btn btn-primary" id="pump-save-config" type="submit"
+                                            disabled>บันทึกการตั้งค่าปั๊มน้ำ</button>
+                                    </div>
+                                </div>
+                                <div class="pump-alert hidden" id="pump-config-error"></div>
+                            </form>
+                        </div>
+                    </details>
 
 
                 </div>
+            </div>
+
+
+
+            <!-- Footer -->
+            <footer class="app-footer">
+                <span lang="en">Fish Pump Relay Timer Control</span>
+            </footer>
+        </section>
+
+        <section id="view-cooling" class="view hidden" aria-hidden="true">
+            <div class="page-header">
+                <div class="header-left">
+                    <h1 lang="en">Cooling Control</h1>
+                    <p>ควบคุมพัดลมหรือระบบระบายความร้อนด้วยเซนเซอร์ <span lang="en">DS18B20</span> แยกอิสระจากระบบปั๊มน้ำ</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline btn-sm" onclick="syncCoolingStatus(true)" aria-label="ซิงค์ข้อมูลระบบทำความเย็น"><svg viewBox="0 0 24 24"
+                            width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                            <use href="#icon-sync"></use>
+                        </svg> อัปเดตข้อมูล (<span lang="en">Sync</span>)</button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
                 <div class="dashboard-col">
                     <!-- Cooling Runtime -->
                     <section class="section-card cooling-runtime flex-col-1" id="cooling-runtime-panel">
                         <div class="section-heading-row">
                             <div>
                                 <div class="runtime-eyebrow" id="cooling-sync-state">กำลังดึงข้อมูลสถานะ...</div>
-                                <h3>ควบคุมระบบทำความเย็น (<span lang="en">Cooling Control</span>)</h3>
-                                <p>ควบคุมพัดลมหรือระบบระบายความร้อนด้วยเซนเซอร์ <span lang="en">DS18B20</span> แยกอิสระจากระบบปั๊มน้ำ</p>
+                                <h3>สถานะระบบทำความเย็น (<span lang="en">Cooling Status</span>)</h3>
                             </div>
                             <span class="settings-state" id="cooling-config-state">กำลังโหลดค่า...</span>
                         </div>
@@ -534,62 +569,73 @@
                             <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>เปิดทดสอบ (<span lang="en">Test ON</span>)</button>
                             <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
                         </div>
-
-                        <form class="cooling-config-form flex-col-1" id="cooling-config-form" novalidate>
-                            <div class="cooling-config-grid">
-                                <div class="duration-field">
-                                    <label for="cooling-threshold-input">อุณหภูมิเป้าหมาย (°C)</label>
-                                    <input id="cooling-threshold-input" type="number" min="-55" max="125" step="0.1"
-                                        inputmode="decimal">
-                                </div>
-                                <div class="duration-field">
-                                    <label for="cooling-hysteresis-input">ส่วนต่างเพื่อเริ่มทำงานใหม่ / <span lang="en">Hysteresis</span> (°C)</label>
-                                    <input id="cooling-hysteresis-input" type="number" min="0.1" max="50" step="0.1"
-                                        inputmode="decimal">
-                                </div>
-                                <div class="duration-field">
-                                    <label for="cooling-test-timeout">ระยะเวลาเปิดทดสอบปั๊ม/พัดลม (วินาที)</label>
-                                    <input id="cooling-test-timeout" type="number" min="1" max="3600" step="1"
-                                        inputmode="numeric">
-                                </div>
-                                <div class="duration-field">
-                                    <label for="cooling-min-off">เวลาหน่วงเปิดซ้ำขั้นต่ำ / <span lang="en">Short-cycle Delay</span> (วินาที)</label>
-                                    <input id="cooling-min-off" type="number" min="0" max="86400" step="1"
-                                        inputmode="numeric">
-                                </div>
-                            </div>
-
-                            <div class="settings-actions flex-col-1">
-                                <label class="toggle-row" for="cooling-auto-enable">
-                                    <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox" role="switch"><span
-                                            class="toggle-slider"></span></div>
-                                    <span>
-                                        <strong>เปิดทำงานระบบความเย็นอัตโนมัติเมื่อเปิดเครื่อง</strong>
-                                        <small>กำหนดให้ทำงานตามอุณหภูมิทันทีเมื่อมีไฟเข้าอุปกรณ์</small>
-                                    </span>
-                                </label>
-                                <div class="settings-button-row mt-auto">
-                                    <span class="unsaved-warning hidden"
-                                        id="cooling-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
-                                    <button class="btn btn-primary" id="cooling-save-config" type="submit"
-                                        disabled>บันทึกการตั้งค่าระบบทำความเย็น</button>
-                                </div>
-                            </div>
-                            <div class="pump-alert hidden" id="cooling-config-error"></div>
-                        </form>
                     </section>
 
+                    <!-- Cooling Settings -->
+                    <details class="settings-collapsible cooling-settings">
+                        <summary>
+                            <div>
+                                <h3 style="margin-bottom: 0;">ตั้งค่าระบบทำความเย็น (<span lang="en">Cooling Settings</span>)</h3>
+                                <p style="font-size: var(--text-sm); color: var(--outline); margin-top: 4px; margin-bottom: 0;">ปรับอุณหภูมิและรอบหน่วงเวลาความปลอดภัยสำหรับการทำความเย็น</p>
+                            </div>
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </summary>
+                        <div class="settings-body">
+                            <form class="cooling-config-form flex-col-1" id="cooling-config-form" novalidate style="margin-top: var(--sp-md);">
+                                <div class="cooling-config-grid">
+                                    <div class="duration-field">
+                                        <label for="cooling-threshold-input">อุณหภูมิเป้าหมาย (°C)</label>
+                                        <input id="cooling-threshold-input" type="number" min="-55" max="125" step="0.1"
+                                            inputmode="decimal">
+                                    </div>
+                                    <div class="duration-field">
+                                        <label for="cooling-hysteresis-input">ส่วนต่างเพื่อเริ่มทำงานใหม่ / <span lang="en">Hysteresis</span> (°C)</label>
+                                        <input id="cooling-hysteresis-input" type="number" min="0.1" max="50" step="0.1"
+                                            inputmode="decimal">
+                                    </div>
+                                    <div class="duration-field">
+                                        <label for="cooling-test-timeout">ระยะเวลาเปิดทดสอบปั๊ม/พัดลม (วินาที)</label>
+                                        <input id="cooling-test-timeout" type="number" min="1" max="3600" step="1"
+                                            inputmode="numeric">
+                                    </div>
+                                    <div class="duration-field">
+                                        <label for="cooling-min-off">เวลาหน่วงเปิดซ้ำขั้นต่ำ / <span lang="en">Short-cycle Delay</span> (วินาที)</label>
+                                        <input id="cooling-min-off" type="number" min="0" max="86400" step="1"
+                                            inputmode="numeric">
+                                    </div>
+                                </div>
 
+                                <div class="settings-actions flex-col-1">
+                                    <label class="toggle-row" for="cooling-auto-enable">
+                                        <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox" role="switch"><span
+                                                class="toggle-slider"></span></div>
+                                        <span>
+                                            <strong>เปิดทำงานระบบความเย็นอัตโนมัติเมื่อเปิดเครื่อง</strong>
+                                            <small>กำหนดให้ทำงานตามอุณหภูมิทันทีเมื่อมีไฟเข้าอุปกรณ์</small>
+                                        </span>
+                                    </label>
+                                    <div class="settings-button-row mt-auto">
+                                        <span class="unsaved-warning hidden"
+                                            id="cooling-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
+                                        <button class="btn btn-primary" id="cooling-save-config" type="submit"
+                                            disabled>บันทึกการตั้งค่าระบบทำความเย็น</button>
+                                    </div>
+                                </div>
+                                <div class="pump-alert hidden" id="cooling-config-error"></div>
+                            </form>
+                        </div>
+                    </details>
                 </div>
             </div>
-
-
 
             <!-- Footer -->
             <footer class="app-footer">
                 <span lang="en">Fish Pump Relay Timer Control</span>
             </footer>
         </section>
+
         <section id="view-status" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
@@ -1270,13 +1316,13 @@
             </svg>
             <span>Wi-Fi</span>
         </a>
-        <button class="mobile-nav-item" id="m-nav-sync" onclick="handleMobileSync()" aria-label="ซิงค์ข้อมูลอุปกรณ์">
+        <a href="/cooling" class="mobile-nav-item" id="m-nav-cooling">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">
-                <use href="#icon-sync"></use>
+                <use href="#icon-cooling"></use>
             </svg>
-            <span>ซิงค์ค่า</span>
-        </button>
+            <span>ทำความเย็น</span>
+        </a>
         <a href="/hardware" class="mobile-nav-item" id="m-nav-hardware">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">

@@ -456,7 +456,6 @@ var HARDWARE_FIELDS = [
 
 function initDashboard() {
     initPumpDashboard();
-    initCoolingDashboard();
 
     var pwdForm = document.getElementById('password-form');
     if (pwdForm) {
@@ -483,7 +482,7 @@ function pumpEl(id) {
 }
 
 function initCoolingDashboard() {
-    if (window.location.pathname !== '/dashboard') return;
+    if (window.location.pathname !== '/cooling') return;
     wireCoolingForm();
     wireCoolingActions();
     updateCoolingButtons();
@@ -2955,6 +2954,7 @@ function handleRoute() {
 
     var viewId = 'view-login';
     if (path === '/dashboard') viewId = 'view-dashboard';
+    else if (path === '/cooling') viewId = 'view-cooling';
     else if (path === '/status') viewId = 'view-status';
     else if (path === '/wifi') viewId = 'view-wifi';
     else if (path === '/hardware') viewId = 'view-hardware';
@@ -2995,6 +2995,8 @@ function handleRoute() {
         if (typeof initLogin === 'function') initLogin();
     } else if (path === '/dashboard') {
         if (typeof initDashboard === 'function') initDashboard();
+    } else if (path === '/cooling') {
+        if (typeof initCoolingDashboard === 'function') initCoolingDashboard();
     } else if (path === '/status') {
         if (typeof initStatus === 'function') initStatus();
     } else if (path === '/wifi') {
