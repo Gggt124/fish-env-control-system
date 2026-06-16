@@ -49,6 +49,45 @@
             document.body.classList.add('login-active');
         }
     </script>
+    <svg style="display: none;" aria-hidden="true">
+        <defs>
+            <symbol id="icon-gear" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </symbol>
+            <symbol id="icon-sync" viewBox="0 0 24 24">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
+            </symbol>
+            <symbol id="icon-wifi" viewBox="0 0 24 24">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+            </symbol>
+            <symbol id="icon-hardware" viewBox="0 0 24 24">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </symbol>
+            <symbol id="icon-lock" viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </symbol>
+            <symbol id="icon-power" viewBox="0 0 24 24">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </symbol>
+            <symbol id="icon-spi" viewBox="0 0 24 24">
+                <line x1="18" y1="8" x2="22" y2="12"></line>
+                <line x1="12" y1="2" x2="12" y2="6"></line>
+                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
+                <line x1="12" y1="17" x2="6" y2="23"></line>
+            </symbol>
+            <symbol id="icon-dashboard" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="9"></rect>
+                <rect x="14" y="3" width="7" height="5"></rect>
+                <rect x="14" y="12" width="7" height="9"></rect>
+                <rect x="3" y="16" width="7" height="5"></rect>
+            </symbol>
+        </defs>
+    </svg>
     <!-- Mobile Top Bar -->
     <header class="mobile-topbar">
         <span class="brand" lang="en">Fish Pump Control</span>
@@ -72,13 +111,7 @@
         <div class="sidebar-brand">
             <div class="brand-name" lang="en">Fish Pump Control</div>
             <div class="sidebar-node-info">
-                <div class="node-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
-                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path
-                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                        </path>
-                    </svg></div>
+                <div class="node-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><use href="#icon-gear"></use></svg></div>
                 <div>
                     <div class="node-name" lang="en">Fish Pump Control</div>
                     <div class="node-status">
@@ -92,36 +125,22 @@
             <a href="/dashboard" class="nav-item active" id="nav-dashboard">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                         stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <rect x="3" y="3" width="7" height="9"></rect>
-                        <rect x="14" y="3" width="7" height="5"></rect>
-                        <rect x="14" y="12" width="7" height="9"></rect>
-                        <rect x="3" y="16" width="7" height="5"></rect>
+                        <use href="#icon-dashboard"></use>
                     </svg></span> <span lang="en">Dashboard</span>
             </a>
             <a href="/status" class="nav-item" id="nav-status">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
-                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path
-                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                        </path>
-                    </svg></span> <span lang="en">System Status</span>
+                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><use href="#icon-gear"></use></svg></span> <span lang="en">System Status</span>
             </a>
             <a href="/wifi" class="nav-item" id="nav-wifi">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                         stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                        <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                        <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+                        <use href="#icon-wifi"></use>
                     </svg></span> <span lang="en">Wi-Fi Settings</span>
             </a>
             <a href="/hardware" class="nav-item" id="nav-hardware">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                         stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <path
-                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
-                        </path>
+                        <use href="#icon-hardware"></use>
                     </svg></span> <span lang="en">Hardware/Install</span>
             </a>
             <button class="nav-item" id="nav-logout" onclick="doLogout();return false;">
@@ -182,8 +201,7 @@
                                 <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                         stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                         stroke-linejoin="round" class="svg-icon">
-                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                        <use href="#icon-lock"></use>
                                     </svg></span>
                                 <input id="password" name="password" type="password"
                                     placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required
@@ -215,22 +233,17 @@
                     <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)" aria-label="ซิงค์ข้อมูลปั๊ม"><svg viewBox="0 0 24 24"
                             width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                             stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
+                            <use href="#icon-sync"></use>
                         </svg> ซิงค์ค่า (Sync)</button>
                     <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
                             stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
-                            <path
-                                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
-                            </path>
+                            <use href="#icon-hardware"></use>
                         </svg> ฮาร์ดแวร์ (Hardware)</a>
                     <a href="/wifi" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
                             stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
-                            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                            <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+                            <use href="#icon-wifi"></use>
                         </svg> ตั้งค่า Wi-Fi (Wi-Fi Setup)</a>
                 </div>
             </div>
@@ -539,23 +552,17 @@
                         <a href="/wifi" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                                <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+                                <use href="#icon-wifi"></use>
                             </svg> Wi-Fi Settings</a>
                         <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <path
-                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
-                                </path>
+                                <use href="#icon-hardware"></use>
                             </svg> Hardware/Install</a>
                         <button onclick="openPasswordModal()" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24"
                                 width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
                                 stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                <use href="#icon-lock"></use>
                             </svg> เปลี่ยนรหัสผ่าน (Change Password)</button>
                     </div>
                 </div>
@@ -590,7 +597,7 @@
                     <button class="btn btn-outline btn-sm" onclick="refreshStatus()"><svg viewBox="0 0 24 24" width="14"
                             height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
+                            <use href="#icon-sync"></use>
                         </svg> รีเฟรช (Refresh)</button>
                 </div>
             </div>
@@ -705,10 +712,7 @@
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                                <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+                                <use href="#icon-wifi"></use>
                             </svg></span>
                     </div>
                     <table class="info-table">
@@ -790,9 +794,7 @@
                         <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
                                 height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <path
-                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
-                                </path>
+                                <use href="#icon-hardware"></use>
                             </svg></span>
                     </div>
                     <table class="info-table">
@@ -896,7 +898,7 @@
                                 viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2"
                                 fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"
                                 style="margin-right: 4px; vertical-align: middle;">
-                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
+                                <use href="#icon-sync"></use>
                             </svg> สแกนใหม่</button>
                     </div>
                     <div class="network-list" id="network-list" aria-live="polite">
@@ -929,7 +931,7 @@
                     <button class="btn btn-outline btn-sm" onclick="loadHardwareMap()"><svg viewBox="0 0 24 24"
                             width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                             stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
+                            <use href="#icon-sync"></use>
                         </svg> รีเฟรช (Refresh)</button>
                     <a href="/dashboard" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="16" height="16"
                             stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
@@ -967,7 +969,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                <use href="#icon-power"></use>
                             </svg></span>
                         <div>
                             <h4>รีเลย์ปั๊ม 1 (Pump Relay 1)</h4>
@@ -978,7 +980,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                <use href="#icon-power"></use>
                             </svg></span>
                         <div>
                             <h4>รีเลย์ปั๊ม 2 (Pump Relay 2)</h4>
@@ -1025,10 +1027,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="18" y1="8" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
-                                <line x1="12" y1="17" x2="6" y2="23"></line>
+                                <use href="#icon-spi"></use>
                             </svg></span>
                         <div>
                             <h4>SCK (สัญญาณนาฬิกา)</h4>
@@ -1039,10 +1038,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="18" y1="8" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
-                                <line x1="12" y1="17" x2="6" y2="23"></line>
+                                <use href="#icon-spi"></use>
                             </svg></span>
                         <div>
                             <h4>MOSI (ข้อมูล)</h4>
@@ -1053,10 +1049,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="18" y1="8" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
-                                <line x1="12" y1="17" x2="6" y2="23"></line>
+                                <use href="#icon-spi"></use>
                             </svg></span>
                         <div>
                             <h4>CS (เลือกชิป)</h4>
@@ -1067,10 +1060,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="18" y1="8" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
-                                <line x1="12" y1="17" x2="6" y2="23"></line>
+                                <use href="#icon-spi"></use>
                             </svg></span>
                         <div>
                             <h4>DC (ข้อมูล/คำสั่ง)</h4>
@@ -1081,10 +1071,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="18" y1="8" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
-                                <line x1="12" y1="17" x2="6" y2="23"></line>
+                                <use href="#icon-spi"></use>
                             </svg></span>
                         <div>
                             <h4>RESET (รีเซต)</h4>
@@ -1095,10 +1082,7 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="18" y1="8" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="6"></line>
-                                <path d="M12 6h8l-2 4h-4v7H8V10l-2-4h8"></path>
-                                <line x1="12" y1="17" x2="6" y2="23"></line>
+                                <use href="#icon-spi"></use>
                             </svg></span>
                         <div>
                             <h4>LED (ไฟหน้าจอ)</h4>
@@ -1235,10 +1219,7 @@
             <h3 class="text-lg" style="display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                     stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-primary">
-                    <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                    <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                    <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+                    <use href="#icon-wifi"></use>
                 </svg>
                 <span>เชื่อมต่อ Wi-Fi</span>
             </h3>
@@ -1268,8 +1249,7 @@
                     <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                             stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
                             class="svg-icon">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            <use href="#icon-lock"></use>
                         </svg></span>
                     <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" autocomplete="off">
                 </div>
@@ -1354,36 +1334,28 @@
         <a href="/dashboard" class="mobile-nav-item active" id="m-nav-dashboard">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="9"></rect>
-                <rect x="14" y="3" width="7" height="5"></rect>
-                <rect x="14" y="12" width="7" height="9"></rect>
-                <rect x="3" y="16" width="7" height="5"></rect>
+                <use href="#icon-dashboard"></use>
             </svg>
             <span>หน้าหลัก</span>
         </a>
         <a href="/wifi" class="mobile-nav-item" id="m-nav-wifi">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
+                <use href="#icon-wifi"></use>
             </svg>
             <span>Wi-Fi</span>
         </a>
         <button class="mobile-nav-item" id="m-nav-sync" onclick="handleMobileSync()" aria-label="ซิงค์ข้อมูลอุปกรณ์">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
+                <use href="#icon-sync"></use>
             </svg>
             <span>ซิงค์ค่า</span>
         </button>
         <a href="/hardware" class="mobile-nav-item" id="m-nav-hardware">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">
-                <path
-                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
-                </path>
+                <use href="#icon-hardware"></use>
             </svg>
             <span>ติดตั้ง</span>
         </a>
