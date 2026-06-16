@@ -165,6 +165,9 @@ function showToast(msg, type) {
     var el = document.createElement('div');
     el.className = 'toast-item ' + type;
     el.textContent = msg;
+    if (type === 'error') {
+        el.setAttribute('role', 'alert');
+    }
     container.appendChild(el);
     setTimeout(function () {
         el.style.opacity = '0';
@@ -172,6 +175,104 @@ function showToast(msg, type) {
         setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
     }, 3000);
 }
+
+/* ======== Focus Trap & Dialog Keyboard Helpers ======== */
+var activeFocusTrap = null;
+var previousFocusedElement = null;
+
+function trapFocus(element) {
+    if (!element) return;
+    
+    previousFocusedElement = document.activeElement;
+    activeFocusTrap = element;
+
+    element.setAttribute('aria-hidden', 'false');
+
+    var focusables = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusables.length > 0) {
+        var first = Array.prototype.find.call(focusables, function(el) {
+            return !el.disabled && el.offsetWidth > 0 && el.offsetHeight > 0;
+        });
+        if (first) {
+            first.focus();
+        }
+    }
+}
+
+function untrapFocus(element) {
+    if (element) {
+        element.setAttribute('aria-hidden', 'true');
+    }
+    activeFocusTrap = null;
+    if (previousFocusedElement) {
+        try {
+            previousFocusedElement.focus();
+        } catch (e) {}
+        previousFocusedElement = null;
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var sidebar = document.getElementById('app-sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            closeMobileNav();
+            return;
+        }
+        var wifiModal = document.getElementById('wifi-connect-modal');
+        if (wifiModal && !wifiModal.classList.contains('hidden')) {
+            clearSelection();
+            return;
+        }
+        var passwordModal = document.getElementById('password-modal');
+        if (passwordModal && !passwordModal.classList.contains('hidden')) {
+            closePasswordModal();
+            return;
+        }
+        var confirmModal = document.getElementById('modal-container');
+        if (confirmModal && !confirmModal.classList.contains('hidden')) {
+            var cancelBtn = document.getElementById('modal-cancel');
+            if (cancelBtn) cancelBtn.click();
+            return;
+        }
+    }
+
+    if (e.key === 'Tab' && activeFocusTrap) {
+        var focusables = activeFocusTrap.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        var visibleFocusables = Array.prototype.filter.call(focusables, function(el) {
+            return !el.disabled && el.offsetWidth > 0 && el.offsetHeight > 0;
+        });
+
+        if (visibleFocusables.length === 0) {
+            e.preventDefault();
+            return;
+        }
+
+        var first = visibleFocusables[0];
+        var last = visibleFocusables[visibleFocusables.length - 1];
+
+        if (e.shiftKey) {
+            if (document.activeElement === first) {
+                last.focus();
+                e.preventDefault();
+            }
+        } else {
+            if (document.activeElement === last) {
+                first.focus();
+                e.preventDefault();
+            }
+        }
+    }
+});
+
+window.addEventListener('resize', function() {
+    if (window.innerWidth >= 1024) {
+        var sidebar = document.getElementById('app-sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            closeMobileNav();
+        }
+    }
+});
 
 /* ======== UI Helpers ======== */
 
@@ -184,6 +285,11 @@ function toggleMobileNav() {
         overlay.classList.toggle('open', open);
         var btn = document.querySelector('.hamburger-btn');
         if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+            trapFocus(sidebar);
+        } else {
+            untrapFocus(sidebar);
+        }
     }
 }
 
@@ -191,10 +297,14 @@ function closeMobileNav() {
     var sidebar = document.getElementById('app-sidebar');
     var overlay = document.getElementById('drawer-overlay');
     if (!sidebar || !overlay) return;
-    sidebar.classList.remove('open');
-    overlay.classList.remove('open');
-    var btn = document.querySelector('.hamburger-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
+    var open = sidebar.classList.contains('open');
+    if (open) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+        var btn = document.querySelector('.hamburger-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        untrapFocus(sidebar);
+    }
 }
 
 window.toggleMobileNav = toggleMobileNav;
@@ -232,6 +342,7 @@ function showConfirmModal(title, message, onConfirm, isDangerous) {
 
     function cleanup() {
         container.classList.add('hidden');
+        untrapFocus(container);
         cancelBtn.onclick = null;
         confirmBtn.onclick = null;
     }
@@ -240,6 +351,7 @@ function showConfirmModal(title, message, onConfirm, isDangerous) {
     confirmBtn.onclick = function () { cleanup(); if (onConfirm) onConfirm(); };
 
     container.classList.remove('hidden');
+    trapFocus(container);
 }
 
 /* ======== Login Page ======== */
@@ -1697,6 +1809,12 @@ function refreshFullStatus() {
         statusFullRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
+            var dot = document.getElementById('sidebar-status-dot');
+            var txt = document.getElementById('sidebar-status-text');
+            if (dot && txt) {
+                dot.className = 'status-dot off';
+                txt.textContent = 'Offline';
+            }
             return;
         }
 
@@ -1788,6 +1906,12 @@ function refreshStatus() {
         statusSummaryRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
+            var dot = document.getElementById('sidebar-status-dot');
+            var txt = document.getElementById('sidebar-status-text');
+            if (dot && txt) {
+                dot.className = 'status-dot off';
+                txt.textContent = 'Offline';
+            }
             return;
         }
 
@@ -2196,7 +2320,7 @@ function doScan() {
                 '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
                 '<div class=\"net-detail\">' +
                 (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ') + escHtml(nets[i].auth) +
-                ' &bull; Ch ' + nets[i].channel +
+                ' &bull; Ch <span class="mono">' + nets[i].channel + '</span>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
@@ -2222,9 +2346,9 @@ function toggleStaticIp() {
     var gwInput = document.getElementById('static-gateway');
     var nmInput = document.getElementById('static-netmask');
     if (fields) fields.style.display = checked ? 'block' : 'none';
-    if (ipInput) ipInput.disabled = !checked;
-    if (gwInput) gwInput.disabled = !checked;
-    if (nmInput) nmInput.disabled = !checked;
+    if (ipInput) { ipInput.disabled = !checked; ipInput.classList.remove('invalid'); if (!checked) ipInput.value = ''; }
+    if (gwInput) { gwInput.disabled = !checked; gwInput.classList.remove('invalid'); if (!checked) gwInput.value = ''; }
+    if (nmInput) { nmInput.disabled = !checked; nmInput.classList.remove('invalid'); if (!checked) nmInput.value = '255.255.255.0'; }
 }
 
 function toggleWifiPasswordVisibility() {
@@ -2285,11 +2409,31 @@ function selectNetwork(ssid) {
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
+    if (pwInput) pwInput.classList.remove('invalid');
+    var ipInput = document.getElementById('static-ip');
+    var gwInput = document.getElementById('static-gateway');
+    var nmInput = document.getElementById('static-netmask');
+    if (ipInput) ipInput.classList.remove('invalid');
+    if (gwInput) gwInput.classList.remove('invalid');
+    if (nmInput) nmInput.classList.remove('invalid');
+
     var isSaved = false;
     if (window.savedWifiProfiles) {
         for (var k = 0; k < window.savedWifiProfiles.length; k++) {
             if (window.savedWifiProfiles[k].ssid === ssid) {
                 isSaved = true;
+                break;
+            }
+        }
+    }
+
+    var isNetworkOpen = false;
+    if (window.lastScanResults) {
+        for (var i = 0; i < window.lastScanResults.length; i++) {
+            if (window.lastScanResults[i].ssid === ssid) {
+                if (window.lastScanResults[i].auth === 'Open') {
+                    isNetworkOpen = true;
+                }
                 break;
             }
         }
@@ -2303,7 +2447,12 @@ function selectNetwork(ssid) {
         var pwGroup = document.getElementById('wifi-password-group');
         var savedMsg = document.getElementById('wifi-saved-msg');
 
-        if (isSaved) {
+        if (isNetworkOpen) {
+            pwInput.placeholder = 'เครือข่ายเปิด (ไม่มีรหัสผ่าน)';
+            pwInput.disabled = true;
+            if (pwGroup) pwGroup.style.display = 'none';
+            if (savedMsg) savedMsg.style.display = 'none';
+        } else if (isSaved) {
             pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e16\u0e39\u0e01\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 (\u0e40\u0e27\u0e49\u0e19\u0e27\u0e48\u0e32\u0e07\u0e44\u0e14\u0e49)';
             if (pwGroup) pwGroup.style.display = 'none';
             if (savedMsg) savedMsg.style.display = 'block';
@@ -2313,7 +2462,7 @@ function selectNetwork(ssid) {
             if (savedMsg) savedMsg.style.display = 'none';
         }
     }
-    if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = false; }
+    if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = isNetworkOpen; }
     if (ipToggle) { ipToggle.checked = false; ipToggle.disabled = false; }
     toggleStaticIp(); // clear static fields and hide them
     if (statusEl) statusEl.textContent = '';
@@ -2322,7 +2471,10 @@ function selectNetwork(ssid) {
 
     /* Show the Wi-Fi connect modal */
     var wifiModal = document.getElementById('wifi-connect-modal');
-    if (wifiModal) wifiModal.classList.remove('hidden');
+    if (wifiModal) {
+        wifiModal.classList.remove('hidden');
+        trapFocus(wifiModal);
+    }
 
     /* Update step to 2 */
     updateStepper(2);
@@ -2343,7 +2495,10 @@ function clearSelection() {
 
     /* Hide the Wi-Fi connect modal */
     var wifiModal = document.getElementById('wifi-connect-modal');
-    if (wifiModal) wifiModal.classList.add('hidden');
+    if (wifiModal) {
+        wifiModal.classList.add('hidden');
+        untrapFocus(wifiModal);
+    }
 
     /* Reset inputs */
     var pwInput = document.getElementById('wifi-password');
@@ -2412,19 +2567,92 @@ function doConnect() {
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
+    if (pwInput) pwInput.classList.remove('invalid');
+    var ipInput = document.getElementById('static-ip');
+    var gwInput = document.getElementById('static-gateway');
+    var nmInput = document.getElementById('static-netmask');
+    if (ipInput) ipInput.classList.remove('invalid');
+    if (gwInput) gwInput.classList.remove('invalid');
+    if (nmInput) nmInput.classList.remove('invalid');
+
+    /* 1. Password length validation for secured unsaved networks */
+    var isSaved = false;
+    if (window.savedWifiProfiles) {
+        for (var k = 0; k < window.savedWifiProfiles.length; k++) {
+            if (window.savedWifiProfiles[k].ssid === selectedSsid) {
+                isSaved = true;
+                break;
+            }
+        }
+    }
+
+    var isNetworkOpen = false;
+    if (window.lastScanResults) {
+        for (var i = 0; i < window.lastScanResults.length; i++) {
+            if (window.lastScanResults[i].ssid === selectedSsid) {
+                if (window.lastScanResults[i].auth === 'Open') {
+                    isNetworkOpen = true;
+                }
+                break;
+            }
+        }
+    }
+
+    if (!isNetworkOpen && !isSaved) {
+        if (!password || password.length < 8) {
+            if (pwInput) pwInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'รหัสผ่านสำหรับเครือข่ายนี้ต้องมีความยาวอย่างน้อย 8 ตัวอักษร';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+    }
+
+    var body = { ssid: selectedSsid, password: password };
+    wifiLastPassword = password;  /* capture for saveWifiProfile on success */
+
+    /* 2. IP format validation */
+    if (document.getElementById('static-ip-toggle').checked) {
+        var ipVal = ipInput ? ipInput.value.trim() : '';
+        var gwVal = gwInput ? gwInput.value.trim() : '';
+        var nmVal = nmInput ? nmInput.value.trim() : '';
+
+        if (!isValidIp(ipVal)) {
+            if (ipInput) ipInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'กรุณากรอก IP Address ให้ถูกต้อง (เช่น 192.168.1.100)';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+        if (!isValidIp(gwVal)) {
+            if (gwInput) gwInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'กรุณากรอก Gateway ให้ถูกต้อง (เช่น 192.168.1.1)';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+        if (!isValidIp(nmVal)) {
+            if (nmInput) nmInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'กรุณากรอก Subnet Netmask ให้ถูกต้อง (เช่น 255.255.255.0)';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+
+        body.ip = ipVal;
+        body.gateway = gwVal;
+        body.netmask = nmVal;
+    }
+
     if (connectBtn) setLoading(connectBtn, true);
     if (cancelBtn) cancelBtn.disabled = true;
     if (statusEl) { statusEl.textContent = ''; statusEl.style.color = 'var(--on-surface-variant)'; }
 
     updateStepper(3);
-
-    var body = { ssid: selectedSsid, password: password };
-    wifiLastPassword = password;  /* capture for saveWifiProfile on success */
-    if (document.getElementById('static-ip-toggle').checked) {
-        body.ip = document.getElementById('static-ip').value.trim();
-        body.gateway = document.getElementById('static-gateway').value.trim();
-        body.netmask = document.getElementById('static-netmask').value.trim();
-    }
 
     apiPost('/api/wifi/connect', body, function (err, data) {
         if (err) {
@@ -2602,6 +2830,21 @@ function escJs(str) {
     return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
+function isValidIp(ip) {
+    if (!ip) return false;
+    var parts = ip.split('.');
+    if (parts.length !== 4) return false;
+    for (var i = 0; i < 4; i++) {
+        var part = parts[i];
+        if (!/^\d+$/.test(part)) return false;
+        var num = parseInt(part, 10);
+        if (num < 0 || num > 255) return false;
+        if (part.length > 1 && part[0] === '0') return false;
+    }
+    return true;
+}
+
+
 
 /* ======== Change Password ======== */
 
@@ -2617,12 +2860,16 @@ function openPasswordModal() {
             errEl.textContent = '';
         }
         modal.classList.remove('hidden');
+        trapFocus(modal);
     }
 }
 
 function closePasswordModal() {
     var modal = document.getElementById('password-modal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.add('hidden');
+        untrapFocus(modal);
+    }
 }
 
 function doChangePassword(e) {

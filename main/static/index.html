@@ -15,21 +15,6 @@
             #app-content {
                 margin-left: 280px;
             }
-
-            .compact-status {
-                margin-top: var(--sp-lg);
-            }
-
-            .compact-status .summary-grid {
-                grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
-                justify-content: start;
-            }
-        }
-
-        @media (max-width: 1023px) {
-            .compact-status {
-                margin-top: var(--sp-lg);
-            }
         }
 
         .view.hidden {
@@ -39,6 +24,24 @@
         body.login-active #app-content {
             margin: 0 !important;
             padding: 0 !important;
+        }
+
+        .tft-wiring-compact-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-sm);
+        }
+
+        .tft-wire-badge {
+            background-color: var(--surface-container);
+            border: 1px solid var(--outline-variant);
+            padding: var(--sp-xs) var(--sp-sm);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: var(--sp-xs);
         }
     </style>
 </head>
@@ -64,6 +67,15 @@
                 <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
                 <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
             </symbol>
+            <symbol id="icon-wifi-off" viewBox="0 0 24 24">
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </symbol>
             <symbol id="icon-hardware" viewBox="0 0 24 24">
                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
             </symbol>
@@ -86,6 +98,63 @@
                 <rect x="14" y="12" width="7" height="9"></rect>
                 <rect x="3" y="16" width="7" height="5"></rect>
             </symbol>
+            <symbol id="icon-menu" viewBox="0 0 24 24">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </symbol>
+            <symbol id="icon-logout" viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </symbol>
+            <symbol id="icon-user" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </symbol>
+            <symbol id="icon-arrow-left" viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </symbol>
+            <symbol id="icon-float" viewBox="0 0 24 24">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+            </symbol>
+            <symbol id="icon-temp" viewBox="0 0 24 24">
+                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+            </symbol>
+            <symbol id="icon-cooling" viewBox="0 0 24 24">
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+                <path d="M20 16l-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"></path>
+            </symbol>
+            <symbol id="icon-shield" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </symbol>
+            <symbol id="icon-globe" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </symbol>
+            <symbol id="icon-link" viewBox="0 0 24 24">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </symbol>
+            <symbol id="icon-mask" viewBox="0 0 24 24">
+                <path d="M12 2a10 10 0 0 1 10 10"></path>
+                <path d="M12 6a6 6 0 0 1 6 6"></path>
+                <circle cx="12" cy="18" r="1"></circle>
+                <path d="M12 14v4"></path>
+            </symbol>
+            <symbol id="icon-info" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </symbol>
+            <symbol id="icon-ap" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+            </symbol>
         </defs>
     </svg>
     <!-- Mobile Top Bar -->
@@ -95,9 +164,7 @@
             onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}"><svg
                 viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
+                <use href="#icon-menu"></use>
             </svg></button>
     </header>
 
@@ -146,9 +213,7 @@
             <button class="nav-item" id="nav-logout" onclick="doLogout();return false;">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                         stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                        <use href="#icon-logout"></use>
                     </svg></span> <span lang="en">Logout</span>
             </button>
         </nav>
@@ -157,11 +222,10 @@
     <!-- Main Content -->
     <main id="app-content" class="main-content" aria-label="Application content">
         <div id="staging-banner" class="alert-banner hidden">
-            <span>⚠️ <strong>โหมดทดลองใช้การตั้งค่าใหม่:</strong> การตั้งค่านี้จะถูกยกเลิกภายใน 3 นาที
-                หากไม่ได้รับการยืนยัน</span>
+            <span>⚠️ <strong>กำลังทดสอบการตั้งค่าใหม่:</strong> ระบบจะกู้คืนการตั้งค่าเดิมโดยอัตโนมัติใน 3 นาที หากคุณไม่ยืนยันว่าการทำงานปกติ</span>
             <div class="banner-actions">
-                <button class="btn btn-primary" onclick="confirmStaging()">ยืนยัน (<span lang="en">Confirm</span>)</button>
-                <button class="btn btn-danger" onclick="cancelStaging()">ยกเลิก (<span lang="en">Cancel</span>)</button>
+                <button class="btn btn-primary" onclick="confirmStaging()">ยืนยันใช้งาน (<span lang="en">Confirm</span>)</button>
+                <button class="btn btn-danger" onclick="cancelStaging()">กู้คืนค่าเดิม (<span lang="en">Cancel</span>)</button>
             </div>
         </div>
         <section id="view-login" class="view hidden" aria-hidden="true">
@@ -171,14 +235,11 @@
                         <div class="icon-circle"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
                                 class="svg-icon">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path
-                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                                </path>
+                                <use href="#icon-gear"></use>
                             </svg></div>
                         <div>
                             <h1 lang="en">Fish Pump Control</h1>
-                            <p>จัดการอุปกรณ์และการเชื่อมต่อของคุณ</p>
+                            <p>เข้าสู่ระบบเพื่อควบคุมการทำงานและตั้งค่าระบบปั๊มน้ำ</p>
                         </div>
                     </header>
                     <form id="login-form" onsubmit="return false;">
@@ -188,8 +249,7 @@
                                 <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18"
                                         stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                         stroke-linejoin="round" class="svg-icon">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
+                                        <use href="#icon-user"></use>
                                     </svg></span>
                                 <input id="username" name="username" type="text" placeholder="admin" required
                                     autocomplete="username">
@@ -211,14 +271,14 @@
                         <div class="form-group form-group-checkbox">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="remember-me">
-                                <span class="text-sm">จำการเข้าสู่ระบบ (Remember Me)</span>
+                                <span class="text-sm">จดจำการเข้าสู่ระบบในอุปกรณ์นี้ (<span lang="en">Remember Me</span>)</span>
                             </label>
                         </div>
                         <div id="login-error" class="login-error" role="alert"></div>
                         <button type="submit" class="btn btn-primary btn-block" id="login-btn">เข้าสู่ระบบ</button>
                     </form>
                     <div class="login-footer">
-                        <p lang="en">Fish Pump Wi-Fi Setup</p>
+                        <p lang="en">Fish Pump Control Panel</p>
                     </div>
                 </div>
             </div>
@@ -227,24 +287,14 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">Pump Control</h1>
-                    <p>ควบคุม <span lang="en">Timer 1 / Timer 2</span> และติดตามสถานะปั๊ม</p>
+                    <p>ติดตามสถานะปั๊มน้ำและควบคุมรอบเวลา <span lang="en">Timer 1 / Timer 2</span></p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)" aria-label="ซิงค์ข้อมูลปั๊ม"><svg viewBox="0 0 24 24"
                             width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                             stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                             <use href="#icon-sync"></use>
-                        </svg> ซิงค์ค่า (Sync)</button>
-                    <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-hardware"></use>
-                        </svg> ฮาร์ดแวร์ (Hardware)</a>
-                    <a href="/wifi" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
-                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-wifi"></use>
-                        </svg> ตั้งค่า Wi-Fi (Wi-Fi Setup)</a>
+                        </svg> อัปเดตข้อมูล (<span lang="en">Sync</span>)</button>
                 </div>
             </div>
 
@@ -255,8 +305,8 @@
                     <section class="pump-runtime section-card" id="pump-runtime-panel">
                         <div class="pump-runtime-main">
                             <div>
-                                <div class="runtime-eyebrow" id="pump-sync-state">รอข้อมูลจากอุปกรณ์</div>
-                                <h2 id="pump-running-label">ระบบปั๊ม: --</h2>
+                                <div class="runtime-eyebrow" id="pump-sync-state">กำลังดึงข้อมูลสถานะ...</div>
+                                <h2 id="pump-running-label">สถานะการทำงาน: --</h2>
                             </div>
                             <div class="pump-countdown-wrap">
                                 <svg class="progress-ring" width="140" height="140" viewBox="0 0 140 140">
@@ -265,7 +315,7 @@
                                         r="62"></circle>
                                 </svg>
                                 <div class="pump-countdown-content">
-                                    <span class="summary-label">เวลาคงเหลือ</span>
+                                    <span class="summary-label">เวลาคงเหลือในรอบ</span>
                                     <div class="pump-countdown" id="pump-countdown">--:--</div>
                                 </div>
                             </div>
@@ -309,24 +359,24 @@
                     <section class="section-card pump-settings">
                         <div class="section-heading-row">
                             <div>
-                                <h3>ตั้งค่า <span lang="en">Timer</span></h3>
-                                <p>Float OFF -> Timer 1 / Relay 1, Float ON -> Timer 2 / Relay 2</p>
+                                <h3>ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
+                                <p>ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (ลูกลอย <span lang="en">OFF</span> ใช้ <span lang="en">Timer 1</span> / ลูกลอย <span lang="en">ON</span> ใช้ <span lang="en">Timer 2</span>)</p>
                             </div>
-                            <span class="settings-state" id="pump-config-state">ยังไม่ได้โหลดค่า</span>
+                            <span class="settings-state" id="pump-config-state">กำลังโหลดการตั้งค่า...</span>
                         </div>
 
                         <form id="pump-config-form" novalidate>
                             <div class="timer-grid">
                                 <fieldset class="timer-card">
-                                    <legend><span lang="en">Timer 1 / Relay 1</span> - เมื่อลูกลอย OFF</legend>
+                                    <legend><span lang="en">Timer 1 / Relay 1</span> (เมื่อลูกลอย <span lang="en">OFF</span>)</legend>
                                     <div class="duration-row">
                                         <div class="duration-field">
-                                            <label for="timer1-on-min">ช่วงเปิด นาที</label>
+                                            <label for="timer1-on-min">ระยะเวลาทำงาน (นาที)</label>
                                             <input id="timer1-on-min" type="number" min="0" step="1"
                                                 inputmode="numeric">
                                         </div>
                                         <div class="duration-field">
-                                            <label for="timer1-on-sec">ช่วงเปิด วินาที</label>
+                                            <label for="timer1-on-sec">ระยะเวลาทำงาน (วินาที)</label>
                                             <input id="timer1-on-sec" type="number" min="0" max="59" step="1"
                                                 inputmode="numeric">
                                         </div>
@@ -334,37 +384,37 @@
                                     <div class="field-error" id="timer1-on-error"></div>
                                     <div class="duration-row">
                                         <div class="duration-field">
-                                            <label for="timer1-off-min">ช่วงปิด นาที</label>
+                                            <label for="timer1-off-min">ระยะเวลาหยุดพัก (นาที)</label>
                                             <input id="timer1-off-min" type="number" min="0" step="1"
                                                 inputmode="numeric">
                                         </div>
                                         <div class="duration-field">
-                                            <label for="timer1-off-sec">ช่วงปิด วินาที</label>
+                                            <label for="timer1-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
                                             <input id="timer1-off-sec" type="number" min="0" max="59" step="1"
                                                 inputmode="numeric">
                                         </div>
                                     </div>
                                     <div class="field-error" id="timer1-off-error"></div>
                                     <div class="duration-field start-phase-field">
-                                        <label for="timer1-start-phase">เริ่มรอบด้วย</label>
+                                        <label for="timer1-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
                                         <select id="timer1-start-phase" name="timer1_start_phase">
-                                            <option value="on">ON - เปิด Relay 1 ก่อน</option>
-                                            <option value="off">OFF - หน่วงปิดก่อน</option>
+                                            <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
+                                            <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
                                         </select>
                                     </div>
                                     <div class="field-error" id="timer1-start-phase-error"></div>
                                 </fieldset>
 
                                 <fieldset class="timer-card">
-                                    <legend><span lang="en">Timer 2 / Relay 2</span> - เมื่อลูกลอย ON</legend>
+                                    <legend><span lang="en">Timer 2 / Relay 2</span> (เมื่อลูกลอย <span lang="en">ON</span>)</legend>
                                     <div class="duration-row">
                                         <div class="duration-field">
-                                            <label for="timer2-on-min">ช่วงเปิด นาที</label>
+                                            <label for="timer2-on-min">ระยะเวลาทำงาน (นาที)</label>
                                             <input id="timer2-on-min" type="number" min="0" step="1"
                                                 inputmode="numeric">
                                         </div>
                                         <div class="duration-field">
-                                            <label for="timer2-on-sec">ช่วงเปิด วินาที</label>
+                                            <label for="timer2-on-sec">ระยะเวลาทำงาน (วินาที)</label>
                                             <input id="timer2-on-sec" type="number" min="0" max="59" step="1"
                                                 inputmode="numeric">
                                         </div>
@@ -372,22 +422,22 @@
                                     <div class="field-error" id="timer2-on-error"></div>
                                     <div class="duration-row">
                                         <div class="duration-field">
-                                            <label for="timer2-off-min">ช่วงปิด นาที</label>
+                                            <label for="timer2-off-min">ระยะเวลาหยุดพัก (นาที)</label>
                                             <input id="timer2-off-min" type="number" min="0" step="1"
                                                 inputmode="numeric">
                                         </div>
                                         <div class="duration-field">
-                                            <label for="timer2-off-sec">ช่วงปิด วินาที</label>
+                                            <label for="timer2-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
                                             <input id="timer2-off-sec" type="number" min="0" max="59" step="1"
                                                 inputmode="numeric">
                                         </div>
                                     </div>
                                     <div class="field-error" id="timer2-off-error"></div>
                                     <div class="duration-field start-phase-field">
-                                        <label for="timer2-start-phase">เริ่มรอบด้วย</label>
+                                        <label for="timer2-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
                                         <select id="timer2-start-phase" name="timer2_start_phase">
-                                            <option value="on">ON - เปิด Relay 2 ก่อน</option>
-                                            <option value="off">OFF - หน่วงปิดก่อน</option>
+                                            <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
+                                            <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
                                         </select>
                                     </div>
                                     <div class="field-error" id="timer2-start-phase-error"></div>
@@ -399,15 +449,15 @@
                                     <div class="toggle-switch"><input id="pump-auto-start" type="checkbox" role="switch"><span
                                             class="toggle-slider"></span></div>
                                     <span>
-                                        <strong>Auto-start หลังบูต</strong>
-                                        <small>บันทึกเป็นพฤติกรรมตอนเปิดเครื่อง ไม่สั่ง Start/Stop ทันที</small>
+                                        <strong>เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span lang="en">Auto-start</span>)</strong>
+                                        <small>ให้ระบบทำงานทันทีหลังจากป้อนไฟเข้าอุปกรณ์ โดยใช้รอบเวลาที่บันทึกไว้</small>
                                     </span>
                                 </label>
                                 <div class="settings-button-row">
                                     <span class="unsaved-warning hidden"
-                                        id="pump-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
+                                        id="pump-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
                                     <button class="btn btn-primary" id="pump-save-config" type="submit"
-                                        disabled>บันทึกค่า</button>
+                                        disabled>บันทึกการตั้งค่าปั๊มน้ำ</button>
                                 </div>
                             </div>
                             <div class="pump-alert hidden" id="pump-config-error"></div>
@@ -421,17 +471,17 @@
                     <section class="section-card cooling-runtime flex-col-1" id="cooling-runtime-panel">
                         <div class="section-heading-row">
                             <div>
-                                <div class="runtime-eyebrow" id="cooling-sync-state">รอข้อมูลชุดทำความเย็น</div>
-                                <h3>ควบคุมระบบทำความเย็น</h3>
-                                <p>ช่องวัดอุณหภูมิเซนเซอร์ DS18B20 และรีเลย์ทำความเย็น แยกต่างหากจากปั๊มหลัก</p>
+                                <div class="runtime-eyebrow" id="cooling-sync-state">กำลังดึงข้อมูลสถานะ...</div>
+                                <h3>ควบคุมระบบทำความเย็น (<span lang="en">Cooling Control</span>)</h3>
+                                <p>ควบคุมพัดลมหรือระบบระบายความร้อนด้วยเซนเซอร์ <span lang="en">DS18B20</span> แยกอิสระจากระบบปั๊มน้ำ</p>
                             </div>
-                            <span class="settings-state" id="cooling-config-state">ยังไม่ได้โหลดค่า</span>
+                            <span class="settings-state" id="cooling-config-state">กำลังโหลดค่า...</span>
                         </div>
 
                         <div class="cooling-runtime-grid">
                             <div class="runtime-stat primary">
                                 <span class="summary-label">อุณหภูมิ</span>
-                                <strong id="cooling-temperature">--</strong>
+                                <strong id="cooling-temperature" class="mono">--</strong>
                             </div>
                             <div class="runtime-stat primary">
                                 <span class="summary-label">สถานะรีเลย์</span>
@@ -446,35 +496,35 @@
                                 <strong id="cooling-sensor-state">--</strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">ข้อผิดพลาด (Fault)</span>
-                                <strong id="cooling-fault-state">Fault: --</strong>
+                                <span class="summary-label">สถานะความผิดปกติ (<span lang="en">Fault</span>)</span>
+                                <strong id="cooling-fault-state">--</strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">อุณหภูมิเป้าหมาย</span>
-                                <strong id="cooling-threshold">--</strong>
+                                <strong id="cooling-threshold" class="mono">--</strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">ช่วงอุณหภูมิเบี่ยงเบน</span>
-                                <strong id="cooling-hysteresis">--</strong>
+                                <strong id="cooling-hysteresis" class="mono">--</strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">เริ่มทำงานอัตโนมัติ</span>
+                                <span class="summary-label">ทำงานอัตโนมัติหลังบูต</span>
                                 <strong id="cooling-auto-enable-state">--</strong>
                             </div>
                         </div>
 
                         <div class="cooling-detail-row">
                             <div class="summary-item">
-                                <span class="summary-label">สาเหตุที่ถูกระงับ</span>
+                                <span class="summary-label">สาเหตุการหยุดชั่วคราว</span>
                                 <span class="summary-value" id="cooling-blocked-reason">--</span>
                             </div>
                             <div class="summary-item">
-                                <span class="summary-label">เวลาหน่วงคอมเพรสเซอร์</span>
-                                <span class="summary-value" id="cooling-lockout">--</span>
+                                <span class="summary-label">เวลาป้องกันเปิดซ้ำ</span>
+                                <span class="summary-value mono" id="cooling-lockout">--</span>
                             </div>
                             <div class="summary-item">
-                                <span class="summary-label">เวลาทดสอบคงเหลือ</span>
-                                <span class="summary-value" id="cooling-test-remaining">--</span>
+                                <span class="summary-label">เวลาที่เหลือในการเปิดทดสอบ</span>
+                                <span class="summary-value mono" id="cooling-test-remaining">--</span>
                             </div>
                         </div>
 
@@ -493,17 +543,17 @@
                                         inputmode="decimal">
                                 </div>
                                 <div class="duration-field">
-                                    <label for="cooling-hysteresis-input">ช่วงอุณหภูมิเบี่ยงเบน (°C)</label>
+                                    <label for="cooling-hysteresis-input">ส่วนต่างเพื่อเริ่มทำงานใหม่ / <span lang="en">Hysteresis</span> (°C)</label>
                                     <input id="cooling-hysteresis-input" type="number" min="0.1" max="50" step="0.1"
                                         inputmode="decimal">
                                 </div>
                                 <div class="duration-field">
-                                    <label for="cooling-test-timeout">ระยะเวลาเปิดทดสอบ (วินาที)</label>
+                                    <label for="cooling-test-timeout">ระยะเวลาเปิดทดสอบปั๊ม/พัดลม (วินาที)</label>
                                     <input id="cooling-test-timeout" type="number" min="1" max="3600" step="1"
                                         inputmode="numeric">
                                 </div>
                                 <div class="duration-field">
-                                    <label for="cooling-min-off">เวลาล็อกป้องกันซ้ำ (วินาที)</label>
+                                    <label for="cooling-min-off">เวลาหน่วงเปิดซ้ำขั้นต่ำ / <span lang="en">Short-cycle Delay</span> (วินาที)</label>
                                     <input id="cooling-min-off" type="number" min="0" max="86400" step="1"
                                         inputmode="numeric">
                                 </div>
@@ -514,15 +564,15 @@
                                     <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox" role="switch"><span
                                             class="toggle-slider"></span></div>
                                     <span>
-                                        <strong>เริ่มระบบความเย็นอัตโนมัติหลังบูต</strong>
-                                        <small>บันทึกพฤติกรรมตอนเปิดเครื่อง ไม่ใช่คำสั่ง Test ON</small>
+                                        <strong>เปิดทำงานระบบความเย็นอัตโนมัติเมื่อเปิดเครื่อง</strong>
+                                        <small>กำหนดให้ทำงานตามอุณหภูมิทันทีเมื่อมีไฟเข้าอุปกรณ์</small>
                                     </span>
                                 </label>
                                 <div class="settings-button-row mt-auto">
                                     <span class="unsaved-warning hidden"
-                                        id="cooling-unsaved-warning">มีการแก้ไขที่ยังไม่ได้บันทึก</span>
+                                        id="cooling-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
                                     <button class="btn btn-primary" id="cooling-save-config" type="submit"
-                                        disabled>บันทึก Cooling</button>
+                                        disabled>บันทึกการตั้งค่าระบบทำความเย็น</button>
                                 </div>
                             </div>
                             <div class="pump-alert hidden" id="cooling-config-error"></div>
@@ -533,54 +583,7 @@
                 </div>
             </div>
 
-            <!-- Summary Row -->
-            <section class="section-card compact-status">
-                <div class="section-heading-row">
-                    <div>
-                        <h3>สถานะย่อ (Quick Status)</h3>
-                        <p>ข้อมูลระบบแบบย่อ</p>
-                    </div>
-                    <div class="quick-links">
-                        <a href="/status" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path
-                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
-                                </path>
-                            </svg> System Status</a>
-                        <a href="/wifi" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-wifi"></use>
-                            </svg> Wi-Fi Settings</a>
-                        <a href="/hardware" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-hardware"></use>
-                            </svg> Hardware/Install</a>
-                        <button onclick="openPasswordModal()" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24"
-                                width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
-                                stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-lock"></use>
-                            </svg> เปลี่ยนรหัสผ่าน (Change Password)</button>
-                    </div>
-                </div>
-                <div class="summary-grid mt-md">
-                    <div class="summary-item"><span class="summary-label" lang="en">Chip</span><span class="summary-value"
-                            id="dash-chip">--</span></div>
-                    <div class="summary-item"><span class="summary-label" lang="en">Heap Usage</span><span class="summary-value"
-                            id="dash-heap-pct">--</span></div>
-                    <div class="summary-item"><span class="summary-label" lang="en">STA RSSI</span><span class="summary-value"
-                            id="dash-rssi">--</span></div>
-                    <div class="summary-item"><span class="summary-label" lang="en">AP Clients</span><span class="summary-value"
-                            id="dash-ap-clients">--</span></div>
-                    <div class="summary-item"><span class="summary-label" lang="en">Wi-Fi Mode</span><span class="summary-value"
-                            id="dash-wifi-mode">--</span></div>
-                    <div class="summary-item"><span class="summary-label" lang="en">Firmware</span><span class="summary-value"
-                            id="dash-project-version">v1.0.0</span></div>
-                </div>
-            </section>
+
 
             <!-- Footer -->
             <footer class="app-footer">
@@ -591,14 +594,19 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">System Status</h1>
-                    <p>ข้อมูลสถานะและสุขภาพของระบบ</p>
+                    <p>ตรวจสอบข้อมูลฮาร์ดแวร์ หน่วยความจำ และการเชื่อมต่อระบบ</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="refreshStatus()"><svg viewBox="0 0 24 24" width="14"
                             height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                             stroke-linejoin="round" class="svg-icon">
                             <use href="#icon-sync"></use>
-                        </svg> รีเฟรช (Refresh)</button>
+                        </svg> อัปเดตข้อมูล (<span lang="en">Refresh</span>)</button>
+                    <button onclick="openPasswordModal()" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24"
+                            width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                            <use href="#icon-lock"></use>
+                        </svg> เปลี่ยนรหัสผ่านเข้าเครื่อง (<span lang="en">Change Password</span>)</button>
                 </div>
             </div>
 
@@ -622,31 +630,31 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Chip</th>
-                                <td class="info-value" id="st-chip-model">--</td>
+                                <td class="info-value mono" id="st-chip-model">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Revision</th>
-                                <td class="info-value" id="st-chip-revision">--</td>
+                                <td class="info-value mono" id="st-chip-revision">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Cores</th>
-                                <td class="info-value" id="st-chip-cores">--</td>
+                                <td class="info-value mono" id="st-chip-cores">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">CPU Speed</th>
-                                <td class="info-value" id="st-cpu-freq">--</td>
+                                <td class="info-value mono" id="st-cpu-freq">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IDF Version</th>
-                                <td class="info-value" id="st-idf-version">--</td>
+                                <td class="info-value mono" id="st-idf-version">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Firmware</th>
-                                <td class="info-value" id="st-project-version">--</td>
+                                <td class="info-value mono" id="st-project-version">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Reset Reason</th>
-                                <td class="info-value" id="st-reset-reason">--</td>
+                                <td class="info-value mono" id="st-reset-reason">--</td>
                             </tr>
                         </tbody>
                     </table>
@@ -668,7 +676,7 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Free</th>
-                                <td class="info-value"><span id="st-free-heap">--</span>
+                                <td class="info-value"><span id="st-free-heap" class="mono">--</span>
                                     <div class="progress-bar-inline">
                                         <div class="fill" id="st-heap-bar"></div>
                                     </div>
@@ -676,15 +684,15 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Min Free</th>
-                                <td class="info-value" id="st-min-free-heap">--</td>
+                                <td class="info-value mono" id="st-min-free-heap">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Largest Block</th>
-                                <td class="info-value" id="st-largest-free-block">--</td>
+                                <td class="info-value mono" id="st-largest-free-block">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Total DRAM</th>
-                                <td class="info-value" id="st-total-heap">--</td>
+                                <td class="info-value mono" id="st-total-heap">--</td>
                             </tr>
                         </tbody>
                     </table>
@@ -701,8 +709,8 @@
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg></span>
                     </div>
-                    <div class="card-value" id="st-uptime">--</div>
-                    <div class="card-sub neutral">เวลาทำงานสะสม</div>
+                    <div class="card-value mono" id="st-uptime">--</div>
+                    <div class="card-sub neutral">ระยะเวลาการทำงานทั้งหมดตั้งแต่เปิดเครื่อง</div>
                 </div>
 
                 <!-- Wi-Fi STA Card -->
@@ -723,19 +731,19 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value" id="st-sta-ssid">--</td>
+                                <td class="info-value mono" id="st-sta-ssid">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value" id="st-sta-ip">--</td>
+                                <td class="info-value mono" id="st-sta-ip">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">RSSI</th>
-                                <td class="info-value" id="st-sta-rssi">--</td>
+                                <td class="info-value mono" id="st-sta-rssi">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Channel</th>
-                                <td class="info-value" id="st-sta-channel">--</td>
+                                <td class="info-value mono" id="st-sta-channel">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Auth</th>
@@ -765,19 +773,19 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value" id="st-ap-ssid">--</td>
+                                <td class="info-value mono" id="st-ap-ssid">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value" id="st-ap-ip">--</td>
+                                <td class="info-value mono" id="st-ap-ip">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Clients</th>
-                                <td class="info-value" id="st-ap-clients">--</td>
+                                <td class="info-value mono" id="st-ap-clients">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Weakest RSSI</th>
-                                <td class="info-value" id="st-ap-client-rssi">--</td>
+                                <td class="info-value mono" id="st-ap-client-rssi">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">MAC</th>
@@ -801,19 +809,19 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Wi-Fi Mode</th>
-                                <td class="info-value" id="st-wifi-mode">--</td>
+                                <td class="info-value mono" id="st-wifi-mode">--</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">DNS Server</th>
                                 <td class="info-value" id="st-dns-status">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label" lang="en">Static Send Errors</th>
-                                <td class="info-value" id="st-http-static-errors">--</td>
+                                <th scope="row" class="info-label" lang="en">Static Web Errors</th>
+                                <td class="info-value mono" id="st-http-static-errors">--</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="info-label" lang="en">JSON Send Errors</th>
-                                <td class="info-value" id="st-http-json-errors">--</td>
+                                <th scope="row" class="info-label" lang="en">JSON API Errors</th>
+                                <td class="info-value mono" id="st-http-json-errors">--</td>
                             </tr>
                         </tbody>
                     </table>
@@ -828,35 +836,29 @@
         <section id="view-wifi" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1><span lang="en">Wi-Fi Setup</span> <span class="text-normal text-muted">(การตั้งค่า <span lang="en">Wi-Fi</span>)</span></h1>
-                    <p>จัดการการเชื่อมต่อ Wi-Fi สำหรับอุปกรณ์</p>
+                    <h1><span lang="en">Wi-Fi Setup</span> <span class="text-normal text-muted">(ตั้งค่าเครือข่ายไร้สาย)</span></h1>
+                    <p>ค้นหาและตั้งค่าจุดเชื่อมต่อ Wi-Fi ภายนอกให้กับตัวอุปกรณ์</p>
                 </div>
                 <div class="header-actions">
                     <div class="ap-pill" id="ap-pill">
                         <span class="pulse-dot"></span>
-                        <span class="ap-label">AP Mode: Active</span>
-                        <span class="ap-ip" id="ap-pill-ip">192.168.4.1</span>
+                        <span class="ap-label"><span lang="en">AP Mode</span>: เปิดบริการ</span>
+                        <span class="ap-ip mono" id="ap-pill-ip" lang="en">192.168.4.1</span>
                     </div>
                 </div>
             </div>
 
             <!-- Current Connection Status -->
             <div class="connection-status" id="connection-status">
-                <div class="status-header">
-                    <span class="status-icon" id="conn-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="svg-icon">
-                            <line x1="1" y1="1" x2="23" y2="23"></line>
-                            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
-                            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
-                            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
-                            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
-                            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                            <line x1="12" y1="20" x2="12.01" y2="20"></line>
-                        </svg></span>
+                 <div class="status-header">
+                     <span class="status-icon" id="conn-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="svg-icon">
+                             <use href="#icon-wifi-off"></use>
+                         </svg></span>
                     <div>
-                        <div class="status-title" id="conn-title">ไม่ได้เชื่อมต่อ</div>
-                        <div class="status-sub" id="conn-sub">STA ไม่ได้เชื่อมต่อกับเครือข่ายใด ๆ</div>
+                        <div class="status-title" id="conn-title">ไม่ได้เชื่อมต่อเครือข่ายภายนอก</div>
+                        <div class="status-sub" id="conn-sub">อุปกรณ์กำลังทำงานแบบ <span lang="en">Offline</span> (<span lang="en">SoftAP</span> เท่านั้น)</div>
                     </div>
                 </div>
                 <button class="btn btn-danger btn-sm" id="disconnect-btn" style="display:none;"
@@ -882,9 +884,8 @@
             <!-- Reconnection Helper Banner -->
             <div id="reconnect-banner" class="alert-banner" role="alert" style="display:none;">
                 <div>
-                    <strong>กำลังเชื่อมต่อ...</strong> <span id="reconnect-countdown">15</span>s<br>
-                    <span class="text-sm">หากหลุด ให้ตรวจสอบ Wi-Fi มือถือว่าต่อกับ SoftAP IP
-                        <strong>192.168.4.1</strong> อีกครั้ง</span>
+                    <strong>กำลังพยายามเชื่อมต่อ...</strong> เหลือเวลาอีก <span id="reconnect-countdown">15</span> วินาที<br>
+                    <span class="text-sm">หากโทรศัพท์หลุดออกจากเครือข่าย ให้ตรวจสอบว่ายังคงเชื่อมต่อกับสัญญาณของตัวปั๊มน้ำ (<span lang="en">IP</span>: <strong class="mono" lang="en">192.168.4.1</strong>) อยู่หรือไม่</span>
                 </div>
             </div>
 
@@ -893,17 +894,16 @@
                 <!-- Network List -->
                 <div class="card network-card">
                     <div class="card-header">
-                        <h3>เครือข่ายที่พบ</h3>
+                        <h3>เครือข่ายที่ค้นพบ</h3>
                         <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()" aria-label="สแกนเครือข่าย Wi-Fi"><svg
                                 viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"
-                                style="margin-right: 4px; vertical-align: middle;">
+                                fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-icon-start">
                                 <use href="#icon-sync"></use>
-                            </svg> สแกนใหม่</button>
+                            </svg> สแกนหา <span lang="en">Wi-Fi</span></button>
                     </div>
                     <div class="network-list" id="network-list" aria-live="polite">
                         <div class="network-item status-message">
-                            กด "สแกนใหม่" เพื่อสแกน Wi-Fi
+                            กดปุ่ม "สแกนหา Wi-Fi" ด้านบนเพื่อเริ่มค้นหาสัญญาณ
                         </div>
                     </div>
                 </div>
@@ -925,29 +925,28 @@
                 <div class="header-left">
                     <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-normal text-muted">(<span lang="en">Hardware/Install</span>)</span>
                     </h1>
-                    <p>การต่อสาย ขาใช้งาน GPIO ปัจจุบัน และการเปลี่ยนแปลงผังที่รอการรีบูต</p>
+                    <p>ตรวจสอบตำแหน่งการต่อสาย ขาใช้งาน GPIO และตั้งค่าพินควบคุมอุปกรณ์</p>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" onclick="loadHardwareMap()"><svg viewBox="0 0 24 24"
                             width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                             stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                             <use href="#icon-sync"></use>
-                        </svg> รีเฟรช (Refresh)</button>
+                        </svg> อัปเดตข้อมูล (<span lang="en">Refresh</span>)</button>
                     <a href="/dashboard" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="16" height="16"
                             stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;" class="svg-icon">
-                            <line x1="19" y1="12" x2="5" y2="12"></line>
-                            <polyline points="12 19 5 12 12 5"></polyline>
-                        </svg> แดชบอร์ด (Dashboard)</a>
+                            stroke-linejoin="round" class="svg-icon svg-icon-start">
+                            <use href="#icon-arrow-left"></use>
+                        </svg> แดชบอร์ด (<span lang="en">Dashboard</span>)</a>
                 </div>
             </div>
 
             <section class="section-card hardware-install" id="hardware-wiring">
                 <div class="section-heading-row">
                     <div>
-                        <div class="runtime-eyebrow" id="hardware-map-state">กำลังโหลดผังพิน...</div>
-                        <h3>สรุปการต่อสายพิน</h3>
-                        <p>พิน GPIO ปัจจุบันกำลังทำงานอยู่ พินที่รอรีบูตจะมีผลหลังจากเปิดเครื่องใหม่</p>
+                        <div class="runtime-eyebrow" id="hardware-map-state">กำลังดึงข้อมูลตำแหน่งพิน...</div>
+                        <h3>ตำแหน่งพินที่กำลังทำงาน</h3>
+                        <p>ตำแหน่งพิน <span lang="en">GPIO</span> ปัจจุบันของระบบ หากมีการแก้ไขและกดบันทึก พินใหม่จะมีผลหลังจากรีสตาร์ทบอร์ดควบคุม</p>
                     </div>
                 </div>
 
@@ -958,11 +957,11 @@
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                                <use href="#icon-float"></use>
                             </svg></span>
                         <div>
-                            <h4>สัญญาณลูกลอย (Float Input)</h4>
-                            <p id="wire-float-input">--</p>
+                            <h4>สัญญาณลูกลอย (<span lang="en">Float Input</span>)</h4>
+                            <p id="wire-float-input" class="mono">--</p>
                         </div>
                     </article>
                     <article class="hardware-wire-item">
@@ -972,8 +971,8 @@
                                 <use href="#icon-power"></use>
                             </svg></span>
                         <div>
-                            <h4>รีเลย์ปั๊ม 1 (Pump Relay 1)</h4>
-                            <p id="wire-pump-relay1">--</p>
+                            <h4>รีเลย์ปั๊ม 1 (<span lang="en">Pump Relay 1</span>)</h4>
+                            <p id="wire-pump-relay1" class="mono">--</p>
                         </div>
                     </article>
                     <article class="hardware-wire-item">
@@ -983,32 +982,30 @@
                                 <use href="#icon-power"></use>
                             </svg></span>
                         <div>
-                            <h4>รีเลย์ปั๊ม 2 (Pump Relay 2)</h4>
-                            <p id="wire-pump-relay2">--</p>
+                            <h4>รีเลย์ปั๊ม 2 (<span lang="en">Pump Relay 2</span>)</h4>
+                            <p id="wire-pump-relay2" class="mono">--</p>
                         </div>
                     </article>
                     <article class="hardware-wire-item">
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+                                <use href="#icon-temp"></use>
                             </svg></span>
                         <div>
-                            <h4>เซนเซอร์อุณหภูมิ DS18B20</h4>
-                            <p id="wire-ds18b20">--</p>
+                            <h4>เซนเซอร์อุณหภูมิ <span lang="en">DS18B20</span></h4>
+                            <p id="wire-ds18b20" class="mono">--</p>
                         </div>
                     </article>
                     <article class="hardware-wire-item">
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
-                                <line x1="2" y1="12" x2="22" y2="12"></line>
-                                <line x1="12" y1="2" x2="12" y2="22"></line>
-                                <path d="M20 16l-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4"></path>
+                                <use href="#icon-cooling"></use>
                             </svg></span>
                         <div>
-                            <h4>รีเลย์ทำความเย็น (Cooling Relay)</h4>
-                            <p id="wire-cooling-relay">--</p>
+                            <h4>รีเลย์ทำความเย็น (<span lang="en">Cooling Relay</span>)</h4>
+                            <p id="wire-cooling-relay" class="mono">--</p>
                         </div>
                     </article>
                 </div>
@@ -1017,103 +1014,41 @@
             <section class="section-card hardware-install mt-lg" id="tft-wiring">
                 <div class="section-heading-row">
                     <div>
-                        <div class="runtime-eyebrow good">พินเชื่อมต่อ SPI แบบคงที่</div>
-                        <h3>หน้าจอแสดงผล TFT (ILI9341 2.4" SPI)</h3>
-                        <p>พินเหล่านี้ถูกจองไว้สำหรับหน้าจอ TFT และไม่สามารถแก้ไขได้</p>
+                        <div class="runtime-eyebrow good">พินเชื่อมต่อ <span lang="en">SPI</span> แบบคงที่</div>
+                        <h3>หน้าจอแสดงผล <span lang="en">TFT</span> (<span lang="en">ILI9341 2.4" SPI</span>)</h3>
                     </div>
                 </div>
-                <div class="hardware-wiring-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
-                    <article class="hardware-wire-item">
-                        <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-spi"></use>
-                            </svg></span>
-                        <div>
-                            <h4>SCK (สัญญาณนาฬิกา)</h4>
-                            <p>GPIO 18</p>
-                        </div>
-                    </article>
-                    <article class="hardware-wire-item">
-                        <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-spi"></use>
-                            </svg></span>
-                        <div>
-                            <h4>MOSI (ข้อมูล)</h4>
-                            <p>GPIO 23</p>
-                        </div>
-                    </article>
-                    <article class="hardware-wire-item">
-                        <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-spi"></use>
-                            </svg></span>
-                        <div>
-                            <h4>CS (เลือกชิป)</h4>
-                            <p>GPIO 5</p>
-                        </div>
-                    </article>
-                    <article class="hardware-wire-item">
-                        <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-spi"></use>
-                            </svg></span>
-                        <div>
-                            <h4>DC (ข้อมูล/คำสั่ง)</h4>
-                            <p>GPIO 21</p>
-                        </div>
-                    </article>
-                    <article class="hardware-wire-item">
-                        <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-spi"></use>
-                            </svg></span>
-                        <div>
-                            <h4>RESET (รีเซต)</h4>
-                            <p>GPIO 22</p>
-                        </div>
-                    </article>
-                    <article class="hardware-wire-item">
-                        <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="18" height="18"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon">
-                                <use href="#icon-spi"></use>
-                            </svg></span>
-                        <div>
-                            <h4>LED (ไฟหน้าจอ)</h4>
-                            <p>GPIO 4</p>
-                        </div>
-                    </article>
+                <div class="tft-wiring-compact-list mt-md" lang="en">
+                    <span class="tft-wire-badge">SCK: <strong>GPIO 18</strong></span>
+                    <span class="tft-wire-badge">MOSI: <strong>GPIO 23</strong></span>
+                    <span class="tft-wire-badge">CS: <strong>GPIO 5</strong></span>
+                    <span class="tft-wire-badge">DC: <strong>GPIO 21</strong></span>
+                    <span class="tft-wire-badge">RESET: <strong>GPIO 22</strong></span>
+                    <span class="tft-wire-badge">LED: <strong>GPIO 4</strong></span>
                 </div>
             </section>
 
             <section class="section-card hardware-map-panel">
                 <div class="section-heading-row">
                     <div>
-                        <h3>ผังการเลือกพิน GPIO</h3>
-                        <p>เลือกพินใช้งานสำหรับบอร์ด ESP32 DevKit V1 ตามที่เฟิร์มแวร์กำหนด</p>
+                        <h3>ผังการเลือกพิน <span lang="en">GPIO</span></h3>
+                        <p>เลือกพินใช้งานสำหรับบอร์ด <span lang="en">ESP32 DevKit V1</span> ตามที่เฟิร์มแวร์กำหนด</p>
                     </div>
                 </div>
 
                 <div class="alert-banner hidden" id="hardware-unsaved-banner">
-                    <div><strong>มีข้อมูลที่ยังไม่ได้บันทึก</strong><br>คุณมีการปรับเปลี่ยนผังพิน GPIO
-                        ที่ยังไม่ได้ใช้จริง</div>
+                    <div><strong>ตรวจพบการเปลี่ยนแปลงตำแหน่งพิน</strong><br>คุณทำการเปลี่ยนค่าพินแต่ยังไม่ได้กดบันทึกเข้าระบบ</div>
                     <button type="submit" form="hardware-map-form" class="btn btn-primary btn-sm" id="hardware-save-map"
-                        disabled>บันทึกและนำไปใช้</button>
+                        disabled>บันทึกตำแหน่งพิน</button>
                 </div>
 
                 <div class="hardware-summary-grid">
                     <div class="hardware-summary-card card active-map">
-                        <span class="summary-label">ผัง GPIO ปัจจุบัน</span>
+                        <span class="summary-label">ผัง <span lang="en">GPIO</span> ปัจจุบัน</span>
                         <div class="hardware-summary-list" id="hardware-active-summary">--</div>
                     </div>
                     <div class="hardware-summary-card card pending-map">
-                        <span class="summary-label">ผัง GPIO รอรีบูต</span>
+                        <span class="summary-label">ผัง <span lang="en">GPIO</span> รอรีบูต</span>
                         <div class="hardware-summary-list" id="hardware-pending-summary">--</div>
                     </div>
                 </div>
@@ -1121,31 +1056,31 @@
                 <form id="hardware-map-form" class="hardware-map-form">
                     <div class="hardware-map-grid">
                         <label class="form-group hardware-role-field" for="hardware-float-input-gpio">
-                            <span>ขา GPIO ลูกลอย (Float Input) <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 32 (เฉพาะอินพุต)</small></span>
+                            <span>ขา <span lang="en">GPIO</span> ลูกลอย (<span lang="en">Float Input</span>) <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 32 (เฉพาะอินพุต)</small></span>
                             <select id="hardware-float-input-gpio" name="float_input_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-pump-relay1-gpio">
-                            <span>ขา GPIO รีเลย์ปั๊ม 1 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 26</small></span>
+                            <span>ขา <span lang="en">GPIO</span> รีเลย์ปั๊ม 1 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 26</small></span>
                             <select id="hardware-pump-relay1-gpio" name="pump_relay1_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-pump-relay2-gpio">
-                            <span>ขา GPIO รีเลย์ปั๊ม 2 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 27</small></span>
+                            <span>ขา <span lang="en">GPIO</span> รีเลย์ปั๊ม 2 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 27</small></span>
                             <select id="hardware-pump-relay2-gpio" name="pump_relay2_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-ds18b20-gpio">
-                            <span>ขา GPIO วัดอุณหภูมิ (DS18B20) <small
-                                    class="text-xs status-warning block-helper">*ค่าเริ่มต้นพิน 33 (ต้องมีตัวต้านทาน Pull-up ขนาด 4.7k&Omega;)</small></span>
+                            <span>ขา <span lang="en">GPIO</span> วัดอุณหภูมิ (<span lang="en">DS18B20</span>) <small
+                                    class="text-xs status-warning block-helper">*ค่าเริ่มต้นพิน 33 (ต้องมีตัวต้านทาน <span lang="en">Pull-up</span> ขนาด 4.7k&Omega;)</small></span>
                             <select id="hardware-ds18b20-gpio" name="ds18b20_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-cooling-relay-gpio">
-                            <span>ขา GPIO รีเลย์ระบบความเย็น <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 25</small></span>
+                            <span>ขา <span lang="en">GPIO</span> รีเลย์ระบบความเย็น <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 25</small></span>
                             <select id="hardware-cooling-relay-gpio" name="cooling_relay_gpio" required></select>
                         </label>
                     </div>
 
                     <label class="checkbox-label hardware-reboot-confirm">
                         <input type="checkbox" id="hardware-confirm-reboot">
-                        <span>ฉันเข้าใจดีว่าการแก้ไข GPIO จำเป็นต้องทำการรีบูตระบบบอร์ดควบคุมก่อนจึงจะมีผลทำงาน</span>
+                        <span>ฉันรับทราบและเข้าใจดีว่า การเปลี่ยนพินควบคุมต้องทำการรีสตาร์ทเครื่องก่อนจึงจะเริ่มต้นใช้สายพินชุดใหม่</span>
                     </label>
 
                     <div class="form-error" id="hardware-map-error"></div>
@@ -1155,7 +1090,7 @@
             <section class="section-card hardware-technical-panel">
                 <div class="section-heading-row">
                     <div>
-                        <h3>ข้อมูลทางเทคนิคของแต่ละพิน (Technical Pinout)</h3>
+                        <h3>ข้อมูลทางเทคนิคของแต่ละพิน (<span lang="en">Technical Pinout</span>)</h3>
                         <p>รายละเอียดขีดความสามารถของพินที่พร้อมใช้งานสำหรับติดตั้งตัวอุปกรณ์</p>
                     </div>
                 </div>
@@ -1174,8 +1109,8 @@
             <h3 id="modal-title"></h3>
             <p id="modal-message"></p>
             <div class="modal-actions">
-                <button class="btn btn-danger" id="modal-confirm">ยืนยัน (Confirm)</button>
-                <button class="btn btn-outline" id="modal-cancel">ยกเลิก (Cancel)</button>
+                <button class="btn btn-danger" id="modal-confirm">ยืนยัน (<span lang="en">Confirm</span>)</button>
+                <button class="btn btn-outline" id="modal-cancel">ยกเลิก (<span lang="en">Cancel</span>)</button>
             </div>
         </div>
     </div>
@@ -1183,8 +1118,8 @@
     <!-- Change Password Modal -->
     <div id="password-modal" class="modal-overlay hidden">
         <div class="modal-card">
-            <h3>เปลี่ยนรหัสผ่าน (<span lang="en">Change Password</span>)</h3>
-            <p class="mb-md">เปลี่ยนรหัสผ่านสำหรับเข้าสู่ระบบ</p>
+            <h3>เปลี่ยนรหัสผ่านเข้าสู่ระบบ</h3>
+            <p class="mb-md">ระบุรายละเอียดรหัสผ่านเดิมเพื่อความปลอดภัยในการตั้งค่ารหัสผ่านใหม่</p>
 
             <form id="password-form">
                 <div class="form-group">
@@ -1201,7 +1136,7 @@
                 </div>
 
                 <p class="text-sm text-error my-sm">
-                    หมายเหตุ: การเปลี่ยนรหัสผ่านจะทำให้ระบบออกจากระบบในทุกอุปกรณ์ทันที
+                    ⚠️ คำเตือน: หลังจากเปลี่ยนรหัสผ่านสำเร็จ อุปกรณ์อื่น ๆ ทั้งหมดจะถูกบังคับให้ออกจากระบบทันที
                 </p>
                 <div id="password-error" class="pump-alert hidden mt-sm"></div>
 
@@ -1215,13 +1150,13 @@
 
     <!-- Wi-Fi Connect Modal -->
     <div id="wifi-connect-modal" class="modal-overlay hidden">
-        <div class="modal-card" style="max-width: 480px;">
-            <h3 class="text-lg" style="display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
+        <div class="modal-card modal-card-wide">
+            <h3 class="modal-title">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                     stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-primary">
                     <use href="#icon-wifi"></use>
                 </svg>
-                <span>เชื่อมต่อ Wi-Fi</span>
+                <span>เชื่อมต่อ <span lang="en">Wi-Fi</span></span>
             </h3>
 
             <div class="form-group">
@@ -1233,13 +1168,13 @@
                 <div class="wifi-saved-msg-header">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <use href="#icon-shield"></use>
                     </svg>
-                    <div>คุณเคยบันทึกรหัสผ่านสำหรับเครือข่ายนี้ไว้แล้ว ระบบจะดึงรหัสผ่านเดิมมาใช้เชื่อมต่ออัตโนมัติ
+                    <div>มีรหัสผ่านของเครือข่ายนี้บันทึกอยู่แล้วในระบบ โดยบอร์ดจะนำมาใช้เชื่อมต่อโดยอัตโนมัติ
                     </div>
                 </div>
                 <button type="button" class="text-link-helper" onclick="showSavedPasswordInput()">
-                    คลิกที่นี่หากต้องการกรอกรหัสผ่านใหม่
+                    คลิกที่นี่หากต้องการเปลี่ยนแปลงรหัสผ่านใหม่
                 </button>
             </div>
 
@@ -1268,61 +1203,51 @@
 
             <div class="static-ip-fields" id="static-ip-fields" style="display:none;">
                 <div class="form-group">
-                    <label for="static-ip">หมายเลข IP (IP Address)</label>
+                    <label for="static-ip">หมายเลข <span lang="en">IP</span> (<span lang="en">IP Address</span>)</label>
                     <div class="input-wrapper">
                         <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
                                 class="svg-icon">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="2" y1="12" x2="22" y2="12"></line>
-                                <path
-                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
-                                </path>
+                                <use href="#icon-globe"></use>
                             </svg></span>
-                        <input type="text" id="static-ip" placeholder="เช่น 192.168.1.100">
+                        <input type="text" id="static-ip" class="mono" placeholder="เช่น 192.168.1.100">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="static-gateway">เกตเวย์ (Gateway)</label>
+                    <label for="static-gateway">เกตเวย์ (<span lang="en">Gateway</span>)</label>
                     <div class="input-wrapper">
                         <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
                                 class="svg-icon">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                <use href="#icon-link"></use>
                             </svg></span>
-                        <input type="text" id="static-gateway" placeholder="เช่น 192.168.1.1">
+                        <input type="text" id="static-gateway" class="mono" placeholder="เช่น 192.168.1.1">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="static-netmask">เนตมาสก์ (Netmask)</label>
+                    <label for="static-netmask">เนตมาสก์ (<span lang="en">Netmask</span>)</label>
                     <div class="input-wrapper">
                         <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                                 stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
                                 class="svg-icon">
-                                <path d="M12 2a10 10 0 0 1 10 10"></path>
-                                <path d="M12 6a6 6 0 0 1 6 6"></path>
-                                <circle cx="12" cy="18" r="1"></circle>
-                                <path d="M12 14v4"></path>
+                                <use href="#icon-mask"></use>
                             </svg></span>
-                        <input type="text" id="static-netmask" placeholder="เช่น 255.255.255.0" value="255.255.255.0">
+                        <input type="text" id="static-netmask" class="mono" placeholder="เช่น 255.255.255.0" value="255.255.255.0">
                     </div>
                 </div>
                 <div class="text-xs dns-helper-text">
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        <use href="#icon-info"></use>
                     </svg>
-                    <span>DNS จะใช้ Gateway โดยอัตโนมัติ</span>
+                    <span><span lang="en">DNS</span> จะใช้ <span lang="en">Gateway</span> โดยอัตโนมัติ</span>
                 </div>
             </div>
 
-            <div id="connect-status" class="text-sm" style="min-height:20px; margin-bottom: 16px; font-weight: 500;">
+            <div id="connect-status" class="text-sm">
             </div>
 
-            <div class="modal-actions" style="margin-top: 16px;">
+            <div class="modal-actions">
                 <button class="btn btn-outline" id="cancel-btn" onclick="clearSelection()">ยกเลิก</button>
                 <button class="btn btn-primary" id="connect-btn" onclick="doConnect()">เชื่อมต่อ</button>
             </div>
