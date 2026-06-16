@@ -18,3 +18,4 @@ dependencies.lock
 logs/
 main/static_compressed/
 .impeccable/
+.qwen/
