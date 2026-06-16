@@ -51,7 +51,7 @@
     </script>
     <!-- Mobile Top Bar -->
     <header class="mobile-topbar">
-        <span class="brand">Fish Pump Control</span>
+        <span class="brand" lang="en">Fish Pump Control</span>
         <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false"
             onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}"><svg
                 viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
@@ -63,15 +63,14 @@
     </header>
 
     <!-- Mobile Drawer Overlay -->
-    <div class="drawer-overlay" id="drawer-overlay" role="button" tabindex="0"
-        onkeydown="if(event.key==='Enter'||event.key===' '){this.click();event.preventDefault();}"
+    <button class="drawer-overlay" id="drawer-overlay" aria-label="ปิดเมนูนำทาง (Close Navigation)"
         onclick="var s=document.getElementById('app-sidebar'),b=document.querySelector('.hamburger-btn');if(s){s.classList.remove('open');this.classList.remove('open');}if(b)b.setAttribute('aria-expanded','false');">
-    </div>
+    </button>
 
     <!-- Sidebar (Desktop & Mobile) -->
     <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-brand">
-            <div class="brand-name">Fish Pump Control</div>
+            <div class="brand-name" lang="en">Fish Pump Control</div>
             <div class="sidebar-node-info">
                 <div class="node-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                         stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
@@ -81,10 +80,10 @@
                         </path>
                     </svg></div>
                 <div>
-                    <div class="node-name">Fish Pump Control</div>
+                    <div class="node-name" lang="en">Fish Pump Control</div>
                     <div class="node-status">
                         <span class="status-dot" id="sidebar-status-dot"></span>
-                        <span id="sidebar-status-text">Online</span>
+                        <span id="sidebar-status-text" lang="en">Online</span>
                     </div>
                 </div>
             </div>
@@ -97,7 +96,7 @@
                         <rect x="14" y="3" width="7" height="5"></rect>
                         <rect x="14" y="12" width="7" height="9"></rect>
                         <rect x="3" y="16" width="7" height="5"></rect>
-                    </svg></span> Dashboard
+                    </svg></span> <span lang="en">Dashboard</span>
             </a>
             <a href="/status" class="nav-item" id="nav-status">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
@@ -106,7 +105,7 @@
                         <path
                             d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
                         </path>
-                    </svg></span> System Status
+                    </svg></span> <span lang="en">System Status</span>
             </a>
             <a href="/wifi" class="nav-item" id="nav-wifi">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
@@ -115,7 +114,7 @@
                         <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
                         <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
                         <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"></line>
-                    </svg></span> Wi-Fi Settings
+                    </svg></span> <span lang="en">Wi-Fi Settings</span>
             </a>
             <a href="/hardware" class="nav-item" id="nav-hardware">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
@@ -123,7 +122,7 @@
                         <path
                             d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
                         </path>
-                    </svg></span> Hardware/Install
+                    </svg></span> <span lang="en">Hardware/Install</span>
             </a>
             <button class="nav-item" id="nav-logout" onclick="doLogout();return false;">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
@@ -131,7 +130,7 @@
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
                         <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg></span> Logout
+                    </svg></span> <span lang="en">Logout</span>
             </button>
         </nav>
     </aside>
@@ -142,8 +141,8 @@
             <span>⚠️ <strong>โหมดทดลองใช้การตั้งค่าใหม่:</strong> การตั้งค่านี้จะถูกยกเลิกภายใน 3 นาที
                 หากไม่ได้รับการยืนยัน</span>
             <div class="banner-actions">
-                <button class="btn btn-primary" onclick="confirmStaging()">ยืนยัน (Confirm)</button>
-                <button class="btn btn-danger" onclick="cancelStaging()">ยกเลิก (Cancel)</button>
+                <button class="btn btn-primary" onclick="confirmStaging()">ยืนยัน (<span lang="en">Confirm</span>)</button>
+                <button class="btn btn-danger" onclick="cancelStaging()">ยกเลิก (<span lang="en">Cancel</span>)</button>
             </div>
         </div>
         <section id="view-login" class="view hidden" aria-hidden="true">
@@ -159,7 +158,7 @@
                                 </path>
                             </svg></div>
                         <div>
-                            <h1>Fish Pump Control</h1>
+                            <h1 lang="en">Fish Pump Control</h1>
                             <p>จัดการอุปกรณ์และการเชื่อมต่อของคุณ</p>
                         </div>
                     </header>
@@ -201,7 +200,7 @@
                         <button type="submit" class="btn btn-primary btn-block" id="login-btn">เข้าสู่ระบบ</button>
                     </form>
                     <div class="login-footer">
-                        <p>Fish Pump Wi-Fi Setup</p>
+                        <p lang="en">Fish Pump Wi-Fi Setup</p>
                     </div>
                 </div>
             </div>
@@ -209,7 +208,7 @@
         <section id="view-dashboard" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>Pump Control</h1>
+                    <h1 lang="en">Pump Control</h1>
                     <p>ควบคุม Timer 1 / Timer 2 และติดตามสถานะปั๊ม</p>
                 </div>
                 <div class="header-actions">
@@ -578,13 +577,13 @@
 
             <!-- Footer -->
             <footer class="app-footer">
-                <span>Fish Pump Relay Timer Control</span>
+                <span lang="en">Fish Pump Relay Timer Control</span>
             </footer>
         </section>
         <section id="view-status" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>System Status</h1>
+                    <h1 lang="en">System Status</h1>
                     <p>ข้อมูลสถานะและสุขภาพของระบบ</p>
                 </div>
                 <div class="header-actions">
@@ -821,14 +820,13 @@
             </div>
 
             <footer class="app-footer">
-                <span>Fish Pump Relay Timer Control</span>
+                <span lang="en">Fish Pump Relay Timer Control</span>
             </footer>
         </section>
         <section id="view-wifi" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>Wi-Fi Setup <span class="text-base text-normal text-on-surface-variant">(การตั้งค่า
-                            Wi-Fi)</span></h1>
+                    <h1><span lang="en">Wi-Fi Setup</span> <span class="text-base text-normal text-on-surface-variant">(การตั้งค่า <span lang="en">Wi-Fi</span>)</span></h1>
                     <p>จัดการการเชื่อมต่อ Wi-Fi สำหรับอุปกรณ์</p>
                 </div>
                 <div class="header-actions">
@@ -923,7 +921,7 @@
         <section id="view-hardware" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-base text-normal text-on-surface-variant">(Hardware/Install)</span>
+                    <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-base text-normal text-on-surface-variant">(<span lang="en">Hardware/Install</span>)</span>
                     </h1>
                     <p>การต่อสาย ขาใช้งาน GPIO ปัจจุบัน และการเปลี่ยนแปลงผังที่รอการรีบูต</p>
                 </div>
@@ -1201,20 +1199,20 @@
     <!-- Change Password Modal -->
     <div id="password-modal" class="modal-overlay hidden">
         <div class="modal-card">
-            <h3>เปลี่ยนรหัสผ่าน (Change Password)</h3>
+            <h3>เปลี่ยนรหัสผ่าน (<span lang="en">Change Password</span>)</h3>
             <p class="mb-md">เปลี่ยนรหัสผ่านสำหรับเข้าสู่ระบบ</p>
 
             <form id="password-form">
                 <div class="form-group">
-                    <label for="current-password">Current Password (รหัสผ่านเดิม)</label>
+                    <label for="current-password"><span lang="en">Current Password</span> (รหัสผ่านเดิม)</label>
                     <input type="password" id="current-password" class="input-field" required>
                 </div>
                 <div class="form-group">
-                    <label for="new-username">New Username (ชื่อผู้ใช้ใหม่ - ปล่อยว่างเพื่อใช้ชื่อเดิม)</label>
+                    <label for="new-username"><span lang="en">New Username</span> (ชื่อผู้ใช้ใหม่ - ปล่อยว่างเพื่อใช้ชื่อเดิม)</label>
                     <input type="text" id="new-username" class="input-field">
                 </div>
                 <div class="form-group">
-                    <label for="new-password">New Password (รหัสผ่านใหม่)</label>
+                    <label for="new-password"><span lang="en">New Password</span> (รหัสผ่านใหม่)</label>
                     <input type="password" id="new-password" class="input-field" required>
                 </div>
 
@@ -1224,8 +1222,8 @@
                 <div id="password-error" class="pump-alert hidden mt-sm"></div>
 
                 <div class="modal-actions" style="margin-top: 16px;">
-                    <button type="submit" class="btn btn-primary" id="password-save-btn">เปลี่ยนรหัสผ่าน (Change Password)</button>
-                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">ยกเลิก (Cancel)</button>
+                    <button type="submit" class="btn btn-primary" id="password-save-btn">เปลี่ยนรหัสผ่าน (<span lang="en">Change Password</span>)</button>
+                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">ยกเลิก (<span lang="en">Cancel</span>)</button>
                 </div>
             </form>
         </div>
@@ -1259,9 +1257,9 @@
                     <div>คุณเคยบันทึกรหัสผ่านสำหรับเครือข่ายนี้ไว้แล้ว ระบบจะดึงรหัสผ่านเดิมมาใช้เชื่อมต่ออัตโนมัติ
                     </div>
                 </div>
-                <div class="text-link-helper" onclick="showSavedPasswordInput()">
+                <button type="button" class="text-link-helper" onclick="showSavedPasswordInput()">
                     คลิกที่นี่หากต้องการกรอกรหัสผ่านใหม่
-                </div>
+                </button>
             </div>
 
             <div class="form-group" id="wifi-password-group">

@@ -1938,7 +1938,7 @@ function loadWifiProfiles(retryCount) {
                     loadWifiProfiles(retryCount + 1);
                 }, 1500);
             } else {
-                el.innerHTML = '<div class="profile-empty clickable" onclick="loadWifiProfiles()"><div class="profile-empty-error-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div class="profile-empty-error-text">ไม่สามารถดึงข้อมูลได้</div><div class="text-xs profile-empty-retry"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></div>';
+                el.innerHTML = '<button type="button" class="profile-empty clickable" onclick="loadWifiProfiles()"><div class="profile-empty-error-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div class="profile-empty-error-text">ไม่สามารถดึงข้อมูลได้</div><div class="text-xs profile-empty-retry"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></button>';
             }
             return;
         }
@@ -2185,9 +2185,9 @@ function doScan() {
             else if (nets[i].rssi >= -85) { sigClass = 'fair'; sigLabel = '\u0e1e\u0e2d\u0e43\u0e0a\u0e49'; }
 
             var isConnected = nets[i].connected === true;
-            html += '<div class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
+            html += '<button type=\"button\" class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
                 'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                (isConnected ? '' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
+                (isConnected ? 'disabled ' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
                 '<div class=\"network-item-left\">' +
                 '<div class=\"network-icon' + (isConnected ? ' connected-icon' : '') + '\">' +
                 '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>' +
@@ -2209,7 +2209,7 @@ function doScan() {
                     ? '<div class=\"network-connected-label\"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</div>'
                     : '<div class=\"btn btn-outline btn-sm btn-select\">\u0e40\u0e25\u0e37\u0e2d\u0e01</div>') +
                 '</div>' +
-                '</div>';
+                '</button>';
         }
         if (list) list.innerHTML = html;
     });
