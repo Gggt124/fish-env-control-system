@@ -442,6 +442,18 @@ function pumpEl(id) {
     return document.getElementById(id);
 }
 
+function updateBadgeCardState(cardId, isActive) {
+    var card = pumpEl(cardId);
+    if (!card) return;
+    if (isActive) {
+        card.classList.add('state-active');
+        card.classList.remove('state-inactive');
+    } else {
+        card.classList.add('state-inactive');
+        card.classList.remove('state-active');
+    }
+}
+
 function initCoolingDashboard() {
     if (window.location.pathname !== '/cooling') return;
     wireCoolingForm();
@@ -803,6 +815,7 @@ function applyPumpStatus(status, authoritative) {
     }
 
     setHtml('pump-running-label', renderPumpRunLabel(status));
+    setHtml('pump-state-desc', renderPumpStateDesc(status));
     renderPumpCountdown();
     setText('pump-active-timer', renderPumpTimer(status.active_timer));
     setHtml('pump-phase', renderPumpPhase(status.active_timer, status.phase, status.running));
@@ -810,6 +823,11 @@ function applyPumpStatus(status, authoritative) {
     setHtml('pump-relay-state', renderActiveRelayState(status));
     setHtml('pump-relay-1-state', renderRelayChannelState('relay1', status));
     setHtml('pump-relay-2-state', renderRelayChannelState('relay2', status));
+
+    // Update dynamic card styles
+    updateBadgeCardState('pump-float-card', status.float_state === 'on');
+    updateBadgeCardState('pump-relay-1-card', relayEnergizedFor('relay1', status));
+    updateBadgeCardState('pump-relay-2-card', relayEnergizedFor('relay2', status));
 
     var sync = pumpEl('pump-sync-state');
     if (sync) {
@@ -843,6 +861,13 @@ function handlePumpStatusFailure() {
         setHtml('pump-relay-1-state', '--');
         setHtml('pump-relay-2-state', '--');
         setText('pump-countdown', '--:--');
+        setHtml('pump-state-desc', 'ไม่สามารถอ่านสถานะจากอุปกรณ์ได้ (การเชื่อมต่อขาดหาย)');
+        
+        // Reset card styles to neutral/inactive
+        updateBadgeCardState('pump-float-card', false);
+        updateBadgeCardState('pump-relay-1-card', false);
+        updateBadgeCardState('pump-relay-2-card', false);
+
         var label = document.getElementById('pump-running-label');
         if (label) {
             clearSkeleton(label);
@@ -942,23 +967,42 @@ function renderPumpCountdown() {
     setText('pump-countdown', formatPumpCountdown(pumpDisplayedCountdownSec));
 
     var ring = document.getElementById('pump-progress-ring-circle');
-    if (!ring) return;
+    var bar = document.getElementById('pump-progress-bar-fill');
+    var pctText = document.getElementById('pump-progress-pct');
 
-    var radius = 62;
-    var circumference = 2 * Math.PI * radius;
-    ring.style.strokeDasharray = circumference;
-
-    var offset = 0;
+    var pct = 0;
     if (pumpLastStatus && pumpLastStatus.running && pumpLastStatus.active_timer && pumpLastStatus.phase) {
         var totalSec = getPumpDurationSec(pumpLastStatus.active_timer, pumpLastStatus.phase);
         if (totalSec > 0) {
-            var pct = pumpDisplayedCountdownSec / totalSec;
+            pct = pumpDisplayedCountdownSec / totalSec;
             if (pct < 0) pct = 0;
             if (pct > 1) pct = 1;
-            offset = circumference * (1 - pct);
         }
     }
-    ring.style.strokeDashoffset = offset;
+
+    if (ring) {
+        var radius = 62;
+        var circumference = 2 * Math.PI * radius;
+        ring.style.strokeDasharray = circumference;
+        ring.style.strokeDashoffset = circumference * (1 - pct);
+    }
+
+    if (bar) {
+        bar.style.width = (pct * 100).toFixed(1) + '%';
+        if (pumpLastStatus) {
+            if (pumpLastStatus.phase === 'on') {
+                bar.style.background = 'var(--secondary)';
+            } else if (pumpLastStatus.phase === 'off') {
+                bar.style.background = 'var(--tertiary)';
+            } else {
+                bar.style.background = 'var(--primary)';
+            }
+        }
+    }
+
+    if (pctText) {
+        pctText.textContent = (pct * 100).toFixed(1) + '%';
+    }
 }
 
 function getPumpDurationSec(timer, phase) {
@@ -995,6 +1039,8 @@ function predictPumpPhaseAdvance() {
     setHtml('pump-relay-state', renderActiveRelayState(pumpLastStatus));
     setHtml('pump-relay-1-state', renderRelayChannelState('relay1', pumpLastStatus));
     setHtml('pump-relay-2-state', renderRelayChannelState('relay2', pumpLastStatus));
+    updateBadgeCardState('pump-relay-1-card', relayEnergizedFor('relay1', pumpLastStatus));
+    updateBadgeCardState('pump-relay-2-card', relayEnergizedFor('relay2', pumpLastStatus));
     return true;
 }
 
@@ -1023,13 +1069,46 @@ function renderPumpTimer(value) {
     return '--';
 }
 
+function renderPumpStateDesc(status) {
+    if (!status) return '--';
+    if (status.fault) {
+        return 'พบข้อผิดพลาดของระบบรีเลย์ (Relay Fault) บังคับปิดปั๊มทั้งหมดเพื่อความปลอดภัย';
+    }
+    if (status.initial_stabilizing) {
+        return 'ระบบกำลังรอสัญญาณเซนเซอร์และสถานะปั๊มให้เสถียรชั่วคราว...';
+    }
+    if (!status.running) {
+        if (status.active_timer && status.active_timer !== 'none') {
+            return 'ระบบหยุดทำงานชั่วคราว (สแตนด์บายรอบ ' + renderPumpTimer(status.active_timer) + ')';
+        }
+        return 'ระบบหยุดทำงานควบคุมปั๊มทั้งหมดแล้ว';
+    }
+    if (status.active_timer === 'timer1') {
+        if (status.phase === 'on') {
+            return 'ลูกลอยระดับปกติ (OFF): ปั๊ม 1 เปิดทำงานต่อเนื่องตามวงจรตั้งเวลาที่ 1';
+        }
+        if (status.phase === 'off') {
+            return 'ลูกลอยระดับปกติ (OFF): ปั๊ม 1 หยุดพักเครื่องชั่วคราวตามวงจรตั้งเวลาที่ 1';
+        }
+    }
+    if (status.active_timer === 'timer2') {
+        if (status.phase === 'on') {
+            return 'ลูกลอยเตือนระดับสูง (ON): ปั๊ม 2 เปิดทำงานต่อเนื่องตามวงจรตั้งเวลาที่ 2';
+        }
+        if (status.phase === 'off') {
+            return 'ลูกลอยเตือนระดับสูง (ON): ปั๊ม 2 หยุดพักเครื่องชั่วคราวตามวงจรตั้งเวลาที่ 2';
+        }
+    }
+    return 'ระบบกำลังประมวลผลการทำงาน';
+}
+
 function renderPumpRunLabel(status) {
     if (!status) return '--';
     if (status.running) {
+        if (status.phase === 'off') {
+            return renderSvgIcon('icon-pause', 'status-warning') + ' <span class="status-warning">พักการทำงาน</span>';
+        }
         return renderSvgIcon('icon-play', 'status-success') + ' <span class="status-success">ทำงาน</span>';
-    }
-    if (status.active_timer && status.active_timer !== 'none') {
-        return renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">หยุด</span> (พร้อมเริ่ม ' + renderPumpTimer(status.active_timer) + ')';
     }
     return renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">หยุด</span>';
 }
@@ -1051,12 +1130,12 @@ function renderPumpPhase(timer, phase, running) {
 
 function renderFloatState(value) {
     if (value === 'on') {
-        return renderSvgIcon('icon-arrow-up', 'status-success') + ' <span class="status-success">ON</span> → T2/R2';
+        return '<span class="badge-pill state-on">ON</span><span class="badge-subtext">→ Timer 2</span>';
     }
     if (value === 'off') {
-        return renderSvgIcon('icon-arrow-down', 'status-danger') + ' <span class="status-danger">OFF</span> → T1/R1';
+        return '<span class="badge-pill state-off">OFF</span><span class="badge-subtext">→ Timer 1</span>';
     }
-    return renderSvgIcon('icon-alert-triangle', 'status-warning') + ' Unknown';
+    return '<span class="badge-pill state-unknown">Unknown</span>';
 }
 
 function renderRelayName(value) {
@@ -1088,9 +1167,9 @@ function renderActiveRelayState(status) {
 function renderRelayChannelState(channel, status) {
     var energized = relayEnergizedFor(channel, status);
     if (energized) {
-        return renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>';
+        return '<span class="badge-pill state-on">ON</span>';
     }
-    return renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>';
+    return '<span class="badge-pill state-off">OFF</span>';
 }
 
 function renderSettingsStatus(value, autoStart) {
