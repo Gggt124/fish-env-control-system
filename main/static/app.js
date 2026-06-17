@@ -1146,18 +1146,18 @@ function renderPumpStateDesc(status) {
     }
     if (status.active_timer === 'timer1') {
         if (status.phase === 'on') {
-            return 'ลูกลอยระดับปกติ (OFF): ปั๊ม 1 เปิดทำงานต่อเนื่องตามวงจรตั้งเวลาที่ 1';
+            return 'รอบเวลา Timer 1: ปั๊มกำลังทำงาน';
         }
         if (status.phase === 'off') {
-            return 'ลูกลอยระดับปกติ (OFF): ปั๊ม 1 หยุดพักเครื่องชั่วคราวตามวงจรตั้งเวลาที่ 1';
+            return 'รอบเวลา Timer 1: ปั๊มหยุดพัก';
         }
     }
     if (status.active_timer === 'timer2') {
         if (status.phase === 'on') {
-            return 'ลูกลอยเตือนระดับสูง (ON): ปั๊ม 2 เปิดทำงานต่อเนื่องตามวงจรตั้งเวลาที่ 2';
+            return 'รอบเวลา Timer 2: ปั๊มกำลังทำงาน';
         }
         if (status.phase === 'off') {
-            return 'ลูกลอยเตือนระดับสูง (ON): ปั๊ม 2 หยุดพักเครื่องชั่วคราวตามวงจรตั้งเวลาที่ 2';
+            return 'รอบเวลา Timer 2: ปั๊มหยุดพัก';
         }
     }
     return 'ระบบกำลังประมวลผลการทำงาน';

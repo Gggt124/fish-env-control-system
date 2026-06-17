@@ -424,7 +424,7 @@
                     <details class="settings-collapsible pump-settings">
                         <summary aria-expanded="false" aria-controls="pump-config-form">
                             <div>
-                                <h3 class="settings-title">ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
+                                <h3 class="settings-title">ตั้งค่าเวลา (<span lang="en">Timer Settings</span>)</h3>
                             </div>
                             <span class="settings-state settings-state-label" id="pump-config-state">กำลังโหลดการตั้งค่า...</span>
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
@@ -432,7 +432,7 @@
                             </svg>
                         </summary>
                         <div class="settings-body">
-                            <p class="settings-intro-text">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (Float ลอย (ON) = เลือก Timer 2 / Float จม (OFF) = เลือก Timer 1)</p>
+                            <p class="settings-intro-text">สลับรอบเวลาอัตโนมัติตามสถานะลูกลอย</p>
                             <form id="pump-config-form" novalidate class="settings-form">
                                 <div class="timer-grid">
                                     <!-- Timer 1 Card -->
@@ -442,16 +442,13 @@
                                                 <span class="timer-badge">
                                                     <svg class="badge-icon"><use href="#icon-timer"></use></svg> Timer 1
                                                 </span>
-                                                <h4>รีเลย์ 1 (เมื่อลูกลอย <span lang="en">OFF</span> / จม)</h4>
+                                                <h4>ลูกลอยจม (<span lang="en">OFF</span>)</h4>
                                             </div>
-                                            <p class="timer-card-desc">
-                                                <svg class="desc-icon"><use href="#icon-arrow-down"></use></svg> ระบบจะใช้รอบเวลานี้ทำงานเมื่อลูกลอยจมลง (<span lang="en">OFF</span>)
-                                            </p>
                                         </div>
 
                                         <div class="durations-row">
                                             <div class="time-input-group">
-                                                <span class="group-label">ระยะเวลาทำงาน (<span lang="en">Active Duration</span>)</span>
+                                                <span class="group-label">ทำงาน (<span lang="en">Active</span>)</span>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer1-on-min">
@@ -469,7 +466,7 @@
                                             </div>
 
                                             <div class="time-input-group">
-                                                <span class="group-label">ระยะเวลาหยุดพัก (<span lang="en">Idle Duration</span>)</span>
+                                                <span class="group-label">หยุดพัก (<span lang="en">Idle</span>)</span>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer1-off-min">
@@ -488,12 +485,11 @@
                                         </div>
 
                                         <div class="time-input-group start-phase-group">
-                                            <label class="group-label" for="timer1-start-phase">สถานะเริ่มต้นรอบทำงาน (<span lang="en">Start Phase</span>)</label>
+                                            <label class="group-label" for="timer1-start-phase">เริ่มต้นด้วย (<span lang="en">Start Phase</span>)</label>
                                             <select id="timer1-start-phase" name="timer1_start_phase">
-                                                <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
-                                                <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
+                                                <option value="on">ทำงานก่อน (ON)</option>
+                                                <option value="off">หยุดพักก่อน (OFF)</option>
                                             </select>
-                                            <small class="group-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
                                             <div class="field-error" id="timer1-start-phase-error" role="alert" aria-live="polite"></div>
                                         </div>
                                     </div>
@@ -505,16 +501,13 @@
                                                 <span class="timer-badge">
                                                     <svg class="badge-icon"><use href="#icon-timer"></use></svg> Timer 2
                                                 </span>
-                                                <h4>รีเลย์ 2 (เมื่อลูกลอย <span lang="en">ON</span> / ลอย)</h4>
+                                                <h4>ลูกลอยลอย (<span lang="en">ON</span>)</h4>
                                             </div>
-                                            <p class="timer-card-desc">
-                                                <svg class="desc-icon"><use href="#icon-arrow-up"></use></svg> ระบบจะใช้รอบเวลานี้ทำงานเมื่อลูกลอยลอยขึ้น (<span lang="en">ON</span>)
-                                            </p>
                                         </div>
 
                                         <div class="durations-row">
                                             <div class="time-input-group">
-                                                <span class="group-label">ระยะเวลาทำงาน (<span lang="en">Active Duration</span>)</span>
+                                                <span class="group-label">ทำงาน (<span lang="en">Active</span>)</span>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer2-on-min">
@@ -532,7 +525,7 @@
                                             </div>
 
                                             <div class="time-input-group">
-                                                <span class="group-label">ระยะเวลาหยุดพัก (<span lang="en">Idle Duration</span>)</span>
+                                                <span class="group-label">หยุดพัก (<span lang="en">Idle</span>)</span>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer2-off-min">
@@ -551,12 +544,11 @@
                                         </div>
 
                                         <div class="time-input-group start-phase-group">
-                                            <label class="group-label" for="timer2-start-phase">สถานะเริ่มต้นรอบทำงาน (<span lang="en">Start Phase</span>)</label>
+                                            <label class="group-label" for="timer2-start-phase">เริ่มต้นด้วย (<span lang="en">Start Phase</span>)</label>
                                             <select id="timer2-start-phase" name="timer2_start_phase">
-                                                <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
-                                                <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
+                                                <option value="on">ทำงานก่อน (ON)</option>
+                                                <option value="off">หยุดพักก่อน (OFF)</option>
                                             </select>
-                                            <small class="group-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
                                             <div class="field-error" id="timer2-start-phase-error" role="alert" aria-live="polite"></div>
                                         </div>
                                     </div>
@@ -567,8 +559,8 @@
                                         <div class="toggle-switch"><input id="pump-auto-start" type="checkbox" role="switch"><span
                                                 class="toggle-slider"></span></div>
                                         <span>
-                                            <strong>เริ่มทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span lang="en">Auto-start</span>)</strong>
-                                            <small>ให้ระบบทำงานทันทีหลังจากป้อนไฟเข้าอุปกรณ์ โดยใช้รอบเวลาที่บันทึกไว้</small>
+                                            <strong>ทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span lang="en">Auto-start</span>)</strong>
+                                            <small>ระบบจะเริ่มทำงานทันทีเมื่อจ่ายไฟ</small>
                                         </span>
                                     </label>
                                     <div class="settings-button-row">
