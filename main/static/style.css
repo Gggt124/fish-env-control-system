@@ -146,6 +146,11 @@
     --modal-overlay-bg: rgba(0, 0, 0, 0.4);
     --shadow-bottom-nav: 0px -4px 12px rgba(0, 0, 0, 0.05);
 
+    /* Disabled button tokens */
+    --btn-disabled-bg: #e2e8f0;
+    --btn-disabled-text: #475569;
+    --btn-disabled-border: #cbd5e0;
+
     /* Semantic Z-Index Scale */
     --z-index-context: 30;
     --z-index-sticky: 50;
@@ -261,6 +266,15 @@
     --alert-warn-strong: #fbbf24;
     --alert-warn-border: rgba(245, 158, 11, 0.3);
     --input-placeholder: #64748b;
+
+    /* Disabled button tokens overrides */
+    --btn-disabled-bg: #374151;
+    --btn-disabled-text: #cbd5e1;
+    --btn-disabled-border: #4b5563;
+}
+
+[data-theme="dark"] {
+    scrollbar-color: var(--outline) var(--surface-dim);
 }
 
 [data-theme="dark"] select {
@@ -465,7 +479,6 @@ h4 {
     .btn-primary:hover { background: var(--primary-hover); color: var(--on-primary); }
 }
 .btn-primary:active { background: var(--primary-active); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-outline {
     background: transparent; color: var(--primary);
@@ -476,7 +489,17 @@ h4 {
 @media (hover: hover) {
     .btn-outline:hover { background: var(--btn-outline-hover-bg); text-decoration: none !important; }
 }
-.btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Unified disabled states for all buttons */
+.btn:disabled,
+.btn.disabled {
+    background-color: var(--btn-disabled-bg) !important;
+    color: var(--btn-disabled-text) !important;
+    border: 1px solid var(--btn-disabled-border) !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
 
 .btn-danger {
     background: var(--error); color: var(--on-error);
@@ -1972,7 +1995,13 @@ select:disabled {
 @media (hover: hover) {
     .scan-btn:hover { background: var(--scan-btn-hover-bg); }
 }
-.scan-btn:disabled { opacity: 0.5; }
+.scan-btn:disabled {
+    background-color: var(--btn-disabled-bg) !important;
+    color: var(--btn-disabled-text) !important;
+    border: 1px solid var(--btn-disabled-border) !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
+}
 
 #toast {
     position: fixed; top: var(--space-4); right: var(--space-4); z-index: var(--z-index-toast);
@@ -2359,7 +2388,12 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:focus-visible,
+.btn:focus-visible,
+.theme-toggle:focus-visible,
+.hamburger-btn:focus-visible,
+.nav-item:focus-visible,
+.mobile-nav-item:focus-visible {
     outline: 2px solid var(--primary) !important;
     outline-offset: 2px !important;
 }
@@ -2371,9 +2405,10 @@ textarea:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
-        animation-duration: 0.01ms !important;
+        animation-delay: -1ms !important;
+        animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+        transition-duration: 0s !important;
         scroll-behavior: auto !important;
     }
     .empty-state-card, .input-panel {
@@ -2385,17 +2420,15 @@ textarea:focus-visible,
         opacity: 0 !important;
     }
     
-    /* 
-     * Spinner Exception:
-     * Pulsing opacity is acceptable for reduced-motion.
-     * We override the global kill above to restore a gentle pulse
-     * so loading states remain visible without spinning.
-     */
+    /* อนุญาตเฉพาะแอนิเมชันสถานะกำลังโหลด (Pulsing Loaders) ที่จำเป็นต่อการบอกการทำงานทางเทคนิค */
+    .spinner-pulse,
+    .skeleton,
     .spinner,
     .btn.loading::after {
-        animation: spinner-pulse 1.5s ease-in-out infinite !important;
+        animation-name: spinner-pulse !important;
         animation-duration: 1.5s !important;
         animation-iteration-count: infinite !important;
+        opacity: 1 !important;
     }
 }
 
@@ -2429,12 +2462,7 @@ select.invalid {
     100% { background-position: -200% 0; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .skeleton {
-        animation: none !important;
-        background: var(--surface-container-highest) !important;
-    }
-}
+
 
 /* === TFT Wiring Styles === */
 .tft-wiring-compact-list {
