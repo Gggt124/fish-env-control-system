@@ -1356,7 +1356,7 @@ function setCoolingMode(mode) {
 }
 
 function syncCoolingStatus(force) {
-    if (window.location.pathname !== '/dashboard') return;
+    if (window.location.pathname !== '/cooling') return;
     if (document.hidden && !force) return;
     if (coolingStatusRequestInFlight) return;
     coolingStatusRequestInFlight = true;
