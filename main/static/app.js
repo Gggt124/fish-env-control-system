@@ -237,6 +237,37 @@ document.addEventListener('keydown', function(e) {
                 e.preventDefault();
             }
         }
+        return;
+    }
+
+    // ข้ามการทำคีย์ลัดหากกำลังอยู่ในช่องป้อนข้อมูล (Input/Textarea/Select)
+    var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+        return;
+    }
+
+    // คีย์ Spacebar: สลับสั่ง Start/Stop ของปั๊มน้ำเฉพาะที่หน้า Dashboard
+    if (e.key === ' ' || e.code === 'Space') {
+        if (window.location.pathname === '/dashboard') {
+            e.preventDefault();
+            var isRunning = pumpLastStatus && pumpLastStatus.running;
+            if (isRunning) {
+                stopPump();
+            } else {
+                startPump();
+            }
+        }
+    }
+
+    // ปุ่ม S หรือ s: บังคับซิงค์ข้อมูล (Manual Sync) ของหน้าแดชบอร์ดที่เปิดอยู่
+    if (e.key === 's' || e.key === 'S') {
+        if (window.location.pathname === '/dashboard') {
+            e.preventDefault();
+            syncPumpStatus(true);
+        } else if (window.location.pathname === '/cooling') {
+            e.preventDefault();
+            syncCoolingStatus(true);
+        }
     }
 });
 
