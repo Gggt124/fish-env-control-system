@@ -142,6 +142,66 @@
                 <circle cx="12" cy="12" r="6"></circle>
                 <circle cx="12" cy="12" r="2"></circle>
             </symbol>
+            <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </symbol>
+            <symbol id="icon-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </symbol>
+            <symbol id="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="4" x2="6" y2="20"></line>
+                <line x1="18" y1="4" x2="18" y2="20"></line>
+            </symbol>
+            <symbol id="icon-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </symbol>
+            <symbol id="icon-relay-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </symbol>
+            <symbol id="icon-relay-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </symbol>
+            <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </symbol>
+            <symbol id="icon-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </symbol>
+            <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </symbol>
+            <symbol id="icon-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+            </symbol>
+            <symbol id="icon-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <polyline points="19 12 12 19 5 12"></polyline>
+            </symbol>
+            <symbol id="icon-fan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M12 2v4a3 3 0 0 0 3 3h4a3 3 0 0 0-3-3V2z"></path>
+                <path d="M22 12h-4a3 3 0 0 0-3 3v4a3 3 0 0 0 3-3v-4z"></path>
+                <path d="M12 22v-4a3 3 0 0 0-3-3H5a3 3 0 0 0 3 3v4z"></path>
+                <path d="M2 12h4a3 3 0 0 0 3-3V5a3 3 0 0 0-3 3v4z"></path>
+            </symbol>
+            <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </symbol>
+            <symbol id="icon-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 8l2.5 7.5h-5L12 8z"></path>
+                <line x1="10.2" y1="13" x2="13.8" y2="13"></line>
+            </symbol>
         </defs>
     </svg>
 
@@ -306,33 +366,33 @@
                         </div>
                         <div class="pump-runtime-grid">
                             <div class="runtime-stat primary">
-                                <span class="summary-label" lang="en">Timer</span>
+                                <span class="summary-label" lang="en"><svg class="label-icon"><use href="#icon-timer"></use></svg> Timer</span>
                                 <strong id="pump-active-timer"><span class="skeleton">Timer 1</span></strong>
                             </div>
                             <div class="runtime-stat primary">
-                                <span class="summary-label" lang="en">Phase</span>
+                                <span class="summary-label" lang="en"><svg class="label-icon"><use href="#icon-play"></use></svg> Phase</span>
                                 <strong id="pump-phase"><span class="skeleton">ON (00s)</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label" lang="en">Float Switch</span>
+                                <span class="summary-label" lang="en"><svg class="label-icon"><use href="#icon-float"></use></svg> Float</span>
                                 <strong id="pump-float-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat primary">
-                                <span class="summary-label" lang="en">Active Relay</span>
+                                <span class="summary-label" lang="en"><svg class="label-icon"><use href="#icon-power"></use></svg> Relay</span>
                                 <strong id="pump-relay-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label" lang="en">Relay 1</span>
+                                <span class="summary-label" lang="en"><svg class="label-icon"><use href="#icon-power"></use></svg> R1</span>
                                 <strong id="pump-relay-1-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label" lang="en">Relay 2</span>
+                                <span class="summary-label" lang="en"><svg class="label-icon"><use href="#icon-power"></use></svg> R2</span>
                                 <strong id="pump-relay-2-state"><span class="skeleton">OFF</span></strong>
                             </div>
                         </div>
                         <div class="pump-runtime-actions">
-                            <button class="btn btn-primary" id="pump-start-btn" type="button" disabled lang="en">Start</button>
-                            <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled lang="en">Stop</button>
+                            <button class="btn btn-primary" id="pump-start-btn" type="button" disabled lang="en"><svg class="label-icon"><use href="#icon-play"></use></svg> Start</button>
+                            <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled lang="en"><svg class="label-icon"><use href="#icon-stop"></use></svg> Stop</button>
                             <span class="runtime-action-state" id="pump-action-state" aria-live="polite"></span>
                         </div>
                         <div class="pump-alert hidden" id="pump-status-error"></div>
@@ -521,58 +581,58 @@
 
                         <div class="cooling-runtime-grid">
                             <div class="runtime-stat primary">
-                                <span class="summary-label">อุณหภูมิ</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-temp"></use></svg> Temp</span>
                                 <strong id="cooling-temperature" class="mono"><span class="skeleton">00.0°C</span></strong>
                             </div>
                             <div class="runtime-stat primary">
-                                <span class="summary-label">สถานะรีเลย์</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-power"></use></svg> Relay</span>
                                 <strong id="cooling-relay-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">โหมดทำงาน</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-auto"></use></svg> Mode</span>
                                 <strong id="cooling-mode-state"><span class="skeleton">AUTO</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">สถานะเซนเซอร์</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-check-circle"></use></svg> Sensor</span>
                                 <strong id="cooling-sensor-state"><span class="skeleton">ปกติ</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">สถานะความผิดปกติ (<span lang="en">Fault</span>)</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-alert-triangle"></use></svg> Fault</span>
                                 <strong id="cooling-fault-state"><span class="skeleton">ปกติ</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">อุณหภูมิเป้าหมาย</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-temp"></use></svg> Target</span>
                                 <strong id="cooling-threshold" class="mono"><span class="skeleton">00.0°C</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">ช่วงอุณหภูมิเบี่ยงเบน</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-temp"></use></svg> Hyst.</span>
                                 <strong id="cooling-hysteresis" class="mono"><span class="skeleton">0.0°C</span></strong>
                             </div>
                             <div class="runtime-stat">
-                                <span class="summary-label">ทำงานอัตโนมัติหลังบูต</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-auto"></use></svg> Boot</span>
                                 <strong id="cooling-auto-enable-state"><span class="skeleton">OFF</span></strong>
                             </div>
                         </div>
 
                         <div class="cooling-detail-row">
                             <div class="summary-item">
-                                <span class="summary-label">สาเหตุการหยุดชั่วคราว</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-pause"></use></svg> Blocked</span>
                                 <span class="summary-value" id="cooling-blocked-reason"><span class="skeleton">ไม่มี</span></span>
                             </div>
                             <div class="summary-item">
-                                <span class="summary-label">เวลาป้องกันเปิดซ้ำ</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-timer"></use></svg> Lockout</span>
                                 <span class="summary-value mono" id="cooling-lockout"><span class="skeleton">00:00</span></span>
                             </div>
                             <div class="summary-item">
-                                <span class="summary-label">เวลาที่เหลือในการเปิดทดสอบ</span>
+                                <span class="summary-label"><svg class="label-icon"><use href="#icon-timer"></use></svg> Test TTL</span>
                                 <span class="summary-value mono" id="cooling-test-remaining"><span class="skeleton">00:00</span></span>
                             </div>
                         </div>
 
                         <div class="pump-runtime-actions cooling-actions">
-                            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled>อัตโนมัติ (<span lang="en">Auto</span>)</button>
-                            <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled>บังคับปิด (<span lang="en">Force OFF</span>)</button>
-                            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled>เปิดทดสอบ (<span lang="en">Test ON</span>)</button>
+                            <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled><svg class="label-icon"><use href="#icon-auto"></use></svg> Auto</button>
+                            <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled><svg class="label-icon"><use href="#icon-stop"></use></svg> Force OFF</button>
+                            <button class="btn btn-outline" id="cooling-test-on" type="button" disabled><svg class="label-icon"><use href="#icon-play"></use></svg> Test ON</button>
                             <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
                         </div>
                     </section>

@@ -815,11 +815,11 @@ function applyPumpStatus(status, authoritative) {
     if (sync) {
         sync.className = status.fault ? 'runtime-eyebrow error' :
             (status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
-        sync.textContent = status.fault ? 'ระบบ relay fault: ปิด relay ทั้งหมดแล้ว' :
-            (status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงค์ล่าสุดจากอุปกรณ์');
+        sync.innerHTML = status.fault ? renderSvgIcon('icon-x-circle') + ' Relay Fault (All OFF)' :
+            (status.initial_stabilizing ? renderSvgIcon('icon-alert-triangle') + ' Stabilizing...' : renderSvgIcon('icon-check-circle') + ' Synced');
     }
     if (!pumpDirty && status.settings_status) {
-        setText('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
+        setHtml('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
     }
     setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
         (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
@@ -832,7 +832,7 @@ function handlePumpStatusFailure() {
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'สถานะปั๊มขาดการซิงค์' : 'รอซิงค์จากอุปกรณ์';
+        sync.innerHTML = stale ? renderSvgIcon('icon-wifi-off') + ' Stale' : renderSvgIcon('icon-sync') + ' Syncing...';
     }
     if (stale) {
         setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงค์สำเร็จ');
@@ -846,7 +846,7 @@ function handlePumpStatusFailure() {
         var label = document.getElementById('pump-running-label');
         if (label) {
             clearSkeleton(label);
-            label.textContent = 'สถานะการทำงาน: --';
+            label.innerHTML = renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">Offline</span>';
         }
     }
     updatePumpButtons();
@@ -1012,6 +1012,11 @@ function formatPumpCountdown(value) {
     return minutes + ':' + (rem < 10 ? '0' : '') + rem;
 }
 
+function renderSvgIcon(iconName, colorClass) {
+    var cls = 'stat-icon' + (colorClass ? ' ' + colorClass : '');
+    return '<svg class="' + cls + '"><use href="#' + iconName + '"></use></svg>';
+}
+
 function renderPumpTimer(value) {
     if (value === 'timer1') return 'Timer 1';
     if (value === 'timer2') return 'Timer 2';
@@ -1019,27 +1024,39 @@ function renderPumpTimer(value) {
 }
 
 function renderPumpRunLabel(status) {
-    if (!status) return 'ระบบปั๊ม: --';
-    if (status.running) return 'ระบบปั๊ม: <span class="status-success">กำลังทำงาน</span>';
-    if (status.active_timer && status.active_timer !== 'none') {
-        return 'ระบบปั๊ม: <span class="status-danger">หยุดอยู่</span> - พร้อมเริ่ม ' + renderPumpTimer(status.active_timer);
+    if (!status) return '--';
+    if (status.running) {
+        return renderSvgIcon('icon-play', 'status-success') + ' <span class="status-success">ทำงาน</span>';
     }
-    return 'ระบบปั๊ม: <span class="status-danger">หยุดอยู่</span>';
+    if (status.active_timer && status.active_timer !== 'none') {
+        return renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">หยุด</span> (พร้อมเริ่ม ' + renderPumpTimer(status.active_timer) + ')';
+    }
+    return renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">หยุด</span>';
 }
 
 function renderPumpPhase(timer, phase, running) {
-    if (!timer || timer === 'none' || !phase || phase === 'idle') return 'Idle';
-    var timerLabel = renderPumpTimer(timer);
-    var prefix = running ? '' : 'พร้อมเริ่ม ';
-    if (phase === 'on') return prefix + timerLabel + ' - <span class="status-success">ช่วงเปิด</span>';
-    if (phase === 'off') return prefix + timerLabel + ' - <span class="status-danger">ช่วงปิด</span>';
-    return timerLabel + ' - --';
+    if (!timer || timer === 'none' || !phase || phase === 'idle') {
+        return renderSvgIcon('icon-pause') + ' Idle';
+    }
+    var timerShort = timer === 'timer1' ? 'T1' : 'T2';
+    var prefix = running ? '' : 'Ready ';
+    if (phase === 'on') {
+        return renderSvgIcon('icon-relay-on', 'status-success') + timerShort + ' ' + prefix + '<span class="status-success">ON</span>';
+    }
+    if (phase === 'off') {
+        return renderSvgIcon('icon-pause', 'status-danger') + timerShort + ' ' + prefix + '<span class="status-danger">OFF</span>';
+    }
+    return timerShort + ' - --';
 }
 
 function renderFloatState(value) {
-    if (value === 'on') return '<span class="status-success">ON</span> -> Timer 2 / Relay 2';
-    if (value === 'off') return '<span class="status-danger">OFF</span> -> Timer 1 / Relay 1';
-    return 'ไม่ทราบสถานะ';
+    if (value === 'on') {
+        return renderSvgIcon('icon-arrow-up', 'status-success') + ' <span class="status-success">ON</span> → T2/R2';
+    }
+    if (value === 'off') {
+        return renderSvgIcon('icon-arrow-down', 'status-danger') + ' <span class="status-danger">OFF</span> → T1/R1';
+    }
+    return renderSvgIcon('icon-alert-triangle', 'status-warning') + ' Unknown';
 }
 
 function renderRelayName(value) {
@@ -1058,24 +1075,35 @@ function relayEnergizedFor(channel, status) {
 
 function renderActiveRelayState(status) {
     if (!status || !status.active_relay || status.active_relay === 'none') return '--';
-    var label = renderRelayName(status.active_relay);
-    if (!status.running) return label + ' พร้อมเริ่ม <span class="status-danger">(OFF)</span>';
-    return label + (status.relay_energized ? ' <span class="status-success">ON</span>' : ' <span class="status-danger">OFF</span>');
+    var label = status.active_relay === 'relay1' ? 'R1' : 'R2';
+    if (!status.running) {
+        return renderSvgIcon('icon-relay-off', 'status-danger') + label + ' <span class="status-danger">OFF</span>';
+    }
+    if (status.relay_energized) {
+        return renderSvgIcon('icon-relay-on', 'status-success') + label + ' <span class="status-success">ON</span>';
+    }
+    return renderSvgIcon('icon-relay-off', 'status-danger') + label + ' <span class="status-danger">OFF</span>';
 }
 
 function renderRelayChannelState(channel, status) {
     var energized = relayEnergizedFor(channel, status);
-    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' พร้อมเริ่ม';
-    return (energized ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>') + suffix;
+    if (energized) {
+        return renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>';
+    }
+    return renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>';
 }
 
 function renderSettingsStatus(value, autoStart) {
-    var label = 'สถานะค่า: ' + value;
-    if (value === 'loaded') label = 'ค่าโหลดแล้ว';
-    else if (value === 'defaults_missing') label = 'ใช้ค่าเริ่มต้น';
-    else if (value === 'defaults_invalid') label = 'ค่าเริ่มต้นไม่ถูกต้อง';
-    else if (value === 'defaults_error') label = 'โหลดค่าเริ่มต้นผิดพลาด';
-    return label + ' • Auto-start: ' + (autoStart ? 'ON' : 'OFF');
+    var icon = renderSvgIcon('icon-check-circle', 'status-success');
+    var label = 'Loaded';
+    if (value !== 'loaded') {
+        icon = renderSvgIcon('icon-alert-triangle', 'status-warning');
+        if (value === 'defaults_missing') label = 'Defaults';
+        else if (value === 'defaults_invalid') label = 'Invalid';
+        else label = 'Error';
+    }
+    var autoIcon = autoStart ? renderSvgIcon('icon-auto', 'status-success') : renderSvgIcon('icon-stop', 'status-danger');
+    return icon + ' ' + label + ' • ' + autoIcon + ' Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
 /* ======== Cooling Dashboard ======== */
@@ -1354,15 +1382,19 @@ function applyCoolingStatus(status, authoritative) {
     coolingLastStatus = status;
     if (authoritative) coolingLastSyncMs = Date.now();
 
-    setText('cooling-temperature', renderCoolingTemperature(status));
-    setHtml('cooling-relay-state', status.relay_energized ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>');
-    setText('cooling-mode-state', renderCoolingMode(status.mode));
+    setHtml('cooling-temperature', renderCoolingTemperature(status));
+    setHtml('cooling-relay-state', status.relay_energized
+        ? renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>'
+        : renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>');
+    setHtml('cooling-mode-state', renderCoolingMode(status.mode));
     setHtml('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
     setHtml('cooling-fault-state', renderCoolingFault(status));
     setText('cooling-threshold', renderCoolingCelsius(status.threshold_c));
     setText('cooling-hysteresis', renderCoolingCelsius(status.hysteresis_c));
-    setHtml('cooling-auto-enable-state', status.auto_enable ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>');
-    setText('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
+    setHtml('cooling-auto-enable-state', status.auto_enable
+        ? renderSvgIcon('icon-auto', 'status-success') + ' <span class="status-success">ON</span>'
+        : renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">OFF</span>');
+    setHtml('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
     setText('cooling-lockout', status.lockout_active ? formatPumpCountdown(status.lockout_remaining_sec) : '--');
     setText('cooling-test-remaining', status.test_remaining_sec ? formatPumpCountdown(status.test_remaining_sec) : '--');
 
@@ -1371,9 +1403,9 @@ function applyCoolingStatus(status, authoritative) {
         sync.className = status.fault || status.sensor_state === 'fault'
             ? 'runtime-eyebrow error'
             : (status.lockout_active || status.mode === 'test_on' ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
-        sync.textContent = status.fault || status.sensor_state === 'fault'
-            ? 'เซนเซอร์ขัดข้อง: บังคับปิดรีเลย์ทำความเย็น'
-            : (status.lockout_active ? 'ระบบหน่วงคอมเพรสเซอร์ทำงานอยู่' : 'ซิงค์ล่าสุดจาก cooling runtime');
+        sync.innerHTML = status.fault || status.sensor_state === 'fault'
+            ? renderSvgIcon('icon-x-circle') + ' Sensor Fault (Relay OFF)'
+            : (status.lockout_active ? renderSvgIcon('icon-timer') + ' Compressor Lockout' : renderSvgIcon('icon-check-circle') + ' Synced');
     }
     setCoolingAlert(status.fault ? 'พบ sensor fault ระบบบังคับปิด cooling relay แล้ว' : '');
     updateCoolingButtons();
@@ -1384,19 +1416,19 @@ function handleCoolingStatusFailure() {
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'สถานะ cooling ขาดการซิงค์' : 'รอซิงค์ cooling';
+        sync.innerHTML = stale ? renderSvgIcon('icon-wifi-off') + ' Stale' : renderSvgIcon('icon-sync') + ' Syncing...';
     }
     if (stale) {
         setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
-        setText('cooling-temperature', '--');
+        setHtml('cooling-temperature', '--');
         setHtml('cooling-relay-state', '--');
-        setText('cooling-mode-state', '--');
+        setHtml('cooling-mode-state', '--');
         setHtml('cooling-sensor-state', '--');
         setHtml('cooling-fault-state', '--');
         setText('cooling-threshold', '--');
         setText('cooling-hysteresis', '--');
         setHtml('cooling-auto-enable-state', '--');
-        setText('cooling-blocked-reason', '--');
+        setHtml('cooling-blocked-reason', '--');
         setText('cooling-lockout', '--');
         setText('cooling-test-remaining', '--');
     }
@@ -1440,7 +1472,8 @@ function handleCoolingVisibilityChange() {
 function renderCoolingTemperature(status) {
     if (!status || !status.temperature_valid) return '--';
     var value = Number(status.temperature_c);
-    return isFinite(value) ? value.toFixed(1) + ' °C' : '--';
+    if (!isFinite(value)) return '--';
+    return renderSvgIcon('icon-temp') + ' ' + value.toFixed(1) + ' °C';
 }
 
 function renderCoolingCelsius(value) {
@@ -1449,30 +1482,30 @@ function renderCoolingCelsius(value) {
 }
 
 function renderCoolingMode(value) {
-    if (value === 'auto') return 'อัตโนมัติ (Auto)';
-    if (value === 'test_on') return 'เปิดทดสอบ (Test ON)';
-    if (value === 'force_off') return 'บังคับปิด (Force OFF)';
+    if (value === 'auto') return renderSvgIcon('icon-auto', 'status-success') + ' Auto';
+    if (value === 'test_on') return renderSvgIcon('icon-play', 'status-warning') + ' Test ON';
+    if (value === 'force_off') return renderSvgIcon('icon-stop', 'status-danger') + ' Force OFF';
     return '--';
 }
 
 function renderCoolingSensor(value) {
-    if (value === 'ok') return '<span class="status-success">OK</span>';
-    if (value === 'fault') return '<span class="status-danger">FAULT</span>';
-    return 'ไม่ทราบ';
+    if (value === 'ok') return renderSvgIcon('icon-check-circle', 'status-success') + ' <span class="status-success">OK</span>';
+    if (value === 'fault') return renderSvgIcon('icon-x-circle', 'status-danger') + ' <span class="status-danger">FAULT</span>';
+    return 'Unknown';
 }
 
 function renderCoolingFault(status) {
-    if (!status) return 'ข้อผิดพลาด: --';
-    if (!status.fault) return 'ข้อผิดพลาด: <span class="status-success">ไม่มี</span>';
-    return 'ข้อผิดพลาด: <span class="status-danger">' + (status.fault_code || 'ไม่ทราบ') + '</span>';
+    if (!status) return '--';
+    if (!status.fault) return renderSvgIcon('icon-check-circle', 'status-success') + ' <span class="status-success">None</span>';
+    return renderSvgIcon('icon-x-circle', 'status-danger') + ' <span class="status-danger">' + (status.fault_code || 'FAULT') + '</span>';
 }
 
 function renderCoolingBlocked(value) {
     if (!value || value === 'none') return '--';
-    if (value === 'compressor_lockout') return 'หน่วงคอมเพรสเซอร์ (Compressor lockout)';
-    if (value === 'sensor_fault') return 'เซนเซอร์ขัดข้อง (Sensor fault)';
-    if (value === 'force_off') return 'บังคับปิด (Force OFF)';
-    if (value === 'config_invalid') return 'การตั้งค่าไม่ถูกต้อง (Config invalid)';
+    if (value === 'compressor_lockout') return 'Lockout';
+    if (value === 'sensor_fault') return 'Sensor Fault';
+    if (value === 'force_off') return 'Force OFF';
+    if (value === 'config_invalid') return 'Config Invalid';
     return value;
 }
 
