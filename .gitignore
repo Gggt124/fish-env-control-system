@@ -19,3 +19,4 @@ logs/
 main/static_compressed/
 .impeccable/
 .qwen/
+.gemini/
