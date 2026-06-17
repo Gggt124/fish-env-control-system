@@ -219,22 +219,6 @@ document.addEventListener('keydown', function(e) {
             closeMobileNav();
             return;
         }
-        var wifiModal = document.getElementById('wifi-connect-modal');
-        if (wifiModal && !wifiModal.classList.contains('hidden')) {
-            clearSelection();
-            return;
-        }
-        var passwordModal = document.getElementById('password-modal');
-        if (passwordModal && !passwordModal.classList.contains('hidden')) {
-            closePasswordModal();
-            return;
-        }
-        var confirmModal = document.getElementById('modal-container');
-        if (confirmModal && !confirmModal.classList.contains('hidden')) {
-            var cancelBtn = document.getElementById('modal-cancel');
-            if (cancelBtn) cancelBtn.click();
-            return;
-        }
     }
 
     if (e.key === 'Tab' && activeFocusTrap) {
@@ -341,8 +325,7 @@ function showConfirmModal(title, message, onConfirm, isDangerous) {
     }
 
     function cleanup() {
-        container.classList.add('hidden');
-        untrapFocus(container);
+        container.close();
         cancelBtn.onclick = null;
         confirmBtn.onclick = null;
     }
@@ -350,8 +333,7 @@ function showConfirmModal(title, message, onConfirm, isDangerous) {
     cancelBtn.onclick = function () { cleanup(); };
     confirmBtn.onclick = function () { cleanup(); if (onConfirm) onConfirm(); };
 
-    container.classList.remove('hidden');
-    trapFocus(container);
+    container.showModal();
 }
 
 /* ======== Login Page ======== */
@@ -2471,8 +2453,7 @@ function selectNetwork(ssid) {
     /* Show the Wi-Fi connect modal */
     var wifiModal = document.getElementById('wifi-connect-modal');
     if (wifiModal) {
-        wifiModal.classList.remove('hidden');
-        trapFocus(wifiModal);
+        wifiModal.showModal();
     }
 
     /* Update step to 2 */
@@ -2495,8 +2476,7 @@ function clearSelection() {
     /* Hide the Wi-Fi connect modal */
     var wifiModal = document.getElementById('wifi-connect-modal');
     if (wifiModal) {
-        wifiModal.classList.add('hidden');
-        untrapFocus(wifiModal);
+        wifiModal.close();
     }
 
     /* Reset inputs */
@@ -2858,16 +2838,14 @@ function openPasswordModal() {
             errEl.classList.add('hidden');
             errEl.textContent = '';
         }
-        modal.classList.remove('hidden');
-        trapFocus(modal);
+        modal.showModal();
     }
 }
 
 function closePasswordModal() {
     var modal = document.getElementById('password-modal');
     if (modal) {
-        modal.classList.add('hidden');
-        untrapFocus(modal);
+        modal.close();
     }
 }
 
@@ -3029,6 +3007,30 @@ window.addEventListener('popstate', handleRoute);
             }
         }
     });
+
+    // Register cancel event listeners for native dialogs to trigger correct cleanups
+    var confirmModal = document.getElementById('modal-container');
+    if (confirmModal) {
+        confirmModal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            var cancelBtn = document.getElementById('modal-cancel');
+            if (cancelBtn) cancelBtn.click();
+        });
+    }
+    var passwordModal = document.getElementById('password-modal');
+    if (passwordModal) {
+        passwordModal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            closePasswordModal();
+        });
+    }
+    var wifiModal = document.getElementById('wifi-connect-modal');
+    if (wifiModal) {
+        wifiModal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            clearSelection();
+        });
+    }
 
     handleRoute();
 })();
