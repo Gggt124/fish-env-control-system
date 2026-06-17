@@ -344,7 +344,6 @@
                         <summary>
                             <div>
                                 <h3 style="margin-bottom: 0;">ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
-                                <p style="font-size: var(--text-sm); color: var(--outline); margin-top: 4px; margin-bottom: 0;">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (Float ลอย (ON) = เลือก Timer 2 / Float จม (OFF) = เลือก Timer 1)</p>
                             </div>
                             <span class="settings-state" id="pump-config-state" style="margin-left: auto; margin-right: var(--sp-md); font-size: var(--text-sm); white-space: nowrap;">กำลังโหลดการตั้งค่า...</span>
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
@@ -352,6 +351,7 @@
                             </svg>
                         </summary>
                         <div class="settings-body">
+                            <p style="font-size: var(--text-sm); color: var(--outline); margin-top: var(--space-4); margin-bottom: 0;">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (Float ลอย (ON) = เลือก Timer 2 / Float จม (OFF) = เลือก Timer 1)</p>
                             <form id="pump-config-form" novalidate style="margin-top: var(--sp-md);">
                                 <div class="timer-grid">
                                     <fieldset class="timer-card">
@@ -582,13 +582,13 @@
                         <summary>
                             <div>
                                 <h3 style="margin-bottom: 0;">ตั้งค่าระบบทำความเย็น (<span lang="en">Cooling Settings</span>)</h3>
-                                <p style="font-size: var(--text-sm); color: var(--outline); margin-top: 4px; margin-bottom: 0;">ปรับอุณหภูมิและรอบหน่วงเวลาความปลอดภัยสำหรับการทำความเย็น</p>
                             </div>
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </summary>
                         <div class="settings-body">
+                            <p style="font-size: var(--text-sm); color: var(--outline); margin-top: var(--space-4); margin-bottom: 0;">ปรับอุณหภูมิและรอบหน่วงเวลาความปลอดภัยสำหรับการทำความเย็น</p>
                             <form class="cooling-config-form flex-col-1" id="cooling-config-form" novalidate style="margin-top: var(--sp-md);">
                                 <div class="cooling-config-grid">
                                     <div class="duration-field">
