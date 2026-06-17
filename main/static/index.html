@@ -424,124 +424,142 @@
                     <details class="settings-collapsible pump-settings">
                         <summary>
                             <div>
-                                <h3 style="margin-bottom: 0;">ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
+                                <h3 class="settings-title">ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
                             </div>
-                            <span class="settings-state" id="pump-config-state" style="margin-left: auto; margin-right: var(--sp-md); font-size: var(--text-sm); white-space: nowrap;">กำลังโหลดการตั้งค่า...</span>
+                            <span class="settings-state settings-state-label" id="pump-config-state">กำลังโหลดการตั้งค่า...</span>
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </summary>
                         <div class="settings-body">
-                            <p style="font-size: var(--text-sm); color: var(--outline); margin-top: var(--space-4); margin-bottom: 0;">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (Float ลอย (ON) = เลือก Timer 2 / Float จม (OFF) = เลือก Timer 1)</p>
-                            <form id="pump-config-form" novalidate style="margin-top: var(--sp-md);">
+                            <p class="settings-intro-text">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (Float ลอย (ON) = เลือก Timer 2 / Float จม (OFF) = เลือก Timer 1)</p>
+                            <form id="pump-config-form" novalidate class="settings-form">
                                 <div class="timer-grid">
-                                    <fieldset class="timer-card">
-                                        <legend><span lang="en">Timer 1 / Relay 1</span> (เมื่อลูกลอย <span lang="en">OFF</span>)</legend>
-                                        <p class="text-xs text-muted" style="margin-top: calc(-1 * var(--space-1)); margin-bottom: var(--space-3);">Float จม (OFF) = เลือกใช้รอบเวลา Timer 1 นี้</p>
-                                        <div class="duration-row">
-                                            <div class="duration-field">
-                                                <label for="timer1-on-min">
-                                                    ระยะเวลาทำงาน (นาที)
-                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–99 นาที)</small>
-                                                </label>
-                                                <input id="timer1-on-min" type="number" min="0" step="1"
-                                                    inputmode="numeric">
+                                    <!-- Timer 1 Card -->
+                                    <div class="timer-card-panel" id="timer1-card-panel">
+                                        <div class="timer-card-header">
+                                            <div class="timer-card-title">
+                                                <span class="timer-badge">
+                                                    <svg class="badge-icon"><use href="#icon-timer"></use></svg> Timer 1
+                                                </span>
+                                                <h4>รีเลย์ 1 (เมื่อลูกลอย <span lang="en">OFF</span> / จม)</h4>
                                             </div>
-                                            <div class="duration-field">
-                                                <label for="timer1-on-sec">
-                                                    ระยะเวลาทำงาน (วินาที)
-                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
-                                                </label>
-                                                <input id="timer1-on-sec" type="number" min="0" max="59" step="1"
-                                                    inputmode="numeric">
+                                            <p class="timer-card-desc">
+                                                <svg class="desc-icon"><use href="#icon-arrow-down"></use></svg> ระบบจะใช้รอบเวลานี้ทำงานเมื่อลูกลอยจมลง (<span lang="en">OFF</span>)
+                                            </p>
+                                        </div>
+
+                                        <div class="durations-row">
+                                            <div class="time-input-group">
+                                                <span class="group-label">ระยะเวลาทำงาน (<span lang="en">Active Duration</span>)</span>
+                                                <div class="duration-picker-container">
+                                                    <div class="duration-picker">
+                                                        <label class="duration-part" for="timer1-on-min">
+                                                            <input id="timer1-on-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาทำงาน (นาที)">
+                                                            <span class="duration-label">นาที</span>
+                                                        </label>
+                                                        <div class="duration-divider">:</div>
+                                                        <label class="duration-part" for="timer1-on-sec">
+                                                            <input id="timer1-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาทำงาน (วินาที)">
+                                                            <span class="duration-label">วินาที</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="field-error" id="timer1-on-error" role="alert" aria-live="polite"></div>
+                                            </div>
+
+                                            <div class="time-input-group">
+                                                <span class="group-label">ระยะเวลาหยุดพัก (<span lang="en">Idle Duration</span>)</span>
+                                                <div class="duration-picker-container">
+                                                    <div class="duration-picker">
+                                                        <label class="duration-part" for="timer1-off-min">
+                                                            <input id="timer1-off-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาหยุดพัก (นาที)">
+                                                            <span class="duration-label">นาที</span>
+                                                        </label>
+                                                        <div class="duration-divider">:</div>
+                                                        <label class="duration-part" for="timer1-off-sec">
+                                                            <input id="timer1-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาหยุดพัก (วินาที)">
+                                                            <span class="duration-label">วินาที</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="field-error" id="timer1-off-error" role="alert" aria-live="polite"></div>
                                             </div>
                                         </div>
-                                        <div class="field-error" id="timer1-on-error"></div>
-                                        <div class="duration-row">
-                                            <div class="duration-field">
-                                                <label for="timer1-off-min">
-                                                    ระยะเวลาหยุดพัก (นาที)
-                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–99 นาที)</small>
-                                                </label>
-                                                <input id="timer1-off-min" type="number" min="0" step="1"
-                                                    inputmode="numeric">
-                                            </div>
-                                            <div class="duration-field">
-                                                <label for="timer1-off-sec">
-                                                    ระยะเวลาหยุดพัก (วินาที)
-                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
-                                                </label>
-                                                <input id="timer1-off-sec" type="number" min="0" max="59" step="1"
-                                                    inputmode="numeric">
-                                            </div>
-                                        </div>
-                                        <div class="field-error" id="timer1-off-error"></div>
-                                        <div class="duration-field start-phase-field">
-                                            <label for="timer1-start-phase">
-                                                เริ่มต้นรอบเวลาด้วยสถานะ
-                                                <small class="field-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
-                                            </label>
+
+                                        <div class="time-input-group start-phase-group">
+                                            <label class="group-label" for="timer1-start-phase">สถานะเริ่มต้นรอบทำงาน (<span lang="en">Start Phase</span>)</label>
                                             <select id="timer1-start-phase" name="timer1_start_phase">
                                                 <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
                                                 <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
                                             </select>
+                                            <small class="group-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
+                                            <div class="field-error" id="timer1-start-phase-error" role="alert" aria-live="polite"></div>
                                         </div>
-                                        <div class="field-error" id="timer1-start-phase-error"></div>
-                                    </fieldset>
+                                    </div>
 
-                                    <fieldset class="timer-card">
-                                        <legend><span lang="en">Timer 2 / Relay 2</span> (เมื่อลูกลอย <span lang="en">ON</span>)</legend>
-                                        <p class="text-xs text-muted" style="margin-top: calc(-1 * var(--space-1)); margin-bottom: var(--space-3);">Float ลอย (ON) = เลือกใช้รอบเวลา Timer 2 นี้</p>
-                                        <div class="duration-row">
-                                            <div class="duration-field">
-                                                <label for="timer2-on-min">
-                                                    ระยะเวลาทำงาน (นาที)
-                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–99 นาที)</small>
-                                                </label>
-                                                <input id="timer2-on-min" type="number" min="0" step="1"
-                                                    inputmode="numeric">
+                                    <!-- Timer 2 Card -->
+                                    <div class="timer-card-panel" id="timer2-card-panel">
+                                        <div class="timer-card-header">
+                                            <div class="timer-card-title">
+                                                <span class="timer-badge">
+                                                    <svg class="badge-icon"><use href="#icon-timer"></use></svg> Timer 2
+                                                </span>
+                                                <h4>รีเลย์ 2 (เมื่อลูกลอย <span lang="en">ON</span> / ลอย)</h4>
                                             </div>
-                                            <div class="duration-field">
-                                                <label for="timer2-on-sec">
-                                                    ระยะเวลาทำงาน (วินาที)
-                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
-                                                </label>
-                                                <input id="timer2-on-sec" type="number" min="0" max="59" step="1"
-                                                    inputmode="numeric">
+                                            <p class="timer-card-desc">
+                                                <svg class="desc-icon"><use href="#icon-arrow-up"></use></svg> ระบบจะใช้รอบเวลานี้ทำงานเมื่อลูกลอยลอยขึ้น (<span lang="en">ON</span>)
+                                            </p>
+                                        </div>
+
+                                        <div class="durations-row">
+                                            <div class="time-input-group">
+                                                <span class="group-label">ระยะเวลาทำงาน (<span lang="en">Active Duration</span>)</span>
+                                                <div class="duration-picker-container">
+                                                    <div class="duration-picker">
+                                                        <label class="duration-part" for="timer2-on-min">
+                                                            <input id="timer2-on-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาทำงาน (นาที)">
+                                                            <span class="duration-label">นาที</span>
+                                                        </label>
+                                                        <div class="duration-divider">:</div>
+                                                        <label class="duration-part" for="timer2-on-sec">
+                                                            <input id="timer2-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาทำงาน (วินาที)">
+                                                            <span class="duration-label">วินาที</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="field-error" id="timer2-on-error" role="alert" aria-live="polite"></div>
+                                            </div>
+
+                                            <div class="time-input-group">
+                                                <span class="group-label">ระยะเวลาหยุดพัก (<span lang="en">Idle Duration</span>)</span>
+                                                <div class="duration-picker-container">
+                                                    <div class="duration-picker">
+                                                        <label class="duration-part" for="timer2-off-min">
+                                                            <input id="timer2-off-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาหยุดพัก (นาที)">
+                                                            <span class="duration-label">นาที</span>
+                                                        </label>
+                                                        <div class="duration-divider">:</div>
+                                                        <label class="duration-part" for="timer2-off-sec">
+                                                            <input id="timer2-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาหยุดพัก (วินาที)">
+                                                            <span class="duration-label">วินาที</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="field-error" id="timer2-off-error" role="alert" aria-live="polite"></div>
                                             </div>
                                         </div>
-                                        <div class="field-error" id="timer2-on-error"></div>
-                                        <div class="duration-row">
-                                            <div class="duration-field">
-                                                <label for="timer2-off-min">
-                                                    ระยะเวลาหยุดพัก (นาที)
-                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–99 นาที)</small>
-                                                </label>
-                                                <input id="timer2-off-min" type="number" min="0" step="1"
-                                                    inputmode="numeric">
-                                            </div>
-                                            <div class="duration-field">
-                                                <label for="timer2-off-sec">
-                                                    ระยะเวลาหยุดพัก (วินาที)
-                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
-                                                </label>
-                                                <input id="timer2-off-sec" type="number" min="0" max="59" step="1"
-                                                    inputmode="numeric">
-                                            </div>
-                                        </div>
-                                        <div class="field-error" id="timer2-off-error"></div>
-                                        <div class="duration-field start-phase-field">
-                                            <label for="timer2-start-phase">
-                                                เริ่มต้นรอบเวลาด้วยสถานะ
-                                                <small class="field-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
-                                            </label>
+
+                                        <div class="time-input-group start-phase-group">
+                                            <label class="group-label" for="timer2-start-phase">สถานะเริ่มต้นรอบทำงาน (<span lang="en">Start Phase</span>)</label>
                                             <select id="timer2-start-phase" name="timer2_start_phase">
                                                 <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
                                                 <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
                                             </select>
+                                            <small class="group-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
+                                            <div class="field-error" id="timer2-start-phase-error" role="alert" aria-live="polite"></div>
                                         </div>
-                                        <div class="field-error" id="timer2-start-phase-error"></div>
-                                    </fieldset>
+                                    </div>
                                 </div>
 
                                 <div class="settings-actions">
@@ -557,10 +575,10 @@
                                         <span class="unsaved-warning hidden"
                                             id="pump-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
                                         <button class="btn btn-primary" id="pump-save-config" type="submit"
-                                            disabled>บันทึกการตั้งค่าปั๊มน้ำ</button>
+                                            disabled><svg class="label-icon"><use href="#icon-save"></use></svg> บันทึกการตั้งค่าปั๊มน้ำ</button>
                                     </div>
                                 </div>
-                                <div class="pump-alert hidden" id="pump-config-error"></div>
+                                <div class="pump-alert hidden" id="pump-config-error" role="alert" aria-live="polite"></div>
                             </form>
                         </div>
                     </details>
@@ -662,15 +680,15 @@
                     <details class="settings-collapsible cooling-settings">
                         <summary>
                             <div>
-                                <h3 style="margin-bottom: 0;">ตั้งค่าระบบทำความเย็น (<span lang="en">Cooling Settings</span>)</h3>
+                                <h3 class="settings-title">ตั้งค่าระบบทำความเย็น (<span lang="en">Cooling Settings</span>)</h3>
                             </div>
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </summary>
                         <div class="settings-body">
-                            <p style="font-size: var(--text-sm); color: var(--outline); margin-top: var(--space-4); margin-bottom: 0;">ปรับอุณหภูมิและรอบหน่วงเวลาความปลอดภัยสำหรับการทำความเย็น</p>
-                            <form class="cooling-config-form flex-col-1" id="cooling-config-form" novalidate style="margin-top: var(--sp-md);">
+                            <p class="settings-intro-text">ปรับอุณหภูมิและรอบหน่วงเวลาความปลอดภัยสำหรับการทำความเย็น</p>
+                            <form class="cooling-config-form flex-col-1 settings-form" id="cooling-config-form" novalidate>
                                 <div class="cooling-config-grid">
                                     <div class="duration-field">
                                         <label for="cooling-threshold-input">
@@ -799,7 +817,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    <button class="btn btn-danger btn-block" style="margin-top: var(--space-4);" onclick="doLogout(); return false;">
+                    <button class="btn btn-danger btn-block mt-md" onclick="doLogout(); return false;">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-logout"></use></svg>
                         ออกจากระบบ (Logout)
                     </button>
@@ -1286,7 +1304,7 @@
                 </p>
                 <div id="password-error" class="pump-alert hidden mt-sm"></div>
 
-                <div class="modal-actions" style="margin-top: 16px;">
+                <div class="modal-actions">
                     <button type="submit" class="btn btn-primary" id="password-save-btn">เปลี่ยนรหัสผ่าน (<span lang="en">Change Password</span>)</button>
                     <button type="button" class="btn btn-outline" onclick="closePasswordModal()">ยกเลิก (<span lang="en">Cancel</span>)</button>
                 </div>

@@ -326,9 +326,11 @@ function initLogin() {
 
     form.onsubmit = function (e) {
         e.preventDefault();
-        var username = document.getElementById('username').value.trim();
-        var password = document.getElementById('password').value;
+        var uInput = document.getElementById('username');
+        var pInput = document.getElementById('password');
         var rememberEl = document.getElementById('remember-me');
+        var username = uInput ? uInput.value.trim() : '';
+        var password = pInput ? pInput.value : '';
         var remember = rememberEl ? rememberEl.checked : false;
 
         if (!username || !password) {
@@ -338,10 +340,16 @@ function initLogin() {
         }
 
         setLoading(btn, true);
+        if (uInput) uInput.disabled = true;
+        if (pInput) pInput.disabled = true;
+        if (rememberEl) rememberEl.disabled = true;
         errEl.style.display = 'none';
 
         apiPost('/api/login', { username: username, password: password, remember: remember }, function (err, data) {
             setLoading(btn, false);
+            if (uInput) uInput.disabled = false;
+            if (pInput) pInput.disabled = false;
+            if (rememberEl) rememberEl.disabled = false;
 
             if (err || !data || !data.ok) {
                 errEl.style.display = 'block';
@@ -376,6 +384,8 @@ function doLogout() {
 var pumpConfig = null;
 var pumpRelayPolarity = null;
 var pumpConfigLoaded = false;
+var pumpLoadingConfig = false;
+var pumpSavingConfig = false;
 var pumpEditVersion = 0;
 var pumpDirty = false;
 var pumpPending = false;
@@ -394,6 +404,8 @@ var PUMP_STALE_MS = 5000;
 var PUMP_DEADLINE_DRIFT_MS = 1500;
 var coolingConfig = null;
 var coolingConfigLoaded = false;
+var coolingLoadingConfig = false;
+var coolingSavingConfig = false;
 var coolingDirty = false;
 var coolingPending = false;
 var coolingLastStatus = null;
@@ -405,6 +417,8 @@ var COOLING_STALE_MS = 12000;
 var statusSummaryRequestInFlight = false;
 var statusFullRequestInFlight = false;
 var hardwareMapData = null;
+var hardwareLoadingMap = false;
+var hardwareSavingMap = false;
 var hardwareDirty = false;
 var hardwarePending = false;
 var HARDWARE_FIELDS = [
@@ -569,16 +583,17 @@ function setPumpClean(label) {
 }
 
 function updatePumpConfigSaveButton() {
-    var saveBtn = pumpEl('pump-save-config');
-    if (saveBtn) saveBtn.disabled = !pumpConfigLoaded || !pumpRelayPolarity || !pumpDirty;
+    updatePumpButtons();
 }
 
 function loadPumpConfig() {
     var requestEditVersion = pumpEditVersion;
     setText('pump-config-state', 'กำลังโหลดค่า...');
     setPumpAlert('pump-config-error', '');
+    pumpLoadingConfig = true;
     updatePumpConfigSaveButton();
     apiGet('/api/pump/config', function (err, data) {
+        pumpLoadingConfig = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
@@ -733,11 +748,12 @@ function savePumpConfig() {
     }
 
     setPumpAlert('pump-config-error', '');
-    if (saveBtn) setLoading(saveBtn, true);
+    pumpSavingConfig = true;
+    updatePumpConfigSaveButton();
     setText('pump-config-state', 'กำลังบันทึก...');
 
     apiPost('/api/pump/config', payload, function (err, data) {
-        if (saveBtn) setLoading(saveBtn, false);
+        pumpSavingConfig = false;
         if (err || !data || !data.ok) {
             setText('pump-config-state', 'บันทึกไม่สำเร็จ');
             setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
@@ -829,6 +845,22 @@ function applyPumpStatus(status, authoritative) {
     updateBadgeCardState('pump-relay-1-card', relayEnergizedFor('relay1', status));
     updateBadgeCardState('pump-relay-2-card', relayEnergizedFor('relay2', status));
 
+    // Highlight active timer card
+    var t1Card = pumpEl('timer1-card-panel');
+    var t2Card = pumpEl('timer2-card-panel');
+    if (t1Card && t2Card) {
+        if (status.active_timer === 'timer1') {
+            t1Card.classList.add('active-timer');
+            t2Card.classList.remove('active-timer');
+        } else if (status.active_timer === 'timer2') {
+            t2Card.classList.add('active-timer');
+            t1Card.classList.remove('active-timer');
+        } else {
+            t1Card.classList.remove('active-timer');
+            t2Card.classList.remove('active-timer');
+        }
+    }
+
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = status.fault ? 'runtime-eyebrow error' :
@@ -868,6 +900,11 @@ function handlePumpStatusFailure() {
         updateBadgeCardState('pump-relay-1-card', false);
         updateBadgeCardState('pump-relay-2-card', false);
 
+        var t1Card = pumpEl('timer1-card-panel');
+        var t2Card = pumpEl('timer2-card-panel');
+        if (t1Card) t1Card.classList.remove('active-timer');
+        if (t2Card) t2Card.classList.remove('active-timer');
+
         var label = document.getElementById('pump-running-label');
         if (label) {
             clearSkeleton(label);
@@ -884,6 +921,30 @@ function updatePumpButtons() {
     var disabled = pumpPending || stale || !pumpLastStatus || pumpLastStatus.config_valid === false;
     if (startBtn) startBtn.disabled = disabled || !!(pumpLastStatus && pumpLastStatus.running);
     if (stopBtn) stopBtn.disabled = disabled || !(pumpLastStatus && pumpLastStatus.running);
+
+    var formDisabled = !pumpConfigLoaded || pumpLoadingConfig || pumpSavingConfig || pumpPending || stale;
+    var ids = [
+        'timer1-on-min', 'timer1-on-sec', 'timer1-off-min', 'timer1-off-sec',
+        'timer2-on-min', 'timer2-on-sec', 'timer2-off-min', 'timer2-off-sec',
+        'timer1-start-phase', 'timer2-start-phase',
+        'pump-auto-start'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        var input = pumpEl(ids[i]);
+        if (input) {
+            input.disabled = formDisabled;
+        }
+    }
+
+    var saveBtn = pumpEl('pump-save-config');
+    if (saveBtn) {
+        if (pumpSavingConfig) {
+            setLoading(saveBtn, true);
+        } else {
+            setLoading(saveBtn, false);
+            saveBtn.disabled = formDisabled || !pumpDirty;
+        }
+    }
 }
 
 function startPumpLiveTimers() {
@@ -988,7 +1049,7 @@ function renderPumpCountdown() {
     }
 
     if (bar) {
-        bar.style.width = (pct * 100).toFixed(1) + '%';
+        bar.style.transform = 'translateX(' + (pct * 100 - 100).toFixed(1) + '%)';
         if (pumpLastStatus) {
             if (pumpLastStatus.phase === 'on') {
                 bar.style.background = 'var(--secondary)';
@@ -1268,7 +1329,7 @@ function markCoolingDirty() {
             setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
         }
     }
-    updateCoolingConfigSaveButton();
+    updateCoolingButtons();
 }
 
 function setCoolingClean(label) {
@@ -1276,17 +1337,19 @@ function setCoolingClean(label) {
     var warning = pumpEl('cooling-unsaved-warning');
     if (warning) warning.classList.add('hidden');
     setText('cooling-config-state', label || 'บันทึกแล้ว');
-    updateCoolingConfigSaveButton();
+    updateCoolingButtons();
 }
 
 function updateCoolingConfigSaveButton() {
     var saveBtn = pumpEl('cooling-save-config');
     if (saveBtn) {
-        if (coolingPending) {
+        var stale = !coolingLastSyncMs || (Date.now() - coolingLastSyncMs > COOLING_STALE_MS);
+        var formDisabled = !coolingConfigLoaded || coolingLoadingConfig || coolingSavingConfig || coolingPending || stale;
+        if (coolingSavingConfig || coolingPending) {
             setLoading(saveBtn, true);
         } else {
             setLoading(saveBtn, false);
-            saveBtn.disabled = !coolingConfigLoaded || !coolingDirty;
+            saveBtn.disabled = formDisabled || !coolingDirty;
         }
     }
 }
@@ -1294,14 +1357,15 @@ function updateCoolingConfigSaveButton() {
 function loadCoolingConfig() {
     setText('cooling-config-state', 'กำลังโหลดค่า...');
     setCoolingAlert('');
-    updateCoolingConfigSaveButton();
+    coolingLoadingConfig = true;
+    updateCoolingButtons();
     apiGet('/api/cooling/config', function (err, data) {
+        coolingLoadingConfig = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
             setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
             setCoolingAlert('โหลดค่า cooling ไม่สำเร็จ');
-            updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
         }
@@ -1392,17 +1456,15 @@ function saveCoolingConfig() {
         return;
     }
 
-    coolingPending = true;
+    coolingSavingConfig = true;
+    updateCoolingButtons();
     setCoolingAlert('');
     setText('cooling-config-state', 'กำลังบันทึก cooling...');
-    updateCoolingConfigSaveButton();
-    updateCoolingButtons();
     apiPost('/api/cooling/config', built.payload, function (err, data) {
-        coolingPending = false;
+        coolingSavingConfig = false;
         if (err || !data || !data.ok) {
             setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
             setCoolingAlert((data && data.message) ? data.message : 'บันทึก cooling ไม่สำเร็จ');
-            updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
         }
@@ -1525,6 +1587,22 @@ function updateCoolingButtons() {
     if (autoBtn) autoBtn.disabled = disabled || (currentMode === 'auto');
     if (forceBtn) forceBtn.disabled = disabled || (currentMode === 'force_off');
     if (testBtn) testBtn.disabled = disabled || (currentMode === 'test_on');
+
+    var formDisabled = !coolingConfigLoaded || coolingLoadingConfig || coolingSavingConfig || coolingPending || stale;
+    var ids = [
+        'cooling-threshold-input',
+        'cooling-hysteresis-input',
+        'cooling-test-timeout',
+        'cooling-min-off',
+        'cooling-auto-enable'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        var input = pumpEl(ids[i]);
+        if (input) {
+            input.disabled = formDisabled;
+        }
+    }
+
     updateCoolingConfigSaveButton();
 }
 
@@ -1675,20 +1753,37 @@ function setHardwareClean() {
 
 function updateHardwareSaveButton() {
     var btn = hardwareEl('hardware-save-map');
-    if (!btn) return;
     var confirm = hardwareEl('hardware-confirm-reboot');
-    if (hardwarePending) {
-        setLoading(btn, true);
-    } else {
-        setLoading(btn, false);
-        btn.disabled = !hardwareDirty || !confirm || !confirm.checked;
+    var formDisabled = !hardwareMapData || hardwareLoadingMap || hardwareSavingMap || hardwarePending;
+
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var select = hardwareEl(HARDWARE_FIELDS[i].select);
+        if (select) {
+            select.disabled = formDisabled;
+        }
+    }
+
+    if (confirm) {
+        confirm.disabled = formDisabled;
+    }
+
+    if (btn) {
+        if (hardwareSavingMap || hardwarePending) {
+            setLoading(btn, true);
+        } else {
+            setLoading(btn, false);
+            btn.disabled = formDisabled || !hardwareDirty || !confirm || !confirm.checked;
+        }
     }
 }
 
 function loadHardwareMap() {
     setHardwareState('กำลังโหลดผัง GPIO...');
     setHardwareError('');
+    hardwareLoadingMap = true;
+    updateHardwareSaveButton();
     apiGet('/api/hardware/map', function (err, data) {
+        hardwareLoadingMap = false;
         if (err) {
             if (err.message === 'HTTP 401') {
                 navigateTo('/login');
@@ -1696,11 +1791,13 @@ function loadHardwareMap() {
             }
             setHardwareState('โหลดข้อมูลล้มเหลว');
             setHardwareError('ไม่สามารถโหลดผัง GPIO ได้: ' + err.message);
+            updateHardwareSaveButton();
             return;
         }
         if (!data || data.ok !== true) {
             setHardwareState('โหลดข้อมูลล้มเหลว');
             setHardwareError('เซิร์ฟเวอร์ตอบกลับผัง GPIO ไม่ถูกต้อง');
+            updateHardwareSaveButton();
             return;
         }
         applyHardwareMap(data);
@@ -1862,7 +1959,7 @@ function saveHardwareMap() {
         return;
     }
 
-    hardwarePending = true;
+    hardwareSavingMap = true;
     updateHardwareSaveButton();
     setHardwareError('');
     setHardwareState('กำลังบันทึกผัง GPIO ใหม่...');
@@ -1871,7 +1968,7 @@ function saveHardwareMap() {
         map: map,
         confirm_reboot_required: true
     }, function (err, data) {
-        hardwarePending = false;
+        hardwareSavingMap = false;
         updateHardwareSaveButton();
         if (err) {
             setHardwareState('บันทึกข้อมูลล้มเหลว');
@@ -2686,6 +2783,13 @@ function markNetworkConnected(ssid) {
 
 
 
+function setWifiModalInputsDisabled(disabled) {
+    var modalInputs = document.querySelectorAll('#wifi-connect-modal input, #wifi-connect-modal select, #wifi-connect-modal button');
+    for (var i = 0; i < modalInputs.length; i++) {
+        modalInputs[i].disabled = disabled;
+    }
+}
+
 function doConnect() {
     if (!selectedSsid) return;
 
@@ -2779,6 +2883,7 @@ function doConnect() {
 
     if (connectBtn) setLoading(connectBtn, true);
     if (cancelBtn) cancelBtn.disabled = true;
+    setWifiModalInputsDisabled(true);
     if (statusEl) { statusEl.textContent = ''; statusEl.style.color = 'var(--on-surface-variant)'; }
 
     updateStepper(3);
@@ -2788,6 +2893,8 @@ function doConnect() {
             if (err.message && err.message.indexOf('HTTP') === 0) {
                 if (connectBtn) setLoading(connectBtn, false);
                 if (cancelBtn) cancelBtn.disabled = false;
+                setWifiModalInputsDisabled(false);
+                toggleStaticIp();
                 if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14: ' + err.message; statusEl.style.color = 'var(--error)'; }
                 updateStepper(2);
             } else {
@@ -2812,6 +2919,8 @@ function doConnect() {
         } else if (data && data.ok) {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
+            setWifiModalInputsDisabled(false);
+            toggleStaticIp();
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
             /* Mark step 3 as done */
             updateStepper(3, true);
@@ -2824,6 +2933,8 @@ function doConnect() {
         } else {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
+            setWifiModalInputsDisabled(false);
+            toggleStaticIp();
             if (statusEl) {
                 statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: ' + (data && data.error ? data.error : '\u0e25\u0e2d\u0e07\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07');
                 statusEl.style.color = 'var(--error)';
@@ -2861,6 +2972,8 @@ function pollWifiConnection(attempt) {
                     wifiConnectPollTimer = null;
                     if (connectBtn) setLoading(connectBtn, false);
                     if (cancelBtn) cancelBtn.disabled = false;
+                    setWifiModalInputsDisabled(false);
+                    toggleStaticIp();
                     if (statusEl) {
                         statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ระบบได้ดึงคุณกลับมายัง Wi-Fi เดิม';
                         statusEl.style.color = 'var(--error)';
@@ -2891,6 +3004,8 @@ function pollWifiConnection(attempt) {
                 wifiConnectPollTimer = null;
                 if (connectBtn) setLoading(connectBtn, false);
                 if (cancelBtn) cancelBtn.disabled = false;
+                setWifiModalInputsDisabled(false);
+                toggleStaticIp();
                 if (statusEl) {
                     statusEl.textContent = '❌ การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
                     statusEl.style.color = 'var(--error)';
@@ -2906,6 +3021,8 @@ function pollWifiConnection(attempt) {
             wifiConnectPollTimer = null;
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
+            setWifiModalInputsDisabled(false);
+            toggleStaticIp();
 
             var banner = document.getElementById('reconnect-banner');
             if (banner) banner.classList.add('hidden');
@@ -3007,12 +3124,21 @@ function doChangePassword(e) {
     var errEl = document.getElementById('password-error');
     var btn = document.getElementById('password-save-btn');
 
+    var modalInputs = document.querySelectorAll('#password-modal input, #password-modal button');
+    function setModalInputsDisabled(disabled) {
+        for (var i = 0; i < modalInputs.length; i++) {
+            modalInputs[i].disabled = disabled;
+        }
+    }
+
     if (errEl) errEl.classList.add('hidden');
     setLoading(btn, true);
+    setModalInputsDisabled(true);
 
     apiGet('/api/auth/nonce', function (err, data) {
         if (err || !data || !data.ok || !data.nonce) {
             setLoading(btn, false);
+            setModalInputsDisabled(false);
             if (errEl) {
                 errEl.classList.remove('hidden');
                 errEl.textContent = 'ไม่สามารถดึงข้อมูล nonce ได้ กรุณาลองใหม่';
@@ -3032,6 +3158,7 @@ function doChangePassword(e) {
         apiPost('/api/auth/credentials', payload, function (err2, data2) {
             setLoading(btn, false);
             if (err2 || !data2 || !data2.ok) {
+                setModalInputsDisabled(false);
                 if (errEl) {
                     errEl.classList.remove('hidden');
                     if (data2 && data2.error === 'invalid_credentials') {
