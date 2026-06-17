@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Pump Control</title>
+    <meta name="description" content="Fish Pump Relay Timer Control — ระบบควบคุมปั๊มน้ำปลาผ่าน ESP32">
     <script>
     (function(){
         var t = localStorage.getItem('theme');
@@ -16,44 +17,6 @@
     })();
     </script>
     <link rel="stylesheet" href="/style.css">
-    <style>
-        #app-content {
-            margin: 0;
-        }
-
-        @media (min-width: 1024px) {
-            #app-content {
-                margin-left: 280px;
-            }
-        }
-
-        .view.hidden {
-            display: none !important;
-        }
-
-        body.login-active #app-content {
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-
-        .tft-wiring-compact-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--sp-sm);
-        }
-
-        .tft-wire-badge {
-            background-color: var(--surface-container);
-            border: 1px solid var(--outline-variant);
-            padding: var(--sp-xs) var(--sp-sm);
-            border-radius: var(--radius-md);
-            font-family: var(--font-mono);
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: var(--sp-xs);
-        }
-    </style>
 </head>
 
 <body>
@@ -62,7 +25,7 @@
             document.body.classList.add('login-active');
         }
     </script>
-    <svg style="display: none;" aria-hidden="true">
+    <svg class="hidden" aria-hidden="true">
         <defs>
             <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"/>
@@ -546,10 +509,6 @@
 
 
 
-            <!-- Footer -->
-            <footer class="app-footer">
-                <span lang="en">Fish Pump Relay Timer Control</span>
-            </footer>
         </section>
 
         <section id="view-cooling" class="view hidden" aria-hidden="true">
@@ -708,10 +667,6 @@
                 </div>
             </div>
 
-            <!-- Footer -->
-            <footer class="app-footer">
-                <span lang="en">Fish Pump Relay Timer Control</span>
-            </footer>
         </section>
 
         <section id="view-status" class="view hidden" aria-hidden="true">
@@ -953,9 +908,6 @@
 
             </div>
 
-            <footer class="app-footer">
-                <span lang="en">Fish Pump Relay Timer Control</span>
-            </footer>
         </section>
         <section id="view-wifi" class="view hidden" aria-hidden="true">
             <div class="page-header">
@@ -985,7 +937,7 @@
                         <div class="status-sub" id="conn-sub">อุปกรณ์กำลังทำงานแบบ <span lang="en">Offline</span> (<span lang="en">SoftAP</span> เท่านั้น)</div>
                     </div>
                 </div>
-                <button class="btn btn-danger btn-sm" id="disconnect-btn" style="display:none;"
+                <button class="btn btn-danger btn-sm hidden" id="disconnect-btn"
                     onclick="doDisconnect()">Disconnect</button>
             </div>
 
@@ -1006,7 +958,7 @@
             </div>
 
             <!-- Reconnection Helper Banner -->
-            <div id="reconnect-banner" class="alert-banner" role="alert" style="display:none;">
+            <div id="reconnect-banner" class="alert-banner hidden" role="alert">
                 <div>
                     <strong>กำลังพยายามเชื่อมต่อ...</strong> เหลือเวลาอีก <span id="reconnect-countdown">15</span> วินาที<br>
                     <span class="text-sm">หากโทรศัพท์หลุดออกจากเครือข่าย ให้ตรวจสอบว่ายังคงเชื่อมต่อกับสัญญาณของตัวปั๊มน้ำ (<span lang="en">IP</span>: <strong class="mono" lang="en">192.168.4.1</strong>) อยู่หรือไม่</span>
@@ -1223,6 +1175,9 @@
                 </div>
             </section>
         </section>
+        <footer class="app-footer">
+            <span lang="en">Fish Pump Relay Timer Control</span>
+        </footer>
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -1289,7 +1244,7 @@
                 <div class="selected-ssid-display" id="modal-wifi-ssid">---</div>
             </div>
 
-            <div id="wifi-saved-msg" class="wifi-saved-msg" style="display:none;">
+            <div id="wifi-saved-msg" class="wifi-saved-msg hidden">
                 <div class="wifi-saved-msg-header">
                     <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                         stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
@@ -1326,7 +1281,7 @@
                 </label>
             </div>
 
-            <div class="static-ip-fields" id="static-ip-fields" style="display:none;">
+            <div class="static-ip-fields hidden" id="static-ip-fields">
                 <div class="form-group">
                     <label for="static-ip">หมายเลข <span lang="en">IP</span> (<span lang="en">IP Address</span>)</label>
                     <div class="input-wrapper">

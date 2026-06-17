@@ -2069,13 +2069,13 @@ function updateConnectionStatus() {
             if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
             title.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27: ' + (data.sta_ssid || 'Wi-Fi');
             if (sub) sub.textContent = 'IP: ' + (data.sta_ip || '--');
-            if (btn) btn.style.display = '';
+            if (btn) btn.classList.remove('hidden');
         } else {
             el.className = 'connection-status';
             if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
             title.textContent = '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
             if (sub) sub.textContent = 'STA \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e01\u0e31\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e14\u0e46';
-            if (btn) btn.style.display = 'none';
+            if (btn) btn.classList.add('hidden');
         }
     });
 }
@@ -2379,7 +2379,13 @@ function toggleStaticIp() {
     var ipInput = document.getElementById('static-ip');
     var gwInput = document.getElementById('static-gateway');
     var nmInput = document.getElementById('static-netmask');
-    if (fields) fields.style.display = checked ? 'block' : 'none';
+    if (fields) {
+        if (checked) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    }
     if (ipInput) { ipInput.disabled = !checked; ipInput.classList.remove('invalid'); if (!checked) ipInput.value = ''; }
     if (gwInput) { gwInput.disabled = !checked; gwInput.classList.remove('invalid'); if (!checked) gwInput.value = ''; }
     if (nmInput) { nmInput.disabled = !checked; nmInput.classList.remove('invalid'); if (!checked) nmInput.value = '255.255.255.0'; }
@@ -2417,8 +2423,8 @@ function fadeSwap(toHide, toShow) {
 function showSavedPasswordInput() {
     var pwGroup = document.getElementById('wifi-password-group');
     var savedMsg = document.getElementById('wifi-saved-msg');
-    if (pwGroup) pwGroup.style.display = 'block';
-    if (savedMsg) savedMsg.style.display = 'none';
+    if (pwGroup) pwGroup.classList.remove('hidden');
+    if (savedMsg) savedMsg.classList.add('hidden');
 }
 
 function selectNetwork(ssid) {
@@ -2484,16 +2490,16 @@ function selectNetwork(ssid) {
         if (isNetworkOpen) {
             pwInput.placeholder = 'เครือข่ายเปิด (ไม่มีรหัสผ่าน)';
             pwInput.disabled = true;
-            if (pwGroup) pwGroup.style.display = 'none';
-            if (savedMsg) savedMsg.style.display = 'none';
+            if (pwGroup) pwGroup.classList.add('hidden');
+            if (savedMsg) savedMsg.classList.add('hidden');
         } else if (isSaved) {
             pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e16\u0e39\u0e01\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 (\u0e40\u0e27\u0e49\u0e19\u0e27\u0e48\u0e32\u0e07\u0e44\u0e14\u0e49)';
-            if (pwGroup) pwGroup.style.display = 'none';
-            if (savedMsg) savedMsg.style.display = 'block';
+            if (pwGroup) pwGroup.classList.add('hidden');
+            if (savedMsg) savedMsg.classList.remove('hidden');
         } else {
             pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19';
-            if (pwGroup) pwGroup.style.display = 'block';
-            if (savedMsg) savedMsg.style.display = 'none';
+            if (pwGroup) pwGroup.classList.remove('hidden');
+            if (savedMsg) savedMsg.classList.add('hidden');
         }
     }
     if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = isNetworkOpen; }
@@ -2697,7 +2703,7 @@ function doConnect() {
                 /* Network error means the ESP32 likely dropped the Wi-Fi to switch networks! */
                 if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
                 var banner = document.getElementById('reconnect-banner');
-                if (banner) banner.style.display = 'block';
+                if (banner) banner.classList.remove('hidden');
                 if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
                 wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(1); }, 2000);
             }
@@ -2708,7 +2714,7 @@ function doConnect() {
             if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
 
             var banner = document.getElementById('reconnect-banner');
-            if (banner) banner.style.display = 'block';
+            if (banner) banner.classList.remove('hidden');
 
             if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
             wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(1); }, 1000);
@@ -2750,7 +2756,7 @@ function pollWifiConnection(attempt) {
                 if (statusEl) { statusEl.textContent = 'เชื่อมต่อสำเร็จ! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
 
                 var banner = document.getElementById('reconnect-banner');
-                if (banner) banner.style.display = 'none';
+                if (banner) banner.classList.add('hidden');
 
                 updateStepper(3, true);
                 updateConnectionStatus();
@@ -2770,7 +2776,7 @@ function pollWifiConnection(attempt) {
                     }
                     updateStepper(2);
                     var banner = document.getElementById('reconnect-banner');
-                    if (banner) banner.style.display = 'none';
+                    if (banner) banner.classList.add('hidden');
                     return;
                 }
 
@@ -2799,7 +2805,7 @@ function pollWifiConnection(attempt) {
                     statusEl.style.color = 'var(--error)';
                 }
                 var banner = document.getElementById('reconnect-banner');
-                if (banner) banner.style.display = 'none';
+                if (banner) banner.classList.add('hidden');
                 updateStepper(2);
                 return;
             }
@@ -2811,7 +2817,7 @@ function pollWifiConnection(attempt) {
             if (cancelBtn) cancelBtn.disabled = false;
 
             var banner = document.getElementById('reconnect-banner');
-            if (banner) banner.style.display = 'none';
+            if (banner) banner.classList.add('hidden');
 
             if (!err && data && data.ok && !data.sta_connected) {
                 /* We are still connected to SoftAP, and connection to STA failed/timed out */
