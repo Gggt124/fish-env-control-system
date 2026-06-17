@@ -144,26 +144,7 @@
             </symbol>
         </defs>
     </svg>
-    <!-- Mobile Top Bar -->
-    <header class="mobile-topbar">
-        <span class="brand" lang="en">Fish Pump Control</span>
-        <div style="display: flex; align-items: center; gap: var(--space-2);">
-            <button class="theme-toggle" id="theme-toggle-mobile" onclick="cycleTheme()" aria-label="สลับธีม">
-                <svg width="20" height="20"><use href="#icon-moon"></use></svg>
-            </button>
-            <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false"
-                onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}"><svg
-                    viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
-                    stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                    <use href="#icon-menu"></use>
-                </svg></button>
-        </div>
-    </header>
 
-    <!-- Mobile Drawer Overlay -->
-    <button class="drawer-overlay" id="drawer-overlay" aria-label="ปิดเมนูนำทาง (Close Navigation)"
-        onclick="var s=document.getElementById('app-sidebar'),b=document.querySelector('.hamburger-btn');if(s){s.classList.remove('open');this.classList.remove('open');}if(b)b.setAttribute('aria-expanded','false');">
-    </button>
 
     <!-- Sidebar (Desktop & Mobile) -->
     <aside class="app-sidebar" id="app-sidebar">
@@ -737,6 +718,10 @@
                             </tr>
                         </tbody>
                     </table>
+                    <button class="btn btn-danger btn-block" style="margin-top: var(--space-4);" onclick="doLogout(); return false;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-logout"></use></svg>
+                        ออกจากระบบ (Logout)
+                    </button>
                 </div>
 
                 <!-- Memory Card -->
@@ -1343,19 +1328,25 @@
             </svg>
             <span>หน้าหลัก</span>
         </a>
-        <a href="/wifi" class="mobile-nav-item" id="m-nav-wifi">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
-                stroke-linecap="round" stroke-linejoin="round">
-                <use href="#icon-wifi"></use>
-            </svg>
-            <span>Wi-Fi</span>
-        </a>
         <a href="/cooling" class="mobile-nav-item" id="m-nav-cooling">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
                 stroke-linecap="round" stroke-linejoin="round">
                 <use href="#icon-cooling"></use>
             </svg>
             <span>ทำความเย็น</span>
+        </a>
+        <a href="/status" class="mobile-nav-item" id="m-nav-status">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <use href="#icon-gear"></use>
+            </svg>
+            <span>ระบบ</span>
+        </a>
+        <a href="/wifi" class="mobile-nav-item" id="m-nav-wifi">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
+                <use href="#icon-wifi"></use>
+            </svg>
+            <span>Wi-Fi</span>
         </a>
         <a href="/hardware" class="mobile-nav-item" id="m-nav-hardware">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"

@@ -303,3 +303,7 @@ If an agent learns patterns, APIs, or architecture from an external repository, 
 Machine-specific agent workflows, local knowledge bases, private paths, and
 custom skill requirements belong in `AGENTS.local.md`. That file is ignored by
 git so this template stays usable on other machines.
+
+**Impeccable Skill Script Path Rule:**
+On this workspace, the `impeccable` skill files are installed in the global user path rather than being mirrored to the local `.agents/skills/impeccable/` directory.
+Always check `AGENTS.local.md` or fallback to the global directory (`C:\Users\Copter\.gemini\config\skills\impeccable\scripts\`) when executing any `/impeccable` script (e.g. `context.mjs`, `palette.mjs`, `context-signals.mjs`, `detect.mjs`, `pin.mjs`). Do NOT use the local `.agents/skills/...` path as it will throw `MODULE_NOT_FOUND`.
