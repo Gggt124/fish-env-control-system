@@ -3304,6 +3304,20 @@ window.addEventListener('popstate', handleRoute);
         });
     }
 
+    // Setup accessibility for collapsible settings details/summary
+    var collapsibles = document.querySelectorAll('details.settings-collapsible');
+    for (var i = 0; i < collapsibles.length; i++) {
+        (function(details) {
+            var summary = details.querySelector('summary');
+            if (summary) {
+                summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+                details.addEventListener('toggle', function() {
+                    summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+                });
+            }
+        })(collapsibles[i]);
+    }
+
     updateThemeIcons(getEffectiveTheme());
     handleRoute();
 })();
