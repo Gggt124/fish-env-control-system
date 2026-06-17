@@ -158,116 +158,134 @@
     --z-index-toast: 1020;
 }
 
-/* === Dark Mode Token Overrides === */
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* Base Colors - Accent Colors overrides */
-        --primary: #60a5fa;
-        --primary-hover: #3b82f6;
-        --primary-container: rgba(37, 99, 235, 0.2);
-        --primary-fixed: rgba(37, 99, 235, 0.15);
-        --primary-fixed-dim: rgba(96, 165, 250, 0.15);
-        --on-primary: #0f172a;
-        --primary-active: #2563eb;
-        --on-primary-container: #dbeafe;
+/* === Dark Theme Token Overrides === */
+[data-theme="dark"] {
+    /* Base Colors - Accent Colors overrides */
+    --primary: #60a5fa;
+    --primary-hover: #3b82f6;
+    --primary-container: rgba(37, 99, 235, 0.2);
+    --primary-fixed: rgba(37, 99, 235, 0.15);
+    --primary-fixed-dim: rgba(96, 165, 250, 0.15);
+    --on-primary: #0f172a;
+    --primary-active: #2563eb;
+    --on-primary-container: #dbeafe;
 
-        /* Base Colors - Semantic Colors overrides */
-        --secondary: #34d399;
-        --on-secondary: #064e3b;
-        --secondary-container: rgba(16, 185, 129, 0.15);
-        --secondary-fixed-dim: rgba(52, 211, 153, 0.15);
+    /* Base Colors - Semantic Colors overrides */
+    --secondary: #34d399;
+    --on-secondary: #064e3b;
+    --secondary-container: rgba(16, 185, 129, 0.15);
+    --secondary-fixed-dim: rgba(52, 211, 153, 0.15);
 
-        --tertiary: #fbbf24;
-        --on-tertiary: #78350f;
-        --tertiary-container: rgba(245, 158, 11, 0.15);
+    --tertiary: #fbbf24;
+    --on-tertiary: #78350f;
+    --tertiary-container: rgba(245, 158, 11, 0.15);
 
-        --error: #f87171;
-        --error-hover: #ef4444;
-        --on-error: #7f1d1d;
-        --error-container: rgba(239, 68, 68, 0.15);
+    --error: #f87171;
+    --error-hover: #ef4444;
+    --on-error: #7f1d1d;
+    --error-container: rgba(239, 68, 68, 0.15);
 
-        /* High-contrast text variants for semantic states (WCAG AA compliant >4.5:1 in dark mode) */
-        --secondary-text: #34d399;
-        --tertiary-text: #fbbf24;
-        --error-text: #f87171;
+    /* High-contrast text variants for semantic states (WCAG AA compliant >4.5:1 in dark mode) */
+    --secondary-text: #34d399;
+    --tertiary-text: #fbbf24;
+    --error-text: #f87171;
 
-        /* Eyebrow Tokens overrides */
-        --eyebrow-good-bg: rgba(16, 185, 129, 0.15);
-        --eyebrow-good-text: var(--secondary-text);
-        --eyebrow-good-border: rgba(52, 211, 153, 0.3);
+    /* Eyebrow Tokens overrides */
+    --eyebrow-good-bg: rgba(16, 185, 129, 0.15);
+    --eyebrow-good-text: var(--secondary-text);
+    --eyebrow-good-border: rgba(52, 211, 153, 0.3);
 
-        --eyebrow-warn-bg: rgba(245, 158, 11, 0.15);
-        --eyebrow-warn-text: var(--tertiary-text);
-        --eyebrow-warn-border: rgba(251, 191, 36, 0.3);
+    --eyebrow-warn-bg: rgba(245, 158, 11, 0.15);
+    --eyebrow-warn-text: var(--tertiary-text);
+    --eyebrow-warn-border: rgba(251, 191, 36, 0.3);
 
-        --eyebrow-error-bg: rgba(239, 68, 68, 0.15);
-        --eyebrow-error-text: var(--error-text);
-        --eyebrow-error-border: rgba(248, 113, 113, 0.3);
+    --eyebrow-error-bg: rgba(239, 68, 68, 0.15);
+    --eyebrow-error-text: var(--error-text);
+    --eyebrow-error-border: rgba(248, 113, 113, 0.3);
 
-        /* Connection Status Tokens overrides */
-        --connection-connected-bg: rgba(16, 185, 129, 0.1);
-        --connection-connected-border: rgba(16, 185, 129, 0.3);
-        --connection-connected-text: #34d399;
-        --connection-connected-subtext: #a7f3d0;
-        --connection-connected-icon: var(--secondary-text);
+    /* Connection Status Tokens overrides */
+    --connection-connected-bg: rgba(16, 185, 129, 0.1);
+    --connection-connected-border: rgba(16, 185, 129, 0.3);
+    --connection-connected-text: #34d399;
+    --connection-connected-subtext: #a7f3d0;
+    --connection-connected-icon: var(--secondary-text);
 
-        /* Base Colors - Neutral & Layout Palette overrides */
-        --bg-body: #0b0f19;
-        --surface: #111827;
-        --surface-dim: #0b0f19;
-        --surface-bright: #1f2937;
-        
-        --surface-container-lowest: #0b0f19;
-        --surface-container-low: #111827;
-        --surface-container: #1f2937;
-        --surface-container-high: #374151;
-        --surface-container-highest: #4b5563;
-        
-        --on-surface: #f8fafc;
-        --on-surface-variant: #94a3b8;
-        --inverse-surface: #f8fafc;
-        --inverse-on-surface: #0f172a;
-        
-        --outline: #4b5563;
-        --outline-variant: #374151;
-        
-        --overlay-bg: rgba(15, 23, 42, 0.65);
+    /* Base Colors - Neutral & Layout Palette overrides */
+    --bg-body: #0b0f19;
+    --surface: #111827;
+    --surface-dim: #0b0f19;
+    --surface-bright: #1f2937;
+    
+    --surface-container-lowest: #0b0f19;
+    --surface-container-low: #111827;
+    --surface-container: #1f2937;
+    --surface-container-high: #374151;
+    --surface-container-highest: #4b5563;
+    
+    --on-surface: #f8fafc;
+    --on-surface-variant: #94a3b8;
+    --inverse-surface: #f8fafc;
+    --inverse-on-surface: #0f172a;
+    
+    --outline: #4b5563;
+    --outline-variant: #374151;
+    
+    --overlay-bg: rgba(15, 23, 42, 0.65);
 
-        /* Shadows overrides (softer/transparent in dark mode) */
-        --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.3);
-        --shadow-login: 0px 8px 24px rgba(0, 0, 0, 0.5);
-        --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.2);
-        --shadow-bottom-nav: 0px -4px 12px rgba(0, 0, 0, 0.3);
+    /* Shadows overrides (softer/transparent in dark mode) */
+    --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-login: 0px 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-bottom-nav: 0px -4px 12px rgba(0, 0, 0, 0.3);
 
-        /* Extracted rgba() overrides */
-        --login-bg-dot: rgba(255, 255, 255, 0.03);
-        --focus-ring-primary: rgba(96, 165, 250, 0.25);
-        --focus-ring-error: rgba(248, 113, 113, 0.2);
-        --btn-outline-hover-bg: rgba(96, 165, 250, 0.1);
-        --drawer-overlay-bg: rgba(0, 0, 0, 0.6);
-        --eyebrow-default-bg: rgba(75, 85, 99, 0.2);
-        --eyebrow-default-border: rgba(156, 163, 175, 0.2);
-        --toggle-thumb-shadow: rgba(0, 0, 0, 0.4);
-        --border-transparent: rgba(75, 85, 99, 0.3);
-        --btn-icon-hover-bg-error: rgba(248, 113, 113, 0.15);
-        --selected-ssid-border: rgba(75, 85, 99, 0.4);
-        --scan-btn-bg: rgba(96, 165, 250, 0.15);
-        --scan-btn-hover-bg: rgba(96, 165, 250, 0.25);
-        --shadow-toast: 0px 4px 12px rgba(0, 0, 0, 0.5);
-        --modal-overlay-bg: rgba(0, 0, 0, 0.6);
+    /* Extracted rgba() overrides */
+    --login-bg-dot: rgba(255, 255, 255, 0.03);
+    --focus-ring-primary: rgba(96, 165, 250, 0.25);
+    --focus-ring-error: rgba(248, 113, 113, 0.2);
+    --btn-outline-hover-bg: rgba(96, 165, 250, 0.1);
+    --drawer-overlay-bg: rgba(0, 0, 0, 0.6);
+    --eyebrow-default-bg: rgba(75, 85, 99, 0.2);
+    --eyebrow-default-border: rgba(156, 163, 175, 0.2);
+    --toggle-thumb-shadow: rgba(0, 0, 0, 0.4);
+    --border-transparent: rgba(75, 85, 99, 0.3);
+    --btn-icon-hover-bg-error: rgba(248, 113, 113, 0.15);
+    --selected-ssid-border: rgba(75, 85, 99, 0.4);
+    --scan-btn-bg: rgba(96, 165, 250, 0.15);
+    --scan-btn-hover-bg: rgba(96, 165, 250, 0.25);
+    --shadow-toast: 0px 4px 12px rgba(0, 0, 0, 0.5);
+    --modal-overlay-bg: rgba(0, 0, 0, 0.6);
 
-        /* Other overrides */
-        --eyebrow-default-text: #9ca3af;
-        --alert-warn-bg: rgba(245, 158, 11, 0.1);
-        --alert-warn-text: #fbbf24;
-        --alert-warn-strong: #fbbf24;
-        --alert-warn-border: rgba(245, 158, 11, 0.3);
-        --input-placeholder: #64748b;
-    }
+    /* Other overrides */
+    --eyebrow-default-text: #9ca3af;
+    --alert-warn-bg: rgba(245, 158, 11, 0.1);
+    --alert-warn-text: #fbbf24;
+    --alert-warn-strong: #fbbf24;
+    --alert-warn-border: rgba(245, 158, 11, 0.3);
+    --input-placeholder: #64748b;
+}
 
-    select {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    }
+[data-theme="dark"] select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* === Theme Toggle Button === */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; height: 40px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-container-low);
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    transition: background-color 0.2s ease-out, color 0.2s ease-out;
+}
+@media (hover: hover) {
+    .theme-toggle:hover { background: var(--surface-container); color: var(--primary); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle { transition: none; }
 }
 
 /* === Reset === */
@@ -1255,6 +1273,15 @@ select:disabled {
     min-height: 18px;
     font-size: var(--text-xs); font-weight: 600;
     color: var(--error-text);
+}
+
+.field-hint {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--on-surface-variant);
+    margin-top: var(--space-1);
+    font-weight: 400;
+    line-height: 1.4;
 }
 
 .settings-actions {
@@ -2433,6 +2460,32 @@ select.invalid {
     box-shadow: 0 0 0 2px var(--focus-ring-error) !important;
 }
 
+/* Skeleton Loading States */
+.skeleton {
+    display: inline-block;
+    background: linear-gradient(
+        90deg,
+        var(--surface-container-highest) 25%,
+        var(--surface-container) 50%,
+        var(--surface-container-highest) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+    color: transparent !important;
+    user-select: none;
+    pointer-events: none;
+    min-width: 3ch;
+}
 
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
 
-
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none !important;
+        background: var(--surface-container-highest) !important;
+    }
+}

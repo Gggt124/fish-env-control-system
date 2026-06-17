@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fish Pump Control</title>
+    <script>
+    (function(){
+        var t = localStorage.getItem('theme');
+        if (t === 'dark' || t === 'light') {
+            document.documentElement.setAttribute('data-theme', t);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+    </script>
     <link rel="stylesheet" href="/style.css">
     <style>
         #app-content {
@@ -54,6 +64,20 @@
     </script>
     <svg style="display: none;" aria-hidden="true">
         <defs>
+            <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </symbol>
+            <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </symbol>
             <symbol id="icon-gear" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -160,12 +184,17 @@
     <!-- Mobile Top Bar -->
     <header class="mobile-topbar">
         <span class="brand" lang="en">Fish Pump Control</span>
-        <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false"
-            onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}"><svg
-                viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
-                stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                <use href="#icon-menu"></use>
-            </svg></button>
+        <div style="display: flex; align-items: center; gap: var(--space-2);">
+            <button class="theme-toggle" id="theme-toggle-mobile" onclick="cycleTheme()" aria-label="สลับธีม">
+                <svg width="20" height="20"><use href="#icon-moon"></use></svg>
+            </button>
+            <button class="hamburger-btn" aria-label="Open Navigation" aria-expanded="false"
+                onclick="var s=document.getElementById('app-sidebar'),o=document.getElementById('drawer-overlay'),x=s&&!s.classList.contains('open');if(s&&o){s.classList.toggle('open',x);o.classList.toggle('open',x);this.setAttribute('aria-expanded',x?'true':'false');}"><svg
+                    viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                    stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                    <use href="#icon-menu"></use>
+                </svg></button>
+        </div>
     </header>
 
     <!-- Mobile Drawer Overlay -->
@@ -223,6 +252,11 @@
                     </svg></span> <span lang="en">Logout</span>
             </button>
         </nav>
+        <div class="sidebar-bottom">
+            <button class="theme-toggle" id="theme-toggle-desktop" onclick="cycleTheme()" aria-label="สลับธีม">
+                <svg width="20" height="20"><use href="#icon-moon"></use></svg>
+            </button>
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -312,7 +346,7 @@
                         <div class="pump-runtime-main">
                             <div>
                                 <div class="runtime-eyebrow" id="pump-sync-state">กำลังดึงข้อมูลสถานะ...</div>
-                                <h2 id="pump-running-label">สถานะการทำงาน: --</h2>
+                                <h2 id="pump-running-label">สถานะการทำงาน: <span class="skeleton">กำลังโหลด</span></h2>
                             </div>
                             <div class="pump-countdown-wrap">
                                 <svg class="progress-ring" width="140" height="140" viewBox="0 0 140 140">
@@ -322,34 +356,34 @@
                                 </svg>
                                 <div class="pump-countdown-content">
                                     <span class="summary-label">เวลาคงเหลือในรอบ</span>
-                                    <div class="pump-countdown" id="pump-countdown">--:--</div>
+                                    <div class="pump-countdown" id="pump-countdown"><span class="skeleton">00:00</span></div>
                                 </div>
                             </div>
                         </div>
                         <div class="pump-runtime-grid">
                             <div class="runtime-stat primary">
                                 <span class="summary-label" lang="en">Timer</span>
-                                <strong id="pump-active-timer">--</strong>
+                                <strong id="pump-active-timer"><span class="skeleton">Timer 1</span></strong>
                             </div>
                             <div class="runtime-stat primary">
                                 <span class="summary-label" lang="en">Phase</span>
-                                <strong id="pump-phase">--</strong>
+                                <strong id="pump-phase"><span class="skeleton">ON (00s)</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label" lang="en">Float Switch</span>
-                                <strong id="pump-float-state">--</strong>
+                                <strong id="pump-float-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat primary">
                                 <span class="summary-label" lang="en">Active Relay</span>
-                                <strong id="pump-relay-state">--</strong>
+                                <strong id="pump-relay-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label" lang="en">Relay 1</span>
-                                <strong id="pump-relay-1-state">--</strong>
+                                <strong id="pump-relay-1-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label" lang="en">Relay 2</span>
-                                <strong id="pump-relay-2-state">--</strong>
+                                <strong id="pump-relay-2-state"><span class="skeleton">OFF</span></strong>
                             </div>
                         </div>
                         <div class="pump-runtime-actions">
@@ -366,7 +400,7 @@
                         <summary>
                             <div>
                                 <h3 style="margin-bottom: 0;">ตั้งค่าการสลับรอบทำงาน (<span lang="en">Timer Settings</span>)</h3>
-                                <p style="font-size: var(--text-sm); color: var(--outline); margin-top: 4px; margin-bottom: 0;">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (ลูกลอย <span lang="en">OFF</span> ใช้ <span lang="en">Timer 1</span> / ลูกลอย <span lang="en">ON</span> ใช้ <span lang="en">Timer 2</span>)</p>
+                                <p style="font-size: var(--text-sm); color: var(--outline); margin-top: 4px; margin-bottom: 0;">ปั๊มจะสลับชุดรอบเวลาตามสถานะลูกลอย (Float ลอย (ON) = เลือก Timer 2 / Float จม (OFF) = เลือก Timer 1)</p>
                             </div>
                             <span class="settings-state" id="pump-config-state" style="margin-left: auto; margin-right: var(--sp-md); font-size: var(--text-sm); white-space: nowrap;">กำลังโหลดการตั้งค่า...</span>
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
@@ -378,14 +412,21 @@
                                 <div class="timer-grid">
                                     <fieldset class="timer-card">
                                         <legend><span lang="en">Timer 1 / Relay 1</span> (เมื่อลูกลอย <span lang="en">OFF</span>)</legend>
+                                        <p class="text-xs text-muted" style="margin-top: calc(-1 * var(--space-1)); margin-bottom: var(--space-3);">Float จม (OFF) = เลือกใช้รอบเวลา Timer 1 นี้</p>
                                         <div class="duration-row">
                                             <div class="duration-field">
-                                                <label for="timer1-on-min">ระยะเวลาทำงาน (นาที)</label>
+                                                <label for="timer1-on-min">
+                                                    ระยะเวลาทำงาน (นาที)
+                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–99 นาที)</small>
+                                                </label>
                                                 <input id="timer1-on-min" type="number" min="0" step="1"
                                                     inputmode="numeric">
                                             </div>
                                             <div class="duration-field">
-                                                <label for="timer1-on-sec">ระยะเวลาทำงาน (วินาที)</label>
+                                                <label for="timer1-on-sec">
+                                                    ระยะเวลาทำงาน (วินาที)
+                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
+                                                </label>
                                                 <input id="timer1-on-sec" type="number" min="0" max="59" step="1"
                                                     inputmode="numeric">
                                             </div>
@@ -393,19 +434,28 @@
                                         <div class="field-error" id="timer1-on-error"></div>
                                         <div class="duration-row">
                                             <div class="duration-field">
-                                                <label for="timer1-off-min">ระยะเวลาหยุดพัก (นาที)</label>
+                                                <label for="timer1-off-min">
+                                                    ระยะเวลาหยุดพัก (นาที)
+                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–99 นาที)</small>
+                                                </label>
                                                 <input id="timer1-off-min" type="number" min="0" step="1"
                                                     inputmode="numeric">
                                             </div>
                                             <div class="duration-field">
-                                                <label for="timer1-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
+                                                <label for="timer1-off-sec">
+                                                    ระยะเวลาหยุดพัก (วินาที)
+                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
+                                                </label>
                                                 <input id="timer1-off-sec" type="number" min="0" max="59" step="1"
                                                     inputmode="numeric">
                                             </div>
                                         </div>
                                         <div class="field-error" id="timer1-off-error"></div>
                                         <div class="duration-field start-phase-field">
-                                            <label for="timer1-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
+                                            <label for="timer1-start-phase">
+                                                เริ่มต้นรอบเวลาด้วยสถานะ
+                                                <small class="field-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
+                                            </label>
                                             <select id="timer1-start-phase" name="timer1_start_phase">
                                                 <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
                                                 <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
@@ -416,14 +466,21 @@
 
                                     <fieldset class="timer-card">
                                         <legend><span lang="en">Timer 2 / Relay 2</span> (เมื่อลูกลอย <span lang="en">ON</span>)</legend>
+                                        <p class="text-xs text-muted" style="margin-top: calc(-1 * var(--space-1)); margin-bottom: var(--space-3);">Float ลอย (ON) = เลือกใช้รอบเวลา Timer 2 นี้</p>
                                         <div class="duration-row">
                                             <div class="duration-field">
-                                                <label for="timer2-on-min">ระยะเวลาทำงาน (นาที)</label>
+                                                <label for="timer2-on-min">
+                                                    ระยะเวลาทำงาน (นาที)
+                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–99 นาที)</small>
+                                                </label>
                                                 <input id="timer2-on-min" type="number" min="0" step="1"
                                                     inputmode="numeric">
                                             </div>
                                             <div class="duration-field">
-                                                <label for="timer2-on-sec">ระยะเวลาทำงาน (วินาที)</label>
+                                                <label for="timer2-on-sec">
+                                                    ระยะเวลาทำงาน (วินาที)
+                                                    <small class="field-hint">ปั๊มจะทำงานนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
+                                                </label>
                                                 <input id="timer2-on-sec" type="number" min="0" max="59" step="1"
                                                     inputmode="numeric">
                                             </div>
@@ -431,19 +488,28 @@
                                         <div class="field-error" id="timer2-on-error"></div>
                                         <div class="duration-row">
                                             <div class="duration-field">
-                                                <label for="timer2-off-min">ระยะเวลาหยุดพัก (นาที)</label>
+                                                <label for="timer2-off-min">
+                                                    ระยะเวลาหยุดพัก (นาที)
+                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–99 นาที)</small>
+                                                </label>
                                                 <input id="timer2-off-min" type="number" min="0" step="1"
                                                     inputmode="numeric">
                                             </div>
                                             <div class="duration-field">
-                                                <label for="timer2-off-sec">ระยะเวลาหยุดพัก (วินาที)</label>
+                                                <label for="timer2-off-sec">
+                                                    ระยะเวลาหยุดพัก (วินาที)
+                                                    <small class="field-hint">ปั๊มจะหยุดนานเท่านี้ต่อรอบ (0–59 วินาที)</small>
+                                                </label>
                                                 <input id="timer2-off-sec" type="number" min="0" max="59" step="1"
                                                     inputmode="numeric">
                                             </div>
                                         </div>
                                         <div class="field-error" id="timer2-off-error"></div>
                                         <div class="duration-field start-phase-field">
-                                            <label for="timer2-start-phase">เริ่มต้นรอบเวลาด้วยสถานะ</label>
+                                            <label for="timer2-start-phase">
+                                                เริ่มต้นรอบเวลาด้วยสถานะ
+                                                <small class="field-hint">ON = ปั๊มเริ่มทำงานทันที / OFF = ปั๊มรอรอบถัดไปก่อน</small>
+                                            </label>
                                             <select id="timer2-start-phase" name="timer2_start_phase">
                                                 <option value="on">เริ่มทำงานทันที (เปิดปั๊มก่อน)</option>
                                                 <option value="off">เริ่มหยุดพักก่อน (ปิดปั๊มก่อน)</option>
@@ -516,50 +582,50 @@
                         <div class="cooling-runtime-grid">
                             <div class="runtime-stat primary">
                                 <span class="summary-label">อุณหภูมิ</span>
-                                <strong id="cooling-temperature" class="mono">--</strong>
+                                <strong id="cooling-temperature" class="mono"><span class="skeleton">00.0°C</span></strong>
                             </div>
                             <div class="runtime-stat primary">
                                 <span class="summary-label">สถานะรีเลย์</span>
-                                <strong id="cooling-relay-state">--</strong>
+                                <strong id="cooling-relay-state"><span class="skeleton">OFF</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">โหมดทำงาน</span>
-                                <strong id="cooling-mode-state">--</strong>
+                                <strong id="cooling-mode-state"><span class="skeleton">AUTO</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">สถานะเซนเซอร์</span>
-                                <strong id="cooling-sensor-state">--</strong>
+                                <strong id="cooling-sensor-state"><span class="skeleton">ปกติ</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">สถานะความผิดปกติ (<span lang="en">Fault</span>)</span>
-                                <strong id="cooling-fault-state">--</strong>
+                                <strong id="cooling-fault-state"><span class="skeleton">ปกติ</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">อุณหภูมิเป้าหมาย</span>
-                                <strong id="cooling-threshold" class="mono">--</strong>
+                                <strong id="cooling-threshold" class="mono"><span class="skeleton">00.0°C</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">ช่วงอุณหภูมิเบี่ยงเบน</span>
-                                <strong id="cooling-hysteresis" class="mono">--</strong>
+                                <strong id="cooling-hysteresis" class="mono"><span class="skeleton">0.0°C</span></strong>
                             </div>
                             <div class="runtime-stat">
                                 <span class="summary-label">ทำงานอัตโนมัติหลังบูต</span>
-                                <strong id="cooling-auto-enable-state">--</strong>
+                                <strong id="cooling-auto-enable-state"><span class="skeleton">OFF</span></strong>
                             </div>
                         </div>
 
                         <div class="cooling-detail-row">
                             <div class="summary-item">
                                 <span class="summary-label">สาเหตุการหยุดชั่วคราว</span>
-                                <span class="summary-value" id="cooling-blocked-reason">--</span>
+                                <span class="summary-value" id="cooling-blocked-reason"><span class="skeleton">ไม่มี</span></span>
                             </div>
                             <div class="summary-item">
                                 <span class="summary-label">เวลาป้องกันเปิดซ้ำ</span>
-                                <span class="summary-value mono" id="cooling-lockout">--</span>
+                                <span class="summary-value mono" id="cooling-lockout"><span class="skeleton">00:00</span></span>
                             </div>
                             <div class="summary-item">
                                 <span class="summary-label">เวลาที่เหลือในการเปิดทดสอบ</span>
-                                <span class="summary-value mono" id="cooling-test-remaining">--</span>
+                                <span class="summary-value mono" id="cooling-test-remaining"><span class="skeleton">00:00</span></span>
                             </div>
                         </div>
 
@@ -586,22 +652,34 @@
                             <form class="cooling-config-form flex-col-1" id="cooling-config-form" novalidate style="margin-top: var(--sp-md);">
                                 <div class="cooling-config-grid">
                                     <div class="duration-field">
-                                        <label for="cooling-threshold-input">อุณหภูมิเป้าหมาย (°C)</label>
+                                        <label for="cooling-threshold-input">
+                                            อุณหภูมิเป้าหมาย (°C)
+                                            <small class="field-hint">ปกติจะตั้งในช่วง 28–30°C สำหรับปลาสวยงาม (ตั้งได้ตั้งแต่ -55 ถึง 125°C)</small>
+                                        </label>
                                         <input id="cooling-threshold-input" type="number" min="-55" max="125" step="0.1"
                                             inputmode="decimal">
                                     </div>
                                     <div class="duration-field">
-                                        <label for="cooling-hysteresis-input">ส่วนต่างเพื่อเริ่มทำงานใหม่ / <span lang="en">Hysteresis</span> (°C)</label>
+                                        <label for="cooling-hysteresis-input">
+                                            ส่วนต่างเพื่อเริ่มทำงานใหม่ / <span lang="en">Hysteresis</span> (°C)
+                                            <small class="field-hint">ความต่างอุณหภูมิเพื่อเริ่มทำงานใหม่ (ปกติ 1.0°C / ตั้งได้ 0.1–50°C)</small>
+                                        </label>
                                         <input id="cooling-hysteresis-input" type="number" min="0.1" max="50" step="0.1"
                                             inputmode="decimal">
                                     </div>
                                     <div class="duration-field">
-                                        <label for="cooling-test-timeout">ระยะเวลาเปิดทดสอบปั๊ม/พัดลม (วินาที)</label>
+                                        <label for="cooling-test-timeout">
+                                            ระยะเวลาเปิดทดสอบปั๊ม/พัดลม (วินาที)
+                                            <small class="field-hint">ระบบจะเปิดการทำงานทดสอบชั่วคราวตามเวลาที่กำหนด (ปกติ 10–30 วินาที)</small>
+                                        </label>
                                         <input id="cooling-test-timeout" type="number" min="1" max="3600" step="1"
                                             inputmode="numeric">
                                     </div>
                                     <div class="duration-field">
-                                        <label for="cooling-min-off">เวลาหน่วงเปิดซ้ำขั้นต่ำ / <span lang="en">Short-cycle Delay</span> (วินาที)</label>
+                                        <label for="cooling-min-off">
+                                            เวลาหน่วงเปิดซ้ำขั้นต่ำ / <span lang="en">Short-cycle Delay</span> (วินาที)
+                                            <small class="field-hint">เวลาหน่วงเปิดซ้ำขั้นต่ำเพื่อความปลอดภัย (ปกติ 10 วินาที / ตั้งได้สูงสุด 86,400 วินาที)</small>
+                                        </label>
                                         <input id="cooling-min-off" type="number" min="0" max="86400" step="1"
                                             inputmode="numeric">
                                     </div>
@@ -676,31 +754,31 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Chip</th>
-                                <td class="info-value mono" id="st-chip-model">--</td>
+                                <td class="info-value mono" id="st-chip-model"><span class="skeleton">ESP32-D0WDQ6</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Revision</th>
-                                <td class="info-value mono" id="st-chip-revision">--</td>
+                                <td class="info-value mono" id="st-chip-revision"><span class="skeleton">1</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Cores</th>
-                                <td class="info-value mono" id="st-chip-cores">--</td>
+                                <td class="info-value mono" id="st-chip-cores"><span class="skeleton">2</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">CPU Speed</th>
-                                <td class="info-value mono" id="st-cpu-freq">--</td>
+                                <td class="info-value mono" id="st-cpu-freq"><span class="skeleton">240 MHz</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IDF Version</th>
-                                <td class="info-value mono" id="st-idf-version">--</td>
+                                <td class="info-value mono" id="st-idf-version"><span class="skeleton">v6.0.1</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Firmware</th>
-                                <td class="info-value mono" id="st-project-version">--</td>
+                                <td class="info-value mono" id="st-project-version"><span class="skeleton">1.0.0</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Reset Reason</th>
-                                <td class="info-value mono" id="st-reset-reason">--</td>
+                                <td class="info-value mono" id="st-reset-reason"><span class="skeleton">POWERON_RESET</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -722,7 +800,7 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Free</th>
-                                <td class="info-value"><span id="st-free-heap" class="mono">--</span>
+                                <td class="info-value"><span id="st-free-heap" class="mono"><span class="skeleton">200 KB (00% used)</span></span>
                                     <div class="progress-bar-inline">
                                         <div class="fill" id="st-heap-bar"></div>
                                     </div>
@@ -730,15 +808,15 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Min Free</th>
-                                <td class="info-value mono" id="st-min-free-heap">--</td>
+                                <td class="info-value mono" id="st-min-free-heap"><span class="skeleton">180 KB</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Largest Block</th>
-                                <td class="info-value mono" id="st-largest-free-block">--</td>
+                                <td class="info-value mono" id="st-largest-free-block"><span class="skeleton">120 KB</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Total DRAM</th>
-                                <td class="info-value mono" id="st-total-heap">--</td>
+                                <td class="info-value mono" id="st-total-heap"><span class="skeleton">320 KB</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -755,7 +833,7 @@
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg></span>
                     </div>
-                    <div class="card-value mono" id="st-uptime">--</div>
+                    <div class="card-value mono" id="st-uptime"><span class="skeleton">0d 00h 00m 00s</span></div>
                     <div class="card-sub neutral">ระยะเวลาการทำงานทั้งหมดตั้งแต่เปิดเครื่อง</div>
                 </div>
 
@@ -773,31 +851,31 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Status</th>
-                                <td class="info-value" id="st-sta-status">--</td>
+                                <td class="info-value" id="st-sta-status"><span class="skeleton">กำลังโหลด</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value mono" id="st-sta-ssid">--</td>
+                                <td class="info-value mono" id="st-sta-ssid"><span class="skeleton">SSID_NAME</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value mono" id="st-sta-ip">--</td>
+                                <td class="info-value mono" id="st-sta-ip"><span class="skeleton">192.168.1.100</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">RSSI</th>
-                                <td class="info-value mono" id="st-sta-rssi">--</td>
+                                <td class="info-value mono" id="st-sta-rssi"><span class="skeleton">-00 dBm</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Channel</th>
-                                <td class="info-value mono" id="st-sta-channel">--</td>
+                                <td class="info-value mono" id="st-sta-channel"><span class="skeleton">11</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Auth</th>
-                                <td class="info-value" id="st-sta-auth">--</td>
+                                <td class="info-value" id="st-sta-auth"><span class="skeleton">WPA2_PSK</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">MAC</th>
-                                <td class="info-value mono" id="st-mac-sta">--</td>
+                                <td class="info-value mono" id="st-mac-sta"><span class="skeleton">00:00:00:00:00:00</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -819,23 +897,23 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value mono" id="st-ap-ssid">--</td>
+                                <td class="info-value mono" id="st-ap-ssid"><span class="skeleton">FishPump-Setup</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value mono" id="st-ap-ip">--</td>
+                                <td class="info-value mono" id="st-ap-ip"><span class="skeleton">192.168.4.1</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Clients</th>
-                                <td class="info-value mono" id="st-ap-clients">--</td>
+                                <td class="info-value mono" id="st-ap-clients"><span class="skeleton">0</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Weakest RSSI</th>
-                                <td class="info-value mono" id="st-ap-client-rssi">--</td>
+                                <td class="info-value mono" id="st-ap-client-rssi"><span class="skeleton">N/A</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">MAC</th>
-                                <td class="info-value mono" id="st-mac-ap">--</td>
+                                <td class="info-value mono" id="st-mac-ap"><span class="skeleton">00:00:00:00:00:00</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -855,19 +933,19 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Wi-Fi Mode</th>
-                                <td class="info-value mono" id="st-wifi-mode">--</td>
+                                <td class="info-value mono" id="st-wifi-mode"><span class="skeleton">APSTA</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">DNS Server</th>
-                                <td class="info-value" id="st-dns-status">--</td>
+                                <td class="info-value" id="st-dns-status"><span class="skeleton">Running</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Static Web Errors</th>
-                                <td class="info-value mono" id="st-http-static-errors">--</td>
+                                <td class="info-value mono" id="st-http-static-errors"><span class="skeleton">0</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">JSON API Errors</th>
-                                <td class="info-value mono" id="st-http-json-errors">--</td>
+                                <td class="info-value mono" id="st-http-json-errors"><span class="skeleton">0</span></td>
                             </tr>
                         </tbody>
                     </table>

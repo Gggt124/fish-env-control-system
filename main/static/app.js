@@ -857,6 +857,18 @@ function handlePumpStatusFailure() {
     }
     if (stale) {
         setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงค์สำเร็จ');
+        setText('pump-active-timer', '--');
+        setHtml('pump-phase', '--');
+        setHtml('pump-float-state', '--');
+        setHtml('pump-relay-state', '--');
+        setHtml('pump-relay-1-state', '--');
+        setHtml('pump-relay-2-state', '--');
+        setText('pump-countdown', '--:--');
+        var label = document.getElementById('pump-running-label');
+        if (label) {
+            clearSkeleton(label);
+            label.textContent = 'สถานะการทำงาน: --';
+        }
     }
     updatePumpButtons();
 }
@@ -1397,6 +1409,17 @@ function handleCoolingStatusFailure() {
     }
     if (stale) {
         setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
+        setText('cooling-temperature', '--');
+        setHtml('cooling-relay-state', '--');
+        setText('cooling-mode-state', '--');
+        setHtml('cooling-sensor-state', '--');
+        setHtml('cooling-fault-state', '--');
+        setText('cooling-threshold', '--');
+        setText('cooling-hysteresis', '--');
+        setHtml('cooling-auto-enable-state', '--');
+        setText('cooling-blocked-reason', '--');
+        setText('cooling-lockout', '--');
+        setText('cooling-test-remaining', '--');
     }
     updateCoolingButtons();
 }
@@ -1782,6 +1805,21 @@ function initStatus() {
     statusInterval = setInterval(refreshFullStatus, 30000);
 }
 
+function clearStatusSkeletonsToOffline() {
+    var ids = [
+        'st-chip-model', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
+        'st-idf-version', 'st-project-version', 'st-reset-reason',
+        'st-free-heap', 'st-min-free-heap', 'st-largest-free-block', 'st-total-heap',
+        'st-uptime', 'st-sta-status', 'st-sta-ssid', 'st-sta-ip', 'st-sta-rssi',
+        'st-sta-channel', 'st-sta-auth', 'st-mac-sta', 'st-ap-ssid', 'st-ap-ip',
+        'st-ap-clients', 'st-ap-client-rssi', 'st-mac-ap', 'st-wifi-mode',
+        'st-dns-status', 'st-http-static-errors', 'st-http-json-errors'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        setText(ids[i], '--');
+    }
+}
+
 function refreshFullStatus() {
     if (document.hidden) return;
     if (statusFullRequestInFlight) return;
@@ -1796,6 +1834,7 @@ function refreshFullStatus() {
                 dot.className = 'status-dot off';
                 txt.textContent = 'Offline';
             }
+            clearStatusSkeletonsToOffline();
             return;
         }
 
@@ -1869,14 +1908,28 @@ function refreshFullStatus() {
     });
 }
 
+function clearSkeleton(el) {
+    if (!el) return;
+    var s = el.querySelector('.skeleton');
+    if (s) {
+        el.innerHTML = '';
+    }
+}
+
 function setText(id, val) {
     var el = document.getElementById(id);
-    if (el) el.textContent = val;
+    if (el) {
+        clearSkeleton(el);
+        el.textContent = val;
+    }
 }
 
 function setHtml(id, val) {
     var el = document.getElementById(id);
-    if (el) el.innerHTML = val;
+    if (el) {
+        clearSkeleton(el);
+        el.innerHTML = val;
+    }
 }
 
 function refreshStatus() {
@@ -3032,6 +3085,7 @@ window.addEventListener('popstate', handleRoute);
         });
     }
 
+    updateThemeIcons(getEffectiveTheme());
     handleRoute();
 })();
 
@@ -3061,17 +3115,30 @@ function cancelStaging() {
     });
 }
 
-function handleMobileSync() {
-    var path = window.location.pathname;
-    if (path === '/dashboard') {
-        if (typeof syncPumpStatus === 'function') syncPumpStatus(true);
-        if (typeof syncCoolingStatus === 'function') syncCoolingStatus(true);
-    } else if (path === '/status') {
-        if (typeof refreshFullStatus === 'function') refreshFullStatus();
-    } else if (path === '/hardware') {
-        if (typeof loadHardwareMap === 'function') loadHardwareMap();
-    } else if (path === '/wifi') {
-        if (typeof doScan === 'function') doScan();
+/* === Theme Management === */
+function getEffectiveTheme() {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function cycleTheme() {
+    var next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    updateThemeIcons(next);
+}
+function updateThemeIcons(theme) {
+    var btns = document.querySelectorAll('.theme-toggle use');
+    var icon = theme === 'dark' ? '#icon-sun' : '#icon-moon';
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].setAttribute('href', icon);
     }
 }
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var t = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        updateThemeIcons(t);
+    }
+});
 
