@@ -7,14 +7,14 @@
     <title>Fish Pump Control</title>
     <meta name="description" content="Fish Pump Relay Timer Control — ระบบควบคุมปั๊มน้ำปลาผ่าน ESP32">
     <script>
-    (function(){
-        var t = localStorage.getItem('theme');
-        if (t === 'dark' || t === 'light') {
-            document.documentElement.setAttribute('data-theme', t);
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        }
-    })();
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (t === 'dark' || t === 'light') {
+                document.documentElement.setAttribute('data-theme', t);
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
     </script>
     <link rel="stylesheet" href="/style.css">
 </head>
@@ -28,22 +28,24 @@
     <svg class="hidden" aria-hidden="true">
         <defs>
             <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/>
-                <line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
             </symbol>
             <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
             </symbol>
             <symbol id="icon-gear" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+                </path>
             </symbol>
             <symbol id="icon-sync" viewBox="0 0 24 24">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path>
@@ -64,7 +66,9 @@
                 <line x1="12" y1="20" x2="12.01" y2="20"></line>
             </symbol>
             <symbol id="icon-hardware" viewBox="0 0 24 24">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                </path>
             </symbol>
             <symbol id="icon-lock" viewBox="0 0 24 24">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -106,7 +110,8 @@
             <symbol id="icon-float" viewBox="0 0 24 24">
                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
             </symbol>
-            <symbol id="icon-temp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-temp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
             </symbol>
             <symbol id="icon-cooling" viewBox="0 0 24 24">
@@ -120,7 +125,8 @@
             <symbol id="icon-globe" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z">
+                </path>
             </symbol>
             <symbol id="icon-link" viewBox="0 0 24 24">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
@@ -142,61 +148,76 @@
                 <circle cx="12" cy="12" r="6"></circle>
                 <circle cx="12" cy="12" r="2"></circle>
             </symbol>
-            <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </symbol>
-            <symbol id="icon-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
             </symbol>
-            <symbol id="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="6" y1="4" x2="6" y2="20"></line>
                 <line x1="18" y1="4" x2="18" y2="20"></line>
             </symbol>
-            <symbol id="icon-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
             </symbol>
-            <symbol id="icon-relay-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-relay-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </symbol>
-            <symbol id="icon-relay-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-relay-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
             </symbol>
-            <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </symbol>
-            <symbol id="icon-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <symbol id="icon-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                </path>
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </symbol>
-            <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="15" y1="9" x2="9" y2="15"></line>
                 <line x1="9" y1="9" x2="15" y2="15"></line>
             </symbol>
-            <symbol id="icon-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5"></line>
                 <polyline points="5 12 12 5 19 12"></polyline>
             </symbol>
-            <symbol id="icon-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <polyline points="19 12 12 19 5 12"></polyline>
             </symbol>
-            <symbol id="icon-fan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-fan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 12v-7a4 4 0 0 0-4 4v3z"></path>
                 <path d="M12 12h7a4 4 0 0 0-4-4h-3z"></path>
                 <path d="M12 12v7a4 4 0 0 0 4-4v-3z"></path>
                 <path d="M12 12h-7a4 4 0 0 0 4 4h3z"></path>
             </symbol>
-            <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                 <polyline points="7 3 7 8 15 8"></polyline>
             </symbol>
-            <symbol id="icon-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <symbol id="icon-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 4 23 10 17 10"></polyline>
                 <polyline points="1 20 1 14 7 14"></polyline>
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -208,9 +229,11 @@
     <!-- Sidebar (Desktop & Mobile) -->
     <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-brand">
-            <div class="brand-name" lang="en">Fish Pump Control</div>
             <div class="sidebar-node-info">
-                <div class="node-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><use href="#icon-gear"></use></svg></div>
+                <div class="node-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                        <use href="#icon-hardware"></use>
+                    </svg></div>
                 <div>
                     <div class="node-name" lang="en">Fish Pump Control</div>
                     <div class="node-status">
@@ -234,7 +257,10 @@
                     </svg></span> <span lang="en">Cooling Control</span>
             </a>
             <a href="/status" class="nav-item" id="nav-status">
-                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><use href="#icon-gear"></use></svg></span> <span lang="en">System Status</span>
+                <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
+                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                        <use href="#icon-gear"></use>
+                    </svg></span> <span lang="en">System Status</span>
             </a>
             <a href="/wifi" class="nav-item" id="nav-wifi">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
@@ -248,16 +274,20 @@
                         <use href="#icon-hardware"></use>
                     </svg></span> <span lang="en">Hardware/Install</span>
             </a>
+            <div style="margin-top: auto; padding: var(--space-4) 0 var(--space-6) var(--space-2);">
+                <button class="theme-toggle" id="theme-toggle-desktop" onclick="cycleTheme()" aria-label="สลับธีม">
+                    <svg width="20" height="20">
+                        <use href="#icon-moon"></use>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+        <div class="sidebar-bottom">
             <button class="nav-item" id="nav-logout" onclick="doLogout();return false;">
                 <span class="nav-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
                         stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                         <use href="#icon-logout"></use>
                     </svg></span> <span lang="en">Logout</span>
-            </button>
-        </nav>
-        <div class="sidebar-bottom">
-            <button class="theme-toggle" id="theme-toggle-desktop" onclick="cycleTheme()" aria-label="สลับธีม">
-                <svg width="20" height="20"><use href="#icon-moon"></use></svg>
             </button>
         </div>
     </aside>
@@ -265,10 +295,13 @@
     <!-- Main Content -->
     <main id="app-content" class="main-content" aria-label="Application content">
         <div id="staging-banner" class="alert-banner hidden">
-            <span>⚠️ <strong>กำลังทดสอบการตั้งค่าใหม่:</strong> ระบบจะกู้คืนการตั้งค่าเดิมโดยอัตโนมัติใน 3 นาที หากคุณไม่ยืนยันว่าการทำงานปกติ</span>
+            <span>⚠️ <strong>กำลังทดสอบการตั้งค่าใหม่:</strong> ระบบจะกู้คืนการตั้งค่าเดิมโดยอัตโนมัติใน 3 นาที
+                หากคุณไม่ยืนยันว่าการทำงานปกติ</span>
             <div class="banner-actions">
-                <button class="btn btn-primary" onclick="confirmStaging()">ยืนยันใช้งาน (<span lang="en">Confirm</span>)</button>
-                <button class="btn btn-danger" onclick="cancelStaging()">กู้คืนค่าเดิม (<span lang="en">Cancel</span>)</button>
+                <button class="btn btn-primary" onclick="confirmStaging()">ยืนยันใช้งาน (<span
+                        lang="en">Confirm</span>)</button>
+                <button class="btn btn-danger" onclick="cancelStaging()">กู้คืนค่าเดิม (<span
+                        lang="en">Cancel</span>)</button>
             </div>
         </div>
         <section id="view-login" class="view hidden" aria-hidden="true">
@@ -333,9 +366,10 @@
                     <p>ติดตามสถานะปั๊มน้ำและควบคุมรอบเวลา <span lang="en">Timer 1 / Timer 2</span></p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)" aria-label="ซิงค์ข้อมูลปั๊ม"><svg viewBox="0 0 24 24"
-                            width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                    <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)"
+                        aria-label="ซิงค์ข้อมูลปั๊ม"><svg viewBox="0 0 24 24" width="14" height="14"
+                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                            stroke-linejoin="round" class="svg-icon">
                             <use href="#icon-sync"></use>
                         </svg> อัปเดตข้อมูล (<span lang="en">Sync</span>)</button>
                 </div>
@@ -349,7 +383,8 @@
                         <!-- Top Row: Header -->
                         <div class="hero-header">
                             <div class="hero-header-left">
-                                <span class="hero-state-badge" id="pump-active-timer"><span class="skeleton">Timer 1</span></span>
+                                <span class="hero-state-badge" id="pump-active-timer"><span class="skeleton">Timer
+                                        1</span></span>
                             </div>
                             <div class="hero-header-right">
                                 <div class="runtime-eyebrow" id="pump-sync-state">กำลังดึงข้อมูลสถานะ...</div>
@@ -359,9 +394,11 @@
                         <!-- Status Badge -->
                         <div class="hero-status-floating-badge" id="pump-status-floating-badge">
                             <div class="hero-title-group">
-                                <h2 class="hero-title" id="pump-running-label"><span class="skeleton">กำลังโหลด</span></h2>
+                                <h2 class="hero-title" id="pump-running-label"><span class="skeleton">กำลังโหลด</span>
+                                </h2>
                             </div>
-                            <p class="hero-desc" id="pump-state-desc">ระบบทำงานสลับชุดรอบเวลาตามสถานะลูกลอยและปั๊มน้ำ</p>
+                            <p class="hero-desc" id="pump-state-desc">ระบบทำงานสลับชุดรอบเวลาตามสถานะลูกลอยและปั๊มน้ำ
+                            </p>
                         </div>
 
                         <!-- Middle Row: Progress Timeline -->
@@ -369,10 +406,11 @@
                             <div class="hero-progress-header">
                                 <div class="hero-progress-label-wrap">
                                     <span class="hero-progress-title">เวลาคงเหลือในรอบ:</span>
-                                    <span class="hero-remaining-time" id="pump-countdown"><span class="skeleton">00:00</span></span>
+                                    <span class="hero-remaining-time" id="pump-countdown"><span
+                                            class="skeleton">00:00</span></span>
                                 </div>
                             </div>
-                            
+
                             <!-- Progress Bar -->
                             <div class="hero-progress-bar-container">
                                 <div class="hero-progress-bar-fill" id="pump-progress-bar-fill"></div>
@@ -384,36 +422,54 @@
                             <div class="hero-badges-group">
                                 <!-- Float State Badge -->
                                 <div class="hero-badge-card" id="pump-float-card" title="ตำแหน่งลูกลอยวัดระดับน้ำ">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-float"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-float"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">FLOAT SWITCH</span>
-                                        <span id="pump-float-state" class="hero-badge-value"><span class="skeleton">OFF</span></span>
+                                        <span id="pump-float-state" class="hero-badge-value"><span
+                                                class="skeleton">OFF</span></span>
                                     </div>
                                 </div>
 
                                 <!-- Relay 1 Badge -->
                                 <div class="hero-badge-card" id="pump-relay-1-card" title="สถานะรีเลย์ช่อง 1 (Timer 1)">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-power"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-power"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">RELAY 1</span>
-                                        <span id="pump-relay-1-state" class="hero-badge-value"><span class="skeleton">OFF</span></span>
+                                        <span id="pump-relay-1-state" class="hero-badge-value"><span
+                                                class="skeleton">OFF</span></span>
                                     </div>
                                 </div>
 
                                 <!-- Relay 2 Badge -->
                                 <div class="hero-badge-card" id="pump-relay-2-card" title="สถานะรีเลย์ช่อง 2 (Timer 2)">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-power"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-power"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">RELAY 2</span>
-                                        <span id="pump-relay-2-state" class="hero-badge-value"><span class="skeleton">OFF</span></span>
+                                        <span id="pump-relay-2-state" class="hero-badge-value"><span
+                                                class="skeleton">OFF</span></span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Action Buttons -->
                             <div class="pump-runtime-actions">
-                                <button class="btn btn-primary" id="pump-start-btn" type="button" disabled lang="en"><svg class="label-icon"><use href="#icon-play"></use></svg> Start</button>
-                                <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled lang="en"><svg class="label-icon"><use href="#icon-stop"></use></svg> Stop</button>
+                                <button class="btn btn-primary" id="pump-start-btn" type="button" disabled
+                                    lang="en"><svg class="label-icon">
+                                        <use href="#icon-play"></use>
+                                    </svg> Start</button>
+                                <button class="btn btn-danger" id="pump-stop-btn" type="button" disabled lang="en"><svg
+                                        class="label-icon">
+                                        <use href="#icon-stop"></use>
+                                    </svg> Stop</button>
                                 <span class="runtime-action-state" id="pump-action-state" aria-live="polite"></span>
                             </div>
                         </div>
@@ -427,10 +483,15 @@
                     <details class="settings-collapsible pump-settings">
                         <summary aria-expanded="false" aria-controls="pump-config-form">
                             <div>
-                                <h3 class="settings-title"><svg class="label-icon" style="width:20px; height:20px; vertical-align:-4px;"><use href="#icon-timer"></use></svg> ตั้งค่าเวลา (<span lang="en">Timer Settings</span>)</h3>
+                                <h3 class="settings-title"><svg class="label-icon"
+                                        style="width:20px; height:20px; vertical-align:-4px;">
+                                        <use href="#icon-timer"></use>
+                                    </svg> ตั้งค่าเวลา (<span lang="en">Timer Settings</span>)</h3>
                             </div>
-                            <span class="settings-state settings-state-label" id="pump-config-state">กำลังโหลดการตั้งค่า...</span>
-                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
+                            <span class="settings-state settings-state-label"
+                                id="pump-config-state">กำลังโหลดการตั้งค่า...</span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </summary>
@@ -443,7 +504,9 @@
                                         <div class="timer-card-header">
                                             <div class="timer-card-title">
                                                 <span class="timer-badge">
-                                                    <svg class="badge-icon"><use href="#icon-timer"></use></svg> Timer 1
+                                                    <svg class="badge-icon">
+                                                        <use href="#icon-timer"></use>
+                                                    </svg> Timer 1
                                                 </span>
                                                 <h4>ลูกลอยจม (<span lang="en">OFF</span>)</h4>
                                             </div>
@@ -455,17 +518,22 @@
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer1-on-min">
-                                                            <input id="timer1-on-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาทำงาน (นาที)">
+                                                            <input id="timer1-on-min" type="number" min="0" max="99"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 1 ระยะเวลาทำงาน (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer1-on-sec">
-                                                            <input id="timer1-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาทำงาน (วินาที)">
+                                                            <input id="timer1-on-sec" type="number" min="0" max="59"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 1 ระยะเวลาทำงาน (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="field-error" id="timer1-on-error" role="alert" aria-live="polite"></div>
+                                                <div class="field-error" id="timer1-on-error" role="alert"
+                                                    aria-live="polite"></div>
                                             </div>
 
                                             <div class="time-input-group">
@@ -473,27 +541,34 @@
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer1-off-min">
-                                                            <input id="timer1-off-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาหยุดพัก (นาที)">
+                                                            <input id="timer1-off-min" type="number" min="0" max="99"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 1 ระยะเวลาหยุดพัก (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer1-off-sec">
-                                                            <input id="timer1-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 1 ระยะเวลาหยุดพัก (วินาที)">
+                                                            <input id="timer1-off-sec" type="number" min="0" max="59"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 1 ระยะเวลาหยุดพัก (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="field-error" id="timer1-off-error" role="alert" aria-live="polite"></div>
+                                                <div class="field-error" id="timer1-off-error" role="alert"
+                                                    aria-live="polite"></div>
                                             </div>
                                         </div>
 
                                         <div class="time-input-group start-phase-group">
-                                            <label class="group-label" for="timer1-start-phase">เริ่มต้นด้วย (<span lang="en">Start Phase</span>)</label>
+                                            <label class="group-label" for="timer1-start-phase">เริ่มต้นด้วย (<span
+                                                    lang="en">Start Phase</span>)</label>
                                             <select id="timer1-start-phase" name="timer1_start_phase">
                                                 <option value="on">ทำงานก่อน (ON)</option>
                                                 <option value="off">หยุดพักก่อน (OFF)</option>
                                             </select>
-                                            <div class="field-error" id="timer1-start-phase-error" role="alert" aria-live="polite"></div>
+                                            <div class="field-error" id="timer1-start-phase-error" role="alert"
+                                                aria-live="polite"></div>
                                         </div>
                                     </div>
 
@@ -502,7 +577,9 @@
                                         <div class="timer-card-header">
                                             <div class="timer-card-title">
                                                 <span class="timer-badge">
-                                                    <svg class="badge-icon"><use href="#icon-timer"></use></svg> Timer 2
+                                                    <svg class="badge-icon">
+                                                        <use href="#icon-timer"></use>
+                                                    </svg> Timer 2
                                                 </span>
                                                 <h4>ลูกลอยลอย (<span lang="en">ON</span>)</h4>
                                             </div>
@@ -514,17 +591,22 @@
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer2-on-min">
-                                                            <input id="timer2-on-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาทำงาน (นาที)">
+                                                            <input id="timer2-on-min" type="number" min="0" max="99"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 2 ระยะเวลาทำงาน (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer2-on-sec">
-                                                            <input id="timer2-on-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาทำงาน (วินาที)">
+                                                            <input id="timer2-on-sec" type="number" min="0" max="59"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 2 ระยะเวลาทำงาน (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="field-error" id="timer2-on-error" role="alert" aria-live="polite"></div>
+                                                <div class="field-error" id="timer2-on-error" role="alert"
+                                                    aria-live="polite"></div>
                                             </div>
 
                                             <div class="time-input-group">
@@ -532,37 +614,45 @@
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer2-off-min">
-                                                            <input id="timer2-off-min" type="number" min="0" max="99" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาหยุดพัก (นาที)">
+                                                            <input id="timer2-off-min" type="number" min="0" max="99"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 2 ระยะเวลาหยุดพัก (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer2-off-sec">
-                                                            <input id="timer2-off-sec" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="00" aria-label="Timer 2 ระยะเวลาหยุดพัก (วินาที)">
+                                                            <input id="timer2-off-sec" type="number" min="0" max="59"
+                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                aria-label="Timer 2 ระยะเวลาหยุดพัก (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="field-error" id="timer2-off-error" role="alert" aria-live="polite"></div>
+                                                <div class="field-error" id="timer2-off-error" role="alert"
+                                                    aria-live="polite"></div>
                                             </div>
                                         </div>
 
                                         <div class="time-input-group start-phase-group">
-                                            <label class="group-label" for="timer2-start-phase">เริ่มต้นด้วย (<span lang="en">Start Phase</span>)</label>
+                                            <label class="group-label" for="timer2-start-phase">เริ่มต้นด้วย (<span
+                                                    lang="en">Start Phase</span>)</label>
                                             <select id="timer2-start-phase" name="timer2_start_phase">
                                                 <option value="on">ทำงานก่อน (ON)</option>
                                                 <option value="off">หยุดพักก่อน (OFF)</option>
                                             </select>
-                                            <div class="field-error" id="timer2-start-phase-error" role="alert" aria-live="polite"></div>
+                                            <div class="field-error" id="timer2-start-phase-error" role="alert"
+                                                aria-live="polite"></div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="settings-actions">
                                     <label class="toggle-row" for="pump-auto-start">
-                                        <div class="toggle-switch"><input id="pump-auto-start" type="checkbox" role="switch"><span
-                                                class="toggle-slider"></span></div>
+                                        <div class="toggle-switch"><input id="pump-auto-start" type="checkbox"
+                                                role="switch"><span class="toggle-slider"></span></div>
                                         <span>
-                                            <span>ทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span lang="en">Auto-start</span>)</span>
+                                            <span>ทำงานอัตโนมัติเมื่อเปิดเครื่อง (<span
+                                                    lang="en">Auto-start</span>)</span>
                                             <small>ระบบจะเริ่มทำงานทันทีเมื่อจ่ายไฟ</small>
                                         </span>
                                     </label>
@@ -570,10 +660,13 @@
                                         <span class="unsaved-warning hidden"
                                             id="pump-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
                                         <button class="btn btn-primary" id="pump-save-config" type="submit"
-                                            disabled><svg class="label-icon"><use href="#icon-save"></use></svg> บันทึกการตั้งค่าปั๊มน้ำ</button>
+                                            disabled><svg class="label-icon">
+                                                <use href="#icon-save"></use>
+                                            </svg> บันทึกการตั้งค่าปั๊มน้ำ</button>
                                     </div>
                                 </div>
-                                <div class="pump-alert hidden" id="pump-config-error" role="alert" aria-live="polite"></div>
+                                <div class="pump-alert hidden" id="pump-config-error" role="alert" aria-live="polite">
+                                </div>
                             </form>
                         </div>
                     </details>
@@ -590,12 +683,14 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">Cooling Control</h1>
-                    <p>ควบคุมพัดลมหรือระบบระบายความร้อนด้วยเซนเซอร์ <span lang="en">DS18B20</span> แยกอิสระจากระบบปั๊มน้ำ</p>
+                    <p>ควบคุมพัดลมหรือระบบระบายความร้อนด้วยเซนเซอร์ <span lang="en">DS18B20</span>
+                        แยกอิสระจากระบบปั๊มน้ำ</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" onclick="syncCoolingStatus(true)" aria-label="ซิงค์ข้อมูลระบบทำความเย็น"><svg viewBox="0 0 24 24"
-                            width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                    <button class="btn btn-outline btn-sm" onclick="syncCoolingStatus(true)"
+                        aria-label="ซิงค์ข้อมูลระบบทำความเย็น"><svg viewBox="0 0 24 24" width="14" height="14"
+                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                            stroke-linejoin="round" class="svg-icon">
                             <use href="#icon-sync"></use>
                         </svg> อัปเดตข้อมูล (<span lang="en">Sync</span>)</button>
                 </div>
@@ -608,7 +703,8 @@
                         <!-- Top Row: Header -->
                         <div class="hero-header">
                             <div class="hero-header-left">
-                                <span class="hero-state-badge" id="cooling-mode-state"><span class="skeleton">AUTO</span></span>
+                                <span class="hero-state-badge" id="cooling-mode-state"><span
+                                        class="skeleton">AUTO</span></span>
                                 <div class="hero-title-group">
                                     <h2 class="hero-title">สถานะระบบทำความเย็น</h2>
                                 </div>
@@ -624,14 +720,22 @@
                             <div class="temp-readout-row">
                                 <div class="temp-current">
                                     <span class="temp-label">อุณหภูมิปัจจุบัน</span>
-                                    <strong class="temp-value mono" id="cooling-temperature"><span class="skeleton">00.0°C</span></strong>
+                                    <strong class="temp-value mono" id="cooling-temperature"><span
+                                            class="skeleton">00.0°C</span></strong>
                                 </div>
                                 <div class="temp-divider">
-                                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="text-muted"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor"
+                                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                        class="text-muted">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
                                 </div>
                                 <div class="temp-target">
-                                    <span class="temp-label">เป้าหมาย (±<span id="cooling-hysteresis" class="mono"><span class="skeleton">0.0°C</span></span>)</span>
-                                    <strong class="temp-value mono text-muted" id="cooling-threshold"><span class="skeleton">00.0°C</span></strong>
+                                    <span class="temp-label">เป้าหมาย (±<span id="cooling-hysteresis" class="mono"><span
+                                                class="skeleton">0.0°C</span></span>)</span>
+                                    <strong class="temp-value mono text-muted" id="cooling-threshold"><span
+                                            class="skeleton">00.0°C</span></strong>
                                 </div>
                             </div>
                         </div>
@@ -641,34 +745,49 @@
                             <div class="hero-badges-group">
                                 <!-- Sensor Badge -->
                                 <div class="hero-badge-card" id="cooling-sensor-card" title="สถานะเซนเซอร์ DS18B20">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-temp"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-temp"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">SENSOR</span>
-                                        <span id="cooling-sensor-state" class="hero-badge-value"><span class="skeleton">ปกติ</span></span>
+                                        <span id="cooling-sensor-state" class="hero-badge-value"><span
+                                                class="skeleton">ปกติ</span></span>
                                     </div>
                                 </div>
 
                                 <!-- Relay Badge -->
                                 <div class="hero-badge-card" id="cooling-relay-card" title="สถานะการจ่ายไฟให้พัดลม">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-power"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-power"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">FAN RELAY</span>
-                                        <span id="cooling-relay-state" class="hero-badge-value"><span class="skeleton">OFF</span></span>
+                                        <span id="cooling-relay-state" class="hero-badge-value"><span
+                                                class="skeleton">OFF</span></span>
                                     </div>
                                 </div>
 
                                 <!-- Fault Badge -->
                                 <div class="hero-badge-card" id="cooling-fault-card" title="สถานะข้อผิดพลาด">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-alert-triangle"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-alert-triangle"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">FAULT</span>
-                                        <span id="cooling-fault-state" class="hero-badge-value"><span class="skeleton">ปกติ</span></span>
+                                        <span id="cooling-fault-state" class="hero-badge-value"><span
+                                                class="skeleton">ปกติ</span></span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Lockout / Test Time (if active) -->
                                 <div class="hero-badge-card" id="cooling-lockout-card" title="สถานะเวลาทำงาน">
-                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-timer"></use></svg></span>
+                                    <span class="hero-badge-icon"><svg viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="2" fill="none">
+                                            <use href="#icon-timer"></use>
+                                        </svg></span>
                                     <div class="hero-badge-info">
                                         <span class="hero-badge-label">LOCKOUT/TEST</span>
                                         <span id="cooling-lockout-test-state" class="hero-badge-value mono">--</span>
@@ -680,10 +799,20 @@
 
                             <!-- Action Buttons -->
                             <div class="pump-runtime-actions cooling-actions">
-                                <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled><svg class="label-icon"><use href="#icon-auto"></use></svg> Auto</button>
-                                <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled><svg class="label-icon"><use href="#icon-stop"></use></svg> Force OFF</button>
-                                <button class="btn btn-outline" id="cooling-test-on" type="button" disabled><svg class="label-icon"><use href="#icon-play"></use></svg> Test ON</button>
-                                <span class="runtime-action-state" id="cooling-mode-action-state" aria-live="polite"></span>
+                                <button class="btn btn-primary" id="cooling-mode-auto" type="button" disabled><svg
+                                        class="label-icon">
+                                        <use href="#icon-auto"></use>
+                                    </svg> Auto</button>
+                                <button class="btn btn-danger" id="cooling-mode-force-off" type="button" disabled><svg
+                                        class="label-icon">
+                                        <use href="#icon-stop"></use>
+                                    </svg> Force OFF</button>
+                                <button class="btn btn-outline" id="cooling-test-on" type="button" disabled><svg
+                                        class="label-icon">
+                                        <use href="#icon-play"></use>
+                                    </svg> Test ON</button>
+                                <span class="runtime-action-state" id="cooling-mode-action-state"
+                                    aria-live="polite"></span>
                             </div>
                         </div>
 
@@ -697,10 +826,15 @@
                     <details class="settings-collapsible cooling-settings">
                         <summary aria-expanded="false" aria-controls="cooling-config-form">
                             <div>
-                                <h3 class="settings-title"><svg class="label-icon" style="width:20px; height:20px; vertical-align:-4px;"><use href="#icon-fan"></use></svg> ตั้งค่าระบบทำความเย็น (<span lang="en">Cooling Settings</span>)</h3>
+                                <h3 class="settings-title"><svg class="label-icon"
+                                        style="width:20px; height:20px; vertical-align:-4px;">
+                                        <use href="#icon-fan"></use>
+                                    </svg> ตั้งค่าระบบทำความเย็น (<span lang="en">Cooling Settings</span>)</h3>
                             </div>
-                            <span class="settings-state settings-state-label" id="cooling-config-state">กำลังโหลดการตั้งค่า...</span>
-                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
+                            <span class="settings-state settings-state-label"
+                                id="cooling-config-state">กำลังโหลดการตั้งค่า...</span>
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </summary>
@@ -713,7 +847,9 @@
                                         <div class="timer-card-header">
                                             <div class="timer-card-title">
                                                 <span class="timer-badge">
-                                                    <svg class="badge-icon"><use href="#icon-temp"></use></svg> Rules
+                                                    <svg class="badge-icon">
+                                                        <use href="#icon-temp"></use>
+                                                    </svg> Rules
                                                 </span>
                                                 <h4>พารามิเตอร์ทำความเย็น</h4>
                                             </div>
@@ -721,11 +857,15 @@
 
                                         <div class="durations-row">
                                             <div class="time-input-group">
-                                                <label class="group-label" for="cooling-threshold-input">เป้าหมาย (°C)</label>
+                                                <label class="group-label" for="cooling-threshold-input">เป้าหมาย
+                                                    (°C)</label>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
-                                                        <label class="duration-part" style="flex:1" for="cooling-threshold-input">
-                                                            <input id="cooling-threshold-input" type="number" min="-55" max="125" step="0.1" inputmode="decimal" placeholder="28.0">
+                                                        <label class="duration-part" style="flex:1"
+                                                            for="cooling-threshold-input">
+                                                            <input id="cooling-threshold-input" type="number" min="-55"
+                                                                max="125" step="0.1" inputmode="decimal"
+                                                                placeholder="28.0">
                                                             <span class="duration-label">°C</span>
                                                         </label>
                                                     </div>
@@ -733,11 +873,15 @@
                                             </div>
 
                                             <div class="time-input-group">
-                                                <label class="group-label" for="cooling-hysteresis-input">เริ่มทำงานซ้ำ (±°C)</label>
+                                                <label class="group-label" for="cooling-hysteresis-input">เริ่มทำงานซ้ำ
+                                                    (±°C)</label>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
-                                                        <label class="duration-part" style="flex:1" for="cooling-hysteresis-input">
-                                                            <input id="cooling-hysteresis-input" type="number" min="0.1" max="50" step="0.1" inputmode="decimal" placeholder="1.0">
+                                                        <label class="duration-part" style="flex:1"
+                                                            for="cooling-hysteresis-input">
+                                                            <input id="cooling-hysteresis-input" type="number" min="0.1"
+                                                                max="50" step="0.1" inputmode="decimal"
+                                                                placeholder="1.0">
                                                             <span class="duration-label">°C</span>
                                                         </label>
                                                     </div>
@@ -747,11 +891,15 @@
 
                                         <div class="durations-row" style="margin-top: 1rem;">
                                             <div class="time-input-group">
-                                                <label class="group-label" for="cooling-test-timeout">เวลาทดสอบ ON (วินาที)</label>
+                                                <label class="group-label" for="cooling-test-timeout">เวลาทดสอบ ON
+                                                    (วินาที)</label>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
-                                                        <label class="duration-part" style="flex:1" for="cooling-test-timeout">
-                                                            <input id="cooling-test-timeout" type="number" min="1" max="3600" step="1" inputmode="numeric" placeholder="30">
+                                                        <label class="duration-part" style="flex:1"
+                                                            for="cooling-test-timeout">
+                                                            <input id="cooling-test-timeout" type="number" min="1"
+                                                                max="3600" step="1" inputmode="numeric"
+                                                                placeholder="30">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
                                                     </div>
@@ -759,11 +907,15 @@
                                             </div>
 
                                             <div class="time-input-group">
-                                                <label class="group-label" for="cooling-min-off">เวลาหน่วง (Lockout)</label>
+                                                <label class="group-label" for="cooling-min-off">เวลาหน่วง
+                                                    (Lockout)</label>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
-                                                        <label class="duration-part" style="flex:1" for="cooling-min-off">
-                                                            <input id="cooling-min-off" type="number" min="0" max="86400" step="1" inputmode="numeric" placeholder="10">
+                                                        <label class="duration-part" style="flex:1"
+                                                            for="cooling-min-off">
+                                                            <input id="cooling-min-off" type="number" min="0"
+                                                                max="86400" step="1" inputmode="numeric"
+                                                                placeholder="10">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
                                                     </div>
@@ -775,15 +927,20 @@
 
                                 <div class="settings-actions">
                                     <label class="toggle-row" for="cooling-auto-enable">
-                                        <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox" role="switch"><span class="toggle-slider"></span></div>
+                                        <div class="toggle-switch"><input id="cooling-auto-enable" type="checkbox"
+                                                role="switch"><span class="toggle-slider"></span></div>
                                         <span>
                                             <span>เปิดทำงานระบบความเย็นอัตโนมัติเมื่อเปิดเครื่อง</span>
                                             <small>กำหนดให้ทำงานตามอุณหภูมิทันทีเมื่อมีไฟเข้าอุปกรณ์</small>
                                         </span>
                                     </label>
                                     <div class="settings-button-row">
-                                        <span class="unsaved-warning hidden" id="cooling-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
-                                        <button class="btn btn-primary" id="cooling-save-config" type="submit" disabled><svg class="label-icon"><use href="#icon-save"></use></svg> บันทึกการตั้งค่าระบบทำความเย็น</button>
+                                        <span class="unsaved-warning hidden"
+                                            id="cooling-unsaved-warning">ตรวจพบการตั้งค่าที่ยังไม่ได้บันทึก</span>
+                                        <button class="btn btn-primary" id="cooling-save-config" type="submit"
+                                            disabled><svg class="label-icon">
+                                                <use href="#icon-save"></use>
+                                            </svg> บันทึกการตั้งค่าระบบทำความเย็น</button>
                                     </div>
                                 </div>
                                 <div class="pump-alert hidden" id="cooling-config-error"></div>
@@ -822,8 +979,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">System</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="3"></circle>
                                 <path
@@ -835,7 +992,8 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Chip</th>
-                                <td class="info-value mono" id="st-chip-model"><span class="skeleton">ESP32-D0WDQ6</span></td>
+                                <td class="info-value mono" id="st-chip-model"><span
+                                        class="skeleton">ESP32-D0WDQ6</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Revision</th>
@@ -851,20 +1009,26 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IDF Version</th>
-                                <td class="info-value mono" id="st-idf-version"><span class="skeleton">v6.0.1</span></td>
+                                <td class="info-value mono" id="st-idf-version"><span class="skeleton">v6.0.1</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Firmware</th>
-                                <td class="info-value mono" id="st-project-version"><span class="skeleton">1.0.0</span></td>
+                                <td class="info-value mono" id="st-project-version"><span class="skeleton">1.0.0</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Reset Reason</th>
-                                <td class="info-value mono" id="st-reset-reason"><span class="skeleton">POWERON_RESET</span></td>
+                                <td class="info-value mono" id="st-reset-reason"><span
+                                        class="skeleton">POWERON_RESET</span></td>
                             </tr>
                         </tbody>
                     </table>
                     <button class="btn btn-danger btn-block mt-md" onclick="doLogout(); return false;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><use href="#icon-logout"></use></svg>
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
+                            fill="none">
+                            <use href="#icon-logout"></use>
+                        </svg>
                         ออกจากระบบ (Logout)
                     </button>
                 </div>
@@ -873,8 +1037,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Memory</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -885,7 +1049,8 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Free</th>
-                                <td class="info-value"><span id="st-free-heap" class="mono"><span class="skeleton">200 KB (00% used)</span></span>
+                                <td class="info-value"><span id="st-free-heap" class="mono"><span class="skeleton">200
+                                            KB (00% used)</span></span>
                                     <div class="progress-bar-inline">
                                         <div class="fill" id="st-heap-bar"></div>
                                     </div>
@@ -893,11 +1058,13 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Min Free</th>
-                                <td class="info-value mono" id="st-min-free-heap"><span class="skeleton">180 KB</span></td>
+                                <td class="info-value mono" id="st-min-free-heap"><span class="skeleton">180 KB</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Largest Block</th>
-                                <td class="info-value mono" id="st-largest-free-block"><span class="skeleton">120 KB</span></td>
+                                <td class="info-value mono" id="st-largest-free-block"><span class="skeleton">120
+                                        KB</span></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Total DRAM</th>
@@ -911,8 +1078,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Uptime</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
@@ -926,8 +1093,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Wi-Fi Station</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <use href="#icon-wifi"></use>
                             </svg></span>
@@ -940,11 +1107,13 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value mono" id="st-sta-ssid"><span class="skeleton">SSID_NAME</span></td>
+                                <td class="info-value mono" id="st-sta-ssid"><span class="skeleton">SSID_NAME</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value mono" id="st-sta-ip"><span class="skeleton">192.168.1.100</span></td>
+                                <td class="info-value mono" id="st-sta-ip"><span class="skeleton">192.168.1.100</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">RSSI</th>
@@ -960,7 +1129,8 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">MAC</th>
-                                <td class="info-value mono" id="st-mac-sta"><span class="skeleton">00:00:00:00:00:00</span></td>
+                                <td class="info-value mono" id="st-mac-sta"><span
+                                        class="skeleton">00:00:00:00:00:00</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -970,8 +1140,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Access Point</span>
-                        <span class="text-lg text-secondary"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        <span class="text-lg text-secondary"><svg viewBox="0 0 24 24" width="18" height="18"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <circle cx="12" cy="12" r="6"></circle>
@@ -982,7 +1152,8 @@
                         <tbody>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value mono" id="st-ap-ssid"><span class="skeleton">FishPump-Setup</span></td>
+                                <td class="info-value mono" id="st-ap-ssid"><span class="skeleton">FishPump-Setup</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">IP</th>
@@ -994,11 +1165,13 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Weakest RSSI</th>
-                                <td class="info-value mono" id="st-ap-client-rssi"><span class="skeleton">N/A</span></td>
+                                <td class="info-value mono" id="st-ap-client-rssi"><span class="skeleton">N/A</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">MAC</th>
-                                <td class="info-value mono" id="st-mac-ap"><span class="skeleton">00:00:00:00:00:00</span></td>
+                                <td class="info-value mono" id="st-mac-ap"><span
+                                        class="skeleton">00:00:00:00:00:00</span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1008,8 +1181,8 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Services</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18"
-                                height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <use href="#icon-hardware"></use>
                             </svg></span>
@@ -1026,11 +1199,13 @@
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">Static Web Errors</th>
-                                <td class="info-value mono" id="st-http-static-errors"><span class="skeleton">0</span></td>
+                                <td class="info-value mono" id="st-http-static-errors"><span class="skeleton">0</span>
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row" class="info-label" lang="en">JSON API Errors</th>
-                                <td class="info-value mono" id="st-http-json-errors"><span class="skeleton">0</span></td>
+                                <td class="info-value mono" id="st-http-json-errors"><span class="skeleton">0</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -1042,7 +1217,8 @@
         <section id="view-wifi" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1><span lang="en">Wi-Fi Setup</span> <span class="text-normal text-muted">(ตั้งค่าเครือข่ายไร้สาย)</span></h1>
+                    <h1><span lang="en">Wi-Fi Setup</span> <span
+                            class="text-normal text-muted">(ตั้งค่าเครือข่ายไร้สาย)</span></h1>
                     <p>ค้นหาและตั้งค่าจุดเชื่อมต่อ Wi-Fi ภายนอกให้กับตัวอุปกรณ์</p>
                 </div>
                 <div class="header-actions">
@@ -1056,15 +1232,16 @@
 
             <!-- Current Connection Status -->
             <div class="connection-status" id="connection-status">
-                 <div class="status-header">
-                     <span class="status-icon" id="conn-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                             class="svg-icon">
-                             <use href="#icon-wifi-off"></use>
-                         </svg></span>
+                <div class="status-header">
+                    <span class="status-icon" id="conn-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="svg-icon">
+                            <use href="#icon-wifi-off"></use>
+                        </svg></span>
                     <div>
                         <div class="status-title" id="conn-title">ไม่ได้เชื่อมต่อเครือข่ายภายนอก</div>
-                        <div class="status-sub" id="conn-sub">อุปกรณ์กำลังทำงานแบบ <span lang="en">Offline</span> (<span lang="en">SoftAP</span> เท่านั้น)</div>
+                        <div class="status-sub" id="conn-sub">อุปกรณ์กำลังทำงานแบบ <span lang="en">Offline</span> (<span
+                                lang="en">SoftAP</span> เท่านั้น)</div>
                     </div>
                 </div>
                 <button class="btn btn-danger btn-sm hidden" id="disconnect-btn"
@@ -1090,8 +1267,11 @@
             <!-- Reconnection Helper Banner -->
             <div id="reconnect-banner" class="alert-banner hidden" role="alert">
                 <div>
-                    <strong>กำลังพยายามเชื่อมต่อ...</strong> เหลือเวลาอีก <span id="reconnect-countdown">15</span> วินาที<br>
-                    <span class="text-sm">หากโทรศัพท์หลุดออกจากเครือข่าย ให้ตรวจสอบว่ายังคงเชื่อมต่อกับสัญญาณของตัวปั๊มน้ำ (<span lang="en">IP</span>: <strong class="mono" lang="en">192.168.4.1</strong>) อยู่หรือไม่</span>
+                    <strong>กำลังพยายามเชื่อมต่อ...</strong> เหลือเวลาอีก <span id="reconnect-countdown">15</span>
+                    วินาที<br>
+                    <span class="text-sm">หากโทรศัพท์หลุดออกจากเครือข่าย
+                        ให้ตรวจสอบว่ายังคงเชื่อมต่อกับสัญญาณของตัวปั๊มน้ำ (<span lang="en">IP</span>: <strong
+                            class="mono" lang="en">192.168.4.1</strong>) อยู่หรือไม่</span>
                 </div>
             </div>
 
@@ -1101,9 +1281,10 @@
                 <div class="card network-card">
                     <div class="card-header">
                         <h3>เครือข่ายที่ค้นพบ</h3>
-                        <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()" aria-label="สแกนเครือข่าย Wi-Fi"><svg
-                                viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2"
-                                fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon svg-icon-start">
+                        <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"
+                            aria-label="สแกนเครือข่าย Wi-Fi"><svg viewBox="0 0 24 24" width="14" height="14"
+                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                                stroke-linejoin="round" class="svg-icon svg-icon-start">
                                 <use href="#icon-sync"></use>
                             </svg> สแกนหา <span lang="en">Wi-Fi</span></button>
                     </div>
@@ -1129,7 +1310,8 @@
         <section id="view-hardware" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-normal text-muted">(<span lang="en">Hardware/Install</span>)</span>
+                    <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-normal text-muted">(<span
+                                lang="en">Hardware/Install</span>)</span>
                     </h1>
                     <p>ตรวจสอบตำแหน่งการต่อสาย ขาใช้งาน GPIO และตั้งค่าพินควบคุมอุปกรณ์</p>
                 </div>
@@ -1152,7 +1334,8 @@
                     <div>
                         <div class="runtime-eyebrow" id="hardware-map-state">กำลังดึงข้อมูลตำแหน่งพิน...</div>
                         <h3>ตำแหน่งพินที่กำลังทำงาน</h3>
-                        <p>ตำแหน่งพิน <span lang="en">GPIO</span> ปัจจุบันของระบบ หากมีการแก้ไขและกดบันทึก พินใหม่จะมีผลหลังจากรีสตาร์ทบอร์ดควบคุม</p>
+                        <p>ตำแหน่งพิน <span lang="en">GPIO</span> ปัจจุบันของระบบ หากมีการแก้ไขและกดบันทึก
+                            พินใหม่จะมีผลหลังจากรีสตาร์ทบอร์ดควบคุม</p>
                     </div>
                 </div>
 
@@ -1243,7 +1426,9 @@
                 </div>
 
                 <div class="alert-banner hidden" id="hardware-unsaved-banner">
-                    <div><strong>ตรวจพบการเปลี่ยนแปลงตำแหน่งพิน</strong><br>คุณทำการเปลี่ยนค่าพินแต่ยังไม่ได้กดบันทึกเข้าระบบ</div>
+                    <div>
+                        <strong>ตรวจพบการเปลี่ยนแปลงตำแหน่งพิน</strong><br>คุณทำการเปลี่ยนค่าพินแต่ยังไม่ได้กดบันทึกเข้าระบบ
+                    </div>
                     <button type="submit" form="hardware-map-form" class="btn btn-primary btn-sm" id="hardware-save-map"
                         disabled>บันทึกตำแหน่งพิน</button>
                 </div>
@@ -1262,31 +1447,38 @@
                 <form id="hardware-map-form" class="hardware-map-form">
                     <div class="hardware-map-grid">
                         <label class="form-group hardware-role-field" for="hardware-float-input-gpio">
-                            <span>ขา <span lang="en">GPIO</span> ลูกลอย (<span lang="en">Float Input</span>) <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 32 (เฉพาะอินพุต)</small></span>
+                            <span>ขา <span lang="en">GPIO</span> ลูกลอย (<span lang="en">Float Input</span>) <small
+                                    class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 32
+                                    (เฉพาะอินพุต)</small></span>
                             <select id="hardware-float-input-gpio" name="float_input_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-pump-relay1-gpio">
-                            <span>ขา <span lang="en">GPIO</span> รีเลย์ปั๊ม 1 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 26</small></span>
+                            <span>ขา <span lang="en">GPIO</span> รีเลย์ปั๊ม 1 <small
+                                    class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 26</small></span>
                             <select id="hardware-pump-relay1-gpio" name="pump_relay1_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-pump-relay2-gpio">
-                            <span>ขา <span lang="en">GPIO</span> รีเลย์ปั๊ม 2 <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 27</small></span>
+                            <span>ขา <span lang="en">GPIO</span> รีเลย์ปั๊ม 2 <small
+                                    class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 27</small></span>
                             <select id="hardware-pump-relay2-gpio" name="pump_relay2_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-ds18b20-gpio">
                             <span>ขา <span lang="en">GPIO</span> วัดอุณหภูมิ (<span lang="en">DS18B20</span>) <small
-                                    class="text-xs status-warning block-helper">*ค่าเริ่มต้นพิน 33 (ต้องมีตัวต้านทาน <span lang="en">Pull-up</span> ขนาด 4.7k&Omega;)</small></span>
+                                    class="text-xs status-warning block-helper">*ค่าเริ่มต้นพิน 33 (ต้องมีตัวต้านทาน
+                                    <span lang="en">Pull-up</span> ขนาด 4.7k&Omega;)</small></span>
                             <select id="hardware-ds18b20-gpio" name="ds18b20_gpio" required></select>
                         </label>
                         <label class="form-group hardware-role-field" for="hardware-cooling-relay-gpio">
-                            <span>ขา <span lang="en">GPIO</span> รีเลย์ระบบความเย็น <small class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 25</small></span>
+                            <span>ขา <span lang="en">GPIO</span> รีเลย์ระบบความเย็น <small
+                                    class="text-xs text-muted block-helper">*ค่าเริ่มต้นพิน 25</small></span>
                             <select id="hardware-cooling-relay-gpio" name="cooling_relay_gpio" required></select>
                         </label>
                     </div>
 
                     <label class="checkbox-label hardware-reboot-confirm">
                         <input type="checkbox" id="hardware-confirm-reboot">
-                        <span>ฉันรับทราบและเข้าใจดีว่า การเปลี่ยนพินควบคุมต้องทำการรีสตาร์ทเครื่องก่อนจึงจะเริ่มต้นใช้สายพินชุดใหม่</span>
+                        <span>ฉันรับทราบและเข้าใจดีว่า
+                            การเปลี่ยนพินควบคุมต้องทำการรีสตาร์ทเครื่องก่อนจึงจะเริ่มต้นใช้สายพินชุดใหม่</span>
                     </label>
 
                     <div class="form-error" id="hardware-map-error"></div>
@@ -1337,7 +1529,8 @@
                     <input type="password" id="current-password" class="input-field" required>
                 </div>
                 <div class="form-group">
-                    <label for="new-username"><span lang="en">New Username</span> (ชื่อผู้ใช้ใหม่ - ปล่อยว่างเพื่อใช้ชื่อเดิม)</label>
+                    <label for="new-username"><span lang="en">New Username</span> (ชื่อผู้ใช้ใหม่ -
+                        ปล่อยว่างเพื่อใช้ชื่อเดิม)</label>
                     <input type="text" id="new-username" class="input-field">
                 </div>
                 <div class="form-group">
@@ -1351,8 +1544,10 @@
                 <div id="password-error" class="pump-alert hidden mt-sm"></div>
 
                 <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary" id="password-save-btn">เปลี่ยนรหัสผ่าน (<span lang="en">Change Password</span>)</button>
-                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">ยกเลิก (<span lang="en">Cancel</span>)</button>
+                    <button type="submit" class="btn btn-primary" id="password-save-btn">เปลี่ยนรหัสผ่าน (<span
+                            lang="en">Change Password</span>)</button>
+                    <button type="button" class="btn btn-outline" onclick="closePasswordModal()">ยกเลิก (<span
+                            lang="en">Cancel</span>)</button>
                 </div>
             </form>
         </div>
@@ -1442,7 +1637,8 @@
                                 class="svg-icon">
                                 <use href="#icon-mask"></use>
                             </svg></span>
-                        <input type="text" id="static-netmask" class="mono" placeholder="เช่น 255.255.255.0" value="255.255.255.0">
+                        <input type="text" id="static-netmask" class="mono" placeholder="เช่น 255.255.255.0"
+                            value="255.255.255.0">
                     </div>
                 </div>
                 <div class="text-xs dns-helper-text">
@@ -1481,7 +1677,8 @@
             <span>ทำความเย็น</span>
         </a>
         <a href="/status" class="mobile-nav-item" id="m-nav-status">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                stroke-linecap="round" stroke-linejoin="round">
                 <use href="#icon-gear"></use>
             </svg>
             <span>ระบบ</span>
