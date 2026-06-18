@@ -833,7 +833,7 @@ function applyPumpStatus(status, authoritative) {
     setHtml('pump-running-label', renderPumpRunLabel(status));
     setHtml('pump-state-desc', renderPumpStateDesc(status));
     renderPumpCountdown();
-    setText('pump-active-timer', renderPumpTimer(status.active_timer));
+    setHtml('pump-active-timer', renderPumpTimerBadge(status.active_timer));
     setHtml('pump-phase', renderPumpPhase(status.active_timer, status.phase, status.running));
     setHtml('pump-float-state', renderFloatState(status.float_state));
     setHtml('pump-relay-state', renderActiveRelayState(status));
@@ -886,7 +886,7 @@ function handlePumpStatusFailure() {
     }
     if (stale) {
         setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงค์สำเร็จ');
-        setText('pump-active-timer', '--');
+        setHtml('pump-active-timer', '--');
         setHtml('pump-phase', '--');
         setHtml('pump-float-state', '--');
         setHtml('pump-relay-state', '--');
@@ -1127,6 +1127,12 @@ function renderSvgIcon(iconName, colorClass) {
 function renderPumpTimer(value) {
     if (value === 'timer1') return 'Timer 1';
     if (value === 'timer2') return 'Timer 2';
+    return '--';
+}
+
+function renderPumpTimerBadge(value) {
+    if (value === 'timer1') return renderSvgIcon('icon-timer', 'status-success') + ' <span class="status-success">Timer 1</span>';
+    if (value === 'timer2') return renderSvgIcon('icon-timer', 'status-success') + ' <span class="status-success">Timer 2</span>';
     return '--';
 }
 
