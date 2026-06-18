@@ -867,7 +867,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
 def start_web_server():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), SimulatorHTTPHandler) as httpd:
+    with socketserver.TCPServer(("0.0.0.0", PORT), SimulatorHTTPHandler) as httpd:
         httpd.serve_forever()
 
 

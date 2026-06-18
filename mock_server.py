@@ -1017,7 +1017,7 @@ if __name__ == '__main__':
     print("-----------------------------------------------------------------")
     
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), MockWebServer) as httpd:
+    with socketserver.TCPServer(("0.0.0.0", PORT), MockWebServer) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
