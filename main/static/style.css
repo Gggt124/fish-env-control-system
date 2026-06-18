@@ -1445,54 +1445,64 @@ button.nav-item {
 }
 
 /* State-specific active badge card styling */
-#pump-float-card.state-active {
+#pump-float-card.state-active,
+#cooling-sensor-card.state-active {
     background: rgba(37, 99, 235, 0.04);
     border-color: rgba(37, 99, 235, 0.35);
 }
-#pump-float-card.state-active .hero-badge-icon {
+#pump-float-card.state-active .hero-badge-icon,
+#cooling-sensor-card.state-active .hero-badge-icon {
     background: rgba(37, 99, 235, 0.12);
     color: var(--primary);
     box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
 }
-#pump-float-card.state-active:hover {
+#pump-float-card.state-active:hover,
+#cooling-sensor-card.state-active:hover {
     background: rgba(37, 99, 235, 0.08);
     border-color: var(--primary);
 }
 
 #pump-relay-1-card.state-active,
-#pump-relay-2-card.state-active {
+#pump-relay-2-card.state-active,
+#cooling-relay-card.state-active {
     background: rgba(16, 185, 129, 0.04);
     border-color: rgba(16, 185, 129, 0.35);
 }
 #pump-relay-1-card.state-active .hero-badge-icon,
-#pump-relay-2-card.state-active .hero-badge-icon {
+#pump-relay-2-card.state-active .hero-badge-icon,
+#cooling-relay-card.state-active .hero-badge-icon {
     background: rgba(16, 185, 129, 0.12);
     color: var(--secondary);
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 #pump-relay-1-card.state-active:hover,
-#pump-relay-2-card.state-active:hover {
+#pump-relay-2-card.state-active:hover,
+#cooling-relay-card.state-active:hover {
     background: rgba(16, 185, 129, 0.08);
     border-color: var(--secondary);
 }
 
 /* Dark Mode overrides for active card backgrounds */
-[data-theme="dark"] #pump-float-card.state-active {
+[data-theme="dark"] #pump-float-card.state-active,
+[data-theme="dark"] #cooling-sensor-card.state-active {
     background: rgba(96, 165, 250, 0.08);
     border-color: rgba(96, 165, 250, 0.4);
 }
-[data-theme="dark"] #pump-float-card.state-active .hero-badge-icon {
+[data-theme="dark"] #pump-float-card.state-active .hero-badge-icon,
+[data-theme="dark"] #cooling-sensor-card.state-active .hero-badge-icon {
     background: rgba(96, 165, 250, 0.2);
     box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
 }
 
 [data-theme="dark"] #pump-relay-1-card.state-active,
-[data-theme="dark"] #pump-relay-2-card.state-active {
+[data-theme="dark"] #pump-relay-2-card.state-active,
+[data-theme="dark"] #cooling-relay-card.state-active {
     background: rgba(52, 211, 153, 0.08);
     border-color: rgba(52, 211, 153, 0.4);
 }
 [data-theme="dark"] #pump-relay-1-card.state-active .hero-badge-icon,
-[data-theme="dark"] #pump-relay-2-card.state-active .hero-badge-icon {
+[data-theme="dark"] #pump-relay-2-card.state-active .hero-badge-icon,
+[data-theme="dark"] #cooling-relay-card.state-active .hero-badge-icon {
     background: rgba(52, 211, 153, 0.2);
     box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
 }

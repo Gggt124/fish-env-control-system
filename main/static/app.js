@@ -1534,16 +1534,8 @@ function applyCoolingStatus(status, authoritative) {
         ? renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>'
         : renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>');
         
-    const relayCard = document.getElementById('cooling-relay-card');
-    if (relayCard) {
-        if (status.relay_energized) {
-            relayCard.classList.remove('off');
-            relayCard.classList.add('on');
-        } else {
-            relayCard.classList.remove('on');
-            relayCard.classList.add('off');
-        }
-    }
+    updateBadgeCardState('cooling-relay-card', status.relay_energized);
+    updateBadgeCardState('cooling-sensor-card', status.sensor_state === 'ok');
     
     setHtml('cooling-mode-state', renderCoolingMode(status.mode));
     setHtml('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
@@ -1589,10 +1581,8 @@ function handleCoolingStatusFailure() {
         setHtml('cooling-temperature', '--');
         setHtml('cooling-relay-state', '--');
         
-        const relayCard = document.getElementById('cooling-relay-card');
-        if (relayCard) {
-            relayCard.classList.remove('on', 'off');
-        }
+        updateBadgeCardState('cooling-relay-card', false);
+        updateBadgeCardState('cooling-sensor-card', false);
         
         setHtml('cooling-mode-state', '--');
         setHtml('cooling-sensor-state', '--');
