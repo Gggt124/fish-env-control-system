@@ -848,6 +848,7 @@ function applyPumpStatus(status, authoritative) {
     // Highlight active timer card
     var t1Card = pumpEl('timer1-card-panel');
     var t2Card = pumpEl('timer2-card-panel');
+    updateFloatingBadgeState(status);
     if (t1Card && t2Card) {
         if (status.active_timer === 'timer1') {
             t1Card.classList.add('active-timer');
@@ -910,6 +911,7 @@ function handlePumpStatusFailure() {
             clearSkeleton(label);
             label.innerHTML = renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">Offline</span>';
         }
+        updateFloatingBadgeState(null);
     }
     updatePumpButtons();
 }
@@ -1178,6 +1180,28 @@ function renderPumpRunLabel(status) {
         return renderSvgIcon('icon-play', 'status-success') + ' <span class="status-success">ทำงาน</span>';
     }
     return renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">หยุด</span>';
+}
+
+function updateFloatingBadgeState(status) {
+    var badge = document.getElementById('pump-status-floating-badge');
+    if (!badge) return;
+    
+    badge.classList.remove('badge-active', 'badge-paused', 'badge-offline');
+    
+    if (!status) {
+        badge.classList.add('badge-offline');
+        return;
+    }
+    
+    if (status.running) {
+        if (status.phase === 'off') {
+            badge.classList.add('badge-paused');
+        } else {
+            badge.classList.add('badge-active');
+        }
+    } else {
+        badge.classList.add('badge-offline');
+    }
 }
 
 function renderPumpPhase(timer, phase, running) {

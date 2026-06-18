@@ -1247,7 +1247,34 @@ button.nav-item {
     background: var(--primary-container);
     color: var(--primary);
     border: 1px solid var(--primary-fixed-dim);
-    margin-bottom: var(--space-3);
+}
+
+.hero-status-floating-badge {
+    background: var(--surface-container-high);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.04);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-status-floating-badge .hero-title-group {
+    margin-bottom: var(--space-1);
+}
+
+.hero-status-floating-badge.badge-active {
+    background: var(--eyebrow-good-bg);
+    border-color: var(--eyebrow-good-border);
+}
+
+.hero-status-floating-badge.badge-paused {
+    background: var(--eyebrow-warn-bg);
+    border-color: var(--eyebrow-warn-border);
+}
+
+.hero-status-floating-badge.badge-offline {
+    background: var(--eyebrow-error-bg);
+    border-color: var(--eyebrow-error-border);
 }
 
 .hero-title-group {
