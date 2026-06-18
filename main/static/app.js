@@ -1191,12 +1191,12 @@ function renderPumpPhase(timer, phase, running) {
 
 function renderFloatState(value) {
     if (value === 'on') {
-        return '<span class="badge-pill state-on">ON</span><span class="badge-subtext">→ Timer 2</span>';
+        return renderSvgIcon('icon-check-circle', 'status-success') + ' <span class="status-success">ON</span> <span class="badge-subtext">→ Timer 2</span>';
     }
     if (value === 'off') {
-        return '<span class="badge-pill state-off">OFF</span><span class="badge-subtext">→ Timer 1</span>';
+        return renderSvgIcon('icon-x-circle', 'status-danger') + ' <span class="status-danger">OFF</span> <span class="badge-subtext">→ Timer 1</span>';
     }
-    return '<span class="badge-pill state-unknown">Unknown</span>';
+    return renderSvgIcon('icon-info', 'status-warning') + ' <span class="status-warning">Unknown</span>';
 }
 
 function renderRelayName(value) {
@@ -1228,9 +1228,9 @@ function renderActiveRelayState(status) {
 function renderRelayChannelState(channel, status) {
     var energized = relayEnergizedFor(channel, status);
     if (energized) {
-        return '<span class="badge-pill state-on">ON</span>';
+        return renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>';
     }
-    return '<span class="badge-pill state-off">OFF</span>';
+    return renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>';
 }
 
 function renderSettingsStatus(value, autoStart) {
@@ -1527,6 +1527,18 @@ function applyCoolingStatus(status, authoritative) {
     setHtml('cooling-relay-state', status.relay_energized
         ? renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>'
         : renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>');
+        
+    const relayCard = document.getElementById('cooling-relay-card');
+    if (relayCard) {
+        if (status.relay_energized) {
+            relayCard.classList.remove('off');
+            relayCard.classList.add('on');
+        } else {
+            relayCard.classList.remove('on');
+            relayCard.classList.add('off');
+        }
+    }
+    
     setHtml('cooling-mode-state', renderCoolingMode(status.mode));
     setHtml('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
     setHtml('cooling-fault-state', renderCoolingFault(status));
@@ -1538,6 +1550,13 @@ function applyCoolingStatus(status, authoritative) {
     setHtml('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
     setText('cooling-lockout', status.lockout_active ? formatPumpCountdown(status.lockout_remaining_sec) : '--');
     setText('cooling-test-remaining', status.test_remaining_sec ? formatPumpCountdown(status.test_remaining_sec) : '--');
+    var lockoutTestStr = '--';
+    if (status.test_remaining_sec > 0) {
+        lockoutTestStr = 'TEST ' + formatPumpCountdown(status.test_remaining_sec);
+    } else if (status.lockout_active) {
+        lockoutTestStr = 'LOCK ' + formatPumpCountdown(status.lockout_remaining_sec);
+    }
+    setText('cooling-lockout-test-state', lockoutTestStr);
 
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
@@ -1563,6 +1582,12 @@ function handleCoolingStatusFailure() {
         setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
         setHtml('cooling-temperature', '--');
         setHtml('cooling-relay-state', '--');
+        
+        const relayCard = document.getElementById('cooling-relay-card');
+        if (relayCard) {
+            relayCard.classList.remove('on', 'off');
+        }
+        
         setHtml('cooling-mode-state', '--');
         setHtml('cooling-sensor-state', '--');
         setHtml('cooling-fault-state', '--');
@@ -1572,6 +1597,7 @@ function handleCoolingStatusFailure() {
         setHtml('cooling-blocked-reason', '--');
         setText('cooling-lockout', '--');
         setText('cooling-test-remaining', '--');
+        setText('cooling-lockout-test-state', '--');
     }
     updateCoolingButtons();
 }
