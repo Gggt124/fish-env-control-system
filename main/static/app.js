@@ -1197,12 +1197,12 @@ function renderPumpPhase(timer, phase, running) {
 
 function renderFloatState(value) {
     if (value === 'on') {
-        return renderSvgIcon('icon-check-circle', 'status-success') + ' <span class="status-success">ON</span> <span class="badge-subtext">→ Timer 2</span>';
+        return '<span class="status-success">ON</span> <span class="badge-subtext">→ Timer 2</span>';
     }
     if (value === 'off') {
-        return renderSvgIcon('icon-x-circle', 'status-danger') + ' <span class="status-danger">OFF</span> <span class="badge-subtext">→ Timer 1</span>';
+        return '<span class="status-danger">OFF</span> <span class="badge-subtext">→ Timer 1</span>';
     }
-    return renderSvgIcon('icon-info', 'status-warning') + ' <span class="status-warning">Unknown</span>';
+    return '<span class="status-warning">Unknown</span>';
 }
 
 function renderRelayName(value) {
@@ -1234,9 +1234,9 @@ function renderActiveRelayState(status) {
 function renderRelayChannelState(channel, status) {
     var energized = relayEnergizedFor(channel, status);
     if (energized) {
-        return renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>';
+        return '<span class="status-success">ON</span>';
     }
-    return renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>';
+    return '<span class="status-danger">OFF</span>';
 }
 
 function renderSettingsStatus(value, autoStart) {
@@ -1531,8 +1531,8 @@ function applyCoolingStatus(status, authoritative) {
 
     setHtml('cooling-temperature', renderCoolingTemperature(status));
     setHtml('cooling-relay-state', status.relay_energized
-        ? renderSvgIcon('icon-relay-on', 'status-success') + ' <span class="status-success">ON</span>'
-        : renderSvgIcon('icon-relay-off', 'status-danger') + ' <span class="status-danger">OFF</span>');
+        ? '<span class="status-success">ON</span>'
+        : '<span class="status-danger">OFF</span>');
         
     updateBadgeCardState('cooling-relay-card', status.relay_energized);
     updateBadgeCardState('cooling-sensor-card', status.sensor_state === 'ok');
@@ -1668,15 +1668,15 @@ function renderCoolingMode(value) {
 }
 
 function renderCoolingSensor(value) {
-    if (value === 'ok') return renderSvgIcon('icon-check-circle', 'status-success') + ' <span class="status-success">OK</span>';
-    if (value === 'fault') return renderSvgIcon('icon-x-circle', 'status-danger') + ' <span class="status-danger">FAULT</span>';
+    if (value === 'ok') return '<span class="status-success">OK</span>';
+    if (value === 'fault') return '<span class="status-danger">FAULT</span>';
     return 'Unknown';
 }
 
 function renderCoolingFault(status) {
     if (!status) return '--';
-    if (!status.fault) return renderSvgIcon('icon-check-circle', 'status-success') + ' <span class="status-success">None</span>';
-    return renderSvgIcon('icon-x-circle', 'status-danger') + ' <span class="status-danger">' + (status.fault_code || 'FAULT') + '</span>';
+    if (!status.fault) return '<span class="status-success">None</span>';
+    return '<span class="status-danger">' + (status.fault_code || 'FAULT') + '</span>';
 }
 
 function renderCoolingBlocked(value) {
