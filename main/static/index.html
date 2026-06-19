@@ -363,15 +363,6 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">Pump Control</h1>
-                    <p>ติดตามสถานะปั๊มน้ำและควบคุมรอบเวลา <span lang="en">Timer 1 / Timer 2</span></p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" onclick="syncPumpStatus(true)"
-                        aria-label="ซิงค์ข้อมูลปั๊ม"><svg viewBox="0 0 24 24" width="14" height="14"
-                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-sync"></use>
-                        </svg> อัปเดตข้อมูล (<span lang="en">Sync</span>)</button>
                 </div>
             </div>
 
@@ -683,16 +674,6 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">Cooling Control</h1>
-                    <p>ควบคุมพัดลมหรือระบบระบายความร้อนด้วยเซนเซอร์ <span lang="en">DS18B20</span>
-                        แยกอิสระจากระบบปั๊มน้ำ</p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" onclick="syncCoolingStatus(true)"
-                        aria-label="ซิงค์ข้อมูลระบบทำความเย็น"><svg viewBox="0 0 24 24" width="14" height="14"
-                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-sync"></use>
-                        </svg> อัปเดตข้อมูล (<span lang="en">Sync</span>)</button>
                 </div>
             </div>
 
@@ -956,19 +937,9 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">System Status</h1>
-                    <p>ตรวจสอบข้อมูลฮาร์ดแวร์ หน่วยความจำ และการเชื่อมต่อระบบ</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" onclick="refreshStatus()"><svg viewBox="0 0 24 24" width="14"
-                            height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-sync"></use>
-                        </svg> อัปเดตข้อมูล (<span lang="en">Refresh</span>)</button>
-                    <button onclick="openPasswordModal()" class="btn btn-outline btn-sm"><svg viewBox="0 0 24 24"
-                            width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-lock"></use>
-                        </svg> เปลี่ยนรหัสผ่านเข้าเครื่อง (<span lang="en">Change Password</span>)</button>
+                    <!-- Actions moved to Account & Security card -->
                 </div>
             </div>
 
@@ -1024,13 +995,6 @@
                             </tr>
                         </tbody>
                     </table>
-                    <button class="btn btn-danger btn-block mt-md" onclick="doLogout(); return false;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
-                            fill="none">
-                            <use href="#icon-logout"></use>
-                        </svg>
-                        ออกจากระบบ (Logout)
-                    </button>
                 </div>
 
                 <!-- Memory Card -->
@@ -1072,6 +1036,33 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Account & Security Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-label">บัญชีและความปลอดภัย</span>
+                        <span class="text-lg text-primary">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                                <use href="#icon-lock"></use>
+                            </svg>
+                        </span>
+                    </div>
+                    <div style="padding-top: var(--space-4);">
+                        <p class="text-muted" style="font-size: var(--text-sm); margin-bottom: var(--space-4);">จัดการรหัสผ่านและเซสชันการเข้าสู่ระบบ</p>
+                        <button onclick="openPasswordModal()" class="btn btn-outline btn-block mb-md" style="height: auto; white-space: normal; padding: 10px 12px; line-height: 1.3;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="flex-shrink: 0;">
+                                <use href="#icon-lock"></use>
+                            </svg> 
+                            <span style="text-align: left;">เปลี่ยนรหัสผ่าน <span lang="en" style="font-size: 0.85em; opacity: 0.85; white-space: nowrap;">(Change Password)</span></span>
+                        </button>
+                        <button class="btn btn-danger btn-block mt-md" onclick="doLogout(); return false;" style="height: auto; white-space: normal; padding: 10px 12px; line-height: 1.3;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink: 0;">
+                                <use href="#icon-logout"></use>
+                            </svg>
+                            <span style="text-align: left;">ออกจากระบบ <span lang="en" style="font-size: 0.85em; opacity: 0.85; white-space: nowrap;">(Logout)</span></span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Uptime Card -->
@@ -1217,9 +1208,7 @@
         <section id="view-wifi" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1><span lang="en">Wi-Fi Setup</span> <span
-                            class="text-normal text-muted">(ตั้งค่าเครือข่ายไร้สาย)</span></h1>
-                    <p>ค้นหาและตั้งค่าจุดเชื่อมต่อ Wi-Fi ภายนอกให้กับตัวอุปกรณ์</p>
+                    <h1><span lang="en">Wi-Fi Setup</span></h1>
                 </div>
                 <div class="header-actions">
                     <div class="ap-pill" id="ap-pill">
@@ -1310,22 +1299,7 @@
         <section id="view-hardware" class="view hidden" aria-hidden="true">
             <div class="page-header">
                 <div class="header-left">
-                    <h1>ฮาร์ดแวร์และการติดตั้ง <span class="text-normal text-muted">(<span
-                                lang="en">Hardware/Install</span>)</span>
-                    </h1>
-                    <p>ตรวจสอบตำแหน่งการต่อสาย ขาใช้งาน GPIO และตั้งค่าพินควบคุมอุปกรณ์</p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn btn-outline btn-sm" onclick="loadHardwareMap()"><svg viewBox="0 0 24 24"
-                            width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                            <use href="#icon-sync"></use>
-                        </svg> อัปเดตข้อมูล (<span lang="en">Refresh</span>)</button>
-                    <a href="/dashboard" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24" width="16" height="16"
-                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon svg-icon-start">
-                            <use href="#icon-arrow-left"></use>
-                        </svg> แดชบอร์ด (<span lang="en">Dashboard</span>)</a>
+                    <h1>ฮาร์ดแวร์และการติดตั้ง</h1>
                 </div>
             </div>
 
