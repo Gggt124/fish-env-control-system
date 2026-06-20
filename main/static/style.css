@@ -984,7 +984,7 @@ button.nav-item {
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-6);
+    gap: var(--space-4);
 }
 
 @media (min-width: 768px) {
@@ -996,7 +996,7 @@ button.nav-item {
 .dashboard-col {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--space-4);
 }
 
 /* Section card */
@@ -1325,7 +1325,6 @@ button.nav-item {
     flex-direction: column;
     gap: var(--space-6);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    margin-bottom: var(--space-6);
 }
 
 /* Decorative radial blob removed — flat-by-default rule */
@@ -2503,11 +2502,11 @@ select:disabled {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    min-height: 20px;
-    border: 2px solid var(--outline);
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    border: 1px solid var(--outline);
     border-radius: var(--radius-sm);
     background-color: var(--surface);
     position: relative;
