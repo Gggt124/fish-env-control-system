@@ -275,10 +275,12 @@
                     </svg></span> <span lang="en">Hardware/Install</span>
             </a>
             <div style="margin-top: auto; padding: var(--space-4) 0 var(--space-6) var(--space-2);">
-                <button class="theme-toggle" id="theme-toggle-desktop" onclick="cycleTheme()" aria-label="สลับธีม">
-                    <svg width="20" height="20">
-                        <use href="#icon-moon"></use>
-                    </svg>
+                <button class="theme-toggle" id="theme-toggle-desktop" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                    <span class="theme-toggle-thumb">
+                        <svg class="theme-toggle-icon">
+                            <use href="#icon-moon"></use>
+                        </svg>
+                    </span>
                 </button>
             </div>
         </nav>
@@ -363,6 +365,15 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1 lang="en">Pump Control</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                        <span class="theme-toggle-thumb">
+                            <svg class="theme-toggle-icon">
+                                <use href="#icon-moon"></use>
+                            </svg>
+                        </span>
+                    </button>
                 </div>
             </div>
 
@@ -675,6 +686,15 @@
                 <div class="header-left">
                     <h1 lang="en">Cooling Control</h1>
                 </div>
+                <div class="header-actions">
+                    <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                        <span class="theme-toggle-thumb">
+                            <svg class="theme-toggle-icon">
+                                <use href="#icon-moon"></use>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
             </div>
 
             <div class="dashboard-grid">
@@ -932,7 +952,13 @@
                     <h1 lang="en">System Status</h1>
                 </div>
                 <div class="header-actions">
-                    <!-- Actions moved to Account & Security card -->
+                    <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                        <span class="theme-toggle-thumb">
+                            <svg class="theme-toggle-icon">
+                                <use href="#icon-moon"></use>
+                            </svg>
+                        </span>
+                    </button>
                 </div>
             </div>
 
@@ -1209,6 +1235,13 @@
                         <span class="ap-label"><span lang="en">AP Mode</span>: เปิดบริการ</span>
                         <span class="ap-ip mono" id="ap-pill-ip" lang="en">192.168.4.1</span>
                     </div>
+                    <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                        <span class="theme-toggle-thumb">
+                            <svg class="theme-toggle-icon">
+                                <use href="#icon-moon"></use>
+                            </svg>
+                        </span>
+                    </button>
                 </div>
             </div>
 
@@ -1293,6 +1326,15 @@
             <div class="page-header">
                 <div class="header-left">
                     <h1>ฮาร์ดแวร์และการติดตั้ง</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                        <span class="theme-toggle-thumb">
+                            <svg class="theme-toggle-icon">
+                                <use href="#icon-moon"></use>
+                            </svg>
+                        </span>
+                    </button>
                 </div>
             </div>
 
