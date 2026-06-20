@@ -2433,10 +2433,31 @@ function renderSavedProfiles() {
 
         html += '<div class="profile-item' + (isConn ? ' connected' : '') + '">';
 
+        var sigBars = 4;
+        if (scanData) {
+            if (scanData.rssi >= -50) { sigBars = 4; }
+            else if (scanData.rssi >= -70) { sigBars = 3; }
+            else if (scanData.rssi >= -85) { sigBars = 2; }
+            else { sigBars = 1; }
+        } else if (!isConn) {
+            sigBars = 0;
+        }
+        
+        var sigSvg = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">';
+        if (sigBars >= 1 || isConn) sigSvg += '<line x1="12" y1="20" x2="12.01" y2="20"></line>';
+        if (sigBars >= 2 || isConn) sigSvg += '<path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>';
+        if (sigBars >= 3 || isConn) sigSvg += '<path d="M5 12.55a11 11 0 0 1 14.08 0"></path>';
+        if (sigBars >= 4 || isConn) sigSvg += '<path d="M1.42 9a16 16 0 0 1 21.16 0"></path>';
+        if (sigBars === 0 && !isConn) {
+            sigSvg = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+        } else {
+            sigSvg += '</svg>';
+        }
+
         /* Left side */
         html += '<div class="profile-item-left">';
         html += '<div class="network-icon' + iconClass + '" style="' + iconStyle + '">';
-        html += '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+        html += sigSvg;
         html += '</div>';
         html += '<div class="network-info">';
         html += '<div class="net-ssid-row">';
@@ -2450,7 +2471,7 @@ function renderSavedProfiles() {
         if (scanData) {
             // Found in scan
             var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ';
-            html += authLabel + escHtml(scanData.auth) + ' &bull; Ch ' + scanData.channel;
+            html += authLabel + escHtml(scanData.auth);
             html += '<span class="text-success" style="margin-left:8px;">(อยู่ในระยะ)</span>';
         } else if (isConn) {
             html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ';
@@ -2625,40 +2646,47 @@ function doScan() {
         }
 
         var html = '';
+        var visibleCount = 0;
         for (var i = 0; i < nets.length; i++) {
-            var sigClass = 'weak';
-            var sigLabel = '\u0e2d\u0e48\u0e2d\u0e19';
-            if (nets[i].rssi >= -50) { sigClass = 'strong'; sigLabel = '\u0e14\u0e35\u0e21\u0e32\u0e01'; }
-            else if (nets[i].rssi >= -70) { sigClass = 'good'; sigLabel = '\u0e14\u0e35'; }
-            else if (nets[i].rssi >= -85) { sigClass = 'fair'; sigLabel = '\u0e1e\u0e2d\u0e43\u0e0a\u0e49'; }
-
             var isConnected = nets[i].connected === true;
-            html += '<button type=\"button\" class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
+            if (isConnected) continue; /* Hide the connected network from the discovered list */
+
+            visibleCount++;
+            var sigBars = 1;
+            if (nets[i].rssi >= -50) { sigBars = 4; }
+            else if (nets[i].rssi >= -70) { sigBars = 3; }
+            else if (nets[i].rssi >= -85) { sigBars = 2; }
+            
+            var sigSvg = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">';
+            sigSvg += '<line x1="12" y1="20" x2="12.01" y2="20"></line>';
+            if (sigBars >= 2) sigSvg += '<path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>';
+            if (sigBars >= 3) sigSvg += '<path d="M5 12.55a11 11 0 0 1 14.08 0"></path>';
+            if (sigBars >= 4) sigSvg += '<path d="M1.42 9a16 16 0 0 1 21.16 0"></path>';
+            sigSvg += '</svg>';
+
+            html += '<button type=\"button\" class=\"network-item' + (selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
                 'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                (isConnected ? 'disabled ' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
+                'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;">' +
                 '<div class=\"network-item-left\">' +
-                '<div class=\"network-icon' + (isConnected ? ' connected-icon' : '') + '\">' +
-                '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>' +
+                '<div class=\"network-icon\">' +
+                sigSvg +
                 '</div>' +
                 '<div class=\"network-info\">' +
                 '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
                 '<div class=\"net-detail\">' +
                 (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ') + escHtml(nets[i].auth) +
-                ' &bull; Ch <span class="mono">' + nets[i].channel + '</span>' +
                 '</div>' +
                 '</div>' +
                 '</div>' +
                 '<div class=\"network-item-right\">' +
-                '<div class=\"net-signal\">' +
-                '<div class=\"sig-label ' + sigClass + '\">' + sigLabel + '</div>' +
-                '<div class=\"sig-dbm\">' + nets[i].rssi + ' dBm</div>' +
-                '</div>' +
-                (isConnected
-                    ? '<div class=\"network-connected-label\"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</div>'
-                    : '<div class=\"btn btn-outline btn-sm btn-select\">\u0e40\u0e25\u0e37\u0e2d\u0e01</div>') +
                 '</div>' +
                 '</button>';
         }
+        
+        if (visibleCount === 0) {
+            html = '<div class="network-empty">\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e40\u0e1e\u0e34\u0e48\u0e21\u0e40\u0e15\u0e34\u0e21</div>'; /* ไม่พบเครือข่ายเพิ่มเติม */
+        }
+        
         if (list) list.innerHTML = html;
     });
 }
@@ -3156,16 +3184,8 @@ function pollWifiConnection(attempt) {
 }
 
 function updateStepper(activeStep, done) {
-    for (var i = 1; i <= 3; i++) {
-        var step = document.getElementById('step-' + i);
-        if (!step) continue;
-        step.classList.remove('active', 'done');
-        if (i === activeStep && done) step.classList.add('done');
-        else if (i === activeStep) step.classList.add('active');
-        else if (i < activeStep) step.classList.add('done');
-    }
+    // Stepper UI removed in v1.2
 }
-
 /* ======== Utilities ======== */
 
 function escHtml(str) {

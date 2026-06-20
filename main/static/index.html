@@ -329,7 +329,7 @@
                                         stroke-linejoin="round" class="svg-icon">
                                         <use href="#icon-user"></use>
                                     </svg></span>
-                                <input id="username" name="username" type="text" placeholder="admin" required
+                                <input id="username" name="username" type="text" required
                                     autocomplete="username">
                             </div>
                         </div>
@@ -341,15 +341,14 @@
                                         stroke-linejoin="round" class="svg-icon">
                                         <use href="#icon-lock"></use>
                                     </svg></span>
-                                <input id="password" name="password" type="password"
-                                    placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required
+                                <input id="password" name="password" type="password" required
                                     autocomplete="current-password">
                             </div>
                         </div>
                         <div class="form-group form-group-checkbox">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="remember-me">
-                                จดจำการเข้าสู่ระบบในอุปกรณ์นี้ (<span lang="en">Remember Me</span>)
+                                <span>จดจำการเข้าสู่ระบบในอุปกรณ์นี้ (<span lang="en">Remember Me</span>)</span>
                             </label>
                         </div>
                         <div id="login-error" class="login-error" role="alert"></div>
@@ -1206,7 +1205,7 @@
                 <div class="header-actions">
                     <div class="ap-pill" id="ap-pill">
                         <span class="pulse-dot"></span>
-                        <span class="ap-label"><span lang="en">AP Mode</span>: เปิดบริการ</span>
+                        <span class="ap-label" lang="en">AP Mode</span>
                         <span class="ap-ip mono" id="ap-pill-ip" lang="en">192.168.4.1</span>
                     </div>
                     <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
@@ -1233,25 +1232,11 @@
                                 lang="en">SoftAP</span> เท่านั้น)</div>
                     </div>
                 </div>
-                <button class="btn btn-danger btn-sm hidden" id="disconnect-btn"
+                <button class="btn btn-outline-danger btn-sm hidden" id="disconnect-btn"
                     onclick="doDisconnect()">Disconnect</button>
             </div>
 
-            <!-- Stepper -->
-            <div class="stepper">
-                <div class="step active" id="step-1">
-                    <div class="step-circle">1</div>
-                    <span class="step-label">Scan</span>
-                </div>
-                <div class="step" id="step-2">
-                    <div class="step-circle">2</div>
-                    <span class="step-label">Password</span>
-                </div>
-                <div class="step" id="step-3">
-                    <div class="step-circle">3</div>
-                    <span class="step-label">Connect</span>
-                </div>
-            </div>
+
 
             <!-- Reconnection Helper Banner -->
             <div id="reconnect-banner" class="alert-banner hidden" role="alert">
@@ -1264,23 +1249,20 @@
                 </div>
             </div>
 
-            <!-- Wi-Fi Grid -->
-            <div class="wifi-grid">
-                <!-- Network List -->
-                <div class="card network-card">
-                    <div class="card-header">
-                        <h3>เครือข่ายที่ค้นพบ</h3>
-                        <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"
-                            aria-label="สแกนเครือข่าย Wi-Fi"><svg viewBox="0 0 24 24" width="14" height="14"
-                                stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                                stroke-linejoin="round" class="svg-icon svg-icon-start">
-                                <use href="#icon-sync"></use>
-                            </svg> สแกนหา <span lang="en">Wi-Fi</span></button>
-                    </div>
-                    <div class="network-list" id="network-list" aria-live="polite">
-                        <div class="network-item status-message">
-                            กดปุ่ม "สแกนหา Wi-Fi" ด้านบนเพื่อเริ่มค้นหาสัญญาณ
-                        </div>
+            <!-- Network List -->
+            <div class="card network-card">
+                <div class="card-header">
+                    <h3>เครือข่ายที่ค้นพบ</h3>
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"
+                        aria-label="สแกนเครือข่าย Wi-Fi"><svg viewBox="0 0 24 24" width="14" height="14"
+                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                            stroke-linejoin="round" class="svg-icon svg-icon-start">
+                            <use href="#icon-sync"></use>
+                        </svg> สแกนหา <span lang="en">Wi-Fi</span></button>
+                </div>
+                <div class="network-list" id="network-list" aria-live="polite">
+                    <div class="network-item status-message">
+                        กดปุ่ม "สแกนหา Wi-Fi" ด้านบนเพื่อเริ่มค้นหาสัญญาณ
                     </div>
                 </div>
             </div>
