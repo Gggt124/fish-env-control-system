@@ -1564,8 +1564,17 @@ function applyCoolingStatus(status, authoritative) {
     setHtml('cooling-mode-state', renderCoolingMode(status.mode));
     setHtml('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
     setHtml('cooling-fault-state', renderCoolingFault(status));
-    setText('cooling-threshold', renderCoolingCelsius(status.threshold_c));
-    setText('cooling-hysteresis', renderCoolingCelsius(status.hysteresis_c));
+    if (typeof status.threshold_c === 'number') {
+        setText('cooling-start-temp', renderCoolingCelsius(status.threshold_c));
+        if (typeof status.hysteresis_c === 'number') {
+            setText('cooling-stop-temp', renderCoolingCelsius(status.threshold_c - status.hysteresis_c));
+        } else {
+            setText('cooling-stop-temp', '--');
+        }
+    } else {
+        setText('cooling-start-temp', '--');
+        setText('cooling-stop-temp', '--');
+    }
     setHtml('cooling-auto-enable-state', status.auto_enable
         ? renderSvgIcon('icon-auto', 'status-success') + ' <span class="status-success">ON</span>'
         : renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">OFF</span>');
@@ -1676,7 +1685,7 @@ function renderCoolingTemperature(status) {
     if (!status || !status.temperature_valid) return '--';
     var value = Number(status.temperature_c);
     if (!isFinite(value)) return '--';
-    return renderSvgIcon('icon-temp') + ' ' + value.toFixed(1) + ' °C';
+    return value.toFixed(1) + ' °C';
 }
 
 function renderCoolingCelsius(value) {

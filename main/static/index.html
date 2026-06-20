@@ -686,10 +686,6 @@
                             <div class="hero-header-left">
                                 <span class="hero-state-badge" id="cooling-mode-state"><span
                                         class="skeleton">AUTO</span></span>
-                                <div class="hero-title-group">
-                                    <h2 class="hero-title">สถานะระบบทำความเย็น</h2>
-                                </div>
-                                <p class="hero-desc" id="cooling-status-desc">ควบคุมพัดลมหรือระบบระบายความร้อน</p>
                             </div>
                             <div class="hero-header-right">
                                 <div class="runtime-eyebrow" id="cooling-sync-state">กำลังดึงข้อมูลสถานะ...</div>
@@ -704,19 +700,16 @@
                                     <strong class="temp-value mono" id="cooling-temperature"><span
                                             class="skeleton">00.0°C</span></strong>
                                 </div>
-                                <div class="temp-divider">
-                                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor"
-                                        stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
-                                        class="text-muted">
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        <polyline points="12 5 19 12 12 19"></polyline>
-                                    </svg>
-                                </div>
-                                <div class="temp-target">
-                                    <span class="temp-label">เป้าหมาย (±<span id="cooling-hysteresis" class="mono"><span
-                                                class="skeleton">0.0°C</span></span>)</span>
-                                    <strong class="temp-value mono text-muted" id="cooling-threshold"><span
-                                            class="skeleton">00.0°C</span></strong>
+                                <div class="temp-section-divider"></div>
+                                <div class="temp-bounds-container">
+                                    <div class="temp-bound-item">
+                                        <span class="temp-bound-label">เริ่มทำความเย็น:</span>
+                                        <span class="temp-bound-value mono" id="cooling-start-temp"><span class="skeleton">00.0°C</span></span>
+                                    </div>
+                                    <div class="temp-bound-item">
+                                        <span class="temp-bound-label">ตัดการทำงาน:</span>
+                                        <span class="temp-bound-value mono text-muted" id="cooling-stop-temp"><span class="skeleton">00.0°C</span></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -838,7 +831,7 @@
 
                                         <div class="durations-row">
                                             <div class="time-input-group">
-                                                <label class="group-label" for="cooling-threshold-input">เป้าหมาย
+                                                <label class="group-label" for="cooling-threshold-input">เริ่มทำความเย็น
                                                     (°C)</label>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
@@ -854,8 +847,8 @@
                                             </div>
 
                                             <div class="time-input-group">
-                                                <label class="group-label" for="cooling-hysteresis-input">เริ่มทำงานซ้ำ
-                                                    (±°C)</label>
+                                                <label class="group-label" for="cooling-hysteresis-input">ส่วนต่างอุณหภูมิ
+                                                    (°C)</label>
                                                 <div class="duration-picker-container">
                                                     <div class="duration-picker">
                                                         <label class="duration-part" style="flex:1"
