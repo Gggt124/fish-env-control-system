@@ -568,7 +568,12 @@ function markPumpDirty() {
             setText('pump-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
         } else {
             warning.classList.add('hidden');
-            setText('pump-config-state', 'โหลดค่าแล้ว');
+            if (pumpConfig && pumpConfig.settings_status) {
+                var autoStart = pumpLastStatus ? pumpLastStatus.auto_start : pumpConfig.auto_start;
+                setHtml('pump-config-state', renderSettingsStatus(pumpConfig.settings_status, autoStart));
+            } else {
+                setText('pump-config-state', 'โหลดค่าแล้ว');
+            }
         }
     }
     updatePumpConfigSaveButton();
@@ -578,7 +583,13 @@ function setPumpClean(label) {
     pumpDirty = false;
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('pump-config-state', label || 'บันทึกแล้ว');
+    if (pumpConfig && (!label || label.indexOf('โหลดค่า') !== -1 || label.indexOf('บันทึก') !== -1)) {
+        var statusStr = pumpConfig.settings_status || 'loaded';
+        var autoStart = pumpConfig.auto_start !== undefined ? !!pumpConfig.auto_start : (pumpLastStatus ? pumpLastStatus.auto_start : false);
+        setHtml('pump-config-state', renderSettingsStatus(statusStr, autoStart));
+    } else {
+        setText('pump-config-state', label || 'บันทึกแล้ว');
+    }
     updatePumpConfigSaveButton();
 }
 
@@ -869,8 +880,9 @@ function applyPumpStatus(status, authoritative) {
         sync.innerHTML = status.fault ? renderSvgIcon('icon-x-circle') + ' Relay Fault (All OFF)' :
             (status.initial_stabilizing ? renderSvgIcon('icon-alert-triangle') + ' Stabilizing...' : renderSvgIcon('icon-check-circle') + ' Synced');
     }
-    if (!pumpDirty && status.settings_status) {
-        setHtml('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
+    if (!pumpDirty && pumpConfig) {
+        var statusStr = pumpConfig.settings_status || 'loaded';
+        setHtml('pump-config-state', renderSettingsStatus(statusStr, status.auto_start));
     }
     setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
         (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
@@ -1264,16 +1276,16 @@ function renderRelayChannelState(channel, status) {
 }
 
 function renderSettingsStatus(value, autoStart) {
-    var icon = renderSvgIcon('icon-check-circle', 'status-success');
-    var label = 'Loaded';
+    var prefix = '';
     if (value !== 'loaded') {
-        icon = renderSvgIcon('icon-alert-triangle', 'status-warning');
+        var icon = renderSvgIcon('icon-alert-triangle', 'status-warning');
+        var label = 'Error';
         if (value === 'defaults_missing') label = 'Defaults';
         else if (value === 'defaults_invalid') label = 'Invalid';
-        else label = 'Error';
+        prefix = icon + ' ' + label + ' &bull; ';
     }
     var autoIcon = autoStart ? renderSvgIcon('icon-auto', 'status-success') : renderSvgIcon('icon-stop', 'status-danger');
-    return icon + ' ' + label + ' • ' + autoIcon + ' Auto-start: ' + (autoStart ? 'ON' : 'OFF');
+    return prefix + autoIcon + ' Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
 /* ======== Cooling Dashboard ======== */
@@ -1356,7 +1368,11 @@ function markCoolingDirty() {
             setText('cooling-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
         } else {
             warning.classList.add('hidden');
-            setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
+            if (coolingConfig && coolingConfig.settings_status && coolingLastStatus) {
+                setHtml('cooling-config-state', renderSettingsStatus(coolingConfig.settings_status, coolingLastStatus.auto_enable));
+            } else {
+                setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
+            }
         }
     }
     updateCoolingButtons();
@@ -1366,7 +1382,13 @@ function setCoolingClean(label) {
     coolingDirty = false;
     var warning = pumpEl('cooling-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('cooling-config-state', label || 'บันทึกแล้ว');
+    if (coolingConfig) {
+        var statusStr = coolingConfig.settings_status || 'loaded';
+        var autoEnabled = coolingConfig.auto_enable !== undefined ? !!coolingConfig.auto_enable : (coolingLastStatus ? coolingLastStatus.auto_enable : false);
+        setHtml('cooling-config-state', renderSettingsStatus(statusStr, autoEnabled));
+    } else {
+        setText('cooling-config-state', label || 'บันทึกแล้ว');
+    }
     updateCoolingButtons();
 }
 
@@ -1498,12 +1520,12 @@ function saveCoolingConfig() {
             updateCoolingButtons();
             return;
         }
-        coolingConfig = data;
+        coolingConfig = data.payload || data;
         coolingConfigLoaded = true;
-        setCoolingConfigFields(data);
-        if (data.status) applyCoolingStatus(data.status, true);
         setCoolingClean('บันทึก cooling แล้ว');
         showToast('บันทึกค่า cooling เรียบร้อย', 'success');
+        if (data.status) applyCoolingStatus(data.status, true);
+        syncCoolingStatus(true);
     });
 }
 
@@ -1588,6 +1610,11 @@ function applyCoolingStatus(status, authoritative) {
         lockoutTestStr = 'LOCK ' + formatPumpCountdown(status.lockout_remaining_sec);
     }
     setText('cooling-lockout-test-state', lockoutTestStr);
+
+    if (!coolingDirty && coolingConfig) {
+        var statusStr = coolingConfig.settings_status || 'loaded';
+        setHtml('cooling-config-state', renderSettingsStatus(statusStr, status.auto_enable));
+    }
 
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
