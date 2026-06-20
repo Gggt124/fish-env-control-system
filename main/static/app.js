@@ -3362,6 +3362,7 @@ function handleRoute() {
         if (typeof initHardwareInstall === 'function') initHardwareInstall();
     }
 
+    window.scrollTo(0, 0);
 }
 
 window.addEventListener('popstate', handleRoute);

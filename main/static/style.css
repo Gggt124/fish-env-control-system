@@ -2954,9 +2954,9 @@ body.login-active #app-content {
         display: flex;
     }
     
-    /* Add padding to main-content to avoid overlapping bottom nav */
+    /* Add padding to main-content to avoid overlapping bottom nav and add extra space */
     .main-content {
-        padding-bottom: calc(var(--space-16) + env(safe-area-inset-bottom)) !important;
+        padding-bottom: calc(var(--space-16) + var(--space-8) + env(safe-area-inset-bottom)) !important;
     }
 }
 
