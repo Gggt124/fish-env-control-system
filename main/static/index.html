@@ -978,42 +978,36 @@
                                 </path>
                             </svg></span>
                     </div>
-                    <table class="info-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Chip</th>
-                                <td class="info-value mono" id="st-chip-model"><span
-                                        class="skeleton">ESP32-D0WDQ6</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Revision</th>
-                                <td class="info-value mono" id="st-chip-revision"><span class="skeleton">1</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Cores</th>
-                                <td class="info-value mono" id="st-chip-cores"><span class="skeleton">2</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">CPU Speed</th>
-                                <td class="info-value mono" id="st-cpu-freq"><span class="skeleton">240 MHz</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">IDF Version</th>
-                                <td class="info-value mono" id="st-idf-version"><span class="skeleton">v6.0.1</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Firmware</th>
-                                <td class="info-value mono" id="st-project-version"><span class="skeleton">1.0.0</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Reset Reason</th>
-                                <td class="info-value mono" id="st-reset-reason"><span
-                                        class="skeleton">POWERON_RESET</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="status-kv-list">
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Chip</span>
+                            <div class="status-kv-value" id="st-chip-model"><span class="skeleton">ESP32-D0WDQ6</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Revision</span>
+                            <div class="status-kv-value" id="st-chip-revision"><span class="skeleton">1</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Cores</span>
+                            <div class="status-kv-value" id="st-chip-cores"><span class="skeleton">2</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">CPU Speed</span>
+                            <div class="status-kv-value" id="st-cpu-freq"><span class="skeleton">240 MHz</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">IDF Version</span>
+                            <div class="status-kv-value" id="st-idf-version"><span class="skeleton">v6.0.1</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Firmware</span>
+                            <div class="status-kv-value" id="st-project-version"><span class="skeleton">1.0.0</span></div>
+                        </div>
+                        <div class="status-kv-item" style="grid-column: 1 / -1;">
+                            <span class="status-kv-label" lang="en">Reset Reason</span>
+                            <div class="status-kv-value" id="st-reset-reason"><span class="skeleton">POWERON_RESET</span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Memory Card -->
@@ -1028,33 +1022,29 @@
                                 <polyline points="7 3 7 8 15 8"></polyline>
                             </svg></span>
                     </div>
-                    <table class="info-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Free</th>
-                                <td class="info-value"><span id="st-free-heap" class="mono"><span class="skeleton">200
-                                            KB (00% used)</span></span>
-                                    <div class="progress-bar-inline">
-                                        <div class="fill" id="st-heap-bar"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Min Free</th>
-                                <td class="info-value mono" id="st-min-free-heap"><span class="skeleton">180 KB</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Largest Block</th>
-                                <td class="info-value mono" id="st-largest-free-block"><span class="skeleton">120
-                                        KB</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Total DRAM</th>
-                                <td class="info-value mono" id="st-total-heap"><span class="skeleton">320 KB</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="status-kv-list">
+                        <div class="status-kv-item" style="grid-column: 1 / -1;">
+                            <span class="status-kv-label" lang="en">Free</span>
+                            <div class="status-kv-value">
+                                <span id="st-free-heap"><span class="skeleton">200 KB (00% used)</span></span>
+                                <div class="progress-bar-inline">
+                                    <div class="fill" id="st-heap-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Min Free</span>
+                            <div class="status-kv-value" id="st-min-free-heap"><span class="skeleton">180 KB</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Largest Block</span>
+                            <div class="status-kv-value" id="st-largest-free-block"><span class="skeleton">120 KB</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Total DRAM</span>
+                            <div class="status-kv-value" id="st-total-heap"><span class="skeleton">320 KB</span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Account & Security Card -->
@@ -1095,7 +1085,7 @@
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg></span>
                     </div>
-                    <div class="card-value mono" id="st-uptime"><span class="skeleton">0d 00h 00m 00s</span></div>
+                    <div class="card-value" id="st-uptime"><span class="skeleton">0d 00h 00m 00s</span></div>
                     <div class="card-sub neutral">ระยะเวลาการทำงานทั้งหมดตั้งแต่เปิดเครื่อง</div>
                 </div>
 
@@ -1109,41 +1099,36 @@
                                 <use href="#icon-wifi"></use>
                             </svg></span>
                     </div>
-                    <table class="info-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Status</th>
-                                <td class="info-value" id="st-sta-status"><span class="skeleton">กำลังโหลด</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value mono" id="st-sta-ssid"><span class="skeleton">SSID_NAME</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value mono" id="st-sta-ip"><span class="skeleton">192.168.1.100</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">RSSI</th>
-                                <td class="info-value mono" id="st-sta-rssi"><span class="skeleton">-00 dBm</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Channel</th>
-                                <td class="info-value mono" id="st-sta-channel"><span class="skeleton">11</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Auth</th>
-                                <td class="info-value" id="st-sta-auth"><span class="skeleton">WPA2_PSK</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">MAC</th>
-                                <td class="info-value mono" id="st-mac-sta"><span
-                                        class="skeleton">00:00:00:00:00:00</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="status-kv-list">
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Status</span>
+                            <div class="status-kv-value" id="st-sta-status"><span class="skeleton">กำลังโหลด</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">SSID</span>
+                            <div class="status-kv-value" id="st-sta-ssid"><span class="skeleton">SSID_NAME</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">IP</span>
+                            <div class="status-kv-value" id="st-sta-ip"><span class="skeleton">192.168.1.100</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">MAC</span>
+                            <div class="status-kv-value" id="st-mac-sta"><span class="skeleton">00:00:00:00:00:00</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">RSSI</span>
+                            <div class="status-kv-value" id="st-sta-rssi"><span class="skeleton">-00 dBm</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Channel</span>
+                            <div class="status-kv-value" id="st-sta-channel"><span class="skeleton">11</span></div>
+                        </div>
+                        <div class="status-kv-item" style="grid-column: 1 / -1;">
+                            <span class="status-kv-label" lang="en">Auth</span>
+                            <div class="status-kv-value" id="st-sta-auth"><span class="skeleton">WPA2_PSK</span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Wi-Fi AP Card -->
@@ -1158,33 +1143,28 @@
                                 <circle cx="12" cy="12" r="2"></circle>
                             </svg></span>
                     </div>
-                    <table class="info-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">SSID</th>
-                                <td class="info-value mono" id="st-ap-ssid"><span class="skeleton">FishPump-Setup</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">IP</th>
-                                <td class="info-value mono" id="st-ap-ip"><span class="skeleton">192.168.4.1</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Clients</th>
-                                <td class="info-value mono" id="st-ap-clients"><span class="skeleton">0</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Weakest RSSI</th>
-                                <td class="info-value mono" id="st-ap-client-rssi"><span class="skeleton">N/A</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">MAC</th>
-                                <td class="info-value mono" id="st-mac-ap"><span
-                                        class="skeleton">00:00:00:00:00:00</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="status-kv-list">
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">SSID</span>
+                            <div class="status-kv-value" id="st-ap-ssid"><span class="skeleton">FishPump-Setup</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">IP</span>
+                            <div class="status-kv-value" id="st-ap-ip"><span class="skeleton">192.168.4.1</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Clients</span>
+                            <div class="status-kv-value" id="st-ap-clients"><span class="skeleton">0</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">MAC</span>
+                            <div class="status-kv-value" id="st-mac-ap"><span class="skeleton">00:00:00:00:00:00</span></div>
+                        </div>
+                        <div class="status-kv-item" style="grid-column: 1 / -1;">
+                            <span class="status-kv-label" lang="en">Weakest RSSI</span>
+                            <div class="status-kv-value" id="st-ap-client-rssi"><span class="skeleton">N/A</span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Services Card -->
@@ -1197,28 +1177,24 @@
                                 <use href="#icon-hardware"></use>
                             </svg></span>
                     </div>
-                    <table class="info-table">
-                        <tbody>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Wi-Fi Mode</th>
-                                <td class="info-value mono" id="st-wifi-mode"><span class="skeleton">APSTA</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">DNS Server</th>
-                                <td class="info-value" id="st-dns-status"><span class="skeleton">Running</span></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">Static Web Errors</th>
-                                <td class="info-value mono" id="st-http-static-errors"><span class="skeleton">0</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="info-label" lang="en">JSON API Errors</th>
-                                <td class="info-value mono" id="st-http-json-errors"><span class="skeleton">0</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="status-kv-list">
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Wi-Fi Mode</span>
+                            <div class="status-kv-value" id="st-wifi-mode"><span class="skeleton">APSTA</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">DNS Server</span>
+                            <div class="status-kv-value" id="st-dns-status"><span class="skeleton">Running</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Static Web Errors</span>
+                            <div class="status-kv-value" id="st-http-static-errors"><span class="skeleton">0</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">JSON API Errors</span>
+                            <div class="status-kv-value" id="st-http-json-errors"><span class="skeleton">0</span></div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -1509,8 +1485,6 @@
 
     </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-    <script src="/app.js"></script>
     <!-- Modal Container -->
     <!-- Modal Container -->
     <dialog id="modal-container" class="modal-dialog">
@@ -1706,6 +1680,7 @@
         </a>
     </nav>
 
+    <script src="/app.js"></script>
 </body>
 
 </html>

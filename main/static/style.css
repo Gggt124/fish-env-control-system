@@ -898,32 +898,48 @@ button.nav-item {
 .card-sub.warn { color: var(--tertiary-text); }
 .card-sub.neutral { color: var(--outline); }
 
-/* Info table for status page */
-.info-table {
-    width: 100%; border-collapse: collapse;
-    margin-top: var(--space-3);
+/* Status KV List for status page */
+.status-kv-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
 }
 
-.info-table tr + tr {
-    border-top: 1px solid var(--surface-container-high);
+.status-kv-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background-color: var(--surface-container-lowest);
+    border: 1px solid var(--surface-container-high);
+    border-radius: var(--radius-md);
 }
 
-.info-label {
+.status-kv-label {
     font-size: var(--text-xs); font-weight: 600; line-height: 1.35rem;
-    color: var(--outline); padding: var(--space-2) var(--space-2) var(--space-2) 0;
-    white-space: nowrap; width: 1%;
-    vertical-align: middle;
-    text-align: left;
+    color: var(--outline);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
 }
 
-.info-value {
+.status-kv-value {
     font-size: var(--text-sm); font-weight: 500; line-height: 1.4rem;
-    color: var(--on-surface); padding: var(--space-2) 0;
-    text-align: right; vertical-align: middle;
+    color: var(--on-surface);
     overflow-wrap: anywhere;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    text-align: right;
+    gap: var(--space-2);
 }
 
-.info-value.mono {
+.status-kv-value.mono {
     font-family: var(--font-mono); font-size: var(--text-sm);
 }
 
@@ -953,7 +969,7 @@ button.nav-item {
 
 /* Grid layouts */
 .status-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-4);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-4);
 }
 
 .dashboard-grid {
