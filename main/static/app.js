@@ -1038,6 +1038,26 @@ function getPumpCountdownSec() {
 }
 
 function renderPumpCountdown() {
+    var stale = !pumpLastSyncMs || (Date.now() - pumpLastSyncMs > PUMP_STALE_MS);
+    if (stale) {
+        setText('pump-countdown', '-- : --');
+        var ring = document.getElementById('pump-progress-ring-circle');
+        var bar = document.getElementById('pump-progress-bar-fill');
+        var pctText = document.getElementById('pump-progress-pct');
+        if (ring) {
+            var circumference = 2 * Math.PI * 62;
+            ring.style.strokeDasharray = circumference;
+            ring.style.strokeDashoffset = circumference;
+        }
+        if (bar) {
+            bar.style.transform = 'translateX(-100%)';
+        }
+        if (pctText) {
+            pctText.textContent = '--%';
+        }
+        return;
+    }
+
     pumpDisplayedCountdownSec = getPumpCountdownSec();
     setText('pump-countdown', formatPumpCountdown(pumpDisplayedCountdownSec));
 
@@ -1135,7 +1155,7 @@ function formatPumpCountdown(value) {
 
 function renderSvgIcon(iconName, colorClass) {
     var cls = 'stat-icon' + (colorClass ? ' ' + colorClass : '');
-    return '<svg class="' + cls + '"><use href="#' + iconName + '"></use></svg>';
+    return '<svg class="' + cls + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#' + iconName + '"></use></svg>';
 }
 
 function renderPumpTimer(value) {
