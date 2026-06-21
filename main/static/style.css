@@ -1026,14 +1026,7 @@ button.nav-item {
     gap: var(--space-4);
 }
 
-@media (min-width: 1024px) {
-    .dashboard-grid.layout-split {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: var(--space-6);
-        align-items: start;
-    }
-}
+
 
 .dashboard-col, .dashboard-col-main, .dashboard-col-side {
     display: flex;
@@ -1052,14 +1045,14 @@ button.nav-item {
 .settings-collapsible {
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--surface), var(--surface-container-low));
+    background: var(--surface);
     box-shadow: var(--shadow-card);
     overflow: hidden;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 [data-theme="dark"] .settings-collapsible {
-    background: linear-gradient(135deg, var(--surface-container-low), var(--surface-container-lowest));
+    background: var(--surface-container-low);
     border-color: rgba(255, 255, 255, 0.08);
 }
 .settings-collapsible > summary {
@@ -1365,7 +1358,7 @@ button.nav-item {
 .pump-hero-card {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--surface), var(--surface-container-low));
+    background: var(--surface);
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-lg);
     padding: var(--space-6) var(--space-8);
@@ -1379,7 +1372,7 @@ button.nav-item {
 /* Decorative radial blob removed — flat-by-default rule */
 
 [data-theme="dark"] .pump-hero-card {
-    background: linear-gradient(135deg, var(--surface-container-low), var(--surface-container-lowest));
+    background: var(--surface-container-low);
     border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -1773,11 +1766,9 @@ button.nav-item {
 
 
 .timer-grid {
-    display: grid; grid-template-columns: 1fr; gap: var(--space-4);
-}
-
-@media (min-width: 900px) {
-    .timer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+    gap: var(--space-4);
 }
 
 .duration-field {
@@ -3141,7 +3132,7 @@ body.login-active .app-footer {
     flex-direction: column;
     gap: var(--space-4);
     padding: var(--space-6);
-    background: linear-gradient(135deg, var(--surface), var(--surface-container-low));
+    background: var(--surface);
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-card);
@@ -3150,7 +3141,7 @@ body.login-active .app-footer {
 }
 
 [data-theme="dark"] .timer-card-panel {
-    background: linear-gradient(135deg, var(--surface-container-low), var(--surface-container-lowest));
+    background: var(--surface-container-low);
     border-color: rgba(255, 255, 255, 0.08);
 }
 
