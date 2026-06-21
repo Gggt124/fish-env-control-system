@@ -254,7 +254,7 @@
     --border-color:        #1e2333;  /* subtle structural border */
     --text-primary:        #e8edf5;  /* near-white, ไม่จ้าเกินไป */
     --text-secondary:      #7a8899;  /* labels และ meta */
-    --text-muted:          #404958;  /* placeholder, divider text */
+    --text-muted:          #64748b;  /* placeholder, divider text */
 
     --accent:              #00c8a0;  /* teal operational — pump active, focus ring */
     --accent-hover:        #00ad8a;
@@ -537,7 +537,7 @@ h4 {
 .input-wrapper { position: relative; }
 .input-wrapper .input-icon {
     position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%);
-    color: var(--outline); font-size: var(--text-lg); pointer-events: none;
+    color: var(--on-surface-variant); font-size: var(--text-lg); pointer-events: none;
 }
 
 .input-wrapper input {
@@ -857,7 +857,7 @@ button.nav-item {
 }
 .page-header .header-left p { 
     font-size: var(--text-sm); 
-    color: var(--outline); 
+    color: var(--on-surface-variant); 
     margin-top: 2px; 
     margin-bottom: 0; 
     white-space: nowrap;
@@ -921,7 +921,7 @@ button.nav-item {
 
 .ap-pill .ap-label { font-size: var(--text-xs); font-weight: 400; color: var(--secondary-text); }
 .ap-pill .ap-ip {
-    font-family: var(--font-mono); font-size: var(--text-sm); color: var(--outline);
+    font-family: var(--font-mono); font-size: var(--text-sm); color: var(--on-surface-variant);
     padding-left: var(--space-2); border-left: 1px solid var(--outline-variant);
 }
 
@@ -937,6 +937,11 @@ button.nav-item {
     margin-bottom: var(--space-2);
 }
 
+.card-header h3 {
+    color: var(--on-surface-variant);
+    font-weight: 500;
+}
+
 .card-label {
     font-size: var(--text-xs); font-weight: 400; line-height: 1.35rem;
     letter-spacing: 0.05em; color: var(--on-surface-variant);
@@ -945,7 +950,7 @@ button.nav-item {
 
 .card-value {
     font-size: var(--text-xl); font-weight: 400; line-height: 1.3;
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
 }
 
 @media (min-width: 1024px) {
@@ -959,7 +964,7 @@ button.nav-item {
 
 .card-sub.good { color: var(--secondary-text); }
 .card-sub.warn { color: var(--tertiary-text); }
-.card-sub.neutral { color: var(--outline); }
+.card-sub.neutral { color: var(--on-surface-variant); }
 
 /* Status KV List for status page */
 .status-kv-list {
@@ -996,7 +1001,7 @@ button.nav-item {
 .status-kv-value {
     font-family: var(--font-mono);
     font-size: var(--text-sm); font-weight: 400; line-height: 1.4rem;
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
     overflow-wrap: anywhere;
     display: flex;
     align-items: center;
@@ -1126,6 +1131,7 @@ button.nav-item {
 
 .section-card h3 {
     font-size: var(--text-lg); font-weight: 400; line-height: 1.3;
+    color: var(--on-surface-variant);
     margin-bottom: var(--space-4);
 }
 
@@ -1143,12 +1149,12 @@ button.nav-item {
 .summary-label {
     font-size: var(--text-xs); font-weight: 400; line-height: 1.35rem;
     letter-spacing: 0.06em; text-transform: uppercase;
-    color: var(--outline);
+    color: var(--on-surface-variant);
 }
 
 .summary-value {
     font-size: var(--text-lg); font-weight: 400; line-height: 1.4rem;
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
 }
 
 /* Inline status icon inside runtime-stat strong values */
@@ -1765,7 +1771,7 @@ button.nav-item {
 .hero-badge-value {
     font-size: var(--text-sm);
     font-weight: 400;
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
     display: flex;
     align-items: center;
     line-height: 1.2;
@@ -1855,7 +1861,7 @@ select {
     border-radius: var(--radius-md);
     border: 1px solid var(--outline-variant);
     background-color: var(--surface-container-lowest);
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
     font-family: var(--font-ui);
     font-size: var(--text-base);
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -2092,7 +2098,7 @@ select:disabled {
 }
 
 .temp-bound-value {
-    color: var(--text-primary);
+    color: var(--on-surface-variant);
     font-weight: 400;
 }
 
@@ -2164,6 +2170,7 @@ select:disabled {
 
 .hardware-wire-item h4 {
     margin: 0 0 var(--space-1); font-size: var(--text-base); line-height: 1.4rem;
+    color: var(--on-surface-variant);
 }
 
 .hardware-wire-item p {
@@ -2189,7 +2196,7 @@ select:disabled {
 }
 
 .hardware-summary-row strong {
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
     white-space: nowrap;
 }
 
@@ -2208,6 +2215,7 @@ select:disabled {
 
 .hardware-role-field span {
     font-size: var(--text-sm);
+    color: var(--on-surface-variant);
 }
 
 .hardware-role-field select {
@@ -2298,7 +2306,8 @@ select:disabled {
 
 .network-info { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .network-info .net-ssid, .network-info .net-ssid-row {
-    font-size: var(--text-base); font-weight: 400;
+    font-size: var(--text-base); font-weight: 500;
+    color: var(--on-surface-variant);
     display: flex; align-items: center; gap: var(--space-2);
     overflow-wrap: anywhere;
 }
@@ -2318,6 +2327,9 @@ select:disabled {
 .network-empty {
     padding: var(--space-8);
     text-align: center;
+    color: var(--on-surface-variant);
+}
+.network-item.status-message {
     color: var(--on-surface-variant);
 }
 .network-empty.error { color: var(--error-text); }
@@ -2351,12 +2363,13 @@ select:disabled {
 .badge-current {
     display: inline-flex;
     align-items: center;
-    padding: 2px var(--space-2);
-    border-radius: 12px;
-    background: var(--secondary-container);
-    color: var(--secondary-text);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--connection-connected-bg);
+    color: var(--connection-connected-text);
+    border: 1px solid var(--connection-connected-border);
     font-size: var(--text-xs);
-    font-weight: 400;
+    font-weight: 600;
     white-space: nowrap;
 }
 
@@ -2439,10 +2452,10 @@ select:disabled {
     color: var(--accent) !important;
 }
 .profile-empty-hint {
-    color: var(--outline) !important;
+    color: var(--on-surface-variant) !important;
 }
 .dns-helper-text {
-    color: var(--outline) !important;
+    color: var(--on-surface-variant) !important;
     margin-top: calc(-1 * var(--space-1));
     margin-bottom: var(--space-3);
     display: flex;
@@ -2486,7 +2499,7 @@ select:disabled {
     }
 }
 .net-signal .sig-dbm {
-    font-family: var(--font-mono); font-size: var(--text-sm); color: var(--outline);
+    font-family: var(--font-mono); font-size: var(--text-sm); color: var(--on-surface-variant);
 }
 
 /* Input panel */
@@ -2521,7 +2534,7 @@ select:disabled {
     width: 100%; padding: 10px var(--space-4);
     background: var(--surface-container-low);
     border: 1px solid var(--selected-ssid-border);
-    border-radius: var(--radius-md); font-size: var(--text-base); color: var(--outline);
+    border-radius: var(--radius-md); font-size: var(--text-base); color: var(--on-surface);
 }
 
 .checkbox-label {
@@ -2530,7 +2543,7 @@ select:disabled {
     gap: var(--space-2);
     font-size: var(--text-sm);
     font-weight: 400;
-    color: var(--outline);
+    color: var(--on-surface-variant);
     cursor: pointer;
     user-select: none;
     margin-top: var(--space-2);
@@ -3139,6 +3152,7 @@ select.invalid {
     display: flex;
     align-items: center;
     gap: var(--space-1);
+    color: var(--on-surface-variant);
 }
 
 /* === Input Field Definition === */
@@ -3148,7 +3162,7 @@ select.invalid {
     border: 1px solid var(--outline-variant);
     border-radius: var(--radius-md);
     background: var(--surface);
-    color: var(--on-surface);
+    color: var(--on-surface-variant);
     font-size: var(--text-base);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
