@@ -2347,25 +2347,18 @@ function initWifi() {
 
 function updateConnectionStatus() {
     apiGet('/api/status', function (err, data) {
-        var el = document.getElementById('connection-status');
-        var icon = document.getElementById('conn-icon');
-        var title = document.getElementById('conn-title');
-        var sub = document.getElementById('conn-sub');
-        var btn = document.getElementById('disconnect-btn');
-        if (!el || !title) return;
-
         if (!err && data && data.ok && data.sta_connected) {
-            el.className = 'connection-status connected';
-            if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-            title.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27: ' + (data.sta_ssid || 'Wi-Fi');
-            if (sub) sub.textContent = 'IP: ' + (data.sta_ip || '--');
-            if (btn) btn.classList.remove('hidden');
+            window.appConnState = {
+                connected: true,
+                ssid: data.sta_ssid,
+                ip: data.sta_ip
+            };
         } else {
-            el.className = 'connection-status';
-            if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
-            title.textContent = '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
-            if (sub) sub.textContent = 'STA \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e01\u0e31\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e14\u0e46';
-            if (btn) btn.classList.add('hidden');
+            window.appConnState = { connected: false };
+        }
+        // Force re-render if profiles are already loaded
+        if (window.savedWifiProfiles) {
+            renderSavedProfiles();
         }
     });
 }
@@ -2487,6 +2480,9 @@ function renderSavedProfiles() {
 
         if (isConn) {
             html += '<span class="text-success" style="margin-left:8px;">เชื่อมต่อแล้ว</span>';
+            if (window.appConnState && window.appConnState.ip) {
+                html += '<span class="text-xs" style="margin-left:8px; opacity:0.8;">IP: <span class="mono">' + escHtml(window.appConnState.ip) + '</span></span>';
+            }
         }
         html += '</div>';
         html += '</div>';
@@ -2506,6 +2502,14 @@ function renderSavedProfiles() {
         html += '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
         html += '<span class="hidden-mobile">ลืม</span>';
         html += '</button>';
+
+        if (isConn) {
+            html += '<div class="action-divider"></div>';
+            html += '<button class="btn-icon-text" onclick="doDisconnect()">';
+            html += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+            html += '<span class="hidden-mobile">ตัดการเชื่อมต่อ</span>';
+            html += '</button>';
+        }
 
         html += '</div></div>';
     }

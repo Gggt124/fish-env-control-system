@@ -48,6 +48,24 @@ extern const uint8_t _binary_app_js_end[]   asm("_binary_app_js_end");
 extern const uint8_t _binary_app_js_gz_start[] asm("_binary_app_js_gz_start");
 extern const uint8_t _binary_app_js_gz_end[]   asm("_binary_app_js_gz_end");
 
+/* Font Embedded Declarations */
+extern const uint8_t _binary_ibm_plex_sans_thai_400_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_400_latin_woff2_start");
+extern const uint8_t _binary_ibm_plex_sans_thai_400_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_400_latin_woff2_end");
+extern const uint8_t _binary_ibm_plex_sans_thai_400_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_400_thai_woff2_start");
+extern const uint8_t _binary_ibm_plex_sans_thai_400_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_400_thai_woff2_end");
+extern const uint8_t _binary_ibm_plex_sans_thai_600_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_600_latin_woff2_start");
+extern const uint8_t _binary_ibm_plex_sans_thai_600_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_600_latin_woff2_end");
+extern const uint8_t _binary_ibm_plex_sans_thai_600_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_600_thai_woff2_start");
+extern const uint8_t _binary_ibm_plex_sans_thai_600_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_600_thai_woff2_end");
+extern const uint8_t _binary_ibm_plex_sans_thai_700_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_700_latin_woff2_start");
+extern const uint8_t _binary_ibm_plex_sans_thai_700_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_700_latin_woff2_end");
+extern const uint8_t _binary_ibm_plex_sans_thai_700_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_700_thai_woff2_start");
+extern const uint8_t _binary_ibm_plex_sans_thai_700_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_700_thai_woff2_end");
+extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_start[] asm("_binary_jetbrains_mono_400_latin_woff2_start");
+extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_end[]   asm("_binary_jetbrains_mono_400_latin_woff2_end");
+extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_start[] asm("_binary_jetbrains_mono_700_latin_woff2_start");
+extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_end[]   asm("_binary_jetbrains_mono_700_latin_woff2_end");
+
 
 /*
  * WARNING: Default credentials come from app_config.h.
@@ -1925,6 +1943,20 @@ static esp_err_t handle_app_js(httpd_req_t *req)
         "application/javascript; charset=utf-8");
 }
 
+#define DECLARE_FONT_HANDLER(name) \
+    static esp_err_t handle_##name##_woff2(httpd_req_t *req) { \
+        return serve_static(req, _binary_##name##_woff2_start, _binary_##name##_woff2_end, NULL, NULL, "font/woff2"); \
+    }
+
+DECLARE_FONT_HANDLER(ibm_plex_sans_thai_400_latin)
+DECLARE_FONT_HANDLER(ibm_plex_sans_thai_400_thai)
+DECLARE_FONT_HANDLER(ibm_plex_sans_thai_600_latin)
+DECLARE_FONT_HANDLER(ibm_plex_sans_thai_600_thai)
+DECLARE_FONT_HANDLER(ibm_plex_sans_thai_700_latin)
+DECLARE_FONT_HANDLER(ibm_plex_sans_thai_700_thai)
+DECLARE_FONT_HANDLER(jetbrains_mono_400_latin)
+DECLARE_FONT_HANDLER(jetbrains_mono_700_latin)
+
 /* GET /favicon.ico - browsers request this automatically; avoid repeated 404 sockets. */
 static esp_err_t handle_favicon(httpd_req_t *req)
 {
@@ -3335,6 +3367,14 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware },
     { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css },
     { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js },
+    { .uri = "/ibm_plex_sans_thai_400_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_latin_woff2 },
+    { .uri = "/ibm_plex_sans_thai_400_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_thai_woff2 },
+    { .uri = "/ibm_plex_sans_thai_600_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_600_latin_woff2 },
+    { .uri = "/ibm_plex_sans_thai_600_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_600_thai_woff2 },
+    { .uri = "/ibm_plex_sans_thai_700_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_700_latin_woff2 },
+    { .uri = "/ibm_plex_sans_thai_700_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_700_thai_woff2 },
+    { .uri = "/jetbrains_mono_400_latin.woff2", .method = HTTP_GET, .handler = handle_jetbrains_mono_400_latin_woff2 },
+    { .uri = "/jetbrains_mono_700_latin.woff2", .method = HTTP_GET, .handler = handle_jetbrains_mono_700_latin_woff2 },
     { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon },
     { .uri = "/connecttest.txt", .method = HTTP_GET, .handler = handle_captive_probe },
     { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe },
