@@ -164,7 +164,18 @@ function showToast(msg, type) {
     }
     var el = document.createElement('div');
     el.className = 'toast-item ' + type;
-    el.textContent = msg;
+    
+    var iconHtml = '';
+    if (type === 'success') {
+        iconHtml = '<span class="toast-icon-wrap success"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg></span>';
+    } else if (type === 'error') {
+        iconHtml = '<span class="toast-icon-wrap error"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>';
+    } else {
+        iconHtml = '<span class="toast-icon-wrap info"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>';
+    }
+    
+    el.innerHTML = '<div class="toast-content">' + iconHtml + '<span class="toast-msg">' + escHtml(msg) + '</span></div>';
+    
     if (type === 'error') {
         el.setAttribute('role', 'alert');
     }
@@ -921,7 +932,7 @@ function handlePumpStatusFailure() {
         var label = document.getElementById('pump-running-label');
         if (label) {
             clearSkeleton(label);
-            label.innerHTML = renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">Offline</span>';
+            label.innerHTML = '<span class="pump-led-dot status-danger"></span><span class="status-danger">Offline</span>';
         }
         updateFloatingBadgeState(null);
     }
@@ -1090,7 +1101,7 @@ function renderPumpCountdown() {
             } else if (pumpLastStatus.phase === 'off') {
                 bar.style.background = 'var(--tertiary)';
             } else {
-                bar.style.background = 'var(--primary)';
+                bar.style.background = 'var(--accent)';
             }
         }
     }
@@ -1207,11 +1218,11 @@ function renderPumpRunLabel(status) {
     if (!status) return '--';
     if (status.running) {
         if (status.phase === 'off') {
-            return renderSvgIcon('icon-pause', 'status-warning') + ' <span class="status-warning">พักการทำงาน</span>';
+            return '<span class="pump-led-dot status-warning"></span><span class="status-warning">พักการทำงาน</span>';
         }
-        return renderSvgIcon('icon-play', 'status-success') + ' <span class="status-success">ทำงาน</span>';
+        return '<span class="pump-led-dot status-success"></span><span class="status-success">ทำงาน</span>';
     }
-    return renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">หยุด</span>';
+    return '<span class="pump-led-dot status-danger"></span><span class="status-danger">หยุด</span>';
 }
 
 function updateFloatingBadgeState(status) {

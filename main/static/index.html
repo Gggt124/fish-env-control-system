@@ -388,8 +388,7 @@
                         <!-- Status Badge -->
                         <div class="hero-status-floating-badge" id="pump-status-floating-badge">
                             <div class="hero-title-group">
-                                <h2 class="hero-title" id="pump-running-label"><span class="skeleton">กำลังโหลด</span>
-                                </h2>
+                                <h2 class="hero-title" id="pump-running-label"><span class="pump-led-dot status-warning"></span><span class="skeleton">กำลังโหลด</span></h2>
                             </div>
                             <p class="hero-desc" id="pump-state-desc">ระบบทำงานสลับชุดรอบเวลาอัตโนมัติตามสถานะสวิตช์ลูกลอย
                             </p>
@@ -959,7 +958,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">System</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                        <span class="text-lg text-accent"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -1004,7 +1003,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Memory</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                        <span class="text-lg text-accent"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -1015,12 +1014,7 @@
                     <div class="status-kv-list">
                         <div class="status-kv-item" style="grid-column: 1 / -1;">
                             <span class="status-kv-label" lang="en">Free</span>
-                            <div class="status-kv-value">
-                                <span id="st-free-heap"><span class="skeleton">200 KB (00% used)</span></span>
-                                <div class="progress-bar-inline">
-                                    <div class="fill" id="st-heap-bar"></div>
-                                </div>
-                            </div>
+                            <div class="status-kv-value" id="st-free-heap"><span class="skeleton">200 KB</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Min Free</span>
@@ -1041,7 +1035,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label">บัญชีและความปลอดภัย</span>
-                        <span class="text-lg text-primary">
+                        <span class="text-lg text-accent">
                             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
                                 <use href="#icon-lock"></use>
                             </svg>
@@ -1068,7 +1062,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Uptime</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                        <span class="text-lg text-accent"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <circle cx="12" cy="12" r="10"></circle>
@@ -1083,7 +1077,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Wi-Fi Station</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                        <span class="text-lg text-accent"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <use href="#icon-wifi"></use>
@@ -1161,7 +1155,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span class="card-label" lang="en">Services</span>
-                        <span class="text-lg text-primary"><svg viewBox="0 0 24 24" width="18" height="18"
+                        <span class="text-lg text-accent"><svg viewBox="0 0 24 24" width="18" height="18"
                                 stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
                                 stroke-linejoin="round" class="svg-icon">
                                 <use href="#icon-hardware"></use>
@@ -1226,31 +1220,144 @@
                 </div>
             </div>
 
-            <!-- Network List -->
-            <div class="card network-card">
-                <div class="card-header">
-                    <h3>เครือข่ายที่ค้นพบ</h3>
-                    <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"
-                        aria-label="สแกนเครือข่าย Wi-Fi"><svg viewBox="0 0 24 24" width="14" height="14"
-                            stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
-                            stroke-linejoin="round" class="svg-icon svg-icon-start">
-                            <use href="#icon-sync"></use>
-                        </svg> สแกนหา <span lang="en">Wi-Fi</span></button>
-                </div>
-                <div class="network-list" id="network-list" aria-live="polite">
-                    <div class="network-item status-message">
-                        กดปุ่ม "สแกนหา Wi-Fi" ด้านบนเพื่อเริ่มค้นหาสัญญาณ
+            <!-- Wi-Fi Layout Bento Columns -->
+            <div class="dashboard-grid">
+                <div class="dashboard-col-main">
+                    <!-- Network List -->
+                    <div class="card network-card">
+                        <div class="card-header">
+                            <h3>เครือข่ายที่ค้นพบ</h3>
+                            <button type="button" class="btn btn-outline btn-sm" id="btn-scan" onclick="doScan()"
+                                aria-label="สแกนเครือข่าย Wi-Fi"><svg viewBox="0 0 24 24" width="14" height="14"
+                                    stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"
+                                    stroke-linejoin="round" class="svg-icon svg-icon-start">
+                                    <use href="#icon-sync"></use>
+                                </svg> สแกนหา <span lang="en">Wi-Fi</span></button>
+                        </div>
+                        <div class="network-list" id="network-list" aria-live="polite">
+                            <div class="network-item status-message">
+                                กดปุ่ม "สแกนหา Wi-Fi" ด้านบนเพื่อเริ่มค้นหาสัญญาณ
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Saved Profiles Card -->
-            <div class="card mt-md" id="saved-profiles-card">
-                <div class="card-header">
-                    <h3>เครือข่ายที่บันทึกไว้</h3>
-                </div>
-                <div id="profile-list" aria-live="polite">
-                    <div class="profile-empty">กำลังโหลด...</div>
+                <div class="dashboard-col-side">
+                    <!-- Wi-Fi Connect Modal / Panel -->
+                    <dialog id="wifi-connect-modal" class="modal-dialog">
+                        <div class="modal-card modal-card-wide">
+                            <h3 class="modal-title">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-accent">
+                                    <use href="#icon-wifi"></use>
+                                </svg>
+                                <span>เชื่อมต่อ <span lang="en">Wi-Fi</span></span>
+                            </h3>
+
+                            <div class="form-group">
+                                <label>ชื่อเครือข่าย (SSID)</label>
+                                <div class="selected-ssid-display" id="modal-wifi-ssid">---</div>
+                            </div>
+
+                            <div id="wifi-saved-msg" class="wifi-saved-msg hidden">
+                                <div class="wifi-saved-msg-header">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                                        <use href="#icon-shield"></use>
+                                    </svg>
+                                    <div>มีรหัสผ่านของเครือข่ายนี้บันทึกอยู่แล้วในระบบ โดยบอร์ดจะนำมาใช้เชื่อมต่อโดยอัตโนมัติ</div>
+                                </div>
+                                <button type="button" class="text-link-helper" onclick="showSavedPasswordInput()">
+                                    คลิกที่นี่หากต้องการเปลี่ยนแปลงรหัสผ่านใหม่
+                                </button>
+                            </div>
+
+                            <div class="form-group" id="wifi-password-group">
+                                <label for="wifi-password">รหัสผ่าน (Password)</label>
+                                <div class="input-wrapper">
+                                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
+                                            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                            class="svg-icon">
+                                            <use href="#icon-lock"></use>
+                                        </svg></span>
+                                    <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" autocomplete="off">
+                                </div>
+                                <label class="checkbox-label password-visibility-toggle">
+                                    <input type="checkbox" id="show-wifi-password" onchange="toggleWifiPasswordVisibility()">
+                                    <span>แสดงรหัสผ่าน</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="static-ip-toggle" onchange="toggleStaticIp()">
+                                    <span>ใช้ IP คงที่ (Static IP)</span>
+                                </label>
+                            </div>
+
+                            <div class="static-ip-fields hidden" id="static-ip-fields">
+                                <div class="form-group">
+                                    <label for="static-ip">หมายเลข <span lang="en">IP</span> (<span lang="en">IP Address</span>)</label>
+                                    <div class="input-wrapper">
+                                        <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
+                                                stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                                class="svg-icon">
+                                                <use href="#icon-globe"></use>
+                                            </svg></span>
+                                        <input type="text" id="static-ip" class="mono" placeholder="เช่น 192.168.1.100">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="static-gateway">เกตเวย์ (<span lang="en">Gateway</span>)</label>
+                                    <div class="input-wrapper">
+                                        <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
+                                                stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                                class="svg-icon">
+                                                <use href="#icon-link"></use>
+                                            </svg></span>
+                                        <input type="text" id="static-gateway" class="mono" placeholder="เช่น 192.168.1.1">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="static-netmask">เนตมาสก์ (<span lang="en">Netmask</span>)</label>
+                                    <div class="input-wrapper">
+                                        <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
+                                                stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                                class="svg-icon">
+                                                <use href="#icon-mask"></use>
+                                            </svg></span>
+                                        <input type="text" id="static-netmask" class="mono" placeholder="เช่น 255.255.255.0"
+                                            value="255.255.255.0">
+                                    </div>
+                                </div>
+                                <div class="text-xs dns-helper-text">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
+                                        <use href="#icon-info"></use>
+                                    </svg>
+                                    <span><span lang="en">DNS</span> จะใช้ <span lang="en">Gateway</span> โดยอัตโนมัติ</span>
+                                </div>
+                            </div>
+
+                            <div id="connect-status" class="text-sm">
+                            </div>
+
+                            <div class="modal-actions">
+                                <button class="btn btn-outline" id="cancel-btn" onclick="clearSelection()">ยกเลิก</button>
+                                <button class="btn btn-primary" id="connect-btn" onclick="doConnect()">เชื่อมต่อ</button>
+                            </div>
+                        </div>
+                    </dialog>
+
+                    <!-- Saved Profiles Card -->
+                    <div class="card" id="saved-profiles-card">
+                        <div class="card-header">
+                            <h3>เครือข่ายที่บันทึกไว้</h3>
+                        </div>
+                        <div id="profile-list" aria-live="polite">
+                            <div class="profile-empty">กำลังโหลด...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1480,112 +1587,7 @@
         </div>
     </dialog>
 
-    <!-- Wi-Fi Connect Modal -->
-    <dialog id="wifi-connect-modal" class="modal-dialog">
-        <div class="modal-card modal-card-wide">
-            <h3 class="modal-title">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
-                    stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-primary">
-                    <use href="#icon-wifi"></use>
-                </svg>
-                <span>เชื่อมต่อ <span lang="en">Wi-Fi</span></span>
-            </h3>
 
-            <div class="form-group">
-                <label>ชื่อเครือข่าย (SSID)</label>
-                <div class="selected-ssid-display" id="modal-wifi-ssid">---</div>
-            </div>
-
-            <div id="wifi-saved-msg" class="wifi-saved-msg hidden">
-                <div class="wifi-saved-msg-header">
-                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <use href="#icon-shield"></use>
-                    </svg>
-                    <div>มีรหัสผ่านของเครือข่ายนี้บันทึกอยู่แล้วในระบบ โดยบอร์ดจะนำมาใช้เชื่อมต่อโดยอัตโนมัติ
-                    </div>
-                </div>
-                <button type="button" class="text-link-helper" onclick="showSavedPasswordInput()">
-                    คลิกที่นี่หากต้องการเปลี่ยนแปลงรหัสผ่านใหม่
-                </button>
-            </div>
-
-            <div class="form-group" id="wifi-password-group">
-                <label for="wifi-password">รหัสผ่าน (Password)</label>
-                <div class="input-wrapper">
-                    <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
-                            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
-                            class="svg-icon">
-                            <use href="#icon-lock"></use>
-                        </svg></span>
-                    <input type="password" id="wifi-password" placeholder="ป้อนรหัสผ่าน Wi-Fi" autocomplete="off">
-                </div>
-                <label class="checkbox-label password-visibility-toggle">
-                    <input type="checkbox" id="show-wifi-password" onchange="toggleWifiPasswordVisibility()">
-                    <span>แสดงรหัสผ่าน</span>
-                </label>
-            </div>
-
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="static-ip-toggle" onchange="toggleStaticIp()">
-                    <span>ใช้ IP คงที่ (Static IP)</span>
-                </label>
-            </div>
-
-            <div class="static-ip-fields hidden" id="static-ip-fields">
-                <div class="form-group">
-                    <label for="static-ip">หมายเลข <span lang="en">IP</span> (<span lang="en">IP Address</span>)</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
-                                stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
-                                class="svg-icon">
-                                <use href="#icon-globe"></use>
-                            </svg></span>
-                        <input type="text" id="static-ip" class="mono" placeholder="เช่น 192.168.1.100">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="static-gateway">เกตเวย์ (<span lang="en">Gateway</span>)</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
-                                stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
-                                class="svg-icon">
-                                <use href="#icon-link"></use>
-                            </svg></span>
-                        <input type="text" id="static-gateway" class="mono" placeholder="เช่น 192.168.1.1">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="static-netmask">เนตมาสก์ (<span lang="en">Netmask</span>)</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor"
-                                stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"
-                                class="svg-icon">
-                                <use href="#icon-mask"></use>
-                            </svg></span>
-                        <input type="text" id="static-netmask" class="mono" placeholder="เช่น 255.255.255.0"
-                            value="255.255.255.0">
-                    </div>
-                </div>
-                <div class="text-xs dns-helper-text">
-                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round" class="svg-icon">
-                        <use href="#icon-info"></use>
-                    </svg>
-                    <span><span lang="en">DNS</span> จะใช้ <span lang="en">Gateway</span> โดยอัตโนมัติ</span>
-                </div>
-            </div>
-
-            <div id="connect-status" class="text-sm">
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-outline" id="cancel-btn" onclick="clearSelection()">ยกเลิก</button>
-                <button class="btn btn-primary" id="connect-btn" onclick="doConnect()">เชื่อมต่อ</button>
-            </div>
-        </div>
-    </dialog>
 
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Mobile navigation">
