@@ -1915,7 +1915,6 @@ function applyHardwareMap(data) {
     renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending', data.active);
     populateHardwareSelects(data.options || {}, effective || data.active || {});
     renderHardwareWiring(data.active, data.pending_valid ? data.pending : null);
-    renderHardwareTechnical(data.options || {});
 
     setHardwareClean();
     setHardwareState(data.reboot_required ? 'บันทึกผังใหม่แล้ว - จำเป็นต้องรีบูตระบบ' : 'โหลดผังปัจจุบันเรียบร้อย');
@@ -1995,45 +1994,6 @@ function renderHardwareWiring(active, pending) {
         }
         setText(field.wire, text);
     }
-}
-
-function renderHardwareTechnical(options) {
-    var el = hardwareEl('hardware-technical-list');
-    if (!el) return;
-
-    var html = '';
-    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
-        var field = HARDWARE_FIELDS[i];
-        var roleOptions = options[field.key] || [];
-        html += '<div class="hardware-technical-group">'
-            + '<h4>' + escHtml(field.label) + '</h4>';
-        if (!roleOptions.length) {
-            html += '<p>ไม่มีพินตัวเลือกจากเฟิร์มแวร์</p>';
-        }
-        for (var j = 0; j < roleOptions.length; j++) {
-            html += renderHardwareOption(roleOptions[j]);
-        }
-        html += '</div>';
-    }
-    el.innerHTML = html;
-}
-
-function renderHardwareOption(opt) {
-    var tags = [];
-    if (opt.input_capable) tags.push('อินพุต (Input)');
-    if (opt.output_capable) tags.push('เอาต์พุต (Output)');
-    if (opt.internal_pull_capable) tags.push('ดึงสัญญาณภายใน (Internal pull)');
-    if (opt.is_default) tags.push('ค่าเริ่มต้น (Default)');
-
-    var tagHtml = '';
-    for (var i = 0; i < tags.length; i++) {
-        tagHtml += '<span class="capability-tag">' + escHtml(tags[i]) + '</span>';
-    }
-
-    return '<div class="hardware-option-row">'
-        + '<div><strong>GPIO ' + escHtml(String(opt.gpio)) + '</strong><span>' + escHtml(opt.label || '') + '</span></div>'
-        + '<div class="capability-tags">' + tagHtml + '</div>'
-        + '</div>';
 }
 
 function readHardwareMapForm() {
