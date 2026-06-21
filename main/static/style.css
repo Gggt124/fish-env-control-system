@@ -1592,9 +1592,10 @@ button.nav-item {
     gap: var(--space-3);
     background: var(--surface);
     border: 1px solid var(--outline-variant);
-    padding: var(--space-2.5) 24px var(--space-2.5) var(--space-4);
+    padding: 0 16px 0 0;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    overflow: hidden;
     transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 130px;
     width: max-content;
