@@ -1072,6 +1072,15 @@ function renderPumpCountdown() {
     pumpDisplayedCountdownSec = getPumpCountdownSec();
     setText('pump-countdown', formatPumpCountdown(pumpDisplayedCountdownSec));
 
+    var countdownEl = document.getElementById('pump-countdown');
+    if (countdownEl && pumpLastStatus) {
+        if (pumpLastStatus.phase === 'off') {
+            countdownEl.classList.add('status-warning');
+        } else {
+            countdownEl.classList.remove('status-warning');
+        }
+    }
+
     var ring = document.getElementById('pump-progress-ring-circle');
     var bar = document.getElementById('pump-progress-bar-fill');
     var pctText = document.getElementById('pump-progress-pct');
@@ -2427,33 +2436,27 @@ function renderSavedProfiles() {
         html += '<div class="net-ssid-row">';
         html += '<span class="net-ssid">' + escHtml(p.ssid) + '</span>';
         if (isConn) {
-            html += '<span class="badge-current"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ปัจจุบัน</span>';
+            html += '<span class="badge-current"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ปัจจุบัน</span>';
         }
         html += '</div>';
         html += '<div class="net-detail">';
 
         if (scanData) {
             // Found in scan
-            var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ';
-            html += authLabel + escHtml(scanData.auth);
-            html += '<span class="text-success" style="margin-left:8px;">(อยู่ในระยะ)</span>';
+            var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+            html += authLabel + ' ' + escHtml(scanData.auth);
         } else if (isConn) {
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ';
-            html += '<span style="opacity:0.8;">กำลังใช้งาน</span>';
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> บันทึกแล้ว';
         } else if (typeof window.lastScanResults === 'undefined') {
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ';
-            html += '<span class="text-xs" style="opacity:0.6;">กดสแกนใหม่เพื่อตรวจสอบระยะ</span>';
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> รอตรวจสอบระยะสัญญาณ';
         } else {
             // Scanned but not found
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> ';
-            html += '<span style="opacity:0.6;">อยู่นอกระยะสัญญาณ</span>';
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> อยู่นอกระยะสัญญาณ';
         }
 
-        if (isConn) {
-            html += '<span class="text-success" style="margin-left:8px;">เชื่อมต่อแล้ว</span>';
-            if (window.appConnState && window.appConnState.ip) {
-                html += '<span class="text-xs" style="margin-left:8px; opacity:0.8;">IP: <span class="mono">' + escHtml(window.appConnState.ip) + '</span></span>';
-            }
+        if (isConn && window.appConnState && window.appConnState.ip) {
+            html += '<span class="detail-divider" style="margin:0 6px; opacity:0.5;">&bull;</span>';
+            html += 'IP: <span class="mono">' + escHtml(window.appConnState.ip) + '</span>';
         }
         html += '</div>';
         html += '</div>';

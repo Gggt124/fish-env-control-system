@@ -1575,10 +1575,14 @@ button.nav-item {
 
 .hero-remaining-time {
     font-family: var(--font-mono);
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
+    font-size: 3.5rem;
+    line-height: 1;
+    font-weight: 400;
+    color: var(--accent);
+}
+
+[data-theme="dark"] .hero-remaining-time {
+    color: var(--accent-hover);
 }
 
 .hero-total-time {
