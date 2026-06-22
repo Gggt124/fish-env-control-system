@@ -2222,8 +2222,30 @@ select:disabled {
     color: var(--on-surface-variant);
 }
 
+.hardware-role-field span.flex {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 .hardware-role-field select {
     margin-top: var(--space-2);
+}
+
+.hardware-reboot-confirm-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-6);
+}
+
+@media (max-width: 640px) {
+    .hardware-reboot-confirm-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 .checkbox-label.hardware-reboot-confirm {
@@ -2234,6 +2256,8 @@ select:disabled {
     background: var(--surface-container-low);
     color: var(--on-surface-variant);
     font-size: var(--text-sm);
+    margin: 0;
+    flex: 1;
 }
 
 .form-warning {
@@ -3140,23 +3164,25 @@ select.invalid {
 
 
 /* === TFT Wiring Styles === */
-.tft-wiring-compact-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.tft-wire-badge {
+.tft-wiring-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2) var(--space-4);
     background-color: var(--surface-container);
     border: 1px solid var(--outline-variant);
-    padding: var(--space-1) var(--space-2);
+    padding: var(--space-3);
     border-radius: var(--radius-md);
-    font-family: var(--font-mono);
-    font-size: 0.875rem;
+}
+
+.tft-wiring-grid div {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-1);
-    color: var(--on-surface-variant);
+    font-size: 0.875rem;
+}
+
+.tft-wiring-grid .mono {
+    color: var(--on-surface);
 }
 
 /* === Input Field Definition === */
