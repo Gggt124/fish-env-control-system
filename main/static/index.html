@@ -1634,6 +1634,33 @@
     </nav>
 
     <script src="/app.js"></script>
+
+    <!-- Force Password Change Modal -->
+    <dialog id="force-pwd-modal" class="modal-dialog">
+        <div class="modal-card">
+            <h2 class="modal-title">ต้องเปลี่ยนรหัสผ่าน</h2>
+            <p class="modal-desc">เพื่อความปลอดภัย กรุณาเปลี่ยนรหัสผ่านก่อนเข้าใช้งานระบบ</p>
+            <form id="force-pwd-form" onsubmit="event.preventDefault(); submitForcePasswordChange();">
+                <div class="form-group">
+                    <label>รหัสผ่านปัจจุบัน</label>
+                    <input type="password" id="force-pwd-current" required>
+                </div>
+                <div class="form-group">
+                    <label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)</label>
+                    <input type="password" id="force-pwd-new" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label>ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" id="force-pwd-confirm" required minlength="8">
+                </div>
+                <div id="force-pwd-error" class="error-msg hidden" style="color: var(--danger-color); margin-top: 0.5rem;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="handleUnauthorized()">ออกจากระบบ</button>
+                    <button type="submit" class="btn btn-primary" id="force-pwd-submit">เปลี่ยนรหัสผ่าน</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 </body>
 
 </html>
