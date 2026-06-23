@@ -231,7 +231,21 @@ static void schedule_sta_connect(void)
     }
 
     esp_timer_stop(s_sta_connect_timer);
-    esp_err_t err = esp_timer_start_once(s_sta_connect_timer, STA_CONNECT_DELAY_MS * 1000);
+    
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    int retry_count = s_sta_retry_count;
+    xSemaphoreGive(s_wifi_mutex);
+
+    uint32_t delay_ms = STA_CONNECT_DELAY_MS;
+    if (retry_count > 0) {
+        uint32_t backoff_seconds = (1 << (retry_count - 1));
+        if (backoff_seconds > 60 || retry_count > 7) {
+            backoff_seconds = 60;
+        }
+        delay_ms = backoff_seconds * 1000;
+    }
+
+    esp_err_t err = esp_timer_start_once(s_sta_connect_timer, (uint64_t)delay_ms * 1000);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to schedule STA connect: %s", esp_err_to_name(err));
     } else {
@@ -341,6 +355,16 @@ static void ap_timeout_timer_cb(void *arg)
         return;
     }
 
+    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    bool sta_connected = s_sta_connected;
+    xSemaphoreGive(s_wifi_mutex);
+
+    if (!sta_connected) {
+        ESP_LOGI(TAG, "AP timeout expired but STA is disconnected. Keeping AP active to prevent blackout.");
+        wifi_manager_reset_ap_timeout();
+        return;
+    }
+
     wifi_sta_list_t clients = {0};
     esp_err_t err = esp_wifi_ap_get_sta_list(&clients);
     if (err == ESP_OK && clients.num > 0) {
@@ -415,9 +439,6 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 s_sta_retry_count++;
             }
             bool retry_limit_reached = s_sta_retry_count > STA_MAX_RETRY;
-            if (retry_limit_reached) {
-                s_sta_retry_blocked = true;
-            }
             bool sta_configured = s_sta_configured;
             bool scan_in_progress = s_scan_in_progress;
             bool retry_blocked = s_sta_retry_blocked;
@@ -464,8 +485,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                         ensure_ap_started();
                     }
                 } else {
-                    ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
+                    ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback but continuing background retries", STA_MAX_RETRY);
                     ensure_ap_started();
+                    schedule_sta_connect();
                 }
             } else if (sta_configured && !scan_in_progress) {
                 schedule_sta_connect();
