@@ -2022,6 +2022,60 @@ static esp_err_t captive_portal_404_handler(httpd_req_t *req, httpd_err_code_t e
     return httpd_resp_send(req, NULL, 0);
 }
 
+/* POST /api/change-password */
+static esp_err_t handle_api_change_password(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    char body[256] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
+    }
+
+    char current_password[64] = {0};
+    char new_password[64] = {0};
+
+    cJSON *root = cJSON_Parse(body);
+    if (root) {
+        cJSON *curr = cJSON_GetObjectItem(root, "current_password");
+        cJSON *newp = cJSON_GetObjectItem(root, "new_password");
+        if (curr && cJSON_IsString(curr)) {
+            strncpy(current_password, curr->valuestring, sizeof(current_password) - 1);
+        }
+        if (newp && cJSON_IsString(newp)) {
+            strncpy(new_password, newp->valuestring, sizeof(new_password) - 1);
+        }
+        cJSON_Delete(root);
+    }
+
+    if (strlen(current_password) == 0 || strlen(new_password) < 8) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
+    }
+
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass));
+
+    if (strcmp(current_password, stored_pass) != 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
+    }
+
+    if (strcmp(new_password, APP_TEMPLATE_DEFAULT_PASSWORD) == 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"cannot_use_default\"}", "400 Bad Request");
+    }
+
+    if (!nvs_store_set_credentials(stored_user, new_password)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"storage_error\"}", "500 Internal Server Error");
+    }
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
 
 #define LOGIN_LRU_SIZE 16
 
@@ -3425,6 +3479,7 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe },
     { .uri = "/hotspot-detect.html", .method = HTTP_GET, .handler = handle_captive_probe },
     { .uri = "/ncsi.txt",       .method = HTTP_GET,  .handler = handle_captive_probe },
+    { .uri = "/api/change-password", .method = HTTP_POST, .handler = handle_api_change_password },
     { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login },
     { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout },
     { .uri = "/api/auth/nonce",.method = HTTP_GET,  .handler = handle_api_auth_nonce },
