@@ -8,6 +8,8 @@
 static const char *TAG = "dns_server";
 static TaskHandle_t s_dns_task = NULL;
 static int s_dns_sock = -1;
+static volatile bool s_dns_run = false;
+
 
 #define DNS_PORT 53
 #define DNS_MAX_QUERY_SIZE 512
@@ -153,17 +155,23 @@ static void dns_server_task(void *pvParameter)
 
     ESP_LOGI(TAG, "DNS server listening on port %d", DNS_PORT);
 
+    /* Set receive timeout so recvfrom doesn't block forever */
+    struct timeval tv = {
+        .tv_sec = 0,
+        .tv_usec = 500000 // 500ms
+    };
+    setsockopt(s_dns_sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
     uint8_t query_buf[DNS_MAX_QUERY_SIZE];
     uint8_t resp_buf[DNS_MAX_QUERY_SIZE];
     struct sockaddr_in client_addr;
     socklen_t client_len;
 
-    while (1) {
+    while (s_dns_run) {
         client_len = sizeof(client_addr);
         int len = recvfrom(s_dns_sock, query_buf, sizeof(query_buf), 0,
                            (struct sockaddr *)&client_addr, &client_len);
         if (len <= 0) {
-            if (s_dns_sock < 0) break; /* Socket closed */
             continue;
         }
 
@@ -186,8 +194,11 @@ static void dns_server_task(void *pvParameter)
         }
     }
 
-    close(s_dns_sock);
-    s_dns_sock = -1;
+    ESP_LOGI(TAG, "DNS server task exiting");
+    if (s_dns_sock >= 0) {
+        close(s_dns_sock);
+        s_dns_sock = -1;
+    }
     s_dns_task = NULL;
     vTaskDelete(NULL);
 }
@@ -199,6 +210,7 @@ bool dns_server_start(void)
         return true;
     }
 
+    s_dns_run = true;
     BaseType_t ret = xTaskCreate(dns_server_task, "dns_server", 4096, NULL, 5, &s_dns_task);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "Failed to create DNS server task");
@@ -215,9 +227,11 @@ bool dns_server_is_running(void)
 
 void dns_server_stop(void)
 {
-    if (s_dns_sock >= 0) {
-        close(s_dns_sock);
-        s_dns_sock = -1;
+    if (s_dns_task) {
+        s_dns_run = false;
+        while (s_dns_task != NULL) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
     }
     ESP_LOGI(TAG, "DNS server stopped");
 }
