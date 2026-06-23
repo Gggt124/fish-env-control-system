@@ -1715,13 +1715,48 @@ static bool static_asset_cacheable(const char *mime_type)
            strncmp(mime_type, "application/javascript", strlen("application/javascript")) == 0;
 }
 
+typedef struct {
+    const uint8_t *start;
+    uint32_t hash;
+} asset_hash_cache_t;
+
 static uint32_t static_asset_hash(const uint8_t *start, size_t len)
 {
+    static asset_hash_cache_t cache[16];
+    static int cache_count = 0;
+    static portMUX_TYPE cache_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+    portENTER_CRITICAL(&cache_spinlock);
+    for (int i = 0; i < cache_count; i++) {
+        if (cache[i].start == start) {
+            uint32_t cached_hash = cache[i].hash;
+            portEXIT_CRITICAL(&cache_spinlock);
+            return cached_hash;
+        }
+    }
+    portEXIT_CRITICAL(&cache_spinlock);
+
     uint32_t hash = 2166136261U;
     for (size_t i = 0; i < len; i++) {
         hash ^= start[i];
         hash *= 16777619U;
     }
+
+    portENTER_CRITICAL(&cache_spinlock);
+    bool found = false;
+    for (int i = 0; i < cache_count; i++) {
+        if (cache[i].start == start) {
+            found = true;
+            break;
+        }
+    }
+    if (!found && cache_count < (int)(sizeof(cache) / sizeof(cache[0]))) {
+        cache[cache_count].start = start;
+        cache[cache_count].hash = hash;
+        cache_count++;
+    }
+    portEXIT_CRITICAL(&cache_spinlock);
+
     return hash;
 }
 
