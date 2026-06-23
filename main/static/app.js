@@ -66,32 +66,32 @@ function apiGet(url, cb, customTimeout) {
     }
     xhr.open('GET', url, true);
     xhr.timeout = customTimeout || API_TIMEOUT_MS;
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             try {
                 var data = JSON.parse(xhr.responseText);
                 if (url === '/api/status' && data && data.ok) {
-                    var banners = document.querySelectorAll('.staging-banner');
-                    for (var i = 0; i < banners.length; i++) {
+                    var banner = document.getElementById('staging-banner');
+                    if (banner) {
                         if (data.stg_type > 0) {
-                            banners[i].classList.remove('hidden');
+                            banner.classList.remove('hidden');
                         } else {
-                            banners[i].classList.add('hidden');
+                            banner.classList.add('hidden');
                         }
                     }
                 }
                 finish(null, data);
             }
-            catch(e) { finish(e, null); }
+            catch (e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function() { finish(new Error('Network error'), null); };
-    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
@@ -106,7 +106,7 @@ function apiPost(url, body, cb) {
     xhr.open('POST', url, true);
     xhr.timeout = API_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
             return;
@@ -114,7 +114,7 @@ function apiPost(url, body, cb) {
         try {
             var parsed = JSON.parse(xhr.responseText);
             finish(null, parsed);
-        } catch(e) {
+        } catch (e) {
             if (xhr.status === 200) {
                 finish(e, null);
             } else {
@@ -122,9 +122,9 @@ function apiPost(url, body, cb) {
             }
         }
     };
-    xhr.onerror = function() { finish(new Error('Network error'), null); };
-    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
     xhr.send(JSON.stringify(body));
 }
 
@@ -138,19 +138,19 @@ function apiDelete(url, cb) {
     }
     xhr.open('DELETE', url, true);
     xhr.timeout = API_TIMEOUT_MS;
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             try { finish(null, JSON.parse(xhr.responseText)); }
-            catch(e) { finish(e, null); }
+            catch (e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function() { finish(new Error('Network error'), null); };
-    xhr.ontimeout = function() { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function() { finish(new Error('Request aborted'), null); };
+    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
+    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
@@ -158,43 +158,131 @@ function apiDelete(url, cb) {
 
 function showToast(msg, type) {
     type = type || 'info';
+    var container = document.getElementById('toast');
+    if (!container) {
+        container = document.body;
+    }
     var el = document.createElement('div');
-    el.className = 'toast ' + type;
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(function() {
+    el.className = 'toast-item ' + type;
+    
+    var iconHtml = '';
+    if (type === 'success') {
+        iconHtml = '<span class="toast-icon-wrap success"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg></span>';
+    } else if (type === 'error') {
+        iconHtml = '<span class="toast-icon-wrap error"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>';
+    } else {
+        iconHtml = '<span class="toast-icon-wrap info"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>';
+    }
+    
+    el.innerHTML = '<div class="toast-content">' + iconHtml + '<span class="toast-msg">' + escHtml(msg) + '</span></div>';
+    
+    if (type === 'error') {
+        el.setAttribute('role', 'alert');
+    }
+    container.appendChild(el);
+    setTimeout(function () {
         el.style.opacity = '0';
         el.style.transition = 'opacity 0.3s';
-        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
     }, 3000);
 }
 
-/* ======== UI Helpers ======== */
+/* ======== Focus Trap & Dialog Keyboard Helpers ======== */
+var activeFocusTrap = null;
+var previousFocusedElement = null;
 
-function toggleMobileNav() {
-    var sidebar = document.getElementById('app-sidebar');
-    var overlay = document.getElementById('drawer-overlay');
-    if (sidebar && overlay) {
-        var open = !sidebar.classList.contains('open');
-        sidebar.classList.toggle('open', open);
-        overlay.classList.toggle('open', open);
-        var btn = document.querySelector('.hamburger-btn');
-        if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+function trapFocus(element) {
+    if (!element) return;
+    
+    previousFocusedElement = document.activeElement;
+    activeFocusTrap = element;
+
+    element.setAttribute('aria-hidden', 'false');
+
+    var focusables = element.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusables.length > 0) {
+        var first = Array.prototype.find.call(focusables, function(el) {
+            return !el.disabled && el.offsetWidth > 0 && el.offsetHeight > 0;
+        });
+        if (first) {
+            first.focus();
+        }
     }
 }
 
-function closeMobileNav() {
-    var sidebar = document.getElementById('app-sidebar');
-    var overlay = document.getElementById('drawer-overlay');
-    if (!sidebar || !overlay) return;
-    sidebar.classList.remove('open');
-    overlay.classList.remove('open');
-    var btn = document.querySelector('.hamburger-btn');
-    if (btn) btn.setAttribute('aria-expanded', 'false');
+function untrapFocus(element) {
+    if (element) {
+        element.setAttribute('aria-hidden', 'true');
+    }
+    activeFocusTrap = null;
+    if (previousFocusedElement) {
+        try {
+            previousFocusedElement.focus();
+        } catch (e) {}
+        previousFocusedElement = null;
+    }
 }
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab' && activeFocusTrap) {
+        var focusables = activeFocusTrap.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        var visibleFocusables = Array.prototype.filter.call(focusables, function(el) {
+            return !el.disabled && el.offsetWidth > 0 && el.offsetHeight > 0;
+        });
 
-window.toggleMobileNav = toggleMobileNav;
-window.closeMobileNav = closeMobileNav;
+        if (visibleFocusables.length === 0) {
+            e.preventDefault();
+            return;
+        }
+
+        var first = visibleFocusables[0];
+        var last = visibleFocusables[visibleFocusables.length - 1];
+
+        if (e.shiftKey) {
+            if (document.activeElement === first) {
+                last.focus();
+                e.preventDefault();
+            }
+        } else {
+            if (document.activeElement === last) {
+                first.focus();
+                e.preventDefault();
+            }
+        }
+        return;
+    }
+
+    // ข้ามการทำคีย์ลัดหากกำลังอยู่ในช่องป้อนข้อมูล (Input/Textarea/Select)
+    var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+        return;
+    }
+
+    // คีย์ Spacebar: สลับสั่ง Start/Stop ของปั๊มน้ำเฉพาะที่หน้า Dashboard
+    if (e.key === ' ' || e.code === 'Space') {
+        if (window.location.pathname === '/dashboard') {
+            e.preventDefault();
+            var isRunning = pumpLastStatus && pumpLastStatus.running;
+            if (isRunning) {
+                stopPump();
+            } else {
+                startPump();
+            }
+        }
+    }
+
+    // ปุ่ม S หรือ s: บังคับซิงค์ข้อมูล (Manual Sync) ของหน้าแดชบอร์ดที่เปิดอยู่
+    if (e.key === 's' || e.key === 'S') {
+        if (window.location.pathname === '/dashboard') {
+            e.preventDefault();
+            syncPumpStatus(true);
+        } else if (window.location.pathname === '/cooling') {
+            e.preventDefault();
+            syncCoolingStatus(true);
+        }
+    }
+});
+
+/* ======== UI Helpers ======== */
 
 
 function setLoading(btn, isLoading) {
@@ -214,28 +302,28 @@ function showConfirmModal(title, message, onConfirm, isDangerous) {
     var msgEl = document.getElementById('modal-message');
     var cancelBtn = document.getElementById('modal-cancel');
     var confirmBtn = document.getElementById('modal-confirm');
-    
+
     if (!container || !titleEl || !msgEl || !cancelBtn || !confirmBtn) return;
-    
+
     titleEl.textContent = title;
     msgEl.textContent = message;
-    
+
     if (isDangerous) {
         confirmBtn.className = 'btn btn-danger';
     } else {
         confirmBtn.className = 'btn btn-primary';
     }
-    
+
     function cleanup() {
-        container.classList.add('hidden');
+        container.close();
         cancelBtn.onclick = null;
         confirmBtn.onclick = null;
     }
-    
-    cancelBtn.onclick = function() { cleanup(); };
-    confirmBtn.onclick = function() { cleanup(); if (onConfirm) onConfirm(); };
-    
-    container.classList.remove('hidden');
+
+    cancelBtn.onclick = function () { cleanup(); };
+    confirmBtn.onclick = function () { cleanup(); if (onConfirm) onConfirm(); };
+
+    container.showModal();
 }
 
 /* ======== Login Page ======== */
@@ -247,11 +335,13 @@ function initLogin() {
     var btn = document.getElementById('login-btn');
     var errEl = document.getElementById('login-error');
 
-    form.onsubmit = function(e) {
+    form.onsubmit = function (e) {
         e.preventDefault();
-        var username = document.getElementById('username').value.trim();
-        var password = document.getElementById('password').value;
+        var uInput = document.getElementById('username');
+        var pInput = document.getElementById('password');
         var rememberEl = document.getElementById('remember-me');
+        var username = uInput ? uInput.value.trim() : '';
+        var password = pInput ? pInput.value : '';
         var remember = rememberEl ? rememberEl.checked : false;
 
         if (!username || !password) {
@@ -261,10 +351,16 @@ function initLogin() {
         }
 
         setLoading(btn, true);
+        if (uInput) uInput.disabled = true;
+        if (pInput) pInput.disabled = true;
+        if (rememberEl) rememberEl.disabled = true;
         errEl.style.display = 'none';
 
-        apiPost('/api/login', { username: username, password: password, remember: remember }, function(err, data) {
+        apiPost('/api/login', { username: username, password: password, remember: remember }, function (err, data) {
             setLoading(btn, false);
+            if (uInput) uInput.disabled = false;
+            if (pInput) pInput.disabled = false;
+            if (rememberEl) rememberEl.disabled = false;
 
             if (err || !data || !data.ok) {
                 errEl.style.display = 'block';
@@ -286,8 +382,8 @@ function initLogin() {
 /* ======== Logout ======== */
 
 function doLogout() {
-    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function() {
-        apiPost('/api/logout', {}, function() {
+    showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function () {
+        apiPost('/api/logout', {}, function () {
             document.cookie = 'session=; Path=/; Max-Age=0';
             navigateTo('/login');
         });
@@ -299,6 +395,8 @@ function doLogout() {
 var pumpConfig = null;
 var pumpRelayPolarity = null;
 var pumpConfigLoaded = false;
+var pumpLoadingConfig = false;
+var pumpSavingConfig = false;
 var pumpEditVersion = 0;
 var pumpDirty = false;
 var pumpPending = false;
@@ -317,6 +415,8 @@ var PUMP_STALE_MS = 5000;
 var PUMP_DEADLINE_DRIFT_MS = 1500;
 var coolingConfig = null;
 var coolingConfigLoaded = false;
+var coolingLoadingConfig = false;
+var coolingSavingConfig = false;
 var coolingDirty = false;
 var coolingPending = false;
 var coolingLastStatus = null;
@@ -328,20 +428,21 @@ var COOLING_STALE_MS = 12000;
 var statusSummaryRequestInFlight = false;
 var statusFullRequestInFlight = false;
 var hardwareMapData = null;
+var hardwareLoadingMap = false;
+var hardwareSavingMap = false;
 var hardwareDirty = false;
 var hardwarePending = false;
 var HARDWARE_FIELDS = [
-    { key: 'float_input_gpio', select: 'hardware-float-input-gpio', wire: 'wire-float-input', label: 'Float Input' },
-    { key: 'pump_relay1_gpio', select: 'hardware-pump-relay1-gpio', wire: 'wire-pump-relay1', label: 'Pump Relay 1' },
-    { key: 'pump_relay2_gpio', select: 'hardware-pump-relay2-gpio', wire: 'wire-pump-relay2', label: 'Pump Relay 2' },
-    { key: 'ds18b20_gpio', select: 'hardware-ds18b20-gpio', wire: 'wire-ds18b20', label: 'DS18B20 Sensor' },
-    { key: 'cooling_relay_gpio', select: 'hardware-cooling-relay-gpio', wire: 'wire-cooling-relay', label: 'Cooling Relay' }
+    { key: 'float_input_gpio', select: 'hardware-float-input-gpio', wire: 'wire-float-input', label: 'ลูกลอย (Float Input)' },
+    { key: 'pump_relay1_gpio', select: 'hardware-pump-relay1-gpio', wire: 'wire-pump-relay1', label: 'รีเลย์ปั๊ม 1 (Pump Relay 1)' },
+    { key: 'pump_relay2_gpio', select: 'hardware-pump-relay2-gpio', wire: 'wire-pump-relay2', label: 'รีเลย์ปั๊ม 2 (Pump Relay 2)' },
+    { key: 'ds18b20_gpio', select: 'hardware-ds18b20-gpio', wire: 'wire-ds18b20', label: 'เซนเซอร์วัดอุณหภูมิ (DS18B20)' },
+    { key: 'cooling_relay_gpio', select: 'hardware-cooling-relay-gpio', wire: 'wire-cooling-relay', label: 'รีเลย์ระบบความเย็น (Cooling Relay)' }
 ];
 
 function initDashboard() {
     initPumpDashboard();
-    initCoolingDashboard();
-    
+
     var pwdForm = document.getElementById('password-form');
     if (pwdForm) {
         pwdForm.onsubmit = doChangePassword;
@@ -366,8 +467,20 @@ function pumpEl(id) {
     return document.getElementById(id);
 }
 
+function updateBadgeCardState(cardId, isActive) {
+    var card = pumpEl(cardId);
+    if (!card) return;
+    if (isActive) {
+        card.classList.add('state-active');
+        card.classList.remove('state-inactive');
+    } else {
+        card.classList.add('state-inactive');
+        card.classList.remove('state-active');
+    }
+}
+
 function initCoolingDashboard() {
-    if (window.location.pathname !== '/dashboard') return;
+    if (window.location.pathname !== '/cooling') return;
     wireCoolingForm();
     wireCoolingActions();
     updateCoolingButtons();
@@ -396,7 +509,7 @@ function setCoolingAlert(message) {
 function wirePumpForm() {
     var form = pumpEl('pump-config-form');
     if (form) {
-        form.onsubmit = function(e) {
+        form.onsubmit = function (e) {
             e.preventDefault();
             savePumpConfig();
         };
@@ -466,7 +579,12 @@ function markPumpDirty() {
             setText('pump-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
         } else {
             warning.classList.add('hidden');
-            setText('pump-config-state', 'โหลดค่าแล้ว');
+            if (pumpConfig && pumpConfig.settings_status) {
+                var autoStart = pumpLastStatus ? pumpLastStatus.auto_start : pumpConfig.auto_start;
+                setHtml('pump-config-state', renderSettingsStatus(pumpConfig.settings_status, autoStart));
+            } else {
+                setText('pump-config-state', 'โหลดค่าแล้ว');
+            }
         }
     }
     updatePumpConfigSaveButton();
@@ -476,21 +594,28 @@ function setPumpClean(label) {
     pumpDirty = false;
     var warning = pumpEl('pump-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('pump-config-state', label || 'บันทึกแล้ว');
+    if (pumpConfig && (!label || label.indexOf('โหลดค่า') !== -1 || label.indexOf('บันทึก') !== -1)) {
+        var statusStr = pumpConfig.settings_status || 'loaded';
+        var autoStart = pumpConfig.auto_start !== undefined ? !!pumpConfig.auto_start : (pumpLastStatus ? pumpLastStatus.auto_start : false);
+        setHtml('pump-config-state', renderSettingsStatus(statusStr, autoStart));
+    } else {
+        setText('pump-config-state', label || 'บันทึกแล้ว');
+    }
     updatePumpConfigSaveButton();
 }
 
 function updatePumpConfigSaveButton() {
-    var saveBtn = pumpEl('pump-save-config');
-    if (saveBtn) saveBtn.disabled = !pumpConfigLoaded || !pumpRelayPolarity || !pumpDirty;
+    updatePumpButtons();
 }
 
 function loadPumpConfig() {
     var requestEditVersion = pumpEditVersion;
     setText('pump-config-state', 'กำลังโหลดค่า...');
     setPumpAlert('pump-config-error', '');
+    pumpLoadingConfig = true;
     updatePumpConfigSaveButton();
-    apiGet('/api/pump/config', function(err, data) {
+    apiGet('/api/pump/config', function (err, data) {
+        pumpLoadingConfig = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             pumpConfigLoaded = false;
@@ -540,7 +665,7 @@ function readDuration(prefix, label) {
     var errEl = pumpEl(prefix + '-error');
     var rawMin = minEl ? minEl.value.trim() : '';
     var rawSec = secEl ? secEl.value.trim() : '';
-    var fail = function(message) {
+    var fail = function (message) {
         if (errEl) errEl.textContent = message;
         if (minEl) minEl.classList.add('invalid');
         if (secEl) secEl.classList.add('invalid');
@@ -645,11 +770,12 @@ function savePumpConfig() {
     }
 
     setPumpAlert('pump-config-error', '');
-    if (saveBtn) setLoading(saveBtn, true);
+    pumpSavingConfig = true;
+    updatePumpConfigSaveButton();
     setText('pump-config-state', 'กำลังบันทึก...');
 
-    apiPost('/api/pump/config', payload, function(err, data) {
-        if (saveBtn) setLoading(saveBtn, false);
+    apiPost('/api/pump/config', payload, function (err, data) {
+        pumpSavingConfig = false;
         if (err || !data || !data.ok) {
             setText('pump-config-state', 'บันทึกไม่สำเร็จ');
             setPumpAlert('pump-config-error', (data && data.message) ? data.message : 'บันทึกค่าตั้งเวลาไม่สำเร็จ');
@@ -684,7 +810,7 @@ function requestPumpAction(url, pendingText, successText) {
     pumpPending = true;
     setText('pump-action-state', pendingText);
     updatePumpButtons();
-    apiPost(url, {}, function(err, data) {
+    apiPost(url, {}, function (err, data) {
         pumpPending = false;
         if (err || !data || !data.ok) {
             setText('pump-action-state', '');
@@ -707,7 +833,7 @@ function syncPumpStatus(force) {
     if (document.hidden && !force) return;
     if (pumpStatusRequestInFlight) return;
     pumpStatusRequestInFlight = true;
-    apiGet('/api/pump/status', function(err, data) {
+    apiGet('/api/pump/status', function (err, data) {
         pumpStatusRequestInFlight = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
@@ -727,23 +853,47 @@ function applyPumpStatus(status, authoritative) {
     }
 
     setHtml('pump-running-label', renderPumpRunLabel(status));
+    setHtml('pump-state-desc', renderPumpStateDesc(status));
     renderPumpCountdown();
-    setText('pump-active-timer', renderPumpTimer(status.active_timer));
+    setHtml('pump-active-timer', renderPumpTimerBadge(status.active_timer));
     setHtml('pump-phase', renderPumpPhase(status.active_timer, status.phase, status.running));
     setHtml('pump-float-state', renderFloatState(status.float_state));
     setHtml('pump-relay-state', renderActiveRelayState(status));
     setHtml('pump-relay-1-state', renderRelayChannelState('relay1', status));
     setHtml('pump-relay-2-state', renderRelayChannelState('relay2', status));
 
+    // Update dynamic card styles
+    updateBadgeCardState('pump-float-card', status.float_state === 'on');
+    updateBadgeCardState('pump-relay-1-card', relayEnergizedFor('relay1', status));
+    updateBadgeCardState('pump-relay-2-card', relayEnergizedFor('relay2', status));
+
+    // Highlight active timer card
+    var t1Card = pumpEl('timer1-card-panel');
+    var t2Card = pumpEl('timer2-card-panel');
+    updateFloatingBadgeState(status);
+    if (t1Card && t2Card) {
+        if (status.active_timer === 'timer1') {
+            t1Card.classList.add('active-timer');
+            t2Card.classList.remove('active-timer');
+        } else if (status.active_timer === 'timer2') {
+            t2Card.classList.add('active-timer');
+            t1Card.classList.remove('active-timer');
+        } else {
+            t1Card.classList.remove('active-timer');
+            t2Card.classList.remove('active-timer');
+        }
+    }
+
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = status.fault ? 'runtime-eyebrow error' :
             (status.initial_stabilizing ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
-        sync.textContent = status.fault ? 'ระบบ relay fault: ปิด relay ทั้งหมดแล้ว' :
-            (status.initial_stabilizing ? 'กำลังรอลูกลอยนิ่ง' : 'ซิงค์ล่าสุดจากอุปกรณ์');
+        sync.innerHTML = status.fault ? renderSvgIcon('icon-x-circle') + ' Relay Fault (All OFF)' :
+            (status.initial_stabilizing ? renderSvgIcon('icon-alert-triangle') + ' Stabilizing...' : renderSvgIcon('icon-check-circle') + ' Synced');
     }
-    if (!pumpDirty && status.settings_status) {
-        setText('pump-config-state', renderSettingsStatus(status.settings_status, status.auto_start));
+    if (!pumpDirty && pumpConfig) {
+        var statusStr = pumpConfig.settings_status || 'loaded';
+        setHtml('pump-config-state', renderSettingsStatus(statusStr, status.auto_start));
     }
     setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
         (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
@@ -756,10 +906,35 @@ function handlePumpStatusFailure() {
     var sync = pumpEl('pump-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'สถานะปั๊มขาดการซิงค์' : 'รอซิงค์จากอุปกรณ์';
+        sync.innerHTML = stale ? renderSvgIcon('icon-wifi-off') + ' Stale' : renderSvgIcon('icon-sync') + ' Syncing...';
     }
     if (stale) {
         setPumpAlert('pump-status-error', 'ไม่สามารถอ่านสถานะปั๊มได้ชั่วคราว ปิดปุ่ม Start/Stop จนกว่าจะซิงค์สำเร็จ');
+        setHtml('pump-active-timer', '--');
+        setHtml('pump-phase', '--');
+        setHtml('pump-float-state', '--');
+        setHtml('pump-relay-state', '--');
+        setHtml('pump-relay-1-state', '--');
+        setHtml('pump-relay-2-state', '--');
+        setText('pump-countdown', '--:--');
+        setHtml('pump-state-desc', 'ไม่สามารถอ่านสถานะจากอุปกรณ์ได้ (การเชื่อมต่อขาดหาย)');
+        
+        // Reset card styles to neutral/inactive
+        updateBadgeCardState('pump-float-card', false);
+        updateBadgeCardState('pump-relay-1-card', false);
+        updateBadgeCardState('pump-relay-2-card', false);
+
+        var t1Card = pumpEl('timer1-card-panel');
+        var t2Card = pumpEl('timer2-card-panel');
+        if (t1Card) t1Card.classList.remove('active-timer');
+        if (t2Card) t2Card.classList.remove('active-timer');
+
+        var label = document.getElementById('pump-running-label');
+        if (label) {
+            clearSkeleton(label);
+            label.innerHTML = '<span class="pump-led-dot status-danger"></span><span class="status-danger">Offline</span>';
+        }
+        updateFloatingBadgeState(null);
     }
     updatePumpButtons();
 }
@@ -771,12 +946,36 @@ function updatePumpButtons() {
     var disabled = pumpPending || stale || !pumpLastStatus || pumpLastStatus.config_valid === false;
     if (startBtn) startBtn.disabled = disabled || !!(pumpLastStatus && pumpLastStatus.running);
     if (stopBtn) stopBtn.disabled = disabled || !(pumpLastStatus && pumpLastStatus.running);
+
+    var formDisabled = !pumpConfigLoaded || pumpLoadingConfig || pumpSavingConfig || pumpPending || stale;
+    var ids = [
+        'timer1-on-min', 'timer1-on-sec', 'timer1-off-min', 'timer1-off-sec',
+        'timer2-on-min', 'timer2-on-sec', 'timer2-off-min', 'timer2-off-sec',
+        'timer1-start-phase', 'timer2-start-phase',
+        'pump-auto-start'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        var input = pumpEl(ids[i]);
+        if (input) {
+            input.disabled = formDisabled;
+        }
+    }
+
+    var saveBtn = pumpEl('pump-save-config');
+    if (saveBtn) {
+        if (pumpSavingConfig) {
+            setLoading(saveBtn, true);
+        } else {
+            setLoading(saveBtn, false);
+            saveBtn.disabled = formDisabled || !pumpDirty;
+        }
+    }
 }
 
 function startPumpLiveTimers() {
     stopPumpLiveTimers();
     if (document.hidden) return;
-    pumpPollTimer = setInterval(function() { syncPumpStatus(false); }, PUMP_STATUS_POLL_MS);
+    pumpPollTimer = setInterval(function () { syncPumpStatus(false); }, PUMP_STATUS_POLL_MS);
     pumpTickTimer = setInterval(tickPumpCountdown, PUMP_COUNTDOWN_TICK_MS);
 }
 
@@ -850,27 +1049,75 @@ function getPumpCountdownSec() {
 }
 
 function renderPumpCountdown() {
+    var stale = !pumpLastSyncMs || (Date.now() - pumpLastSyncMs > PUMP_STALE_MS);
+    if (stale) {
+        setText('pump-countdown', '-- : --');
+        var ring = document.getElementById('pump-progress-ring-circle');
+        var bar = document.getElementById('pump-progress-bar-fill');
+        var pctText = document.getElementById('pump-progress-pct');
+        if (ring) {
+            var circumference = 2 * Math.PI * 62;
+            ring.style.strokeDasharray = circumference;
+            ring.style.strokeDashoffset = circumference;
+        }
+        if (bar) {
+            bar.style.transform = 'translateX(-100%)';
+        }
+        if (pctText) {
+            pctText.textContent = '--%';
+        }
+        return;
+    }
+
     pumpDisplayedCountdownSec = getPumpCountdownSec();
     setText('pump-countdown', formatPumpCountdown(pumpDisplayedCountdownSec));
 
+    var countdownEl = document.getElementById('pump-countdown');
+    if (countdownEl && pumpLastStatus) {
+        if (pumpLastStatus.phase === 'off') {
+            countdownEl.classList.add('status-warning');
+        } else {
+            countdownEl.classList.remove('status-warning');
+        }
+    }
+
     var ring = document.getElementById('pump-progress-ring-circle');
-    if (!ring) return;
+    var bar = document.getElementById('pump-progress-bar-fill');
+    var pctText = document.getElementById('pump-progress-pct');
 
-    var radius = 62;
-    var circumference = 2 * Math.PI * radius;
-    ring.style.strokeDasharray = circumference;
-
-    var offset = 0;
+    var pct = 0;
     if (pumpLastStatus && pumpLastStatus.running && pumpLastStatus.active_timer && pumpLastStatus.phase) {
         var totalSec = getPumpDurationSec(pumpLastStatus.active_timer, pumpLastStatus.phase);
         if (totalSec > 0) {
-            var pct = pumpDisplayedCountdownSec / totalSec;
+            pct = pumpDisplayedCountdownSec / totalSec;
             if (pct < 0) pct = 0;
             if (pct > 1) pct = 1;
-            offset = circumference * (1 - pct);
         }
     }
-    ring.style.strokeDashoffset = offset;
+
+    if (ring) {
+        var radius = 62;
+        var circumference = 2 * Math.PI * radius;
+        ring.style.strokeDasharray = circumference;
+        ring.style.strokeDashoffset = circumference * (1 - pct);
+    }
+
+    if (bar) {
+        bar.style.transform = 'translateX(' + (pct * 100 - 100).toFixed(1) + '%)';
+        if (pumpLastStatus) {
+            if (pumpLastStatus.phase === 'on') {
+                bar.style.background = 'var(--secondary)';
+            } else if (pumpLastStatus.phase === 'off') {
+                bar.style.background = 'var(--tertiary)';
+            } else {
+                bar.style.background = 'var(--accent)';
+            }
+        }
+    }
+
+    if (pctText) {
+        pctText.textContent = (pct * 100).toFixed(1) + '%';
+    }
 }
 
 function getPumpDurationSec(timer, phase) {
@@ -907,6 +1154,8 @@ function predictPumpPhaseAdvance() {
     setHtml('pump-relay-state', renderActiveRelayState(pumpLastStatus));
     setHtml('pump-relay-1-state', renderRelayChannelState('relay1', pumpLastStatus));
     setHtml('pump-relay-2-state', renderRelayChannelState('relay2', pumpLastStatus));
+    updateBadgeCardState('pump-relay-1-card', relayEnergizedFor('relay1', pumpLastStatus));
+    updateBadgeCardState('pump-relay-2-card', relayEnergizedFor('relay2', pumpLastStatus));
     return true;
 }
 
@@ -924,34 +1173,112 @@ function formatPumpCountdown(value) {
     return minutes + ':' + (rem < 10 ? '0' : '') + rem;
 }
 
+function renderSvgIcon(iconName, colorClass) {
+    var cls = 'stat-icon' + (colorClass ? ' ' + colorClass : '');
+    return '<svg class="' + cls + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#' + iconName + '"></use></svg>';
+}
+
 function renderPumpTimer(value) {
     if (value === 'timer1') return 'Timer 1';
     if (value === 'timer2') return 'Timer 2';
     return '--';
 }
 
-function renderPumpRunLabel(status) {
-    if (!status) return 'ระบบปั๊ม: --';
-    if (status.running) return 'ระบบปั๊ม: <span class="status-success">กำลังทำงาน</span>';
-    if (status.active_timer && status.active_timer !== 'none') {
-        return 'ระบบปั๊ม: <span class="status-danger">หยุดอยู่</span> - พร้อมเริ่ม ' + renderPumpTimer(status.active_timer);
+function renderPumpTimerBadge(value) {
+    if (value === 'timer1') return renderSvgIcon('icon-timer', 'status-success') + ' <span class="status-success">Timer 1</span>';
+    if (value === 'timer2') return renderSvgIcon('icon-timer', 'status-success') + ' <span class="status-success">Timer 2</span>';
+    return '--';
+}
+
+function renderPumpStateDesc(status) {
+    if (!status) return '--';
+    if (status.fault) {
+        return 'พบข้อผิดพลาดของระบบรีเลย์ (Relay Fault) บังคับปิดปั๊มทั้งหมดเพื่อความปลอดภัย';
     }
-    return 'ระบบปั๊ม: <span class="status-danger">หยุดอยู่</span>';
+    if (status.initial_stabilizing) {
+        return 'ระบบกำลังรอสัญญาณเซนเซอร์และสถานะปั๊มให้เสถียรชั่วคราว...';
+    }
+    if (!status.running) {
+        if (status.active_timer && status.active_timer !== 'none') {
+            return 'ระบบหยุดทำงานชั่วคราว (สแตนด์บายรอบ ' + renderPumpTimer(status.active_timer) + ')';
+        }
+        return 'ระบบหยุดทำงานควบคุมปั๊มทั้งหมดแล้ว';
+    }
+    if (status.active_timer === 'timer1') {
+        if (status.phase === 'on') {
+            return 'รอบเวลา Timer 1: ปั๊มกำลังทำงาน';
+        }
+        if (status.phase === 'off') {
+            return 'รอบเวลา Timer 1: ปั๊มหยุดพัก';
+        }
+    }
+    if (status.active_timer === 'timer2') {
+        if (status.phase === 'on') {
+            return 'รอบเวลา Timer 2: ปั๊มกำลังทำงาน';
+        }
+        if (status.phase === 'off') {
+            return 'รอบเวลา Timer 2: ปั๊มหยุดพัก';
+        }
+    }
+    return 'ระบบกำลังประมวลผลการทำงาน';
+}
+
+function renderPumpRunLabel(status) {
+    if (!status) return '--';
+    if (status.running) {
+        if (status.phase === 'off') {
+            return '<span class="pump-led-dot status-warning"></span><span class="status-warning">พักการทำงาน</span>';
+        }
+        return '<span class="pump-led-dot status-success"></span><span class="status-success">ทำงาน</span>';
+    }
+    return '<span class="pump-led-dot status-danger"></span><span class="status-danger">หยุด</span>';
+}
+
+function updateFloatingBadgeState(status) {
+    var badge = document.getElementById('pump-status-floating-badge');
+    if (!badge) return;
+    
+    badge.classList.remove('badge-active', 'badge-paused', 'badge-offline');
+    
+    if (!status) {
+        badge.classList.add('badge-offline');
+        return;
+    }
+    
+    if (status.running) {
+        if (status.phase === 'off') {
+            badge.classList.add('badge-paused');
+        } else {
+            badge.classList.add('badge-active');
+        }
+    } else {
+        badge.classList.add('badge-offline');
+    }
 }
 
 function renderPumpPhase(timer, phase, running) {
-    if (!timer || timer === 'none' || !phase || phase === 'idle') return 'Idle';
-    var timerLabel = renderPumpTimer(timer);
-    var prefix = running ? '' : 'พร้อมเริ่ม ';
-    if (phase === 'on') return prefix + timerLabel + ' - <span class="status-success">ช่วงเปิด</span>';
-    if (phase === 'off') return prefix + timerLabel + ' - <span class="status-danger">ช่วงปิด</span>';
-    return timerLabel + ' - --';
+    if (!timer || timer === 'none' || !phase || phase === 'idle') {
+        return renderSvgIcon('icon-pause') + ' Idle';
+    }
+    var timerShort = timer === 'timer1' ? 'T1' : 'T2';
+    var prefix = running ? '' : 'Ready ';
+    if (phase === 'on') {
+        return renderSvgIcon('icon-relay-on', 'status-success') + timerShort + ' ' + prefix + '<span class="status-success">ON</span>';
+    }
+    if (phase === 'off') {
+        return renderSvgIcon('icon-pause', 'status-danger') + timerShort + ' ' + prefix + '<span class="status-danger">OFF</span>';
+    }
+    return timerShort + ' - --';
 }
 
 function renderFloatState(value) {
-    if (value === 'on') return '<span class="status-success">ON</span> -> Timer 2 / Relay 2';
-    if (value === 'off') return '<span class="status-danger">OFF</span> -> Timer 1 / Relay 1';
-    return 'ไม่ทราบสถานะ';
+    if (value === 'on') {
+        return '<span class="status-success">ON</span> <span class="badge-subtext">→ Timer 2</span>';
+    }
+    if (value === 'off') {
+        return '<span class="status-danger">OFF</span> <span class="badge-subtext">→ Timer 1</span>';
+    }
+    return '<span class="status-warning">Unknown</span>';
 }
 
 function renderRelayName(value) {
@@ -970,24 +1297,35 @@ function relayEnergizedFor(channel, status) {
 
 function renderActiveRelayState(status) {
     if (!status || !status.active_relay || status.active_relay === 'none') return '--';
-    var label = renderRelayName(status.active_relay);
-    if (!status.running) return label + ' พร้อมเริ่ม <span class="status-danger">(OFF)</span>';
-    return label + (status.relay_energized ? ' <span class="status-success">ON</span>' : ' <span class="status-danger">OFF</span>');
+    var label = status.active_relay === 'relay1' ? 'R1' : 'R2';
+    if (!status.running) {
+        return renderSvgIcon('icon-relay-off', 'status-danger') + label + ' <span class="status-danger">OFF</span>';
+    }
+    if (status.relay_energized) {
+        return renderSvgIcon('icon-relay-on', 'status-success') + label + ' <span class="status-success">ON</span>';
+    }
+    return renderSvgIcon('icon-relay-off', 'status-danger') + label + ' <span class="status-danger">OFF</span>';
 }
 
 function renderRelayChannelState(channel, status) {
     var energized = relayEnergizedFor(channel, status);
-    var suffix = (!status || status.running || status.active_relay !== channel) ? '' : ' พร้อมเริ่ม';
-    return (energized ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>') + suffix;
+    if (energized) {
+        return '<span class="status-success">ON</span>';
+    }
+    return '<span class="status-danger">OFF</span>';
 }
 
 function renderSettingsStatus(value, autoStart) {
-    var label = 'สถานะค่า: ' + value;
-    if (value === 'loaded') label = 'ค่าโหลดแล้ว';
-    else if (value === 'defaults_missing') label = 'ใช้ค่าเริ่มต้น';
-    else if (value === 'defaults_invalid') label = 'ค่าเริ่มต้นไม่ถูกต้อง';
-    else if (value === 'defaults_error') label = 'โหลดค่าเริ่มต้นผิดพลาด';
-    return label + ' • Auto-start: ' + (autoStart ? 'ON' : 'OFF');
+    var prefix = '';
+    if (value !== 'loaded') {
+        var icon = renderSvgIcon('icon-alert-triangle', 'status-warning');
+        var label = 'Error';
+        if (value === 'defaults_missing') label = 'Defaults';
+        else if (value === 'defaults_invalid') label = 'Invalid';
+        prefix = icon + ' ' + label + ' &bull; ';
+    }
+    var autoIcon = autoStart ? renderSvgIcon('icon-auto', 'status-success') : renderSvgIcon('icon-stop', 'status-danger');
+    return prefix + autoIcon + ' Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
 /* ======== Cooling Dashboard ======== */
@@ -995,7 +1333,7 @@ function renderSettingsStatus(value, autoStart) {
 function wireCoolingForm() {
     var form = pumpEl('cooling-config-form');
     if (form) {
-        form.onsubmit = function(e) {
+        form.onsubmit = function (e) {
             e.preventDefault();
             saveCoolingConfig();
         };
@@ -1020,9 +1358,9 @@ function wireCoolingActions() {
     var autoBtn = pumpEl('cooling-mode-auto');
     var forceBtn = pumpEl('cooling-mode-force-off');
     var testBtn = pumpEl('cooling-test-on');
-    if (autoBtn) autoBtn.onclick = function() { setCoolingMode('auto'); };
-    if (forceBtn) forceBtn.onclick = function() { setCoolingMode('force_off'); };
-    if (testBtn) testBtn.onclick = function() { setCoolingMode('test_on'); };
+    if (autoBtn) autoBtn.onclick = function () { setCoolingMode('auto'); };
+    if (forceBtn) forceBtn.onclick = function () { setCoolingMode('force_off'); };
+    if (testBtn) testBtn.onclick = function () { setCoolingMode('test_on'); };
 }
 
 function checkCoolingDirty() {
@@ -1070,28 +1408,40 @@ function markCoolingDirty() {
             setText('cooling-config-state', 'มีแก้ไขที่ยังไม่ได้บันทึก');
         } else {
             warning.classList.add('hidden');
-            setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
+            if (coolingConfig && coolingConfig.settings_status && coolingLastStatus) {
+                setHtml('cooling-config-state', renderSettingsStatus(coolingConfig.settings_status, coolingLastStatus.auto_enable));
+            } else {
+                setText('cooling-config-state', 'โหลดค่า cooling แล้ว');
+            }
         }
     }
-    updateCoolingConfigSaveButton();
+    updateCoolingButtons();
 }
 
 function setCoolingClean(label) {
     coolingDirty = false;
     var warning = pumpEl('cooling-unsaved-warning');
     if (warning) warning.classList.add('hidden');
-    setText('cooling-config-state', label || 'บันทึกแล้ว');
-    updateCoolingConfigSaveButton();
+    if (coolingConfig) {
+        var statusStr = coolingConfig.settings_status || 'loaded';
+        var autoEnabled = coolingConfig.auto_enable !== undefined ? !!coolingConfig.auto_enable : (coolingLastStatus ? coolingLastStatus.auto_enable : false);
+        setHtml('cooling-config-state', renderSettingsStatus(statusStr, autoEnabled));
+    } else {
+        setText('cooling-config-state', label || 'บันทึกแล้ว');
+    }
+    updateCoolingButtons();
 }
 
 function updateCoolingConfigSaveButton() {
     var saveBtn = pumpEl('cooling-save-config');
     if (saveBtn) {
-        if (coolingPending) {
+        var stale = !coolingLastSyncMs || (Date.now() - coolingLastSyncMs > COOLING_STALE_MS);
+        var formDisabled = !coolingConfigLoaded || coolingLoadingConfig || coolingSavingConfig || coolingPending || stale;
+        if (coolingSavingConfig || coolingPending) {
             setLoading(saveBtn, true);
         } else {
             setLoading(saveBtn, false);
-            saveBtn.disabled = !coolingConfigLoaded || !coolingDirty;
+            saveBtn.disabled = formDisabled || !coolingDirty;
         }
     }
 }
@@ -1099,14 +1449,15 @@ function updateCoolingConfigSaveButton() {
 function loadCoolingConfig() {
     setText('cooling-config-state', 'กำลังโหลดค่า...');
     setCoolingAlert('');
-    updateCoolingConfigSaveButton();
-    apiGet('/api/cooling/config', function(err, data) {
+    coolingLoadingConfig = true;
+    updateCoolingButtons();
+    apiGet('/api/cooling/config', function (err, data) {
+        coolingLoadingConfig = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
             coolingConfigLoaded = false;
             setText('cooling-config-state', 'โหลดค่า cooling ไม่สำเร็จ');
             setCoolingAlert('โหลดค่า cooling ไม่สำเร็จ');
-            updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
         }
@@ -1166,10 +1517,10 @@ function readCoolingU32(id, label, minValue, maxValue) {
 
 function buildCoolingConfigPayload() {
     if (!coolingConfig) return null;
-    var threshold = readCoolingX10('cooling-threshold-input', 'Threshold', -550, 1250);
-    var hysteresis = readCoolingX10('cooling-hysteresis-input', 'Hysteresis', 1, 500);
-    var testTimeout = readCoolingU32('cooling-test-timeout', 'Test ON seconds', 1, 3600);
-    var minOff = readCoolingU32('cooling-min-off', 'Lockout seconds', 0, 86400);
+    var threshold = readCoolingX10('cooling-threshold-input', 'อุณหภูมิเป้าหมาย', -550, 1250);
+    var hysteresis = readCoolingX10('cooling-hysteresis-input', 'ช่วงอุณหภูมิเบี่ยงเบน', 1, 500);
+    var testTimeout = readCoolingU32('cooling-test-timeout', 'ระยะเวลาเปิดทดสอบ', 1, 3600);
+    var minOff = readCoolingU32('cooling-min-off', 'เวลาล็อกป้องกันซ้ำ', 0, 86400);
     if (!threshold.ok) return threshold;
     if (!hysteresis.ok) return hysteresis;
     if (!testTimeout.ok) return testTimeout;
@@ -1197,36 +1548,34 @@ function saveCoolingConfig() {
         return;
     }
 
-    coolingPending = true;
+    coolingSavingConfig = true;
+    updateCoolingButtons();
     setCoolingAlert('');
     setText('cooling-config-state', 'กำลังบันทึก cooling...');
-    updateCoolingConfigSaveButton();
-    updateCoolingButtons();
-    apiPost('/api/cooling/config', built.payload, function(err, data) {
-        coolingPending = false;
+    apiPost('/api/cooling/config', built.payload, function (err, data) {
+        coolingSavingConfig = false;
         if (err || !data || !data.ok) {
             setText('cooling-config-state', 'บันทึก cooling ไม่สำเร็จ');
             setCoolingAlert((data && data.message) ? data.message : 'บันทึก cooling ไม่สำเร็จ');
-            updateCoolingConfigSaveButton();
             updateCoolingButtons();
             return;
         }
-        coolingConfig = data;
+        coolingConfig = data.payload || data;
         coolingConfigLoaded = true;
-        setCoolingConfigFields(data);
-        if (data.status) applyCoolingStatus(data.status, true);
         setCoolingClean('บันทึก cooling แล้ว');
         showToast('บันทึกค่า cooling เรียบร้อย', 'success');
+        if (data.status) applyCoolingStatus(data.status, true);
+        syncCoolingStatus(true);
     });
 }
 
 function setCoolingMode(mode) {
     if (coolingPending) return;
     coolingPending = true;
-    var label = mode === 'auto' ? 'Auto' : (mode === 'test_on' ? 'Test ON' : 'Force OFF');
+    var label = mode === 'auto' ? 'อัตโนมัติ (Auto)' : (mode === 'test_on' ? 'เปิดทดสอบ (Test ON)' : 'บังคับปิด (Force OFF)');
     setText('cooling-mode-action-state', 'กำลังสั่ง ' + label + '...');
     updateCoolingButtons();
-    apiPost('/api/cooling/mode', { mode: mode }, function(err, data) {
+    apiPost('/api/cooling/mode', { mode: mode }, function (err, data) {
         coolingPending = false;
         if (err || !data || !data.ok) {
             setText('cooling-mode-action-state', '');
@@ -1247,11 +1596,11 @@ function setCoolingMode(mode) {
 }
 
 function syncCoolingStatus(force) {
-    if (window.location.pathname !== '/dashboard') return;
+    if (window.location.pathname !== '/cooling') return;
     if (document.hidden && !force) return;
     if (coolingStatusRequestInFlight) return;
     coolingStatusRequestInFlight = true;
-    apiGet('/api/cooling/status', function(err, data) {
+    apiGet('/api/cooling/status', function (err, data) {
         coolingStatusRequestInFlight = false;
         if (isUnauthorizedError(err)) { handleUnauthorized(); return; }
         if (err || !data || !data.ok) {
@@ -1266,26 +1615,55 @@ function applyCoolingStatus(status, authoritative) {
     coolingLastStatus = status;
     if (authoritative) coolingLastSyncMs = Date.now();
 
-    setText('cooling-temperature', renderCoolingTemperature(status));
-    setHtml('cooling-relay-state', status.relay_energized ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>');
-    setText('cooling-mode-state', renderCoolingMode(status.mode));
+    setHtml('cooling-temperature', renderCoolingTemperature(status));
+    setHtml('cooling-relay-state', status.relay_energized
+        ? '<span class="status-success">ON</span>'
+        : '<span class="status-danger">OFF</span>');
+        
+    updateBadgeCardState('cooling-relay-card', status.relay_energized);
+    updateBadgeCardState('cooling-sensor-card', status.sensor_state === 'ok');
+    
+    setHtml('cooling-mode-state', renderCoolingMode(status.mode));
     setHtml('cooling-sensor-state', renderCoolingSensor(status.sensor_state));
     setHtml('cooling-fault-state', renderCoolingFault(status));
-    setText('cooling-threshold', renderCoolingCelsius(status.threshold_c));
-    setText('cooling-hysteresis', renderCoolingCelsius(status.hysteresis_c));
-    setHtml('cooling-auto-enable-state', status.auto_enable ? '<span class="status-success">ON</span>' : '<span class="status-danger">OFF</span>');
-    setText('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
+    if (typeof status.threshold_c === 'number') {
+        setText('cooling-start-temp', renderCoolingCelsius(status.threshold_c));
+        if (typeof status.hysteresis_c === 'number') {
+            setText('cooling-stop-temp', renderCoolingCelsius(status.threshold_c - status.hysteresis_c));
+        } else {
+            setText('cooling-stop-temp', '--');
+        }
+    } else {
+        setText('cooling-start-temp', '--');
+        setText('cooling-stop-temp', '--');
+    }
+    setHtml('cooling-auto-enable-state', status.auto_enable
+        ? renderSvgIcon('icon-auto', 'status-success') + ' <span class="status-success">ON</span>'
+        : renderSvgIcon('icon-stop', 'status-danger') + ' <span class="status-danger">OFF</span>');
+    setHtml('cooling-blocked-reason', renderCoolingBlocked(status.blocked_reason));
     setText('cooling-lockout', status.lockout_active ? formatPumpCountdown(status.lockout_remaining_sec) : '--');
     setText('cooling-test-remaining', status.test_remaining_sec ? formatPumpCountdown(status.test_remaining_sec) : '--');
+    var lockoutTestStr = '--';
+    if (status.test_remaining_sec > 0) {
+        lockoutTestStr = 'TEST ' + formatPumpCountdown(status.test_remaining_sec);
+    } else if (status.lockout_active) {
+        lockoutTestStr = 'LOCK ' + formatPumpCountdown(status.lockout_remaining_sec);
+    }
+    setText('cooling-lockout-test-state', lockoutTestStr);
+
+    if (!coolingDirty && coolingConfig) {
+        var statusStr = coolingConfig.settings_status || 'loaded';
+        setHtml('cooling-config-state', renderSettingsStatus(statusStr, status.auto_enable));
+    }
 
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
         sync.className = status.fault || status.sensor_state === 'fault'
             ? 'runtime-eyebrow error'
             : (status.lockout_active || status.mode === 'test_on' ? 'runtime-eyebrow warn' : 'runtime-eyebrow good');
-        sync.textContent = status.fault || status.sensor_state === 'fault'
-            ? 'Sensor fault: cooling relay forced OFF'
-            : (status.lockout_active ? 'Compressor lockout active' : 'ซิงค์ล่าสุดจาก cooling runtime');
+        sync.innerHTML = status.fault || status.sensor_state === 'fault'
+            ? renderSvgIcon('icon-x-circle') + ' Sensor Fault (Relay OFF)'
+            : (status.lockout_active ? renderSvgIcon('icon-timer') + ' Compressor Lockout' : renderSvgIcon('icon-check-circle') + ' Synced');
     }
     setCoolingAlert(status.fault ? 'พบ sensor fault ระบบบังคับปิด cooling relay แล้ว' : '');
     updateCoolingButtons();
@@ -1296,10 +1674,26 @@ function handleCoolingStatusFailure() {
     var sync = pumpEl('cooling-sync-state');
     if (sync) {
         sync.className = stale ? 'runtime-eyebrow error' : 'runtime-eyebrow warn';
-        sync.textContent = stale ? 'สถานะ cooling ขาดการซิงค์' : 'รอซิงค์ cooling';
+        sync.innerHTML = stale ? renderSvgIcon('icon-wifi-off') + ' Stale' : renderSvgIcon('icon-sync') + ' Syncing...';
     }
     if (stale) {
         setCoolingAlert('ไม่สามารถอ่านสถานะ cooling ได้ชั่วคราว');
+        setHtml('cooling-temperature', '--');
+        setHtml('cooling-relay-state', '--');
+        
+        updateBadgeCardState('cooling-relay-card', false);
+        updateBadgeCardState('cooling-sensor-card', false);
+        
+        setHtml('cooling-mode-state', '--');
+        setHtml('cooling-sensor-state', '--');
+        setHtml('cooling-fault-state', '--');
+        setText('cooling-threshold', '--');
+        setText('cooling-hysteresis', '--');
+        setHtml('cooling-auto-enable-state', '--');
+        setHtml('cooling-blocked-reason', '--');
+        setText('cooling-lockout', '--');
+        setText('cooling-test-remaining', '--');
+        setText('cooling-lockout-test-state', '--');
     }
     updateCoolingButtons();
 }
@@ -1311,17 +1705,33 @@ function updateCoolingButtons() {
     var forceBtn = pumpEl('cooling-mode-force-off');
     var testBtn = pumpEl('cooling-test-on');
     var currentMode = coolingLastStatus ? coolingLastStatus.mode : null;
-    
+
     if (autoBtn) autoBtn.disabled = disabled || (currentMode === 'auto');
     if (forceBtn) forceBtn.disabled = disabled || (currentMode === 'force_off');
     if (testBtn) testBtn.disabled = disabled || (currentMode === 'test_on');
+
+    var formDisabled = !coolingConfigLoaded || coolingLoadingConfig || coolingSavingConfig || coolingPending || stale;
+    var ids = [
+        'cooling-threshold-input',
+        'cooling-hysteresis-input',
+        'cooling-test-timeout',
+        'cooling-min-off',
+        'cooling-auto-enable'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        var input = pumpEl(ids[i]);
+        if (input) {
+            input.disabled = formDisabled;
+        }
+    }
+
     updateCoolingConfigSaveButton();
 }
 
 function startCoolingStatusTimer() {
     stopCoolingStatusTimer();
     if (document.hidden) return;
-    coolingPollTimer = setInterval(function() { syncCoolingStatus(false); }, COOLING_STATUS_POLL_MS);
+    coolingPollTimer = setInterval(function () { syncCoolingStatus(false); }, COOLING_STATUS_POLL_MS);
 }
 
 function stopCoolingStatusTimer() {
@@ -1341,39 +1751,40 @@ function handleCoolingVisibilityChange() {
 function renderCoolingTemperature(status) {
     if (!status || !status.temperature_valid) return '--';
     var value = Number(status.temperature_c);
-    return isFinite(value) ? value.toFixed(1) + ' C' : '--';
+    if (!isFinite(value)) return '--';
+    return value.toFixed(1) + ' °C';
 }
 
 function renderCoolingCelsius(value) {
     var num = Number(value);
-    return isFinite(num) ? num.toFixed(1) + ' C' : '--';
+    return isFinite(num) ? num.toFixed(1) + ' °C' : '--';
 }
 
 function renderCoolingMode(value) {
-    if (value === 'auto') return 'Auto';
-    if (value === 'test_on') return 'Test ON';
-    if (value === 'force_off') return 'Force OFF';
+    if (value === 'auto') return renderSvgIcon('icon-auto', 'status-success') + ' Auto';
+    if (value === 'test_on') return renderSvgIcon('icon-play', 'status-warning') + ' Test ON';
+    if (value === 'force_off') return renderSvgIcon('icon-stop', 'status-danger') + ' Force OFF';
     return '--';
 }
 
 function renderCoolingSensor(value) {
     if (value === 'ok') return '<span class="status-success">OK</span>';
     if (value === 'fault') return '<span class="status-danger">FAULT</span>';
-    return 'unknown';
+    return 'Unknown';
 }
 
 function renderCoolingFault(status) {
-    if (!status) return 'Fault: --';
-    if (!status.fault) return 'Fault: <span class="status-success">none</span>';
-    return 'Fault: <span class="status-danger">' + (status.fault_code || 'unknown') + '</span>';
+    if (!status) return '--';
+    if (!status.fault) return '<span class="status-success">None</span>';
+    return '<span class="status-danger">' + (status.fault_code || 'FAULT') + '</span>';
 }
 
 function renderCoolingBlocked(value) {
     if (!value || value === 'none') return '--';
-    if (value === 'compressor_lockout') return 'Compressor lockout';
-    if (value === 'sensor_fault') return 'Sensor fault';
+    if (value === 'compressor_lockout') return 'Lockout';
+    if (value === 'sensor_fault') return 'Sensor Fault';
     if (value === 'force_off') return 'Force OFF';
-    if (value === 'config_invalid') return 'Config invalid';
+    if (value === 'config_invalid') return 'Config Invalid';
     return value;
 }
 
@@ -1393,7 +1804,7 @@ function hardwareEl(id) {
 function wireHardwareForm() {
     var form = hardwareEl('hardware-map-form');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             saveHardwareMap();
         });
@@ -1464,32 +1875,51 @@ function setHardwareClean() {
 
 function updateHardwareSaveButton() {
     var btn = hardwareEl('hardware-save-map');
-    if (!btn) return;
     var confirm = hardwareEl('hardware-confirm-reboot');
-    if (hardwarePending) {
-        setLoading(btn, true);
-    } else {
-        setLoading(btn, false);
-        btn.disabled = !hardwareDirty || !confirm || !confirm.checked;
+    var formDisabled = !hardwareMapData || hardwareLoadingMap || hardwareSavingMap || hardwarePending;
+
+    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
+        var select = hardwareEl(HARDWARE_FIELDS[i].select);
+        if (select) {
+            select.disabled = formDisabled;
+        }
+    }
+
+    if (confirm) {
+        confirm.disabled = formDisabled;
+    }
+
+    if (btn) {
+        if (hardwareSavingMap || hardwarePending) {
+            setLoading(btn, true);
+        } else {
+            setLoading(btn, false);
+            btn.disabled = formDisabled || !hardwareDirty || !confirm || !confirm.checked;
+        }
     }
 }
 
 function loadHardwareMap() {
-    setHardwareState('Loading hardware map');
+    setHardwareState('กำลังโหลดผัง GPIO...');
     setHardwareError('');
-    apiGet('/api/hardware/map', function(err, data) {
+    hardwareLoadingMap = true;
+    updateHardwareSaveButton();
+    apiGet('/api/hardware/map', function (err, data) {
+        hardwareLoadingMap = false;
         if (err) {
             if (err.message === 'HTTP 401') {
                 navigateTo('/login');
                 return;
             }
-            setHardwareState('Load failed');
-            setHardwareError('Could not load hardware map: ' + err.message);
+            setHardwareState('โหลดข้อมูลล้มเหลว');
+            setHardwareError('ไม่สามารถโหลดผัง GPIO ได้: ' + err.message);
+            updateHardwareSaveButton();
             return;
         }
         if (!data || data.ok !== true) {
-            setHardwareState('Load failed');
-            setHardwareError('Hardware map API returned an invalid response.');
+            setHardwareState('โหลดข้อมูลล้มเหลว');
+            setHardwareError('เซิร์ฟเวอร์ตอบกลับผัง GPIO ไม่ถูกต้อง');
+            updateHardwareSaveButton();
             return;
         }
         applyHardwareMap(data);
@@ -1505,10 +1935,9 @@ function applyHardwareMap(data) {
     renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending', data.active);
     populateHardwareSelects(data.options || {}, effective || data.active || {});
     renderHardwareWiring(data.active, data.pending_valid ? data.pending : null);
-    renderHardwareTechnical(data.options || {});
 
     setHardwareClean();
-    setHardwareState(data.reboot_required ? 'Pending map saved - reboot required' : 'Active map loaded');
+    setHardwareState(data.reboot_required ? 'บันทึกผังใหม่แล้ว - จำเป็นต้องรีบูตระบบ' : 'โหลดผังปัจจุบันเรียบร้อย');
 }
 
 function renderHardwareBanner(data) {
@@ -1520,14 +1949,14 @@ function renderHardwareBanner(data) {
         return;
     }
     el.classList.remove('hidden');
-    el.innerHTML = '<strong>Reboot required</strong><span> A pending GPIO map is saved. Reboot the ESP32 before wiring behavior changes.</span>';
+    el.innerHTML = '<strong>จำเป็นต้องรีบูตระบบ</strong><span> บันทึกผัง GPIO ใหม่แล้ว กรุณารีบูตบอร์ด ESP32 เพื่อเริ่มใช้งานขาพินใหม่</span>';
 }
 
 function renderHardwareSummary(id, map, emptyLabel, activeMap) {
     var el = hardwareEl(id);
     if (!el) return;
     if (!map) {
-        el.innerHTML = '<div class="hardware-summary-empty">No ' + escHtml(emptyLabel) + ' changes</div>';
+        el.innerHTML = '<div class="hardware-summary-empty">ไม่มีการเปลี่ยนแปลงของผัง ' + (emptyLabel === 'active' ? 'ปัจจุบัน' : 'ใหม่') + '</div>';
         return;
     }
 
@@ -1546,7 +1975,7 @@ function renderHardwareSummary(id, map, emptyLabel, activeMap) {
     }
 
     if (activeMap && count === 0) {
-        el.innerHTML = '<div class="hardware-summary-empty">No ' + escHtml(emptyLabel) + ' changes</div>';
+        el.innerHTML = '<div class="hardware-summary-empty">ไม่มีการเปลี่ยนแปลงของผัง ' + (emptyLabel === 'active' ? 'ปัจจุบัน' : 'ใหม่') + '</div>';
     } else {
         el.innerHTML = html;
     }
@@ -1565,7 +1994,7 @@ function populateHardwareSelects(options, map) {
             var opt = roleOptions[j];
             var value = String(opt.gpio);
             var label = opt.label || ('GPIO ' + value);
-            if (opt.is_default) label += ' (default)';
+            if (opt.is_default) label += ' (ค่าเริ่มต้น)';
             html += '<option value="' + escHtml(value) + '"'
                 + (value === current ? ' selected' : '')
                 + '>' + escHtml(label) + '</option>';
@@ -1579,51 +2008,12 @@ function renderHardwareWiring(active, pending) {
     for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
         var field = HARDWARE_FIELDS[i];
         var activeValue = active && active[field.key] !== undefined ? active[field.key] : '--';
-        var text = 'Active GPIO ' + activeValue;
+        var text = 'พินปัจจุบัน GPIO ' + activeValue;
         if (pending && pending[field.key] !== undefined && String(pending[field.key]) !== String(activeValue)) {
-            text += ' / pending GPIO ' + pending[field.key];
+            text += ' / รอรีบูต GPIO ' + pending[field.key];
         }
         setText(field.wire, text);
     }
-}
-
-function renderHardwareTechnical(options) {
-    var el = hardwareEl('hardware-technical-list');
-    if (!el) return;
-
-    var html = '';
-    for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
-        var field = HARDWARE_FIELDS[i];
-        var roleOptions = options[field.key] || [];
-        html += '<div class="hardware-technical-group">'
-            + '<h4>' + escHtml(field.label) + '</h4>';
-        if (!roleOptions.length) {
-            html += '<p>No options reported by firmware.</p>';
-        }
-        for (var j = 0; j < roleOptions.length; j++) {
-            html += renderHardwareOption(roleOptions[j]);
-        }
-        html += '</div>';
-    }
-    el.innerHTML = html;
-}
-
-function renderHardwareOption(opt) {
-    var tags = [];
-    if (opt.input_capable) tags.push('Input');
-    if (opt.output_capable) tags.push('Output');
-    if (opt.internal_pull_capable) tags.push('Internal pull');
-    if (opt.is_default) tags.push('Default');
-
-    var tagHtml = '';
-    for (var i = 0; i < tags.length; i++) {
-        tagHtml += '<span class="capability-tag">' + escHtml(tags[i]) + '</span>';
-    }
-
-    return '<div class="hardware-option-row">'
-        + '<div><strong>GPIO ' + escHtml(String(opt.gpio)) + '</strong><span>' + escHtml(opt.label || '') + '</span></div>'
-        + '<div class="capability-tags">' + tagHtml + '</div>'
-        + '</div>';
 }
 
 function readHardwareMapForm() {
@@ -1640,40 +2030,40 @@ function readHardwareMapForm() {
 function saveHardwareMap() {
     var confirm = hardwareEl('hardware-confirm-reboot');
     if (!confirm || !confirm.checked) {
-        setHardwareError('Confirm that a reboot is required before saving.');
+        setHardwareError('กรุณาทำเครื่องหมายยืนยันว่าเข้าใจว่าต้องรีบูตระบบก่อนบันทึก');
         updateHardwareSaveButton();
         return;
     }
 
     var map = readHardwareMapForm();
     if (!map) {
-        setHardwareError('Choose a GPIO for every hardware role.');
+        setHardwareError('กรุณาเลือกพิน GPIO สำหรับทุกหน้าที่การทำงาน');
         return;
     }
 
-    hardwarePending = true;
+    hardwareSavingMap = true;
     updateHardwareSaveButton();
     setHardwareError('');
-    setHardwareState('Saving pending map');
+    setHardwareState('กำลังบันทึกผัง GPIO ใหม่...');
 
     apiPost('/api/hardware/map', {
         map: map,
         confirm_reboot_required: true
-    }, function(err, data) {
-        hardwarePending = false;
+    }, function (err, data) {
+        hardwareSavingMap = false;
         updateHardwareSaveButton();
         if (err) {
-            setHardwareState('Save failed');
-            setHardwareError('Could not save hardware map: ' + err.message);
+            setHardwareState('บันทึกข้อมูลล้มเหลว');
+            setHardwareError('ไม่สามารถบันทึกผัง GPIO ได้: ' + err.message);
             return;
         }
         if (!data || data.ok !== true) {
-            setHardwareState('Save failed');
-            setHardwareError('Save rejected: ' + ((data && (data.message || data.error)) || 'invalid hardware map'));
+            setHardwareState('บันทึกข้อมูลล้มเหลว');
+            setHardwareError('การบันทึกถูกปฏิเสธ: ' + ((data && (data.message || data.error)) || 'ผัง GPIO ไม่ถูกต้อง'));
             return;
         }
         applyHardwareMap(data);
-        showToast('Pending hardware map saved', 'success');
+        showToast('บันทึกผัง GPIO รอการรีบูตเรียบร้อย', 'success');
     });
 }
 
@@ -1685,14 +2075,36 @@ function initStatus() {
     statusInterval = setInterval(refreshFullStatus, 30000);
 }
 
+function clearStatusSkeletonsToOffline() {
+    var ids = [
+        'st-chip-model', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
+        'st-idf-version', 'st-project-version', 'st-reset-reason',
+        'st-free-heap', 'st-min-free-heap', 'st-largest-free-block', 'st-total-heap',
+        'st-uptime', 'st-sta-status', 'st-sta-ssid', 'st-sta-ip', 'st-sta-rssi',
+        'st-sta-channel', 'st-sta-auth', 'st-mac-sta', 'st-ap-ssid', 'st-ap-ip',
+        'st-ap-clients', 'st-ap-client-rssi', 'st-mac-ap', 'st-wifi-mode',
+        'st-dns-status', 'st-http-static-errors', 'st-http-json-errors'
+    ];
+    for (var i = 0; i < ids.length; i++) {
+        setText(ids[i], '--');
+    }
+}
+
 function refreshFullStatus() {
     if (document.hidden) return;
     if (statusFullRequestInFlight) return;
     statusFullRequestInFlight = true;
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         statusFullRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
+            var dot = document.getElementById('sidebar-status-dot');
+            var txt = document.getElementById('sidebar-status-text');
+            if (dot && txt) {
+                dot.className = 'status-dot off';
+                txt.textContent = 'Offline';
+            }
+            clearStatusSkeletonsToOffline();
             return;
         }
 
@@ -1710,9 +2122,9 @@ function refreshFullStatus() {
         var minKb = (data.min_free_heap / 1024).toFixed(0);
         var largestKb = (data.largest_free_block / 1024).toFixed(0);
         var totalKb = (data.total_heap / 1024).toFixed(0);
-        
+
         var pct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100) : 0;
-        
+
         setText('st-free-heap', freeKb + ' KB (' + pct.toFixed(1) + '% used)');
         setText('st-min-free-heap', minKb + ' KB');
         setText('st-largest-free-block', largestKb + ' KB');
@@ -1766,24 +2178,44 @@ function refreshFullStatus() {
     });
 }
 
+function clearSkeleton(el) {
+    if (!el) return;
+    var s = el.querySelector('.skeleton');
+    if (s) {
+        el.innerHTML = '';
+    }
+}
+
 function setText(id, val) {
     var el = document.getElementById(id);
-    if (el) el.textContent = val;
+    if (el) {
+        clearSkeleton(el);
+        el.textContent = val;
+    }
 }
 
 function setHtml(id, val) {
     var el = document.getElementById(id);
-    if (el) el.innerHTML = val;
+    if (el) {
+        clearSkeleton(el);
+        el.innerHTML = val;
+    }
 }
 
 function refreshStatus() {
     if (document.hidden) return;
     if (statusSummaryRequestInFlight) return;
     statusSummaryRequestInFlight = true;
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         statusSummaryRequestInFlight = false;
         if (err || !data || !data.ok) {
             if (err && err.message === 'HTTP 401') { navigateTo('/login'); }
+            var dot = document.getElementById('sidebar-status-dot');
+            var txt = document.getElementById('sidebar-status-text');
+            if (dot && txt) {
+                dot.className = 'status-dot off';
+                txt.textContent = 'Offline';
+            }
             return;
         }
 
@@ -1894,26 +2326,19 @@ function initWifi() {
 }
 
 function updateConnectionStatus() {
-    apiGet('/api/status', function(err, data) {
-        var el = document.getElementById('connection-status');
-        var icon = document.getElementById('conn-icon');
-        var title = document.getElementById('conn-title');
-        var sub = document.getElementById('conn-sub');
-        var btn = document.getElementById('disconnect-btn');
-        if (!el || !title) return;
-
+    apiGet('/api/status', function (err, data) {
         if (!err && data && data.ok && data.sta_connected) {
-            el.className = 'connection-status connected';
-            if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-            title.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27: ' + (data.sta_ssid || 'Wi-Fi');
-            if (sub) sub.textContent = 'IP: ' + (data.sta_ip || '--');
-            if (btn) btn.style.display = '';
+            window.appConnState = {
+                connected: true,
+                ssid: data.sta_ssid,
+                ip: data.sta_ip
+            };
         } else {
-            el.className = 'connection-status';
-            if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
-            title.textContent = '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
-            if (sub) sub.textContent = 'STA \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e01\u0e31\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e48\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e43\u0e14\u0e46';
-            if (btn) btn.style.display = 'none';
+            window.appConnState = { connected: false };
+        }
+        // Force re-render if profiles are already loaded
+        if (window.savedWifiProfiles) {
+            renderSavedProfiles();
         }
     });
 }
@@ -1922,19 +2347,19 @@ function loadWifiProfiles(retryCount) {
     if (retryCount === undefined) retryCount = 0;
     var el = document.getElementById('profile-list');
     if (!el) return;
-    
+
     if (retryCount === 0) {
         el.innerHTML = '<div class="profile-empty">กำลังโหลด...</div>';
     }
-    
-    apiGet('/api/wifi/profiles', function(err, data) {
+
+    apiGet('/api/wifi/profiles', function (err, data) {
         if (err || !data || !data.ok) {
             if (retryCount < 1) {
-                setTimeout(function() {
+                setTimeout(function () {
                     loadWifiProfiles(retryCount + 1);
                 }, 1500);
             } else {
-                el.innerHTML = '<div class="profile-empty" style="cursor:pointer;" onclick="loadWifiProfiles()"><div style="color:var(--error);margin-bottom:8px;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div style="font-weight:600;margin-bottom:4px;color:var(--error);">ไม่สามารถดึงข้อมูลได้</div><div style="font-size:12px;color:var(--primary);"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></div>';
+                el.innerHTML = '<button type="button" class="profile-empty clickable" onclick="loadWifiProfiles()"><div class="profile-empty-error-icon"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div><div class="profile-empty-error-text">ไม่สามารถดึงข้อมูลได้</div><div class="text-xs profile-empty-retry"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="vertical-align:middle;margin-right:4px;"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>คลิกเพื่อลองใหม่</div></button>';
             }
             return;
         }
@@ -1947,24 +2372,24 @@ function loadWifiProfiles(retryCount) {
 function renderSavedProfiles() {
     var el = document.getElementById('profile-list');
     if (!el) return;
-    
+
     var profiles = window.savedWifiProfiles || [];
     /* Sort by connected first */
-    profiles.sort(function(a, b) {
+    profiles.sort(function (a, b) {
         if (a.connected && !b.connected) return -1;
         if (!a.connected && b.connected) return 1;
         return 0;
     });
     if (profiles.length === 0) {
-        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span style="font-size:12px;color:var(--outline);">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
+        el.innerHTML = '<div class="profile-empty">ยังไม่มีเครือข่ายที่บันทึกไว้<br><span class="text-xs profile-empty-hint">เชื่อมต่อ Wi-Fi เพื่อบันทึก credential</span></div>';
         return;
     }
-    
+
     var html = '<div class="profile-list">';
     for (var i = 0; i < profiles.length; i++) {
         var p = profiles[i];
         var isConn = p.connected === true;
-        
+
         // Cross-reference with scan results
         var scanData = null;
         if (window.lastScanResults) {
@@ -1975,65 +2400,91 @@ function renderSavedProfiles() {
                 }
             }
         }
-        
+
         var iconClass = isConn ? ' connected-icon' : (scanData ? '' : ' inactive-icon');
         var iconStyle = scanData ? '' : 'opacity: 0.4;';
-        
+
         html += '<div class="profile-item' + (isConn ? ' connected' : '') + '">';
+
+        var sigBars = 4;
+        if (scanData) {
+            if (scanData.rssi >= -50) { sigBars = 4; }
+            else if (scanData.rssi >= -70) { sigBars = 3; }
+            else if (scanData.rssi >= -85) { sigBars = 2; }
+            else { sigBars = 1; }
+        } else if (!isConn) {
+            sigBars = 0;
+        }
         
+        var sigSvg = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">';
+        if (sigBars >= 1 || isConn) sigSvg += '<line x1="12" y1="20" x2="12.01" y2="20"></line>';
+        if (sigBars >= 2 || isConn) sigSvg += '<path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>';
+        if (sigBars >= 3 || isConn) sigSvg += '<path d="M5 12.55a11 11 0 0 1 14.08 0"></path>';
+        if (sigBars >= 4 || isConn) sigSvg += '<path d="M1.42 9a16 16 0 0 1 21.16 0"></path>';
+        if (sigBars === 0 && !isConn) {
+            sigSvg = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+        } else {
+            sigSvg += '</svg>';
+        }
+
         /* Left side */
         html += '<div class="profile-item-left">';
         html += '<div class="network-icon' + iconClass + '" style="' + iconStyle + '">';
-        html += '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+        html += sigSvg;
         html += '</div>';
         html += '<div class="network-info">';
         html += '<div class="net-ssid-row">';
         html += '<span class="net-ssid">' + escHtml(p.ssid) + '</span>';
         if (isConn) {
-            html += '<span class="badge-current"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ปัจจุบัน</span>';
+            html += '<span class="badge-current"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> ปัจจุบัน</span>';
         }
         html += '</div>';
         html += '<div class="net-detail">';
-        
+
         if (scanData) {
             // Found in scan
-            var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ';
-            html += authLabel + escHtml(scanData.auth) + ' &bull; Ch ' + scanData.channel;
-            html += '<span class="text-success" style="margin-left:8px;">(อยู่ในระยะ)</span>';
+            var authLabel = scanData.auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>';
+            html += authLabel + ' ' + escHtml(scanData.auth);
         } else if (isConn) {
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ';
-            html += '<span style="opacity:0.8;">กำลังใช้งาน</span>';
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> บันทึกแล้ว';
         } else if (typeof window.lastScanResults === 'undefined') {
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ';
-            html += '<span style="opacity:0.6; font-size:12px;">กดสแกนใหม่เพื่อตรวจสอบระยะ</span>';
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> รอตรวจสอบระยะสัญญาณ';
         } else {
             // Scanned but not found
-            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px; opacity:0.6;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> ';
-            html += '<span style="opacity:0.6;">อยู่นอกระยะสัญญาณ</span>';
+            html += '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> อยู่นอกระยะสัญญาณ';
         }
-        
-        if (isConn) {
-            html += '<span class="text-success" style="margin-left:8px;">เชื่อมต่อแล้ว</span>';
+
+        if (isConn && window.appConnState && window.appConnState.ip) {
+            html += '<span class="detail-divider" style="margin:0 6px; opacity:0.5;">&bull;</span>';
+            html += 'IP: <span class="mono">' + escHtml(window.appConnState.ip) + '</span>';
         }
         html += '</div>';
         html += '</div>';
         html += '</div>';
-        
+
         /* Right side */
         html += '<div class="profile-actions">';
-        
+
         html += '<label class="toggle-row-inline">';
         html += '<span class="toggle-label-text">เชื่อมต่ออัตโนมัติ</span>';
         html += '<div class="toggle-switch"><input type="checkbox" onchange="toggleAutoProfile(\'' + escJs(p.ssid) + '\', this.checked, ' + (p.auto ? 'true' : 'false') + ')" ' + (p.auto ? 'checked' : '') + '><span class="toggle-slider"></span></div>';
         html += '</label>';
-        
+
         html += '<div class="action-divider"></div>';
-        
+
         html += '<button class="btn-icon-text btn-forget" onclick="forgetProfile(\'' + escJs(p.ssid) + '\')">';
         html += '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
         html += '<span class="hidden-mobile">ลืม</span>';
         html += '</button>';
-        
+
+        if (isConn) {
+            html += '<div class="action-divider"></div>';
+            html += '<button class="btn-icon-text" onclick="doDisconnect()">';
+            html += '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>';
+            html += '<span class="hidden-mobile">ตัดการเชื่อมต่อ</span>';
+            html += '</button>';
+        }
+
         html += '</div></div>';
     }
     html += '</div>';
@@ -2041,8 +2492,8 @@ function renderSavedProfiles() {
 }
 
 function forgetProfile(ssid) {
-    showConfirmModal('ลืมเครือข่าย', '\u0e25\u0e37\u0e21 "' + escHtml(ssid) + '" \u0e43\u0e0a\u0e48\u0e2b\u0e23\u0e37\u0e2d\u0e44\u0e21\u0e48?', function() {
-        apiPost('/api/wifi/profiles/forget', { ssid: ssid }, function(err, data) {
+    showConfirmModal('ลืมเครือข่าย', '\u0e25\u0e37\u0e21 "' + escHtml(ssid) + '" \u0e43\u0e0a\u0e48\u0e2b\u0e23\u0e37\u0e2d\u0e44\u0e21\u0e48?', function () {
+        apiPost('/api/wifi/profiles/forget', { ssid: ssid }, function (err, data) {
             if (err || !data || !data.ok) {
                 showToast('\u0e25\u0e37\u0e21\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
                 return;
@@ -2058,12 +2509,12 @@ function toggleAutoProfile(ssid, isChecked, initialState) {
     if (toggleAutoTimer) {
         clearTimeout(toggleAutoTimer);
     }
-    toggleAutoTimer = setTimeout(function() {
+    toggleAutoTimer = setTimeout(function () {
         if (isChecked === initialState) {
             return;
         }
         if (isChecked) {
-            apiPost('/api/wifi/profiles/setauto', { ssid: ssid }, function(err, data) {
+            apiPost('/api/wifi/profiles/setauto', { ssid: ssid }, function (err, data) {
                 if (err || !data || !data.ok) {
                     showToast('\u0e15\u0e31\u0e49\u0e07 Auto \u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
                     loadWifiProfiles(); // revert toggle
@@ -2073,7 +2524,7 @@ function toggleAutoProfile(ssid, isChecked, initialState) {
                 loadWifiProfiles();
             });
         } else {
-            apiPost('/api/wifi/profiles/setauto', { index: -1 }, function(err, data) {
+            apiPost('/api/wifi/profiles/setauto', { index: -1 }, function (err, data) {
                 if (err || !data || !data.ok) {
                     showToast('\u0e22\u0e01\u0e40\u0e25\u0e34\u0e01 Auto \u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08', 'error');
                     loadWifiProfiles(); // revert toggle
@@ -2087,7 +2538,7 @@ function toggleAutoProfile(ssid, isChecked, initialState) {
 }
 
 function saveWifiProfile(ssid, password) {
-    apiPost('/api/wifi/profiles/save', { ssid: ssid, password: password || '' }, function(err, data) {
+    apiPost('/api/wifi/profiles/save', { ssid: ssid, password: password || '' }, function (err, data) {
         if (!err && data && data.ok) {
             loadWifiProfiles();
         }
@@ -2095,15 +2546,15 @@ function saveWifiProfile(ssid, password) {
 }
 
 function doDisconnect() {
-    showConfirmModal('ตัดการเชื่อมต่อ', 'คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?', function() {
+    showConfirmModal('ตัดการเชื่อมต่อ', 'คุณต้องการตัดการเชื่อมต่อ Wi-Fi ใช่หรือไม่?', function () {
         var btn = document.getElementById('disconnect-btn');
         if (btn) { setLoading(btn, true); }
 
-        apiPost('/api/wifi/disconnect', {}, function(err, data) {
+        apiPost('/api/wifi/disconnect', {}, function (err, data) {
             if ((data && data.ok) || (err && !data)) {
                 showToast('ตัดการเชื่อมต่อเรียบร้อย', 'success');
                 clearSelection();
-                setTimeout(function() {
+                setTimeout(function () {
                     if (btn) {
                         setLoading(btn, false);
                     }
@@ -2121,7 +2572,7 @@ function doDisconnect() {
 }
 
 function updateApPill() {
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         if (!err && data && data.ok) {
             var ipEl = document.getElementById('ap-pill-ip');
             var pill = document.getElementById('ap-pill');
@@ -2136,7 +2587,7 @@ function doScan() {
     var list = document.getElementById('network-list');
 
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class=\"spinner\"></span> \u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e41\u0e01\u0e19...'; }
-    apiGet('/api/wifi/scan', function(err, data) {
+    apiGet('/api/wifi/scan', function (err, data) {
         if (btn) {
             setLoading(btn, false);
             btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right: 4px; vertical-align: middle;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73"></path></svg> สแกนใหม่';
@@ -2156,12 +2607,12 @@ function doScan() {
         }
 
         /* Sort by connected first, then RSSI (strongest first) */
-        nets.sort(function(a, b) {
+        nets.sort(function (a, b) {
             if (a.connected && !b.connected) return -1;
             if (!a.connected && b.connected) return 1;
             return b.rssi - a.rssi;
         });
-        
+
         window.lastScanResults = nets;
         if (window.savedWifiProfiles) renderSavedProfiles();
 
@@ -2173,40 +2624,47 @@ function doScan() {
         }
 
         var html = '';
+        var visibleCount = 0;
         for (var i = 0; i < nets.length; i++) {
-            var sigClass = 'weak';
-            var sigLabel = '\u0e2d\u0e48\u0e2d\u0e19';
-            if (nets[i].rssi >= -50) { sigClass = 'strong'; sigLabel = '\u0e14\u0e35\u0e21\u0e32\u0e01'; }
-            else if (nets[i].rssi >= -70) { sigClass = 'good'; sigLabel = '\u0e14\u0e35'; }
-            else if (nets[i].rssi >= -85) { sigClass = 'fair'; sigLabel = '\u0e1e\u0e2d\u0e43\u0e0a\u0e49'; }
-
             var isConnected = nets[i].connected === true;
-            html += '<div class=\"network-item' + (isConnected ? ' connected' : '') + (!isConnected && selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
-                    'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
-                    (isConnected ? '' : 'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;"') + '>' +
+            if (isConnected) continue; /* Hide the connected network from the discovered list */
+
+            visibleCount++;
+            var sigBars = 1;
+            if (nets[i].rssi >= -50) { sigBars = 4; }
+            else if (nets[i].rssi >= -70) { sigBars = 3; }
+            else if (nets[i].rssi >= -85) { sigBars = 2; }
+            
+            var sigSvg = '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon">';
+            sigSvg += '<line x1="12" y1="20" x2="12.01" y2="20"></line>';
+            if (sigBars >= 2) sigSvg += '<path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>';
+            if (sigBars >= 3) sigSvg += '<path d="M5 12.55a11 11 0 0 1 14.08 0"></path>';
+            if (sigBars >= 4) sigSvg += '<path d="M1.42 9a16 16 0 0 1 21.16 0"></path>';
+            sigSvg += '</svg>';
+
+            html += '<button type=\"button\" class=\"network-item' + (selectedSsid === nets[i].ssid ? ' selected' : '') + '\" ' +
+                'data-ssid=\"' + escHtml(nets[i].ssid) + '\" ' +
+                'onclick=\"selectNetwork(\'' + escHtml(escJs(nets[i].ssid)) + '\')\" style="cursor:pointer;">' +
                 '<div class=\"network-item-left\">' +
-                    '<div class=\"network-icon' + (isConnected ? ' connected-icon' : '') + '\">' +
-                        '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>' +
-                    '</div>' +
-                    '<div class=\"network-info\">' +
-                        '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
-                        '<div class=\"net-detail\">' +
-                            (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ') + escHtml(nets[i].auth) +
-                            ' &bull; Ch ' + nets[i].channel +
-                        '</div>' +
-                    '</div>' +
+                '<div class=\"network-icon\">' +
+                sigSvg +
+                '</div>' +
+                '<div class=\"network-info\">' +
+                '<div class=\"net-ssid\">' + escHtml(nets[i].ssid) + '</div>' +
+                '<div class=\"net-detail\">' +
+                (nets[i].auth !== 'Open' ? '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> ' : '<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> ') + escHtml(nets[i].auth) +
+                '</div>' +
+                '</div>' +
                 '</div>' +
                 '<div class=\"network-item-right\">' +
-                    '<div class=\"net-signal\">' +
-                        '<div class=\"sig-label ' + sigClass + '\">' + sigLabel + '</div>' +
-                        '<div class=\"sig-dbm\">' + nets[i].rssi + ' dBm</div>' +
-                    '</div>' +
-                    (isConnected
-                        ? '<div class=\"network-connected-label\"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> \u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2d\u0e22\u0e39\u0e48</div>'
-                        : '<div class=\"btn btn-outline btn-sm btn-select\">\u0e40\u0e25\u0e37\u0e2d\u0e01</div>') +
                 '</div>' +
-            '</div>';
+                '</button>';
         }
+        
+        if (visibleCount === 0) {
+            html = '<div class="network-empty">\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e40\u0e04\u0e23\u0e37\u0e2d\u0e02\u0e48\u0e32\u0e22\u0e40\u0e1e\u0e34\u0e48\u0e21\u0e40\u0e15\u0e34\u0e21</div>'; /* ไม่พบเครือข่ายเพิ่มเติม */
+        }
+        
         if (list) list.innerHTML = html;
     });
 }
@@ -2217,10 +2675,16 @@ function toggleStaticIp() {
     var ipInput = document.getElementById('static-ip');
     var gwInput = document.getElementById('static-gateway');
     var nmInput = document.getElementById('static-netmask');
-    if (fields) fields.style.display = checked ? 'block' : 'none';
-    if (ipInput) ipInput.disabled = !checked;
-    if (gwInput) gwInput.disabled = !checked;
-    if (nmInput) nmInput.disabled = !checked;
+    if (fields) {
+        if (checked) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    }
+    if (ipInput) { ipInput.disabled = !checked; ipInput.classList.remove('invalid'); if (!checked) ipInput.value = ''; }
+    if (gwInput) { gwInput.disabled = !checked; gwInput.classList.remove('invalid'); if (!checked) gwInput.value = ''; }
+    if (nmInput) { nmInput.disabled = !checked; nmInput.classList.remove('invalid'); if (!checked) nmInput.value = '255.255.255.0'; }
 }
 
 function toggleWifiPasswordVisibility() {
@@ -2242,7 +2706,7 @@ function fadeSwap(toHide, toShow) {
         return;
     }
     toHide.style.opacity = '0';
-    setTimeout(function() {
+    setTimeout(function () {
         toHide.classList.add('hidden');
         toShow.style.opacity = '0';
         toShow.classList.remove('hidden');
@@ -2255,8 +2719,8 @@ function fadeSwap(toHide, toShow) {
 function showSavedPasswordInput() {
     var pwGroup = document.getElementById('wifi-password-group');
     var savedMsg = document.getElementById('wifi-saved-msg');
-    if (pwGroup) pwGroup.style.display = 'block';
-    if (savedMsg) savedMsg.style.display = 'none';
+    if (pwGroup) pwGroup.classList.remove('hidden');
+    if (savedMsg) savedMsg.classList.add('hidden');
 }
 
 function selectNetwork(ssid) {
@@ -2281,6 +2745,14 @@ function selectNetwork(ssid) {
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
+    if (pwInput) pwInput.classList.remove('invalid');
+    var ipInput = document.getElementById('static-ip');
+    var gwInput = document.getElementById('static-gateway');
+    var nmInput = document.getElementById('static-netmask');
+    if (ipInput) ipInput.classList.remove('invalid');
+    if (gwInput) gwInput.classList.remove('invalid');
+    if (nmInput) nmInput.classList.remove('invalid');
+
     var isSaved = false;
     if (window.savedWifiProfiles) {
         for (var k = 0; k < window.savedWifiProfiles.length; k++) {
@@ -2291,25 +2763,42 @@ function selectNetwork(ssid) {
         }
     }
 
-    if (pwInput) { 
-        pwInput.value = ''; 
-        pwInput.type = 'password'; 
-        pwInput.disabled = false; 
-        
-        var pwGroup = document.getElementById('wifi-password-group');
-        var savedMsg = document.getElementById('wifi-saved-msg');
-        
-        if (isSaved) {
-            pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e16\u0e39\u0e01\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 (\u0e40\u0e27\u0e49\u0e19\u0e27\u0e48\u0e32\u0e07\u0e44\u0e14\u0e49)';
-            if (pwGroup) pwGroup.style.display = 'none';
-            if (savedMsg) savedMsg.style.display = 'block';
-        } else {
-            pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19';
-            if (pwGroup) pwGroup.style.display = 'block';
-            if (savedMsg) savedMsg.style.display = 'none';
+    var isNetworkOpen = false;
+    if (window.lastScanResults) {
+        for (var i = 0; i < window.lastScanResults.length; i++) {
+            if (window.lastScanResults[i].ssid === ssid) {
+                if (window.lastScanResults[i].auth === 'Open') {
+                    isNetworkOpen = true;
+                }
+                break;
+            }
         }
     }
-    if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = false; }
+
+    if (pwInput) {
+        pwInput.value = '';
+        pwInput.type = 'password';
+        pwInput.disabled = false;
+
+        var pwGroup = document.getElementById('wifi-password-group');
+        var savedMsg = document.getElementById('wifi-saved-msg');
+
+        if (isNetworkOpen) {
+            pwInput.placeholder = 'เครือข่ายเปิด (ไม่มีรหัสผ่าน)';
+            pwInput.disabled = true;
+            if (pwGroup) pwGroup.classList.add('hidden');
+            if (savedMsg) savedMsg.classList.add('hidden');
+        } else if (isSaved) {
+            pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e16\u0e39\u0e01\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27 (\u0e40\u0e27\u0e49\u0e19\u0e27\u0e48\u0e32\u0e07\u0e44\u0e14\u0e49)';
+            if (pwGroup) pwGroup.classList.add('hidden');
+            if (savedMsg) savedMsg.classList.remove('hidden');
+        } else {
+            pwInput.placeholder = '\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19';
+            if (pwGroup) pwGroup.classList.remove('hidden');
+            if (savedMsg) savedMsg.classList.add('hidden');
+        }
+    }
+    if (showPwToggle) { showPwToggle.checked = false; showPwToggle.disabled = isNetworkOpen; }
     if (ipToggle) { ipToggle.checked = false; ipToggle.disabled = false; }
     toggleStaticIp(); // clear static fields and hide them
     if (statusEl) statusEl.textContent = '';
@@ -2318,7 +2807,9 @@ function selectNetwork(ssid) {
 
     /* Show the Wi-Fi connect modal */
     var wifiModal = document.getElementById('wifi-connect-modal');
-    if (wifiModal) wifiModal.classList.remove('hidden');
+    if (wifiModal) {
+        wifiModal.showModal();
+    }
 
     /* Update step to 2 */
     updateStepper(2);
@@ -2339,7 +2830,9 @@ function clearSelection() {
 
     /* Hide the Wi-Fi connect modal */
     var wifiModal = document.getElementById('wifi-connect-modal');
-    if (wifiModal) wifiModal.classList.add('hidden');
+    if (wifiModal) {
+        wifiModal.close();
+    }
 
     /* Reset inputs */
     var pwInput = document.getElementById('wifi-password');
@@ -2398,9 +2891,16 @@ function markNetworkConnected(ssid) {
 
 
 
+function setWifiModalInputsDisabled(disabled) {
+    var modalInputs = document.querySelectorAll('#wifi-connect-modal input, #wifi-connect-modal select, #wifi-connect-modal button');
+    for (var i = 0; i < modalInputs.length; i++) {
+        modalInputs[i].disabled = disabled;
+    }
+}
+
 function doConnect() {
     if (!selectedSsid) return;
-    
+
     var pwInput = document.getElementById('wifi-password');
     var password = pwInput ? pwInput.value : '';
 
@@ -2408,61 +2908,141 @@ function doConnect() {
     var cancelBtn = document.getElementById('cancel-btn');
     var statusEl = document.getElementById('connect-status');
 
+    if (pwInput) pwInput.classList.remove('invalid');
+    var ipInput = document.getElementById('static-ip');
+    var gwInput = document.getElementById('static-gateway');
+    var nmInput = document.getElementById('static-netmask');
+    if (ipInput) ipInput.classList.remove('invalid');
+    if (gwInput) gwInput.classList.remove('invalid');
+    if (nmInput) nmInput.classList.remove('invalid');
+
+    /* 1. Password length validation for secured unsaved networks */
+    var isSaved = false;
+    if (window.savedWifiProfiles) {
+        for (var k = 0; k < window.savedWifiProfiles.length; k++) {
+            if (window.savedWifiProfiles[k].ssid === selectedSsid) {
+                isSaved = true;
+                break;
+            }
+        }
+    }
+
+    var isNetworkOpen = false;
+    if (window.lastScanResults) {
+        for (var i = 0; i < window.lastScanResults.length; i++) {
+            if (window.lastScanResults[i].ssid === selectedSsid) {
+                if (window.lastScanResults[i].auth === 'Open') {
+                    isNetworkOpen = true;
+                }
+                break;
+            }
+        }
+    }
+
+    if (!isNetworkOpen && !isSaved) {
+        if (!password || password.length < 8) {
+            if (pwInput) pwInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'รหัสผ่านสำหรับเครือข่ายนี้ต้องมีความยาวอย่างน้อย 8 ตัวอักษร';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+    }
+
+    var body = { ssid: selectedSsid, password: password };
+    wifiLastPassword = password;  /* capture for saveWifiProfile on success */
+
+    /* 2. IP format validation */
+    if (document.getElementById('static-ip-toggle').checked) {
+        var ipVal = ipInput ? ipInput.value.trim() : '';
+        var gwVal = gwInput ? gwInput.value.trim() : '';
+        var nmVal = nmInput ? nmInput.value.trim() : '';
+
+        if (!isValidIp(ipVal)) {
+            if (ipInput) ipInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'กรุณากรอก IP Address ให้ถูกต้อง (เช่น 192.168.1.100)';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+        if (!isValidIp(gwVal)) {
+            if (gwInput) gwInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'กรุณากรอก Gateway ให้ถูกต้อง (เช่น 192.168.1.1)';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+        if (!isValidIp(nmVal)) {
+            if (nmInput) nmInput.classList.add('invalid');
+            if (statusEl) {
+                statusEl.textContent = 'กรุณากรอก Subnet Netmask ให้ถูกต้อง (เช่น 255.255.255.0)';
+                statusEl.style.color = 'var(--error)';
+            }
+            return;
+        }
+
+        body.ip = ipVal;
+        body.gateway = gwVal;
+        body.netmask = nmVal;
+    }
+
     if (connectBtn) setLoading(connectBtn, true);
     if (cancelBtn) cancelBtn.disabled = true;
+    setWifiModalInputsDisabled(true);
     if (statusEl) { statusEl.textContent = ''; statusEl.style.color = 'var(--on-surface-variant)'; }
 
     updateStepper(3);
 
-    var body = { ssid: selectedSsid, password: password };
-    wifiLastPassword = password;  /* capture for saveWifiProfile on success */
-    if (document.getElementById('static-ip-toggle').checked) {
-        body.ip = document.getElementById('static-ip').value.trim();
-        body.gateway = document.getElementById('static-gateway').value.trim();
-        body.netmask = document.getElementById('static-netmask').value.trim();
-    }
-
-    apiPost('/api/wifi/connect', body, function(err, data) {
+    apiPost('/api/wifi/connect', body, function (err, data) {
         if (err) {
             if (err.message && err.message.indexOf('HTTP') === 0) {
                 if (connectBtn) setLoading(connectBtn, false);
                 if (cancelBtn) cancelBtn.disabled = false;
+                setWifiModalInputsDisabled(false);
+                toggleStaticIp();
                 if (statusEl) { statusEl.textContent = '\u0e40\u0e01\u0e34\u0e14\u0e02\u0e49\u0e2d\u0e1c\u0e34\u0e14\u0e1e\u0e25\u0e32\u0e14: ' + err.message; statusEl.style.color = 'var(--error)'; }
                 updateStepper(2);
             } else {
                 /* Network error means the ESP32 likely dropped the Wi-Fi to switch networks! */
                 if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
                 var banner = document.getElementById('reconnect-banner');
-                if (banner) banner.style.display = 'block';
+                if (banner) banner.classList.remove('hidden');
                 if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
-                wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 2000);
+                wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(1); }, 2000);
             }
             return;
         }
 
         if (data && data.ok && data.connecting) {
             if (statusEl) { statusEl.textContent = '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e23\u0e2d\u0e1c\u0e25\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d...'; statusEl.style.color = 'var(--on-surface-variant)'; }
-            
+
             var banner = document.getElementById('reconnect-banner');
-            if (banner) banner.style.display = 'block';
-            
+            if (banner) banner.classList.remove('hidden');
+
             if (wifiConnectPollTimer) clearTimeout(wifiConnectPollTimer);
-            wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(1); }, 1000);
+            wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(1); }, 1000);
         } else if (data && data.ok) {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
+            setWifiModalInputsDisabled(false);
+            toggleStaticIp();
             if (statusEl) { statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08! IP: ' + (data.ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
             /* Mark step 3 as done */
             updateStepper(3, true);
             /* Update AP pill */
             updateApPill();
             /* Auto close modal after 2 seconds */
-            setTimeout(function() {
+            setTimeout(function () {
                 clearSelection();
             }, 2000);
         } else {
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
+            setWifiModalInputsDisabled(false);
+            toggleStaticIp();
             if (statusEl) {
                 statusEl.textContent = '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08: ' + (data && data.error ? data.error : '\u0e25\u0e2d\u0e07\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07');
                 statusEl.style.color = 'var(--error)';
@@ -2473,7 +3053,7 @@ function doConnect() {
 }
 
 function pollWifiConnection(attempt) {
-    apiGet('/api/status', function(err, data) {
+    apiGet('/api/status', function (err, data) {
         var connectBtn = document.getElementById('connect-btn');
         var cancelBtn = document.getElementById('cancel-btn');
         var statusEl = document.getElementById('connect-status');
@@ -2486,7 +3066,7 @@ function pollWifiConnection(attempt) {
                 if (statusEl) { statusEl.textContent = 'เชื่อมต่อสำเร็จ! IP: ' + (data.sta_ip || 'N/A'); statusEl.style.color = 'var(--secondary)'; }
 
                 var banner = document.getElementById('reconnect-banner');
-                if (banner) banner.style.display = 'none';
+                if (banner) banner.classList.add('hidden');
 
                 updateStepper(3, true);
                 updateConnectionStatus();
@@ -2494,19 +3074,21 @@ function pollWifiConnection(attempt) {
 
                 /* Mark the connected network in the list */
                 var connSsid = data.sta_ssid || selectedSsid;
-                
+
                 if (connSsid && connSsid !== selectedSsid) {
                     /* Fallback detected! We are back on the old Wi-Fi */
                     wifiConnectPollTimer = null;
                     if (connectBtn) setLoading(connectBtn, false);
                     if (cancelBtn) cancelBtn.disabled = false;
-                    if (statusEl) { 
-                        statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ระบบได้ดึงคุณกลับมายัง Wi-Fi เดิม'; 
-                        statusEl.style.color = 'var(--error)'; 
+                    setWifiModalInputsDisabled(false);
+                    toggleStaticIp();
+                    if (statusEl) {
+                        statusEl.textContent = 'เชื่อมต่อไม่สำเร็จ: ระบบได้ดึงคุณกลับมายัง Wi-Fi เดิม';
+                        statusEl.style.color = 'var(--error)';
                     }
                     updateStepper(2);
                     var banner = document.getElementById('reconnect-banner');
-                    if (banner) banner.style.display = 'none';
+                    if (banner) banner.classList.add('hidden');
                     return;
                 }
 
@@ -2520,7 +3102,7 @@ function pollWifiConnection(attempt) {
                 wifiConnectedSsid = connSsid;
 
                 /* Auto close modal after 2 seconds, keep stepper at step 3 done */
-                setTimeout(function() {
+                setTimeout(function () {
                     clearSelection();
                 }, 2000);
                 return;
@@ -2530,12 +3112,14 @@ function pollWifiConnection(attempt) {
                 wifiConnectPollTimer = null;
                 if (connectBtn) setLoading(connectBtn, false);
                 if (cancelBtn) cancelBtn.disabled = false;
+                setWifiModalInputsDisabled(false);
+                toggleStaticIp();
                 if (statusEl) {
                     statusEl.textContent = '❌ การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
                     statusEl.style.color = 'var(--error)';
                 }
                 var banner = document.getElementById('reconnect-banner');
-                if (banner) banner.style.display = 'none';
+                if (banner) banner.classList.add('hidden');
                 updateStepper(2);
                 return;
             }
@@ -2545,9 +3129,11 @@ function pollWifiConnection(attempt) {
             wifiConnectPollTimer = null;
             if (connectBtn) setLoading(connectBtn, false);
             if (cancelBtn) cancelBtn.disabled = false;
-            
+            setWifiModalInputsDisabled(false);
+            toggleStaticIp();
+
             var banner = document.getElementById('reconnect-banner');
-            if (banner) banner.style.display = 'none';
+            if (banner) banner.classList.add('hidden');
 
             if (!err && data && data.ok && !data.sta_connected) {
                 /* We are still connected to SoftAP, and connection to STA failed/timed out */
@@ -2558,9 +3144,9 @@ function pollWifiConnection(attempt) {
                 updateStepper(2);
             } else {
                 /* Connection to SoftAP lost, assume device moved to new network */
-                if (statusEl) { 
-                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ'; 
-                    statusEl.style.color = 'var(--secondary)'; 
+                if (statusEl) {
+                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ';
+                    statusEl.style.color = 'var(--secondary)';
                 }
                 updateStepper(3, true);
                 updateConnectionStatus();
@@ -2571,21 +3157,13 @@ function pollWifiConnection(attempt) {
         var countdownEl = document.getElementById('reconnect-countdown');
         if (countdownEl) countdownEl.textContent = (15 - attempt);
 
-        wifiConnectPollTimer = setTimeout(function() { pollWifiConnection(attempt + 1); }, 200);
+        wifiConnectPollTimer = setTimeout(function () { pollWifiConnection(attempt + 1); }, 200);
     }, 800);
 }
 
 function updateStepper(activeStep, done) {
-    for (var i = 1; i <= 3; i++) {
-        var step = document.getElementById('step-' + i);
-        if (!step) continue;
-        step.classList.remove('active', 'done');
-        if (i === activeStep && done) step.classList.add('done');
-        else if (i === activeStep) step.classList.add('active');
-        else if (i < activeStep) step.classList.add('done');
-    }
+    // Stepper UI removed in v1.2
 }
-
 /* ======== Utilities ======== */
 
 function escHtml(str) {
@@ -2597,6 +3175,21 @@ function escJs(str) {
     if (!str) return '';
     return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
+
+function isValidIp(ip) {
+    if (!ip) return false;
+    var parts = ip.split('.');
+    if (parts.length !== 4) return false;
+    for (var i = 0; i < 4; i++) {
+        var part = parts[i];
+        if (!/^\d+$/.test(part)) return false;
+        var num = parseInt(part, 10);
+        if (num < 0 || num > 255) return false;
+        if (part.length > 1 && part[0] === '0') return false;
+    }
+    return true;
+}
+
 
 
 /* ======== Change Password ======== */
@@ -2612,13 +3205,15 @@ function openPasswordModal() {
             errEl.classList.add('hidden');
             errEl.textContent = '';
         }
-        modal.classList.remove('hidden');
+        modal.showModal();
     }
 }
 
 function closePasswordModal() {
     var modal = document.getElementById('password-modal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+        modal.close();
+    }
 }
 
 function doChangePassword(e) {
@@ -2629,12 +3224,21 @@ function doChangePassword(e) {
     var errEl = document.getElementById('password-error');
     var btn = document.getElementById('password-save-btn');
 
+    var modalInputs = document.querySelectorAll('#password-modal input, #password-modal button');
+    function setModalInputsDisabled(disabled) {
+        for (var i = 0; i < modalInputs.length; i++) {
+            modalInputs[i].disabled = disabled;
+        }
+    }
+
     if (errEl) errEl.classList.add('hidden');
     setLoading(btn, true);
+    setModalInputsDisabled(true);
 
-    apiGet('/api/auth/nonce', function(err, data) {
+    apiGet('/api/auth/nonce', function (err, data) {
         if (err || !data || !data.ok || !data.nonce) {
             setLoading(btn, false);
+            setModalInputsDisabled(false);
             if (errEl) {
                 errEl.classList.remove('hidden');
                 errEl.textContent = 'ไม่สามารถดึงข้อมูล nonce ได้ กรุณาลองใหม่';
@@ -2651,9 +3255,10 @@ function doChangePassword(e) {
             payload.new_username = newUsername;
         }
 
-        apiPost('/api/auth/credentials', payload, function(err2, data2) {
+        apiPost('/api/auth/credentials', payload, function (err2, data2) {
             setLoading(btn, false);
             if (err2 || !data2 || !data2.ok) {
+                setModalInputsDisabled(false);
                 if (errEl) {
                     errEl.classList.remove('hidden');
                     if (data2 && data2.error === 'invalid_credentials') {
@@ -2667,7 +3272,7 @@ function doChangePassword(e) {
 
             closePasswordModal();
             showToast('เปลี่ยนรหัสผ่านเรียบร้อย ระบบจะนำคุณออกเพื่อล็อกอินใหม่', 'success');
-            setTimeout(function() {
+            setTimeout(function () {
                 document.cookie = 'session=; Path=/; Max-Age=0';
                 navigateTo('/login');
             }, 2500);
@@ -2685,39 +3290,42 @@ function navigateTo(path) {
 
 function handleRoute() {
     var path = window.location.pathname;
-    
+
     if (path === '/' || path === '') {
         path = isAuthenticated() ? '/dashboard' : '/login';
         history.replaceState(null, '', path);
     }
-    
+
     if (path === '/login' && isAuthenticated()) {
         navigateTo('/dashboard');
         return;
     }
-    
+
     var views = document.querySelectorAll('.view');
     for (var i = 0; i < views.length; i++) {
         views[i].classList.add('hidden');
+        views[i].setAttribute('aria-hidden', 'true');
     }
-    
+
     var viewId = 'view-login';
     if (path === '/dashboard') viewId = 'view-dashboard';
+    else if (path === '/cooling') viewId = 'view-cooling';
     else if (path === '/status') viewId = 'view-status';
     else if (path === '/wifi') viewId = 'view-wifi';
     else if (path === '/hardware') viewId = 'view-hardware';
-    
+
     var activeView = document.getElementById(viewId);
     if (activeView) {
         activeView.classList.remove('hidden');
+        activeView.setAttribute('aria-hidden', 'false');
     }
-    
+
     if (viewId === 'view-login') {
         document.body.classList.add('login-active');
     } else {
         document.body.classList.remove('login-active');
     }
-    
+
     var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
     for (var j = 0; j < navItems.length; j++) {
         navItems[j].classList.remove('active');
@@ -2725,15 +3333,25 @@ function handleRoute() {
             navItems[j].classList.add('active');
         }
     }
-    
+
+    var mNavItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item');
+    for (var k = 0; k < mNavItems.length; k++) {
+        mNavItems[k].classList.remove('active');
+        if (mNavItems[k].getAttribute('href') === path) {
+            mNavItems[k].classList.add('active');
+        }
+    }
+
     checkAuth();
-    
+
     cleanupCurrentView();
-    
+
     if (path === '/login') {
         if (typeof initLogin === 'function') initLogin();
     } else if (path === '/dashboard') {
         if (typeof initDashboard === 'function') initDashboard();
+    } else if (path === '/cooling') {
+        if (typeof initCoolingDashboard === 'function') initCoolingDashboard();
     } else if (path === '/status') {
         if (typeof initStatus === 'function') initStatus();
     } else if (path === '/wifi') {
@@ -2741,22 +3359,18 @@ function handleRoute() {
     } else if (path === '/hardware') {
         if (typeof initHardwareInstall === 'function') initHardwareInstall();
     }
-    
-    if (typeof closeMobileNav === 'function') closeMobileNav();
+
+    window.scrollTo(0, 0);
 }
 
 window.addEventListener('popstate', handleRoute);
 
 /* ======== Init ======== */
 
-(function() {
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            if (typeof closeMobileNav === 'function') closeMobileNav();
-        }
-    });
+(function () {
 
-    document.addEventListener('click', function(e) {
+
+    document.addEventListener('click', function (e) {
         var link = e.target.closest('a');
         if (link) {
             var href = link.getAttribute('href');
@@ -2767,16 +3381,55 @@ window.addEventListener('popstate', handleRoute);
         }
     });
 
+    // Register cancel event listeners for native dialogs to trigger correct cleanups
+    var confirmModal = document.getElementById('modal-container');
+    if (confirmModal) {
+        confirmModal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            var cancelBtn = document.getElementById('modal-cancel');
+            if (cancelBtn) cancelBtn.click();
+        });
+    }
+    var passwordModal = document.getElementById('password-modal');
+    if (passwordModal) {
+        passwordModal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            closePasswordModal();
+        });
+    }
+    var wifiModal = document.getElementById('wifi-connect-modal');
+    if (wifiModal) {
+        wifiModal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+            clearSelection();
+        });
+    }
+
+    // Setup accessibility for collapsible settings details/summary
+    var collapsibles = document.querySelectorAll('details.settings-collapsible');
+    for (var i = 0; i < collapsibles.length; i++) {
+        (function(details) {
+            var summary = details.querySelector('summary');
+            if (summary) {
+                summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+                details.addEventListener('toggle', function() {
+                    summary.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+                });
+            }
+        })(collapsibles[i]);
+    }
+
+    updateThemeIcons(getEffectiveTheme());
     handleRoute();
 })();
 
 function confirmStaging() {
-    apiPost('/api/confirm', {}, function(err, data) {
+    apiPost('/api/confirm', {}, function (err, data) {
         if (err) {
             showToast('ยืนยันไม่สำเร็จ: ' + err.message, 'error');
         } else if (data && data.ok) {
             showToast('ยืนยันการตั้งค่าสำเร็จ', 'success');
-            setTimeout(function() { window.location.reload(); }, 1500);
+            setTimeout(function () { window.location.reload(); }, 1500);
         } else {
             showToast('ยืนยันไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'), 'error');
         }
@@ -2784,15 +3437,42 @@ function confirmStaging() {
 }
 
 function cancelStaging() {
-    apiDelete('/api/confirm', function(err, data) {
+    apiDelete('/api/confirm', function (err, data) {
         if (err) {
             showToast('ยกเลิกไม่สำเร็จ: ' + err.message, 'error');
         } else if (data && data.ok) {
             showToast('ยกเลิกการตั้งค่าเรียบร้อยแล้ว อุปกรณ์กำลังรีบูตเพื่อย้อนกลับ...', 'success');
-            setTimeout(function() { window.location.reload(); }, 1500);
+            setTimeout(function () { window.location.reload(); }, 1500);
         } else {
             showToast('ยกเลิกไม่สำเร็จ: ' + (data ? data.error : 'Unknown error'), 'error');
         }
     });
 }
+
+/* === Theme Management === */
+function getEffectiveTheme() {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function cycleTheme() {
+    var next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    updateThemeIcons(next);
+}
+function updateThemeIcons(theme) {
+    var btns = document.querySelectorAll('.theme-toggle use');
+    var icon = theme === 'dark' ? '#icon-sun' : '#icon-moon';
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].setAttribute('href', icon);
+    }
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    if (!localStorage.getItem('theme')) {
+        var t = e.matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        updateThemeIcons(t);
+    }
+});
 

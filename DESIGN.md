@@ -1,487 +1,197 @@
 ---
-version: alpha
 name: Fish-Pump-Control-design-system
-description: A compact ESP32 local-web dashboard design system for Wi-Fi setup, login, and device status. The UI is a light operational control panel with Material-inspired surfaces, soft shadows, small-radius cards, system fonts, Unicode icons, and a restrained blue/green/orange semantic palette that works without internet access or external assets.
+description: A clean, local-web operational control panel for the ESP32 Fish Pump controller using a Flat-by-Default layout, structured SVG status signals, and a high-contrast semantic color palette.
 colors:
-  surface: "#faf9fe"
-  surface-dim: "#dad9df"
-  surface-bright: "#faf9fe"
-  surface-container-lowest: "#ffffff"
-  surface-container-low: "#f4f3f8"
-  surface-container: "#eeedf3"
-  surface-container-high: "#e9e7ed"
-  surface-container-highest: "#e3e2e7"
-  on-surface: "#1a1b1f"
-  on-surface-variant: "#414755"
-  inverse-surface: "#2f3034"
-  inverse-on-surface: "#f1f0f5"
-  outline: "#717786"
-  outline-variant: "#c1c6d7"
-  surface-tint: "#005bc1"
-  primary: "#0058bc"
+  primary: "#2563eb"
+  primary-hover: "#1d4ed8"
+  primary-container: "#eff6ff"
   on-primary: "#ffffff"
-  primary-container: "#0070eb"
-  primary-fixed: "#d8e2ff"
-  primary-fixed-dim: "#adc6ff"
-  secondary: "#006e28"
+  secondary: "#10b981"
   on-secondary: "#ffffff"
-  secondary-container: "#6ffb85"
-  secondary-fixed-dim: "#53e16f"
-  tertiary: "#9e3d00"
+  tertiary: "#f59e0b"
   on-tertiary: "#ffffff"
-  tertiary-container: "#c64f00"
-  error: "#ba1a1a"
+  error: "#ef4444"
+  error-hover: "#dc2626"
   on-error: "#ffffff"
-  error-container: "#ffdad6"
-  bg-body: "#f2f2f7"
+  bg-body: "#f1f5f9"
+  surface: "#ffffff"
+  surface-dim: "#f1f5f9"
+  surface-container: "#f1f5f9"
+  surface-container-highest: "#e2e8f0"
+  on-surface: "#0f172a"
+  on-surface-variant: "#64748b"
+  outline: "#64748b"
+  outline-variant: "#e2e8f0"
 typography:
-  font-ui: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  font-ui: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
   font-mono: "'Courier New', Consolas, monospace"
-  display-lg:
+  display:
     fontFamily: "{typography.font-ui}"
-    fontSize: 32px
+    fontSize: "1.953rem"
     fontWeight: 700
-    lineHeight: 40px
-    letterSpacing: -0.02em
-  display-md:
+    lineHeight: "2.5rem"
+  headline:
     fontFamily: "{typography.font-ui}"
-    fontSize: 24px
+    fontSize: "1.563rem"
     fontWeight: 700
-    lineHeight: 32px
-    letterSpacing: -0.01em
-  heading-sm:
+    lineHeight: "2rem"
+  title:
     fontFamily: "{typography.font-ui}"
-    fontSize: 20px
+    fontSize: "1.25rem"
     fontWeight: 600
-    lineHeight: 28px
-  heading-xs:
+    lineHeight: "1.75rem"
+  body:
     fontFamily: "{typography.font-ui}"
-    fontSize: 16px
-    fontWeight: 600
-    lineHeight: 24px
-  body-md:
-    fontFamily: "{typography.font-ui}"
-    fontSize: 16px
+    fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 24px
-  body-sm:
-    fontFamily: "{typography.font-ui}"
-    fontSize: 14px
-    fontWeight: 400
-    lineHeight: 20px
+    lineHeight: "1.5rem"
   label:
     fontFamily: "{typography.font-ui}"
-    fontSize: 12px
+    fontSize: "0.75rem"
     fontWeight: 600
-    lineHeight: 16px
-    letterSpacing: 0.05em
-    textTransform: uppercase
-  mono:
-    fontFamily: "{typography.font-mono}"
-    fontSize: 13px
-    fontWeight: 400
-    lineHeight: 18px
+    lineHeight: "1rem"
+    letterSpacing: "0.05em"
+    textTransform: "uppercase"
+rounded:
+  sm: "4px"
+  md: "8px"
+  lg: "12px"
+  full: "9999px"
 spacing:
-  xs: 4px
-  base: 8px
-  sm: 12px
-  md: 16px
-  lg: 24px
-  xl: 32px
-radius:
-  sm: 4px
-  md: 8px
-  lg: 12px
-  full: 9999px
-shadows:
-  card: "0px 4px 12px rgba(0, 0, 0, 0.05)"
-  login: "0px 8px 24px rgba(0, 0, 0, 0.1)"
-  sm: "0px 1px 3px rgba(0, 0, 0, 0.08)"
+  xs: "4px"
+  base: "8px"
+  sm: "12px"
+  md: "16px"
+  lg: "24px"
+  xl: "32px"
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
-    typography: "{typography.body-md}"
-    rounded: "{radius.md}"
+    rounded: "{rounded.md}"
     padding: "10px 16px"
   button-outline:
-    backgroundColor: transparent
+    backgroundColor: "transparent"
     textColor: "{colors.primary}"
-    borderColor: "{colors.primary}"
-    typography: "{typography.body-md}"
-    rounded: "{radius.md}"
-    padding: "10px 16px"
-  button-danger:
-    backgroundColor: "#d32f2f"
-    textColor: "#ffffff"
-    rounded: "{radius.md}"
+    rounded: "{rounded.md}"
     padding: "10px 16px"
   card:
-    backgroundColor: "{colors.surface-container-lowest}"
-    borderColor: "rgba(255, 255, 255, 0.5)"
-    rounded: "{radius.lg}"
-    shadow: "{shadows.card}"
-    padding: "{spacing.lg}"
-  text-input:
-    backgroundColor: "{colors.surface-container-lowest}"
-    textColor: "{colors.on-surface}"
-    borderColor: "{colors.outline-variant}"
-    focusBorderColor: "{colors.primary}"
-    focusRing: "0 0 0 2px rgba(0, 88, 188, 0.15)"
-    rounded: "{radius.md}"
-    padding: "10px 12px 10px 40px"
-  sidebar:
-    width: 280px
-    backgroundColor: "{colors.surface-container-lowest}"
-    borderColor: "rgba(193, 198, 215, 0.2)"
-    shadow: "{shadows.card}"
-  mobile-topbar:
-    height: 64px
     backgroundColor: "{colors.surface}"
-    shadow: "{shadows.sm}"
+    rounded: "{rounded.lg}"
+    padding: "{spacing.lg}"
 ---
 
-# Fish Pump Control DESIGN.md
+# Design System: Fish Pump Control
 
-## Overview
+## 1. Overview
 
-Fish Pump Control is a local ESP32 setup and operations UI. It is not a marketing site and should not look like one. The design language is quiet, clear, and device-administration oriented: light gray body canvas, white or near-white surfaces, compact status cards, small-radius controls, and direct action buttons.
+**Creative North Star: "The Clear Console"**
 
-The UI must work inside an ESP32 SoftAP environment with no internet. Use plain HTML/CSS/JS, system fonts, Unicode symbols, and embedded static assets only. Do not introduce CDN fonts, icon libraries, CSS frameworks, SVG illustration packs, or remote images.
+The Fish Pump Control design system is engineered to provide local operators with an immediate, unambiguous understanding of the device's state. It rejects SaaS dashboards, complex decorative gradients, and marketing fluff in favor of a clean, industrial hardware-style control panel. The interface is optimized to perform reliably in offline SoftAP environments, utilizing only embedded static assets, system fonts, and vector graphics.
 
-The current product mood is "Connectivity & Control": practical, calm, local-device focused, and easy to scan on a phone while standing near hardware. Data density is moderate. The dashboard should communicate whether the device is reachable, whether AP fallback is active, whether STA is connected, and whether system health looks normal.
+A primary principle of "The Clear Console" is the **SVG & Text-Reduction Directive**. Rather than describing status and transitions in verbose paragraphs, the interface prioritizes structured, vector-based status signals and high-contrast semantic colors to communicate operational health instantly. 
 
-## Visual Theme & Atmosphere
+### Key Characteristics:
+- **SVG-First State Signaling**: Rely on icon symbols and status dots for quick status scans.
+- **Flat-by-Default Visuals**: Depth is suggested through color steps (tonal layering) rather than drop shadows.
+- **Embedded-Friendly Weight**: Zero reliance on CDNs, external fonts, or online asset packages.
+- **Dual-Language Context**: Interface copy uses Thai for user action controls and English for precise technical nouns.
 
-- Light operational dashboard, not decorative.
-- Surfaces are layered by subtle container tints, small shadows, and thin borders.
-- Primary blue means action, navigation, focus, and Wi-Fi setup.
-- Secondary green means connected, active, healthy, or completed.
-- Tertiary orange means warning or weak signal.
-- Error red means failed login, failed scan, failed connect, and destructive status.
-- Unicode icons are part of the current voice. They should stay simple and functional.
-- Thai UI text is first-class. English labels are acceptable for technical terms like Dashboard, Wi-Fi, STA, AP, RSSI, IP, MAC, and Firmware.
+## 2. Colors
 
-## Colors
+Colors in this system represent physical appliance states and command structures. We use an **Operational Semantics** approach to define color roles, mapping them to standard hardware console alerts.
 
-### Surfaces
+### Primary
+- **Console Blue** (`#2563eb`): Used for primary action buttons, active navigation markers, input focus rings, and positive progress indicators. It draws the operator's eye to active settings and confirmations.
 
-| Token | Hex | Role |
-|---|---:|---|
-| `surface` | `#faf9fe` | Light page/shell surface and Wi-Fi panels. |
-| `bg-body` | `#f2f2f7` | Default app body background behind cards and sections. |
-| `surface-container-lowest` | `#ffffff` | Card, login card, input, and sidebar base. |
-| `surface-container-low` | `#f4f3f8` | Subtle selected rows, sidebar node panel, summary tiles. |
-| `surface-container` | `#eeedf3` | Status banners and AP pills. |
-| `surface-container-high` | `#e9e7ed` | Table row separators and progress track variants. |
-| `surface-container-highest` | `#e3e2e7` | Stronger border and divider surface. |
-| `surface-dim` | `#dad9df` | Dimmed surface utility. |
+### Secondary
+- **Active Green** (`#10b981` / `#006e28`): Indicates active, energized, healthy, and successful operations. Used for active pump relays, healthy sensor connection states, and successful Wi-Fi connections.
 
-### Text & Borders
+### Tertiary
+- **Warning Amber** (`#f59e0b` / `#9e3d00`): Represents transient or warning states, such as pending configurations, timer cooldowns, or temporary stabilization periods.
 
-| Token | Hex | Role |
-|---|---:|---|
-| `on-surface` | `#1a1b1f` | Main text and card values. |
-| `on-surface-variant` | `#414755` | Supporting copy and secondary labels. |
-| `outline` | `#717786` | Low-emphasis text, metadata, table labels, disabled-ish text. |
-| `outline-variant` | `#c1c6d7` | Input borders, light dividers, placeholder text. |
-| `inverse-surface` | `#2f3034` | Dark inverse surfaces if needed. |
-| `inverse-on-surface` | `#f1f0f5` | Text on inverse surfaces. |
+### Neutral
+- **Alarm Red** (`#ef4444` / `#ba1a1a`): Indicates critical faults, offline state, emergency stop alerts, or invalid configurations.
+- **Muted Slate** (`#64748b`): Used for units of measure, reference text, inactive options, and label descriptions.
+- **Canvas Background** (`#f1f5f9`): The low-saturation gray backplane resembling physical plastic console panels.
+- **Card Surface** (`#ffffff`): The high-contrast white container color for organizing controls.
 
-### Semantic Palette
+### Named Rules
+**The Color-as-State Rule.** Saturated color must never be used decoratively. Green, orange, and red must strictly map to active, warning, and alarm status respectively. If a color is visible, it carries functional meaning that the operator must trust.
 
-| Token | Hex | Role |
-|---|---:|---|
-| `primary` | `#0058bc` | Main CTA, nav active state, focus border, progress fill, primary icon color. |
-| `primary-container` | `#0070eb` | Primary button hover and stronger blue container. |
-| `primary-fixed` | `#d8e2ff` | Login icon background and soft blue emphasis. |
-| `primary-fixed-dim` | `#adc6ff` | Login icon border and soft blue edge. |
-| `secondary` | `#006e28` | Connected, active, done, strong signal, healthy. |
-| `secondary-container` | `#6ffb85` | Bright green container when needed sparingly. |
-| `secondary-fixed-dim` | `#53e16f` | AP pulse indicator. |
-| `tertiary` | `#9e3d00` | Warnings, weak signal, attention states. |
-| `tertiary-container` | `#c64f00` | Strong orange surface if required. |
-| `error` | `#ba1a1a` | Form errors and failed operations. |
-| `error-container` | `#ffdad6` | Soft error background if an error panel is added. |
+## 3. Typography
 
-## Typography
+This system uses a single clean font family to handle display, labels, and text data, ensuring readability and consistency across all screen densities.
 
-Use only the system UI stack:
+**Display Font:** System UI stack (system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)
+**Body Font:** System UI stack
+**Label/Mono Font:** Courier New, Consolas, monospace (used for MAC addresses, IP addresses, and GPIO configurations)
 
-```css
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-```
+### Hierarchy
+- **Display** (Bold, 31px / 1.953rem, Line-height: 2.5rem): Used for main page headers (e.g. Wi-Fi Setup, Dashboard) to orient the operator.
+- **Headline** (Bold, 25px / 1.563rem, Line-height: 2rem): Used for main control section headers.
+- **Title** (Semibold, 20px / 1.25rem, Line-height: 1.75rem): Used for status card headers and configuration group labels.
+- **Body** (Regular, 16px / 1rem, Line-height: 1.5rem): Used for form inputs, table items, and status indicators. Line length is capped at 65ch.
+- **Label** (Semibold, 12px / 0.75rem, Line-height: 1rem, Letter-spacing: 0.05em, Uppercase): Used for metadata labels, column headers, and sub-card categories.
 
-Use monospace only for device identifiers, IPs, MACs, RSSI values, and other machine-readable values:
+### Named Rules
+**The Mono-for-Data Rule.** Every raw hardware metric, IP address, MAC address, and GPIO pin number must be typeset in the monospace font (`--font-mono`). Monospace indicates raw, unfiltered machine state.
 
-```css
-font-family: 'Courier New', Consolas, monospace;
-```
+## 4. Elevation
 
-| Token | Size | Weight | Line Height | Use |
-|---|---:|---:|---:|---|
-| `display-lg` | `32px` | `700` | `40px` | Desktop page H1. |
-| `display-md` | `24px` | `700` | `32px` | Mobile page H1, login H1, card metric values. |
-| `heading-sm` | `20px` | `600` | `28px` | Section card titles and desktop brand name. |
-| `heading-xs` | `16px` | `600` | `24px` | Panel titles, table card headings, network SSIDs. |
-| `body-md` | `16px` | `400` | `24px` | Inputs and default readable text. |
-| `body-sm` | `14px` | `400` | `20px` | Supporting copy, subtitles, nav, card subtext. |
-| `label` | `12px` | `600` | `16px` | Uppercase labels, card labels, form labels. |
-| `mono` | `13px` | `400` | `18px` | IP, MAC, RSSI, technical values. |
+In order to maintain a fast, distraction-free environment, the visual depth is flat-by-default, relying on tonal contrast.
 
-Rules:
+Surfaces use a tiered hierarchy of light-gray to white background layers to separate sections. Ambient shadows are restrained and reserved for specific overlay elements.
 
-- Keep headings compact. Do not use oversized hero typography.
-- Labels should be uppercase, 12px, semibold, and slightly tracked.
-- Thai copy should be rendered in the same system stack. Avoid decorative Thai fonts.
-- Do not use negative letter spacing except the existing `h1` desktop/mobile values.
+### Shadow Vocabulary
+- **Card Ambient** (`box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05)`): A very soft, subtle shadow applied to main operational control cards to lift them slightly off the background canvas.
+- **Login Box** (`box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.08)`): Used on the centered login card to draw focus during authentication.
+- **Overlay/Toast** (`box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2)`): High-density shadow to separate floating elements (like toasts or modals) from background content.
 
-## Layout Principles
+### Named Rules
+**The Flat-Surface Rule.** All background panels, data lists, and sidebars must remain flat (no box shadow). Depth is conveyed by contrasting white surfaces (`#ffffff`) against the light gray canvas (`#f1f5f9`).
 
-### App Shell
-
-- Desktop width `>= 1024px`: show a fixed left sidebar, `280px` wide.
-- Desktop main content: `margin-left: 280px`, `32px` padding.
-- Mobile and tablet: hide sidebar and show a sticky `64px` mobile top bar.
-- Default page content uses a vertical stack with `24px` gaps.
-- Page headers stack on mobile and become horizontal from `768px`.
-
-### Grids
-
-- Status grid: 1 column by default, 2 columns from `640px`, 4 columns from `1024px`.
-- Wi-Fi setup grid: 1 column by default, then `8fr 4fr` from `1024px`.
-- Summary grid: 2 columns by default, 3 columns from `640px`.
-- Keep control panels dense enough for repeated use. Avoid landing-page spacing.
-
-### Login
-
-- Login page uses a full viewport centered card.
-- Background is `surface` with a subtle 20px radial dot pattern using `outline-variant`.
-- Card width is `100%` with `max-width: 400px`, `32px` padding, `12px` radius.
-- Login icon is a 64px square, 8px radius, blue soft container.
-
-## Spacing
-
-Use the existing CSS spacing tokens:
-
-| Token | Value | Use |
-|---|---:|---|
-| `xs` | `4px` | Micro gaps, status dot text, small margin-top. |
-| `base` | `8px` | Button icon gaps, label-to-value gaps. |
-| `sm` | `12px` | Sidebar node padding, small buttons, row gaps. |
-| `md` | `16px` | Mobile page padding, panel headers, default horizontal control padding. |
-| `lg` | `24px` | Card padding, page stack gaps. |
-| `xl` | `32px` | Desktop page padding and login card padding. |
-
-Spacing should feel measured and utilitarian. Do not add large hero gaps, decorative whitespace, or marketing-style section breaks.
-
-## Shape & Radius
-
-| Token | Value | Use |
-|---|---:|---|
-| `radius-sm` | `4px` | Small labels or tight utility elements if needed. |
-| `radius-md` | `8px` | Inputs, buttons, nav items, node info, selected SSID display. |
-| `radius-lg` | `12px` | Cards, login card, Wi-Fi panels, overlays. |
-| `radius-full` | `9999px` | Pills, dots, progress bars, circular Wi-Fi icons. |
-
-Do not make the app overly rounded. Cards stay at `12px`, buttons and inputs at `8px`, and pills only where the shape communicates status.
-
-## Depth & Elevation
-
-| Level | Treatment | Use |
-|---|---|---|
-| Level 0 | Flat body background `bg-body` | Page canvas. |
-| Level 1 | White/near-white surface with subtle border | Cards, panels, sidebar. |
-| Level 2 | `0px 1px 3px rgba(0, 0, 0, 0.08)` | Mobile top bar, small raised controls. |
-| Level 3 | `0px 4px 12px rgba(0, 0, 0, 0.05)` | Dashboard cards, Wi-Fi panels, sidebar. |
-| Level 4 | `0px 8px 24px rgba(0, 0, 0, 0.1)` | Login card. |
-| Toast | `0px 4px 12px rgba(0, 0, 0, 0.2)` | Temporary notification above app. |
-
-Elevation must remain soft. Do not add heavy glassmorphism, glowing panels, or dark-mode shadows.
-
-## Components
+## 5. Components
 
 ### Buttons
+- **Shape:** Gently rounded (8px / `--radius-md`).
+- **Primary:** Console Blue fill, white text, 10px 16px padding. Active state uses `#004493`.
+- **Outline:** Transparent background, Console Blue border and text, 10px 16px padding. Hover state uses `rgba(0, 88, 188, 0.05)`.
+- **Danger:** Alarm Red fill, white text, 10px 16px padding. Used for disconnect/reset.
+- **Scan/Refresh:** Pill-shaped (9999px / `--radius-full`), light blue background, 6px 12px padding.
 
-`btn`:
-
-- Inline-flex, centered, `gap: 8px`.
-- Padding `10px 16px`.
-- Radius `8px`.
-- Font `16px`, weight `600`, line-height `24px`.
-- Disabled state uses `opacity: 0.5` and `cursor: not-allowed`.
-
-Variants:
-
-- `btn-primary`: blue fill, white text, small shadow. Hover uses `primary-container`, active uses `#004493`.
-- `btn-outline`: transparent fill, primary blue text and border. Hover uses `rgba(0, 88, 188, 0.05)`.
-- `btn-danger`: red fill for disconnect/destructive actions. Hover uses `#b71c1c`.
-- `btn-sm`: `6px 12px`, 12px semibold text.
-- `btn-block`: full width, used on login submit.
-- `scan-btn`: pill shape, light blue background, 12px semibold, used only for scan refresh.
-
-### Inputs & Forms
-
-- Form groups stack label and field with `4px` gap and `24px` bottom margin.
-- Labels are 12px semibold uppercase.
-- Inputs are 16px, `10px 12px 10px 40px`, white background, `outline-variant` border, 8px radius.
-- Input icons sit absolutely at `left: 12px`, vertically centered, `18px`, outline color.
-- Focus state must use blue border and `0 0 0 2px rgba(0, 88, 188, 0.15)`.
-- Checkboxes use `accent-color: primary`.
-
-### Sidebar
-
-- Fixed left shell only on desktop.
-- Width `280px`, full viewport height, white surface, soft card shadow.
-- Brand title is 20px bold primary blue.
-- Node info block uses `surface-container-low`, `12px` padding, 8px radius.
-- Nav rows are `10px 16px`, 8px radius, 14px semibold.
-- Active nav uses blue text, `surface-container-low` fill, and a `4px` blue border on the right.
-
-### Mobile Top Bar
-
-- Sticky top, height `64px`, `24px` horizontal padding.
-- Brand is 20px bold primary blue.
-- Icons are Unicode symbols at 20px in primary blue.
-- Use this for navigation context on mobile, not for complex controls.
+### Inputs / Fields
+- **Style:** 1px solid border (`--outline-variant`), white background, 8px radius. Inputs have a left padding of 40px to accommodate absolute-positioned vector icons.
+- **Focus:** Border switches to Console Blue with a soft outer ring: `box-shadow: 0 0 0 2px var(--focus-ring-primary)`.
+- **Error:** Border switches to Alarm Red with a soft red outer ring: `box-shadow: 0 0 0 2px var(--focus-ring-error)`.
 
 ### Cards
+- **Corner Style:** Rounded (12px / `--radius-lg`).
+- **Background:** Solid white (`#ffffff`).
+- **Shadow:** Restrained `Card Ambient` shadow.
+- **Internal Spacing:** 24px padding (`--space-6`).
 
-- Base card: white background, `24px` padding, 12px radius, soft card shadow.
-- Use a subtle white border on dashboard cards.
-- Card labels are 12px semibold uppercase with outline color.
-- Card values are large and strong: 24px bold on mobile, 20px semibold on desktop where the grid is denser.
-- Card subtext is 14px with semantic color classes: `good`, `warn`, `neutral`.
-- Cards may contain compact tables, progress bars, and short status lines.
-
-### Section Cards & Summary Tiles
-
-- Section cards use the same white surface and 12px radius.
-- Section title is 20px semibold.
-- Summary tiles sit inside section cards with `surface-container-low`, `12px` padding, 8px radius.
-- Summary labels are 11px uppercase semibold; summary values are 18px bold.
-
-### Info Tables
-
-- Full-width, collapsed borders.
-- Rows after the first have a `surface-container-high` top border.
-- Labels are 12px semibold outline text, nowrap, left aligned.
-- Values are 14px medium, right aligned.
-- Technical values use monospace 13px.
-
-### Progress Bar
-
-- 6px height, full-pill radius.
-- Track uses `surface-container-high`.
-- Fill uses primary blue.
-- Animate width changes with `0.3s`.
-
-### Wi-Fi Stepper
-
-- Horizontal, centered, `max-width: 640px`, 32px bottom margin.
-- Connector line is 2px `surface-container-highest`.
-- Step circle is 32px, circular, 12px semibold.
-- Active step uses primary blue.
-- Done step uses secondary green.
-- Step label is 12px semibold on the body background.
-
-### Network List
-
-- Network panel is a white/light surface with soft shadow and clipped overflow.
-- Header is 16px panel title and a scan pill.
-- List max height is 400px and scrolls.
-- Network item has 16px padding, bottom border, pointer cursor, hover and selected fill `surface-container-low`.
-- Left side: circular 40px icon container and SSID/auth/channel text.
-- Right side: signal label, dBm value in monospace, and small select button.
-- Signal semantics: strong green, good neutral, weak orange.
-
-### Input Panel Overlay
-
-- Disabled Wi-Fi input panel uses `opacity: 0.5` and `pointer-events: none`.
-- Overlay hint uses a translucent surface with 1px blur and a centered hint box.
-- Hint box uses white/light surface, small shadow, border, 8px radius, 12px semibold text.
+### Navigation Sidebar
+- **Desktop Layout:** Fixed left sidebar, width 280px, flat surface, 1px right border (`--outline-variant`).
+- **Mobile Navigation:** Sticky bottom navigation bar, height 64px, with absolute z-index (`--z-index-bottom-nav`) and shadow.
+- **Active Navigation:** Active item uses Console Blue text and a background highlight.
 
 ### Toasts
+- **Style:** Compact floating notification at top-right, z-index 1020 (`--z-index-toast`).
+- **Color Coding:** Success toast uses Active Green, error uses Alarm Red, info uses Console Blue.
 
-- Fixed top-right at `16px`.
-- Max width `320px`.
-- Padding `12px 16px`, 8px radius, 14px semibold white text.
-- Success uses secondary green, error uses error red, info uses primary blue.
-- Enter animation slides in from the right over `0.3s`.
-
-## Interaction & State Rules
-
-- Login submit disables the button and swaps text to loading copy.
-- Login errors appear inline below the password field in error red.
-- Dashboard refresh actions use small buttons and do not change layout.
-- Wi-Fi scan button shows the spinner inline and disables itself while scanning.
-- Selecting a network removes the input panel disabled state, hides the overlay, marks step 2 active, and highlights the selected network row.
-- Connecting marks step 3 active; success marks step 3 done and shows green status text.
-- Failed connect returns the stepper to step 2 and shows error red text.
-- AP active indicator uses a small pulsing green dot.
-- Do not introduce modal dialogs unless the user flow truly requires interruption.
-
-## Responsive Behavior
-
-| Breakpoint | Width | Behavior |
-|---|---:|---|
-| Mobile | `< 640px` | One-column grids, mobile top bar, sidebar hidden, page padding 16px. |
-| Small tablet | `>= 640px` | Status cards become 2 columns; summary grid becomes 3 columns. |
-| Tablet | `>= 768px` | Page header becomes horizontal; context bar can appear. |
-| Desktop | `>= 1024px` | Sidebar appears, main content shifts right, status cards become 4 columns, Wi-Fi grid becomes 8fr/4fr, page padding 32px. |
-
-Touch targets should remain at least about 40px high. Buttons with icons should not wrap awkwardly. Long SSIDs, IPs, and MAC addresses should be allowed to fit without overlapping adjacent controls.
-
-## Accessibility & Content
-
-- Keep semantic HTML: `main`, `header`, `aside`, `nav`, `table`, `button`, and form labels.
-- Focus states must remain visible on every interactive form control.
-- Do not rely on color alone for network security or signal status; keep text labels such as auth type, dBm, and status words.
-- Preserve Thai copy where it already exists. Use concise Thai for user-facing actions and short English for technical nouns when natural.
-- Avoid decorative copy. The app should read as a control interface.
-
-## Do's And Don'ts
+## 6. Do's and Don'ts
 
 ### Do
-
-- Use the existing CSS custom properties as the source of truth.
-- Keep blue reserved for primary action, navigation, focus, and progress.
-- Use green for connected, active, completed, and healthy states.
-- Use orange only for warning or weak states.
-- Use red only for errors and destructive operations.
-- Keep the sidebar, cards, tables, Wi-Fi list, and forms visually consistent.
-- Use Unicode icons that already fit the embedded/offline constraint.
-- Keep UI dense but readable for phone-based setup.
+- **Do** map all transparency values (rgba) and layer depths to CSS custom variables (e.g. `--focus-ring-primary`, `--z-index-sticky`).
+- **Do** use consolidated SVG symbols via `<svg><use href="#icon-..."></use></svg>` to display system state and reduce inline SVG bloat.
+- **Do** use `lang="en"` attributes on inline English technical terms (such as Status, SSID, MAC, IP) to ensure accessibility parser compliance.
+- **Do** respect the user's reduced-motion preference: disable standard animations, but allow pulsing loaders (`spinner-pulse`) to pulse opacity so the operator knows the system is loading.
+- **Do** use the canonical `.text-muted` class for all secondary gray text.
 
 ### Don't
-
-- Do not add CDN dependencies, external fonts, remote icon sets, or remote images.
-- Do not create a landing page or marketing hero.
-- Do not use dark-mode-first styling unless a full alternate theme is explicitly requested.
-- Do not add relay/timer control UI until relay pin map and timing requirements are explicit.
-- Do not add oversized cards, decorative gradients, bokeh/orb backgrounds, or illustration-heavy sections.
-- Do not turn status cards into nested card stacks.
-- Do not use primary blue for long body text.
-- Do not remove the SoftAP fallback context from Wi-Fi setup screens.
-
-## Agent Prompt Guide
-
-When implementing UI changes in this project, use this short instruction:
-
-> Build a compact light operational ESP32 dashboard using the Fish Pump Control design system. Use system fonts, no CDN, white/light-gray surfaces, 12px cards, 8px controls, primary blue actions, green healthy states, orange warnings, red errors, Unicode icons, and responsive behavior with mobile topbar plus desktop sidebar.
-
-Quick token reference:
-
-- Page background: `#f2f2f7`
-- Main surface: `#ffffff`
-- Panel surface: `#faf9fe`
-- Primary action: `#0058bc`
-- Success/connected: `#006e28`
-- Warning/weak: `#9e3d00`
-- Error: `#ba1a1a`
-- Main text: `#1a1b1f`
-- Muted text: `#717786`
-- Border: `#c1c6d7`
-- Card radius: `12px`
-- Control radius: `8px`
-- Desktop sidebar: `280px`
+- **Don't** use raw, hardcoded rgba colors or z-index integers in stylesheets.
+- **Don't** add CDN stylesheets, external web fonts, or remote illustration packages.
+- **Don't** use fluid typography clamps; typography scale must remain stable and predictable.
+- **Don't** duplicate utility classes (do not use `.text-on-surface-variant` or `.text-outline` as they are deprecated).
+- **Don't** use side-stripe borders (e.g., `border-left: 4px solid var(--primary)`) as decoration.

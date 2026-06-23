@@ -539,7 +539,9 @@ bool pump_control_init(const pump_control_config_t *config)
         return false;
     }
 
-    xSemaphoreTake(s_pump_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_pump_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
 
     if (s_tick_timer) {
         esp_timer_stop(s_tick_timer);
@@ -598,7 +600,9 @@ bool pump_control_start(void)
         return false;
     }
 
-    xSemaphoreTake(s_pump_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_pump_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     if (!s_initialized || !s_config_valid || s_fault) {
         xSemaphoreGive(s_pump_mutex);
         return false;
@@ -632,7 +636,9 @@ bool pump_control_stop(void)
         return false;
     }
 
-    xSemaphoreTake(s_pump_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_pump_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     if (!s_initialized || !s_config_valid) {
         xSemaphoreGive(s_pump_mutex);
         return false;
@@ -653,7 +659,9 @@ bool pump_control_get_status(pump_control_status_t *out)
         return false;
     }
 
-    xSemaphoreTake(s_pump_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_pump_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     if (s_running) {
         int64_t now_ms = esp_timer_get_time() / 1000;
         s_countdown_sec = seconds_remaining(now_ms);

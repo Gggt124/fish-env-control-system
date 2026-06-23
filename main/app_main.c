@@ -788,8 +788,8 @@ void app_main(void)
         if (auto_idx >= 0 && auto_idx < prof_count && profiles[auto_idx].ssid[0]) {
             ESP_LOGI(TAG, "Auto-connect to Wi-Fi profile[%d]: %s", auto_idx, profiles[auto_idx].ssid);
             wifi_manager_connect_sta(profiles[auto_idx].ssid, profiles[auto_idx].pass, NULL);
-        } else {
-            /* Fallback: try legacy sta_ssid if no profile auto-connect configured */
+        } else if (prof_count == 0) {
+            /* Fallback: try legacy sta_ssid only if no profile store entries exist yet */
             char sta_ssid[33] = {0}, sta_pass[65] = {0};
             if (nvs_store_load_wifi(sta_ssid, sizeof(sta_ssid), sta_pass, sizeof(sta_pass)) && sta_ssid[0]) {
                 ESP_LOGI(TAG, "Auto-connect to legacy saved SSID: %s", sta_ssid);
@@ -797,6 +797,8 @@ void app_main(void)
             } else {
                 ESP_LOGI(TAG, "No saved Wi-Fi credential; staying in AP-only mode");
             }
+        } else {
+            ESP_LOGI(TAG, "Wi-Fi auto-connect is disabled; staying in AP-only mode");
         }
     }
 

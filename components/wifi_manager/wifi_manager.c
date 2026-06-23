@@ -704,10 +704,24 @@ bool wifi_manager_init(void)
         }
     }
     if (!has_creds) {
-        if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
-                                saved_pass, sizeof(saved_pass))) {
-            has_creds = true;
-            ESP_LOGI(TAG, "Found saved STA credentials for SSID: %s", saved_ssid);
+        wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
+        int count = 0, auto_idx = -1;
+        if (nvs_store_load_wifi_profiles(profiles, &count, &auto_idx)) {
+            if (auto_idx >= 0 && auto_idx < count && profiles[auto_idx].ssid[0]) {
+                strlcpy(saved_ssid, profiles[auto_idx].ssid, sizeof(saved_ssid));
+                strlcpy(saved_pass, profiles[auto_idx].pass, sizeof(saved_pass));
+                has_creds = true;
+                ESP_LOGI(TAG, "Found auto-connect Wi-Fi profile[%d] SSID: %s", auto_idx, saved_ssid);
+            } else if (count == 0) {
+                /* Fallback to legacy single credential only if no profiles exist yet (first boot/migration path) */
+                if (nvs_store_load_wifi(saved_ssid, sizeof(saved_ssid),
+                                        saved_pass, sizeof(saved_pass))) {
+                    has_creds = true;
+                    ESP_LOGI(TAG, "Found legacy saved STA credentials for SSID: %s", saved_ssid);
+                }
+            } else {
+                ESP_LOGI(TAG, "Wi-Fi auto-connect is disabled (auto_idx=%d, count=%d)", auto_idx, count);
+            }
         }
     }
     if (has_creds) {
