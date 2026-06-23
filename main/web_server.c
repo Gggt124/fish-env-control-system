@@ -1844,22 +1844,14 @@ static esp_err_t serve_static(httpd_req_t *req,
 
 /* --------------- Route Handlers --------------- */
 
-/* GET / - redirect based on auth status */
+/* GET / */
 static esp_err_t handle_root(httpd_req_t *req)
 {
-    char token[SESSION_TOKEN_LEN] = {0};
-    char client_ip[64] = {0};
-    get_client_ip(req, client_ip, sizeof(client_ip));
-    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token, client_ip)) {
-        set_no_store_response_headers(req);
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/dashboard");
-    } else {
-        set_no_store_response_headers(req);
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/login");
-    }
-    return httpd_resp_send(req, NULL, 0);
+    /* Serve the SPA index.html directly; app.js handles the client-side routing to /login or /dashboard */
+    return serve_static(req,
+                        _binary_index_html_start, _binary_index_html_end,
+                        _binary_index_html_gz_start, _binary_index_html_gz_end,
+                        "text/html; charset=utf-8");
 }
 
 /* GET /login */
@@ -1965,18 +1957,36 @@ static esp_err_t handle_favicon(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
+
 /*
  * Captive-portal connectivity probes. Windows and mobile clients request these
- * automatically after joining the SoftAP; redirect them explicitly instead of
- * letting esp_http_server's default 404 path create noisy socket errors.
+ * automatically after joining the SoftAP.
  */
 static esp_err_t handle_captive_probe(httpd_req_t *req)
 {
     set_no_store_response_headers(req);
     httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "/login");
+    httpd_resp_set_hdr(req, "Location", "http://192.168.4.1/");
     return httpd_resp_send(req, NULL, 0);
 }
+
+/*
+ * Captive portal global catch-all. If a device queries a random domain over
+ * the AP, DNS returns 192.168.4.1. The browser connects and asks for an unknown URI.
+ * This 404 handler catches it and redirects to the local root.
+ */
+static esp_err_t captive_portal_404_handler(httpd_req_t *req, httpd_err_code_t err)
+{
+    if (err != HTTPD_404_NOT_FOUND) {
+        return ESP_FAIL;
+    }
+
+    set_no_store_response_headers(req);
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "http://192.168.4.1/");
+    return httpd_resp_send(req, NULL, 0);
+}
+
 
 #define LOGIN_LRU_SIZE 16
 
@@ -3570,6 +3580,9 @@ bool web_server_start(void)
         s_server = NULL;
         return false;
     }
+
+    /* Register global 404 handler for captive portal routing of random domains */
+    httpd_register_err_handler(s_server, HTTPD_404_NOT_FOUND, captive_portal_404_handler);
 
     bool route_registration_failed = false;
     for (size_t i = 0; i < sizeof(s_routes) / sizeof(s_routes[0]); i++) {
