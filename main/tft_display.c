@@ -28,6 +28,7 @@ static const char *TAG = "TFT_DISPLAY";
 
 static esp_lcd_panel_handle_t s_panel_handle = NULL;
 static SemaphoreHandle_t s_trans_done_sem = NULL;
+static SemaphoreHandle_t s_tft_mutex = NULL;
 
 // Helper to swap bytes for 16-bit RGB565 to match big-endian SPI transmission
 #define SWAP_BYTES(val) ((((val) & 0xff) << 8) | (((val) & 0xff00) >> 8))
@@ -43,10 +44,15 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
 esp_err_t tft_display_init(void) {
     ESP_LOGI(TAG, "Initializing TFT display on VSPI (SPI3_HOST)");
 
-    // 1. Create binary semaphore for DMA transfer synchronization
+    // 1. Create binary semaphore for DMA transfer synchronization and mutex for thread-safety
     s_trans_done_sem = xSemaphoreCreateBinary();
     if (!s_trans_done_sem) {
         ESP_LOGE(TAG, "Failed to create transfer done semaphore");
+        return ESP_ERR_NO_MEM;
+    }
+    s_tft_mutex = xSemaphoreCreateMutex();
+    if (!s_tft_mutex) {
+        ESP_LOGE(TAG, "Failed to create TFT mutex");
         return ESP_ERR_NO_MEM;
     }
 
@@ -169,9 +175,11 @@ void tft_clear(uint16_t color) {
 }
 
 void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
-    if (!s_panel_handle || x + 8 > TFT_WIDTH || y + 16 > TFT_HEIGHT) {
+    if (!s_panel_handle || !s_tft_mutex || x + 8 > TFT_WIDTH || y + 16 > TFT_HEIGHT) {
         return;
     }
+
+    xSemaphoreTake(s_tft_mutex, portMAX_DELAY);
 
     // 8x16 font has 128 pixels (256 bytes buffer, well under the 1024-byte limit)
     uint16_t pixel_buf[128];
@@ -192,12 +200,16 @@ void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_c
     if (err == ESP_OK) {
         xSemaphoreTake(s_trans_done_sem, portMAX_DELAY);
     }
+    
+    xSemaphoreGive(s_tft_mutex);
 }
 
 void tft_draw_char_x2(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
-    if (!s_panel_handle || x + 16 > TFT_WIDTH || y + 32 > TFT_HEIGHT) {
+    if (!s_panel_handle || !s_tft_mutex || x + 16 > TFT_WIDTH || y + 32 > TFT_HEIGHT) {
         return;
     }
+
+    xSemaphoreTake(s_tft_mutex, portMAX_DELAY);
 
     // 16x32 scaled character has 512 pixels (1024 bytes buffer, exactly matching the limit)
     uint16_t pixel_buf[512];
@@ -227,6 +239,8 @@ void tft_draw_char_x2(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t b
     if (err == ESP_OK) {
         xSemaphoreTake(s_trans_done_sem, portMAX_DELAY);
     }
+    
+    xSemaphoreGive(s_tft_mutex);
 }
 
 void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg_color) {
@@ -260,7 +274,7 @@ void tft_draw_string_x2(uint16_t x, uint16_t y, const char *str, uint16_t color,
 }
 
 void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
-    if (!s_panel_handle || x >= TFT_WIDTH || y >= TFT_HEIGHT || w == 0 || h == 0) {
+    if (!s_panel_handle || !s_tft_mutex || x >= TFT_WIDTH || y >= TFT_HEIGHT || w == 0 || h == 0) {
         return;
     }
     if (x + w > TFT_WIDTH) {
@@ -270,9 +284,11 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
         h = TFT_HEIGHT - y;
     }
 
+    xSemaphoreTake(s_tft_mutex, portMAX_DELAY);
+
     uint16_t big_endian_color = SWAP_BYTES(color);
 
-    // Static (file-scope) buffer — keeps the 640-byte chunk_buf out of any task stack that calls tft_fill_rect, which is critical for the 8192-byte tft_display_task stack. The buffer is single-writer at a time because callers serialize transfers via s_trans_done_sem.
+    // Static (file-scope) buffer — safely protected by s_tft_mutex
     static uint16_t chunk_buf[320];
     for (int i = 0; i < w; i++) {
         chunk_buf[i] = big_endian_color;
@@ -284,6 +300,8 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
             xSemaphoreTake(s_trans_done_sem, portMAX_DELAY);
         }
     }
+    
+    xSemaphoreGive(s_tft_mutex);
 }
 
 void tft_draw_rect_outline(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
