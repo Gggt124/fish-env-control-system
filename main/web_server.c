@@ -2022,6 +2022,9 @@ static esp_err_t captive_portal_404_handler(httpd_req_t *req, httpd_err_code_t e
     return httpd_resp_send(req, NULL, 0);
 }
 
+static bool s_is_password_default_cached = false;
+static bool s_password_state_initialized = false;
+
 /* POST /api/change-password */
 static esp_err_t handle_api_change_password(httpd_req_t *req)
 {
@@ -2073,6 +2076,9 @@ static esp_err_t handle_api_change_password(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"storage_error\"}", "500 Internal Server Error");
     }
 
+    s_is_password_default_cached = false;
+    s_password_state_initialized = true;
+
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
 
@@ -2087,10 +2093,19 @@ typedef struct {
 } login_rate_limit_t;
 
 static bool is_password_default(void) {
+    if (s_password_state_initialized) {
+        return s_is_password_default_cached;
+    }
+
     char stored_user[64] = {0};
     char stored_pass[64] = {0};
-    nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass));
-    return (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0);
+    if (!nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass))) {
+        s_is_password_default_cached = false;
+    } else {
+        s_is_password_default_cached = (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0);
+    }
+    s_password_state_initialized = true;
+    return s_is_password_default_cached;
 }
 
 /* POST /api/login */
