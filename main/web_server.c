@@ -2086,6 +2086,13 @@ typedef struct {
     int64_t last_seen;
 } login_rate_limit_t;
 
+static bool is_password_default(void) {
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass));
+    return (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0);
+}
+
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
@@ -2234,6 +2241,9 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
     cJSON_AddStringToObject(resp, "username", username);
+    if (is_password_default()) {
+        cJSON_AddBoolToObject(resp, "require_password_change", true);
+    }
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);
 
@@ -2374,6 +2384,10 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     wifi_scan_ctx_t ctx;
     ctx.sem = xSemaphoreCreateBinary();
     ctx.count = 0;
@@ -2429,6 +2443,10 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, true)) {
@@ -2598,6 +2616,10 @@ static esp_err_t handle_api_wifi_profiles(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
     int count = 0, auto_idx = -1;
     nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
@@ -2633,6 +2655,10 @@ static esp_err_t handle_api_wifi_profiles_forget(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
@@ -2670,6 +2696,10 @@ static esp_err_t handle_api_wifi_profiles_setauto(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
@@ -2788,6 +2818,10 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
@@ -2840,6 +2874,10 @@ static esp_err_t handle_api_hardware_map_get(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     return api_hardware_map_send(req);
 }
 
@@ -2848,6 +2886,10 @@ static esp_err_t handle_api_hardware_map_post(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, false)) {
@@ -2904,6 +2946,10 @@ static esp_err_t handle_api_pump_config_get(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     nvs_store_pump_settings_t settings;
     nvs_store_pump_settings_load_status_t status = nvs_store_load_pump_settings(&settings);
     if (status == NVS_STORE_PUMP_SETTINGS_DEFAULTS_ERROR) {
@@ -2919,6 +2965,10 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, false)) {
@@ -3186,6 +3236,10 @@ static esp_err_t handle_api_pump_start(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     if (!is_same_origin(req, false)) {
         return send_api_error(req, "forbidden", "Cross-origin pump start blocked", "403 Forbidden");
     }
@@ -3233,6 +3287,10 @@ static esp_err_t handle_api_pump_stop(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, false)) {
@@ -3291,6 +3349,10 @@ static esp_err_t handle_api_status(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     bool sta_conn = wifi_manager_is_sta_connected();
