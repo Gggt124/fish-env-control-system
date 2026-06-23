@@ -23,6 +23,18 @@ typedef struct {
 static session_slot_t s_slots[NUM_SLOTS];
 static SemaphoreHandle_t s_session_mutex = NULL;
 
+static bool secure_str_eq(const char *a, const char *b) {
+    size_t len_a = strlen(a);
+    size_t len_b = strlen(b);
+    if (len_a != len_b || len_a == 0) return false;
+    
+    volatile uint8_t result = 0;
+    for (size_t i = 0; i < len_a; i++) {
+        result |= (a[i] ^ b[i]);
+    }
+    return result == 0;
+}
+
 bool session_init(void)
 {
     if (s_session_mutex == NULL) {
@@ -99,14 +111,14 @@ bool session_create(const char *username, const char *client_ip, char token_out[
 
 bool session_validate(const char *token, const char *client_ip)
 {
-    (void)client_ip;
-    if (!s_session_mutex || !token) return false;
+    if (!s_session_mutex || !token || !client_ip) return false;
 
     bool valid = false;
     xSemaphoreTake(s_session_mutex, portMAX_DELAY);
     for (int i = 0; i < NUM_SLOTS; i++) {
         if (s_slots[i].active && 
-            strcmp(s_slots[i].token, token) == 0) {
+            secure_str_eq(s_slots[i].token, token) &&
+            strcmp(s_slots[i].ip, client_ip) == 0) {
             int64_t now = esp_timer_get_time();
             if ((now - s_slots[i].last_used) > (int64_t)SESSION_MAX_AGE_SEC * 1000000) {
                 s_slots[i].active = false;
@@ -128,7 +140,7 @@ void session_destroy(const char *token)
 
     xSemaphoreTake(s_session_mutex, portMAX_DELAY);
     for (int i = 0; i < NUM_SLOTS; i++) {
-        if (s_slots[i].active && strcmp(s_slots[i].token, token) == 0) {
+        if (s_slots[i].active && secure_str_eq(s_slots[i].token, token)) {
             s_slots[i].active = false;
             break;
         }
@@ -154,7 +166,7 @@ void session_invalidate_others(const char *current_token)
     xSemaphoreTake(s_session_mutex, portMAX_DELAY);
     for (int i = 0; i < NUM_SLOTS; i++) {
         if (s_slots[i].active) {
-            if (current_token == NULL || strcmp(s_slots[i].token, current_token) != 0) {
+            if (current_token == NULL || !secure_str_eq(s_slots[i].token, current_token)) {
                 s_slots[i].active = false;
             }
         }

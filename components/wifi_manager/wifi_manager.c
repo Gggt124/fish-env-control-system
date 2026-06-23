@@ -300,12 +300,12 @@ static bool configure_ap(void)
 {
     wifi_config_t ap_cfg = {
         .ap = {
-            .ssid = AP_SSID,
-            .password = "",
-            .ssid_len = strlen(AP_SSID),
+            .ssid = APP_TEMPLATE_AP_SSID,
+            .password = APP_TEMPLATE_AP_PASSWORD,
+            .ssid_len = strlen(APP_TEMPLATE_AP_SSID),
             .channel = APP_TEMPLATE_AP_CHANNEL,
-            .authmode = WIFI_AUTH_OPEN,
-            .max_connection = AP_MAX_CONN,
+            .authmode = WIFI_AUTH_WPA2_PSK,
+            .max_connection = APP_TEMPLATE_AP_MAX_CONN,
         },
     };
 
