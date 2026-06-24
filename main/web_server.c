@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdatomic.h>
+#include "esp_ota_ops.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -2085,6 +2086,21 @@ static esp_err_t handle_get_dashboard(httpd_req_t *req)
         "text/html; charset=utf-8");
 }
 
+/* GET /ota - protected */
+static esp_err_t handle_get_ota(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        set_no_store_response_headers(req);
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/login");
+        return httpd_resp_send(req, NULL, 0);
+    }
+    return serve_static(req,
+        _binary_index_html_start, _binary_index_html_end,
+        _binary_index_html_gz_start, _binary_index_html_gz_end,
+        "text/html; charset=utf-8");
+}
+
 /* GET /wifi - protected */
 static esp_err_t handle_get_wifi(httpd_req_t *req)
 {
@@ -3712,15 +3728,99 @@ static esp_err_t handle_api_confirm_delete(httpd_req_t *req)
     return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
 }
 
+/* POST /api/ota - OTA upload handler */
+static esp_err_t handle_api_ota(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    if (req->content_len == 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_file\"}", "400 Bad Request");
+    }
+    if (req->content_len > 0x1F0000) {
+        return send_json(req, "{\"ok\":false,\"error\":\"file_too_large\"}", "413 Payload Too Large");
+    }
+
+    const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
+    if (update_partition == NULL) {
+        ESP_LOGE(TAG, "No OTA partition found");
+        return send_json(req, "{\"ok\":false,\"error\":\"no_ota_partition\"}", "500 Internal Server Error");
+    }
+
+    ESP_LOGI(TAG, "Writing OTA to partition subtype %d at offset 0x%lx",
+             update_partition->subtype, (unsigned long)update_partition->address);
+
+    esp_ota_handle_t ota_handle = 0;
+    esp_err_t err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
+        return send_json(req, "{\"ok\":false,\"error\":\"ota_begin_failed\"}", "500 Internal Server Error");
+    }
+
+    char buf[1024];
+    int remaining = req->content_len;
+    while (remaining > 0) {
+        int recv_len = httpd_req_recv(req, buf, remaining < sizeof(buf) ? remaining : sizeof(buf));
+        if (recv_len < 0) {
+            if (recv_len == HTTPD_SOCK_ERR_TIMEOUT) {
+                continue;
+            }
+            ESP_LOGE(TAG, "Error receiving OTA data");
+            esp_ota_abort(ota_handle);
+            return send_json(req, "{\"ok\":false,\"error\":\"recv_failed\"}", "500 Internal Server Error");
+        }
+        if (recv_len > 0) {
+            err = esp_ota_write(ota_handle, buf, recv_len);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "esp_ota_write failed (%s)", esp_err_to_name(err));
+                esp_ota_abort(ota_handle);
+                return send_json(req, "{\"ok\":false,\"error\":\"ota_write_failed\"}", "500 Internal Server Error");
+            }
+            remaining -= recv_len;
+        } else if (recv_len == 0) {
+            break;
+        }
+    }
+
+    if (remaining > 0) {
+        ESP_LOGE(TAG, "Incomplete OTA transfer");
+        esp_ota_abort(ota_handle);
+        return send_json(req, "{\"ok\":false,\"error\":\"incomplete\"}", "500 Internal Server Error");
+    }
+
+    err = esp_ota_end(ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end failed (%s)", esp_err_to_name(err));
+        return send_json(req, "{\"ok\":false,\"error\":\"ota_end_failed\"}", "500 Internal Server Error");
+    }
+
+    err = esp_ota_set_boot_partition(update_partition);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)", esp_err_to_name(err));
+        return send_json(req, "{\"ok\":false,\"error\":\"ota_set_boot_failed\"}", "500 Internal Server Error");
+    }
+
+    ESP_LOGI(TAG, "OTA successful, rebooting...");
+    schedule_delayed_reboot();
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
 /* --------------- Server Start --------------- */
 
 static web_route_diag_t s_routes[] = {
     { .uri = "/",              .method = HTTP_GET,  .handler = handle_root },
     { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login },
     { .uri = "/dashboard",     .method = HTTP_GET,  .handler = handle_get_dashboard },
+    { .uri = "/ota",           .method = HTTP_GET,  .handler = handle_get_ota },
     { .uri = "/status",        .method = HTTP_GET,  .handler = handle_get_status },
     { .uri = "/wifi",          .method = HTTP_GET,  .handler = handle_get_wifi },
     { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware },
+    { .uri = "/api/ota",       .method = HTTP_POST, .handler = handle_api_ota },
     { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css },
     { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js },
     { .uri = "/ibm_plex_sans_thai_400_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_latin_woff2 },

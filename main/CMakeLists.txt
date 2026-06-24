@@ -48,6 +48,7 @@ idf_component_register(
         "static/jetbrains_mono_400_latin.woff2"
         "static/jetbrains_mono_700_latin.woff2"
     REQUIRES
+        app_update
         app_config
         cooling_control
         hardware_map

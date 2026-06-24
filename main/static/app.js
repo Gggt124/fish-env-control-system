@@ -3340,6 +3340,7 @@ function handleRoute() {
     else if (path === '/status') viewId = 'view-status';
     else if (path === '/wifi') viewId = 'view-wifi';
     else if (path === '/hardware') viewId = 'view-hardware';
+    else if (path === '/ota') viewId = 'view-ota';
 
     var activeView = document.getElementById(viewId);
     if (activeView) {
@@ -3385,6 +3386,8 @@ function handleRoute() {
         if (typeof initWifi === 'function') initWifi();
     } else if (path === '/hardware') {
         if (typeof initHardwareInstall === 'function') initHardwareInstall();
+    } else if (path === '/ota') {
+        if (typeof initOta === 'function') initOta();
     }
 
     window.scrollTo(0, 0);
@@ -3550,4 +3553,109 @@ function submitForcePasswordChange() {
             handleRoute();
         }
     });
+}
+
+/* ======== OTA Firmware Update ======== */
+function initOta() {
+    if (window.location.pathname !== '/ota') return;
+    apiGet('/api/status', function(err, data) {
+        var versionEl = document.getElementById('ota-current-version');
+        if (versionEl) {
+            if (err || !data || !data.ok) {
+                versionEl.textContent = 'ไม่สามารถดึงข้อมูลได้';
+            } else {
+                versionEl.textContent = data.project_version || 'ไม่ทราบเวอร์ชัน';
+            }
+        }
+    });
+
+    var fileInput = document.getElementById('ota-file-input');
+    var uploadBtn = document.getElementById('ota-upload-btn');
+    var progressContainer = document.getElementById('ota-progress-container');
+    var progressBar = document.getElementById('ota-progress-bar');
+    var progressText = document.getElementById('ota-progress-text');
+    var msgEl = document.getElementById('ota-message');
+
+    if (fileInput && uploadBtn) {
+        fileInput.onchange = function() {
+            uploadBtn.disabled = !fileInput.files || fileInput.files.length === 0;
+            msgEl.classList.add('hidden');
+            if(fileInput.files && fileInput.files.length > 0) {
+                 var label = fileInput.parentElement.querySelector('span');
+                 if(label) label.textContent = fileInput.files[0].name;
+            } else {
+                 var label = fileInput.parentElement.querySelector('span');
+                 if(label) label.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่';
+            }
+        };
+
+        uploadBtn.onclick = function() {
+            if (!fileInput.files || fileInput.files.length === 0) return;
+            var file = fileInput.files[0];
+            if (file.size > 0x1F0000) {
+                msgEl.textContent = 'ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ~2MB)';
+                msgEl.classList.remove('hidden');
+                msgEl.style.color = 'var(--error)';
+                msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            fileInput.disabled = true;
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = 'กำลังอัปโหลด: 0%';
+            msgEl.classList.add('hidden');
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/ota', true);
+            
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    var percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    progressText.textContent = 'กำลังอัปโหลด: ' + percent + '%';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.ok) {
+                            progressText.textContent = 'อัปเดตสำเร็จ! ระบบกำลังรีสตาร์ท...';
+                            progressBar.style.width = '100%';
+                            msgEl.textContent = 'อัปเดตสำเร็จ! ระบบจะรีบูตในไม่ช้า กรุณารอสักครู่แล้วเชื่อมต่อใหม่';
+                            msgEl.classList.remove('hidden');
+                            msgEl.style.color = 'var(--success-700, #047857)';
+                            msgEl.style.backgroundColor = 'var(--success-50, #ecfdf5)';
+                            setTimeout(function() {
+                                window.location.href = '/login';
+                            }, 5000);
+                            return;
+                        }
+                    } catch(e) {}
+                }
+                
+                // Error case
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+                msgEl.textContent = 'เกิดข้อผิดพลาดในการอัปเดต (HTTP ' + xhr.status + ')';
+                msgEl.classList.remove('hidden');
+                msgEl.style.color = 'var(--error)';
+                msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';
+            };
+
+            xhr.onerror = function() {
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+                msgEl.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย';
+                msgEl.classList.remove('hidden');
+                msgEl.style.color = 'var(--error)';
+                msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';
+            };
+
+            xhr.send(file);
+        };
+    }
 }
