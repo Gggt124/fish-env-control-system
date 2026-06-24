@@ -21,3 +21,5 @@ main/static_compressed/
 .qwen/
 .gemini/
 .superpowers/
+build_task*/
+build_integration/
