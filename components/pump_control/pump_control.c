@@ -3,11 +3,14 @@
 #include "app_config.h"
 #include "esp_err.h"
 #include "esp_timer.h"
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
 #define PUMP_CONTROL_TICK_US 100000LL
 #define MS_PER_SEC 1000LL
+
+static const char *TAG = "pump_control";
 
 static SemaphoreHandle_t s_pump_mutex;
 static esp_timer_handle_t s_tick_timer;
@@ -33,15 +36,7 @@ static pump_control_timer_phase_t s_phase = PUMP_CONTROL_PHASE_IDLE;
 static uint32_t s_countdown_sec;
 static int64_t s_phase_deadline_ms;
 
-static bool ensure_mutex(void)
-{
-    if (s_pump_mutex) {
-        return true;
-    }
 
-    s_pump_mutex = xSemaphoreCreateMutex();
-    return s_pump_mutex != NULL;
-}
 
 static bool polarity_valid(pump_control_relay_polarity_t polarity)
 {
@@ -535,8 +530,16 @@ pump_control_config_t pump_control_default_config(void)
 
 bool pump_control_init(const pump_control_config_t *config)
 {
-    if (!config || !ensure_mutex()) {
+    if (!config) {
         return false;
+    }
+
+    if (!s_pump_mutex) {
+        s_pump_mutex = xSemaphoreCreateMutex();
+        if (!s_pump_mutex) {
+            ESP_LOGE(TAG, "Failed to create pump mutex");
+            return false;
+        }
     }
 
     if (xSemaphoreTake(s_pump_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
@@ -596,7 +599,8 @@ bool pump_control_init(const pump_control_config_t *config)
 
 bool pump_control_start(void)
 {
-    if (!ensure_mutex()) {
+    if (!s_pump_mutex) {
+        ESP_LOGE(TAG, "pump_control not initialized");
         return false;
     }
 
@@ -632,7 +636,8 @@ bool pump_control_start(void)
 
 bool pump_control_stop(void)
 {
-    if (!ensure_mutex()) {
+    if (!s_pump_mutex) {
+        ESP_LOGE(TAG, "pump_control not initialized");
         return false;
     }
 
@@ -655,7 +660,11 @@ bool pump_control_stop(void)
 
 bool pump_control_get_status(pump_control_status_t *out)
 {
-    if (!out || !ensure_mutex()) {
+    if (!s_pump_mutex) {
+        ESP_LOGW(TAG, "pump_control not initialized");
+        return false;
+    }
+    if (!out) {
         return false;
     }
 
