@@ -921,6 +921,13 @@ void app_main(void)
             }
         }
 
+        web_server_queue_health_check();
+        if (!web_server_check_health(15000)) {
+            ESP_LOGE(TAG, "FATAL: HTTP server task hang detected (>15s without processing work queue). Rebooting!");
+            vTaskDelay(pdMS_TO_TICKS(100)); // Allow logs to flush
+            esp_restart();
+        }
+
         loop_counter++;
         if (loop_counter >= APP_TEMPLATE_STATUS_LOG_INTERVALS) {
             ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu, HeapMin=%lu, Largest=%lu, MainStackHWM=%lu",

@@ -45,7 +45,10 @@ bool session_init(void)
         }
     }
 
-    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_session_mutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire session mutex in init");
+        return false;
+    }
     for (int i = 0; i < NUM_SLOTS; i++) {
         s_slots[i].active = false;
         s_slots[i].last_used = 0;
@@ -70,7 +73,10 @@ bool session_create(const char *username, const char *client_ip, char token_out[
         snprintf(&hex_token[i * 2], 3, "%02x", rand_bytes[i]);
     }
 
-    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_session_mutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire session mutex in create");
+        return false;
+    }
     
     int target_idx = -1;
     int64_t oldest_time = INT64_MAX;
@@ -114,7 +120,10 @@ bool session_validate(const char *token, const char *client_ip)
     if (!s_session_mutex || !token || !client_ip) return false;
 
     bool valid = false;
-    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_session_mutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire session mutex in validate");
+        return false;
+    }
     for (int i = 0; i < NUM_SLOTS; i++) {
         if (s_slots[i].active && 
             secure_str_eq(s_slots[i].token, token) &&
@@ -138,7 +147,10 @@ void session_destroy(const char *token)
 {
     if (!s_session_mutex || !token) return;
 
-    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_session_mutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire session mutex in destroy");
+        return;
+    }
     for (int i = 0; i < NUM_SLOTS; i++) {
         if (s_slots[i].active && secure_str_eq(s_slots[i].token, token)) {
             s_slots[i].active = false;
@@ -152,7 +164,10 @@ void session_invalidate_all(void)
 {
     if (!s_session_mutex) return;
 
-    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_session_mutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire session mutex in invalidate_all");
+        return;
+    }
     for (int i = 0; i < NUM_SLOTS; i++) {
         s_slots[i].active = false;
     }
@@ -163,7 +178,10 @@ void session_invalidate_others(const char *current_token)
 {
     if (!s_session_mutex) return;
 
-    xSemaphoreTake(s_session_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_session_mutex, pdMS_TO_TICKS(2000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Failed to acquire session mutex in invalidate_others");
+        return;
+    }
     for (int i = 0; i < NUM_SLOTS; i++) {
         if (s_slots[i].active) {
             if (current_token == NULL || !secure_str_eq(s_slots[i].token, current_token)) {

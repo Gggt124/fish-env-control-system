@@ -3715,6 +3715,33 @@ void web_server_log_diagnostics(void)
     }
 }
 
+static volatile uint32_t s_httpd_last_alive_ms = 0;
+
+static void httpd_health_check_work(void *arg)
+{
+    (void)arg;
+    s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
+}
+
+void web_server_queue_health_check(void)
+{
+    if (s_server) {
+        httpd_queue_work(s_server, httpd_health_check_work, NULL);
+    }
+}
+
+bool web_server_check_health(uint32_t timeout_ms)
+{
+    if (!s_server) {
+        return true; // Not started yet, ignore
+    }
+    uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000);
+    if ((now_ms - s_httpd_last_alive_ms) > timeout_ms) {
+        return false;
+    }
+    return true;
+}
+
 bool web_server_start(void)
 {
     if (s_server) {
@@ -3747,6 +3774,8 @@ bool web_server_start(void)
         s_server = NULL;
         return false;
     }
+
+    s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
 
     /* Register global 404 handler for captive portal routing of random domains */
     httpd_register_err_handler(s_server, HTTPD_404_NOT_FOUND, captive_portal_404_handler);
