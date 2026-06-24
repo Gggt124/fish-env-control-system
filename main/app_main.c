@@ -613,6 +613,13 @@ static void hardware_ui_task(void *pvParameters)
 
 void app_main(void)
 {
+    /* Reduce noise from Wi-Fi, LwIP, HTTPD, and other noisy components */
+    esp_log_level_set("*", ESP_LOG_WARN);
+    esp_log_level_set("app_main", ESP_LOG_INFO);
+    esp_log_level_set("cooling_control", ESP_LOG_INFO);
+    esp_log_level_set("web_server", ESP_LOG_INFO);
+    esp_log_level_set("TFT_DISPLAY", ESP_LOG_INFO);
+
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  %s %s", APP_TEMPLATE_NAME, APP_TEMPLATE_FIRMWARE_VERSION);
     ESP_LOGI(TAG, "  %s", APP_TEMPLATE_PHASE_LABEL);
@@ -938,6 +945,14 @@ void app_main(void)
                 (unsigned long)esp_get_minimum_free_heap_size(),
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
                 (unsigned long)uxTaskGetStackHighWaterMark(NULL));
+
+            char *task_list_buf = malloc(1024);
+            if (task_list_buf) {
+                vTaskList(task_list_buf);
+                ESP_LOGI(TAG, "\n--- Task List ---\nName          State  Priority  Stack   Num\n%s-----------------", task_list_buf);
+                free(task_list_buf);
+            }
+
             log_board_and_hardware_diagnostics();
             wifi_manager_log_diagnostics();
             web_server_log_diagnostics();
