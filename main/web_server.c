@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdatomic.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -123,6 +124,74 @@ typedef struct {
 static web_server_diag_t s_web_diag = {0};
 
 static bool api_pump_add_status_object(cJSON *root);
+
+
+/* --------------- JSON Generator --------------- */
+typedef struct {
+    char *buf;
+    size_t capacity;
+    size_t len;
+    bool first_item;
+} json_gen_t;
+
+static void json_gen_init(json_gen_t *gen, char *buf, size_t capacity) {
+    if (gen) {
+        gen->buf = buf;
+        gen->capacity = capacity;
+        gen->len = 0;
+        gen->first_item = true;
+        if (capacity > 0 && buf) buf[0] = '\0';
+    }
+}
+
+static void json_gen_append(json_gen_t *gen, const char *fmt, ...) {
+    if (!gen || !gen->buf || gen->len >= gen->capacity) return;
+    va_list args;
+    va_start(args, fmt);
+    int space = gen->capacity - gen->len;
+    int written = vsnprintf(gen->buf + gen->len, space, fmt, args);
+    va_end(args);
+    if (written > 0) {
+        if (written >= space) {
+            gen->len = gen->capacity;
+        } else {
+            gen->len += written;
+        }
+    }
+}
+
+static void json_gen_start_object(json_gen_t *gen) {
+    if (!gen->first_item) json_gen_append(gen, ",");
+    json_gen_append(gen, "{");
+    gen->first_item = true;
+}
+
+static void json_gen_end_object(json_gen_t *gen) {
+    json_gen_append(gen, "}");
+    gen->first_item = false;
+}
+
+static void json_gen_add_key(json_gen_t *gen, const char *key) {
+    if (!gen->first_item) json_gen_append(gen, ",");
+    json_gen_append(gen, "\"%s\":", key);
+    gen->first_item = false;
+}
+
+static void json_gen_add_bool(json_gen_t *gen, const char *key, bool val) {
+    json_gen_add_key(gen, key);
+    json_gen_append(gen, val ? "true" : "false");
+}
+
+static void json_gen_add_string(json_gen_t *gen, const char *key, const char *val) {
+    json_gen_add_key(gen, key);
+    if (val) json_gen_append(gen, "\"%s\"", val);
+    else json_gen_append(gen, "null");
+}
+
+static void json_gen_add_number(json_gen_t *gen, const char *key, double val) {
+    json_gen_add_key(gen, key);
+    json_gen_append(gen, "%g", val);
+}
 
 /* --------------- Helpers --------------- */
 
@@ -1048,6 +1117,60 @@ static const char *api_cooling_blocked_reason_name(cooling_control_blocked_reaso
     }
 }
 
+static bool api_pump_add_status_fields_gen(json_gen_t *gen)
+{
+    if (!gen) {
+        return false;
+    }
+
+    pump_control_status_t status = {0};
+    if (!pump_control_get_status(&status)) {
+        return false;
+    }
+
+    nvs_store_pump_settings_t settings;
+    nvs_store_pump_settings_load_status_t settings_status = nvs_store_load_pump_settings(&settings);
+    hardware_map_t active_map = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t map_status = NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    api_pump_load_active_hardware_map(&active_map, &map_status);
+    bool hardware_reboot_required = false;
+    bool hardware_reboot_status_ok = nvs_store_hardware_reboot_required(&hardware_reboot_required);
+    nvs_store_cooling_settings_t cooling_settings;
+    nvs_store_cooling_settings_defaults(&cooling_settings);
+    nvs_store_load_cooling_settings(&cooling_settings);
+
+    json_gen_add_bool(gen, "running", status.running);
+    json_gen_add_bool(gen, "initialized", status.initialized);
+    json_gen_add_bool(gen, "config_valid", status.config_valid);
+    json_gen_add_bool(gen, "initial_stabilizing", status.initial_stabilizing);
+    json_gen_add_bool(gen, "fault", status.fault);
+    json_gen_add_string(gen, "float_state", api_pump_float_state_name(status.float_state));
+    json_gen_add_string(gen, "active_timer", api_pump_active_timer_name(status.active_timer));
+    json_gen_add_string(gen, "active_relay", api_pump_active_relay_name(status.active_relay));
+    json_gen_add_string(gen, "phase", api_pump_timer_phase_name(status.phase));
+    json_gen_add_number(gen, "countdown_sec", (double)(status.countdown_sec));
+    json_gen_add_bool(gen, "relay_energized", status.relay_energized);
+    json_gen_add_bool(gen, "relay1_energized", status.relay1_energized);
+    json_gen_add_bool(gen, "relay2_energized", status.relay2_energized);
+    json_gen_add_number(gen, "float_gpio", (double)(status.float_gpio));
+    json_gen_add_number(gen, "relay_gpio", (double)(active_map.pump_relay1_gpio));
+    json_gen_add_number(gen, "active_relay_gpio", (double)(status.relay_gpio));
+    json_gen_add_number(gen, "pump_relay1_gpio", (double)(active_map.pump_relay1_gpio));
+    json_gen_add_number(gen, "pump_relay2_gpio", (double)(active_map.pump_relay2_gpio));
+    json_gen_add_number(gen, "ds18b20_gpio", (double)(active_map.ds18b20_data_gpio));
+    json_gen_add_number(gen, "cooling_relay_gpio", (double)(active_map.cooling_relay_gpio));
+    json_gen_add_string(gen, "relay1_polarity", api_pump_relay_polarity_name(settings.relay1_active_low));
+    json_gen_add_string(gen, "relay2_polarity", api_pump_relay_polarity_name(settings.relay2_active_low));
+    json_gen_add_string(gen, "cooling_relay_polarity", hardware_map_polarity_name(cooling_settings.relay_polarity));
+    json_gen_add_string(gen, "timer1_start_phase", hardware_map_timer_start_phase_name(settings.timer1_start_phase));
+    json_gen_add_string(gen, "timer2_start_phase", hardware_map_timer_start_phase_name(settings.timer2_start_phase));
+    json_gen_add_bool(gen, "hardware_reboot_required", hardware_reboot_status_ok && hardware_reboot_required);
+    json_gen_add_string(gen, "hardware_map_status", api_hardware_map_status_name(map_status));
+    json_gen_add_bool(gen, "auto_start", settings.auto_start);
+    json_gen_add_string(gen, "settings_status", api_pump_settings_status_name(settings_status));
+    return true;
+}
+
 static bool api_pump_add_status_fields(cJSON *root)
 {
     if (!root) {
@@ -1105,6 +1228,39 @@ static bool api_pump_add_status_fields(cJSON *root)
     cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
+    return true;
+}
+
+static bool api_cooling_add_status_fields_gen(json_gen_t *gen)
+{
+    if (!gen) {
+        return false;
+    }
+
+    cooling_control_status_t status = {0};
+    if (!cooling_control_get_status(&status)) {
+        return false;
+    }
+
+    json_gen_add_bool(gen, "initialized", status.initialized);
+    json_gen_add_bool(gen, "config_valid", status.config_valid);
+    json_gen_add_string(gen, "mode", api_cooling_mode_name(status.mode));
+    json_gen_add_bool(gen, "auto_enable", status.auto_enable);
+    json_gen_add_number(gen, "temperature_c", (double)(status.temperature_c));
+    json_gen_add_bool(gen, "temperature_valid", status.temperature_valid);
+    json_gen_add_string(gen, "sensor_state", api_cooling_sensor_state_name(status.sensor_state));
+    json_gen_add_bool(gen, "fault", status.fault);
+    json_gen_add_string(gen, "fault_code", api_cooling_fault_code_name(status.fault_code));
+    json_gen_add_bool(gen, "relay_energized", status.relay_energized);
+    json_gen_add_number(gen, "threshold_c", (double)(status.threshold_c_x10) / 10.0);
+    json_gen_add_number(gen, "hysteresis_c", (double)(status.hysteresis_c_x10) / 10.0);
+    json_gen_add_bool(gen, "lockout_active", status.lockout_active);
+    json_gen_add_number(gen, "lockout_remaining_sec", (double)(status.lockout_remaining_sec));
+    json_gen_add_number(gen, "test_remaining_sec", (double)(status.test_remaining_sec));
+    json_gen_add_bool(gen, "cooling_demand", status.cooling_demand);
+    json_gen_add_string(gen, "blocked_reason", api_cooling_blocked_reason_name(status.blocked_reason));
+    json_gen_add_number(gen, "ds18b20_gpio", (double)(status.ds18b20_gpio));
+    json_gen_add_number(gen, "cooling_relay_gpio", (double)(status.cooling_relay_gpio));
     return true;
 }
 
@@ -3055,26 +3211,24 @@ static esp_err_t handle_api_pump_status(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    cJSON *root = cJSON_CreateObject();
-    if (!root) {
+    char *json_buf = malloc(2048);
+    if (!json_buf) {
         return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
 
-    cJSON_AddBoolToObject(root, "ok", true);
-    if (!api_pump_add_status_fields(root)) {
-        cJSON_Delete(root);
-        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
-                              "409 Conflict");
+    json_gen_t gen;
+    json_gen_init(&gen, json_buf, 2048);
+    json_gen_start_object(&gen);
+    json_gen_add_bool(&gen, "ok", true);
+    
+    if (!api_pump_add_status_fields_gen(&gen)) {
+        free(json_buf);
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable", "409 Conflict");
     }
+    json_gen_end_object(&gen);
 
-    char *json_str = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
-    if (!json_str) {
-        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
-    }
-
-    esp_err_t result = send_json(req, json_str, "200 OK");
-    free(json_str);
+    esp_err_t result = send_json(req, json_buf, "200 OK");
+    free(json_buf);
     return result;
 }
 
@@ -3085,26 +3239,24 @@ static esp_err_t handle_api_cooling_status(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    cJSON *root = cJSON_CreateObject();
-    if (!root) {
+    char *json_buf = malloc(2048);
+    if (!json_buf) {
         return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
 
-    cJSON_AddBoolToObject(root, "ok", true);
-    if (!api_cooling_add_status_fields(root)) {
-        cJSON_Delete(root);
-        return send_api_error(req, "status_unavailable", "Cooling status is unavailable",
-                              "409 Conflict");
+    json_gen_t gen;
+    json_gen_init(&gen, json_buf, 2048);
+    json_gen_start_object(&gen);
+    json_gen_add_bool(&gen, "ok", true);
+    
+    if (!api_cooling_add_status_fields_gen(&gen)) {
+        free(json_buf);
+        return send_api_error(req, "status_unavailable", "Cooling status is unavailable", "409 Conflict");
     }
+    json_gen_end_object(&gen);
 
-    char *json_str = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
-    if (!json_str) {
-        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
-    }
-
-    esp_err_t result = send_json(req, json_str, "200 OK");
-    free(json_str);
+    esp_err_t result = send_json(req, json_buf, "200 OK");
+    free(json_buf);
     return result;
 }
 
@@ -3373,46 +3525,50 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     bool sta_conn = wifi_manager_is_sta_connected();
     bool ap_up = wifi_manager_is_ap_enabled();
 
-    cJSON *root = cJSON_CreateObject();
-    if (!root) {
+    char *json_buf = malloc(2048);
+    if (!json_buf) {
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
-    cJSON_AddBoolToObject(root, "ok", true);
+    json_gen_t gen;
+    json_gen_init(&gen, json_buf, 2048);
+    json_gen_start_object(&gen);
+    
+    json_gen_add_bool(&gen, "ok", true);
 
     /* ---------- System ---------- */
     esp_chip_info_t chip;
     esp_chip_info(&chip);
-    cJSON_AddStringToObject(root, "chip_model", chip_model_to_string(chip.model));
-    cJSON_AddNumberToObject(root, "chip_revision", chip.revision);
-    cJSON_AddNumberToObject(root, "chip_cores", chip.cores);
-    cJSON_AddNumberToObject(root, "cpu_freq_mhz", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
-    cJSON_AddStringToObject(root, "idf_version", esp_get_idf_version());
-    cJSON_AddStringToObject(root, "project_name", APP_TEMPLATE_NAME);
-    cJSON_AddStringToObject(root, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
-    cJSON_AddStringToObject(root, "reset_reason", reset_reason_to_string(esp_reset_reason()));
+    json_gen_add_string(&gen, "chip_model", chip_model_to_string(chip.model));
+    json_gen_add_number(&gen, "chip_revision", (double)(chip.revision));
+    json_gen_add_number(&gen, "chip_cores", (double)(chip.cores));
+    json_gen_add_number(&gen, "cpu_freq_mhz", (double)(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ));
+    json_gen_add_string(&gen, "idf_version", esp_get_idf_version());
+    json_gen_add_string(&gen, "project_name", APP_TEMPLATE_NAME);
+    json_gen_add_string(&gen, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
+    json_gen_add_string(&gen, "reset_reason", reset_reason_to_string(esp_reset_reason()));
 
     /* ---------- MAC addresses ---------- */
     uint8_t mac[6];
     char mac_str[18];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
     format_mac(mac, mac_str);
-    cJSON_AddStringToObject(root, "mac_sta", mac_str);
+    json_gen_add_string(&gen, "mac_sta", mac_str);
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
     format_mac(mac, mac_str);
-    cJSON_AddStringToObject(root, "mac_ap", mac_str);
+    json_gen_add_string(&gen, "mac_ap", mac_str);
 
     /* ---------- Memory ---------- */
     uint32_t free_heap = wifi_manager_get_free_heap();
     uint32_t min_free_heap = esp_get_minimum_free_heap_size();
     uint32_t total_heap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
     uint32_t largest_free_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
-    cJSON_AddNumberToObject(root, "free_heap", (double)free_heap);
-    cJSON_AddNumberToObject(root, "min_free_heap", (double)min_free_heap);
-    cJSON_AddNumberToObject(root, "total_heap", (double)total_heap);
-    cJSON_AddNumberToObject(root, "largest_free_block", (double)largest_free_block);
+    json_gen_add_number(&gen, "free_heap", (double)(free_heap));
+    json_gen_add_number(&gen, "min_free_heap", (double)(min_free_heap));
+    json_gen_add_number(&gen, "total_heap", (double)(total_heap));
+    json_gen_add_number(&gen, "largest_free_block", (double)(largest_free_block));
 
     /* ---------- Uptime ---------- */
-    cJSON_AddNumberToObject(root, "uptime_ms", (double)wifi_manager_get_uptime_ms());
+    json_gen_add_number(&gen, "uptime_ms", (double)(wifi_manager_get_uptime_ms()));
 
     /* ---------- Wi-Fi ---------- */
     wifi_mode_t wmode;
@@ -3421,16 +3577,16 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     if (wmode == WIFI_MODE_STA)      wmode_str = "STA";
     else if (wmode == WIFI_MODE_AP)  wmode_str = "AP";
     else if (wmode == WIFI_MODE_APSTA) wmode_str = "APSTA";
-    cJSON_AddStringToObject(root, "wifi_mode", wmode_str);
+    json_gen_add_string(&gen, "wifi_mode", wmode_str);
 
     /* AP info */
-    cJSON_AddBoolToObject(root, "ap_enabled", ap_up);
-    cJSON_AddStringToObject(root, "ap_ssid", ap_up ? AP_SSID : "");
-    cJSON_AddStringToObject(root, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
+    json_gen_add_bool(&gen, "ap_enabled", ap_up);
+    json_gen_add_string(&gen, "ap_ssid", ap_up ? AP_SSID : "");
+    json_gen_add_string(&gen, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
 
     wifi_sta_list_t sta_list;
     if (ap_up && esp_wifi_ap_get_sta_list(&sta_list) == ESP_OK) {
-        cJSON_AddNumberToObject(root, "ap_clients", sta_list.num);
+        json_gen_add_number(&gen, "ap_clients", (double)(sta_list.num));
         if (sta_list.num > 0) {
             int8_t weakest_rssi = sta_list.sta[0].rssi;
             for (int i = 1; i < sta_list.num; i++) {
@@ -3438,46 +3594,44 @@ static esp_err_t handle_api_status(httpd_req_t *req)
                     weakest_rssi = sta_list.sta[i].rssi;
                 }
             }
-            cJSON_AddNumberToObject(root, "ap_client_weakest_rssi", weakest_rssi);
+            json_gen_add_number(&gen, "ap_client_weakest_rssi", (double)(weakest_rssi));
         }
     } else {
-        cJSON_AddNumberToObject(root, "ap_clients", 0);
+        json_gen_add_number(&gen, "ap_clients", (double)(0));
     }
 
     /* STA info */
-    cJSON_AddBoolToObject(root, "sta_connected", sta_conn);
-    cJSON_AddBoolToObject(root, "sta_connecting", wifi_manager_is_sta_connecting());
-    cJSON_AddBoolToObject(root, "sta_retry_blocked", wifi_manager_is_sta_retry_blocked());
-    cJSON_AddStringToObject(root, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
-    cJSON_AddStringToObject(root, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
+    json_gen_add_bool(&gen, "sta_connected", sta_conn);
+    json_gen_add_bool(&gen, "sta_connecting", wifi_manager_is_sta_connecting());
+    json_gen_add_bool(&gen, "sta_retry_blocked", wifi_manager_is_sta_retry_blocked());
+    json_gen_add_string(&gen, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
+    json_gen_add_string(&gen, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
 
     if (sta_conn) {
         wifi_ap_record_t ap_rec;
         if (esp_wifi_sta_get_ap_info(&ap_rec) == ESP_OK) {
-            cJSON_AddNumberToObject(root, "sta_rssi", ap_rec.rssi);
-            cJSON_AddNumberToObject(root, "sta_channel", ap_rec.primary);
-            cJSON_AddStringToObject(root, "sta_auth", wifi_auth_mode_to_string(ap_rec.authmode));
+            json_gen_add_number(&gen, "sta_rssi", (double)(ap_rec.rssi));
+            json_gen_add_number(&gen, "sta_channel", (double)(ap_rec.primary));
+            json_gen_add_string(&gen, "sta_auth", wifi_auth_mode_to_string(ap_rec.authmode));
         }
     }
 
     /* ---------- Services ---------- */
-    cJSON_AddBoolToObject(root, "dns_server", dns_server_is_running());
-    cJSON_AddNumberToObject(root, "http_json_send_failures", s_json_send_failures);
-    cJSON_AddNumberToObject(root, "http_static_send_failures", s_static_send_failures);
-    cJSON_AddNumberToObject(root, "http_static_cache_hits", s_static_cache_hits);
-    cJSON_AddNumberToObject(root, "http_static_deadline_aborts", s_static_deadline_aborts);
+    json_gen_add_bool(&gen, "dns_server", dns_server_is_running());
+    json_gen_add_number(&gen, "http_json_send_failures", (double)(s_json_send_failures));
+    json_gen_add_number(&gen, "http_static_send_failures", (double)(s_static_send_failures));
+    json_gen_add_number(&gen, "http_static_cache_hits", (double)(s_static_cache_hits));
+    json_gen_add_number(&gen, "http_static_deadline_aborts", (double)(s_static_deadline_aborts));
 
     uint8_t stg_type = 0;
     nvs_store_get_staging_type(&stg_type);
-    cJSON_AddNumberToObject(root, "stg_type", stg_type);
+    json_gen_add_number(&gen, "stg_type", (double)(stg_type));
 
-    char *json_str = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
-    if (!json_str) {
-        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
-    }
-    esp_err_t result = send_json(req, json_str, "200 OK");
-    free(json_str);
+    json_gen_end_object(&gen);
+    
+    
+    esp_err_t result = send_json(req, json_buf, "200 OK");
+    free(json_buf);
     return result;
 }
 
