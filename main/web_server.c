@@ -2265,11 +2265,39 @@ static bool is_password_default(void) {
     return s_is_password_default_cached;
 }
 
+static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
+
+static void update_login_rate_limit(const char *ip, int64_t now, bool is_success)
+{
+    if (s_login_rate_limit_mutex) {
+        xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
+    }
+    int current_idx = -1;
+    for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+        if (s_rate_limits[i].ip[0] != '\0' && strcmp(s_rate_limits[i].ip, ip) == 0) {
+            current_idx = i;
+            break;
+        }
+    }
+    if (current_idx != -1) {
+        if (is_success) {
+            s_rate_limits[current_idx].attempts = 0;
+            s_rate_limits[current_idx].block_until = 0;
+        } else {
+            s_rate_limits[current_idx].attempts++;
+            if (s_rate_limits[current_idx].attempts >= RATE_LIMIT_MAX) {
+                s_rate_limits[current_idx].block_until = now + RATE_LIMIT_WINDOW;
+            }
+        }
+    }
+    if (s_login_rate_limit_mutex) {
+        xSemaphoreGive(s_login_rate_limit_mutex);
+    }
+}
+
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
-    static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
-
     char client_ip[64] = {0};
     get_client_ip(req, client_ip, sizeof(client_ip));
 
@@ -2281,11 +2309,9 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     login_rate_limit_t *rl = NULL;
-    int target_idx = -1;
     for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
         if (s_rate_limits[i].ip[0] != '\0' && strcmp(s_rate_limits[i].ip, client_ip) == 0) {
             rl = &s_rate_limits[i];
-            target_idx = i;
             break;
         }
     }
@@ -2304,7 +2330,6 @@ static esp_err_t handle_api_login(httpd_req_t *req)
             }
         }
         rl = &s_rate_limits[evict_idx];
-        target_idx = evict_idx;
         strncpy(rl->ip, client_ip, sizeof(rl->ip));
         rl->attempts = 0;
         rl->block_until = 0;
@@ -2378,12 +2403,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        if (s_login_rate_limit_mutex) xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
-        s_rate_limits[target_idx].attempts++;
-        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
-            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
-        }
-        if (s_login_rate_limit_mutex) xSemaphoreGive(s_login_rate_limit_mutex);
+        update_login_rate_limit(client_ip, now, false);
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
@@ -2398,12 +2418,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (strcmp(username, stored_user) != 0 || strcmp(password, stored_pass) != 0) {
         ESP_LOGW(TAG, "Login failed");
-        if (s_login_rate_limit_mutex) xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
-        s_rate_limits[target_idx].attempts++;
-        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
-            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
-        }
-        if (s_login_rate_limit_mutex) xSemaphoreGive(s_login_rate_limit_mutex);
+        update_login_rate_limit(client_ip, now, false);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
@@ -2412,10 +2427,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    if (s_login_rate_limit_mutex) xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
-    s_rate_limits[target_idx].attempts = 0;
-    s_rate_limits[target_idx].block_until = 0;
-    if (s_login_rate_limit_mutex) xSemaphoreGive(s_login_rate_limit_mutex);
+    update_login_rate_limit(client_ip, now, true);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
