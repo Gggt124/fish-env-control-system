@@ -179,7 +179,9 @@ void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_c
         return;
     }
 
-    xSemaphoreTake(s_tft_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+        return;
+    }
 
     // 8x16 font has 128 pixels (256 bytes buffer, well under the 1024-byte limit)
     uint16_t pixel_buf[128];
@@ -198,7 +200,7 @@ void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_c
 
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + 8, y + 16, pixel_buf);
     if (err == ESP_OK) {
-        xSemaphoreTake(s_trans_done_sem, portMAX_DELAY);
+        xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500));
     }
     
     xSemaphoreGive(s_tft_mutex);
@@ -209,7 +211,9 @@ void tft_draw_char_x2(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t b
         return;
     }
 
-    xSemaphoreTake(s_tft_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+        return;
+    }
 
     // 16x32 scaled character has 512 pixels (1024 bytes buffer, exactly matching the limit)
     uint16_t pixel_buf[512];
@@ -237,7 +241,7 @@ void tft_draw_char_x2(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t b
 
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + 16, y + 32, pixel_buf);
     if (err == ESP_OK) {
-        xSemaphoreTake(s_trans_done_sem, portMAX_DELAY);
+        xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500));
     }
     
     xSemaphoreGive(s_tft_mutex);
@@ -284,7 +288,9 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
         h = TFT_HEIGHT - y;
     }
 
-    xSemaphoreTake(s_tft_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+        return;
+    }
 
     uint16_t big_endian_color = SWAP_BYTES(color);
 
@@ -297,7 +303,9 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
     for (uint16_t cy = y; cy < y + h; cy++) {
         esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, cy, x + w, cy + 1, chunk_buf);
         if (err == ESP_OK) {
-            xSemaphoreTake(s_trans_done_sem, portMAX_DELAY);
+            if (xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500)) != pdTRUE) {
+                break;
+            }
         }
     }
     
