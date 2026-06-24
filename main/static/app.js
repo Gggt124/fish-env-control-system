@@ -67,6 +67,16 @@ function apiGet(url, cb, customTimeout) {
     xhr.open('GET', url, true);
     xhr.timeout = customTimeout || API_TIMEOUT_MS;
     xhr.onload = function () {
+        if (xhr.status === 403) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.error === 'force_password_change') {
+                    showForcePasswordModal();
+                }
+            } catch(e) {}
+            finish(new Error('HTTP 403 Forbidden'), null);
+            return;
+        }
         if (xhr.status === 200) {
             try {
                 var data = JSON.parse(xhr.responseText);
@@ -107,6 +117,16 @@ function apiPost(url, body, cb) {
     xhr.timeout = API_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function () {
+        if (xhr.status === 403) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.error === 'force_password_change') {
+                    showForcePasswordModal();
+                }
+            } catch(e) {}
+            finish(new Error('HTTP 403 Forbidden'), null);
+            return;
+        }
         if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
             return;
@@ -374,7 +394,12 @@ function initLogin() {
                 return;
             }
 
-            navigateTo('/dashboard');
+            if (data && data.require_password_change) {
+                navigateTo('/dashboard');
+                showForcePasswordModal();
+            } else {
+                navigateTo('/dashboard');
+            }
         });
     };
 }
@@ -3476,3 +3501,51 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
     }
 });
 
+function showForcePasswordModal() {
+    var modal = document.getElementById('force-pwd-modal');
+    if (modal && !modal.open) {
+        modal.showModal();
+        // Prevent canceling via Escape key
+        modal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+        });
+    }
+}
+
+function submitForcePasswordChange() {
+    var curr = document.getElementById('force-pwd-current').value;
+    var newp = document.getElementById('force-pwd-new').value;
+    var conf = document.getElementById('force-pwd-confirm').value;
+    var errEl = document.getElementById('force-pwd-error');
+    var btn = document.getElementById('force-pwd-submit');
+
+    if (newp !== conf) {
+        errEl.textContent = "รหัสผ่านใหม่ไม่ตรงกัน";
+        errEl.classList.remove('hidden');
+        return;
+    }
+    if (newp.length < 8) {
+        errEl.textContent = "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร";
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    errEl.classList.add('hidden');
+    var origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "กำลังบันทึก...";
+
+    apiPost('/api/change-password', { current_password: curr, new_password: newp }, function(err, data) {
+        btn.disabled = false;
+        btn.textContent = origText;
+        if (err || !data.ok) {
+            errEl.textContent = (data && data.error === 'invalid_credentials') ? "รหัสผ่านปัจจุบันไม่ถูกต้อง" : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+            errEl.classList.remove('hidden');
+        } else {
+            var modal = document.getElementById('force-pwd-modal');
+            modal.close();
+            // Refresh current view to load data that was blocked
+            handleRoute();
+        }
+    });
+}
