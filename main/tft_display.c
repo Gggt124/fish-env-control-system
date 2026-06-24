@@ -43,17 +43,22 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
 
 esp_err_t tft_display_init(void) {
     ESP_LOGI(TAG, "Initializing TFT display on VSPI (SPI3_HOST)");
+    esp_err_t ret = ESP_OK;
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    bool spi_initialized = false;
 
     // 1. Create binary semaphore for DMA transfer synchronization and mutex for thread-safety
     s_trans_done_sem = xSemaphoreCreateBinary();
     if (!s_trans_done_sem) {
         ESP_LOGE(TAG, "Failed to create transfer done semaphore");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto err;
     }
     s_tft_mutex = xSemaphoreCreateMutex();
     if (!s_tft_mutex) {
         ESP_LOGE(TAG, "Failed to create TFT mutex");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto err;
     }
 
     // 2. Turn on LED backlight pin
@@ -64,10 +69,10 @@ esp_err_t tft_display_init(void) {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    esp_err_t ret = gpio_config(&io_conf);
+    ret = gpio_config(&io_conf);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to configure backlight GPIO: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
     gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, 1);
     ESP_LOGI(TAG, "Backlight turned ON");
@@ -84,11 +89,11 @@ esp_err_t tft_display_init(void) {
     ret = spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
+    spi_initialized = true;
 
     // 4. Configure SPI Panel IO
-    esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_spi_config_t io_config = {
         .dc_gpio_num = APP_TEMPLATE_TFT_DC_GPIO,
         .cs_gpio_num = APP_TEMPLATE_TFT_CS_GPIO,
@@ -102,7 +107,7 @@ esp_err_t tft_display_init(void) {
     ret = esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)SPI3_HOST, &io_config, &io_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create panel IO: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
 
     // 5. Install panel driver
@@ -115,13 +120,13 @@ esp_err_t tft_display_init(void) {
     ret = esp_lcd_new_panel_st7789(io_handle, &panel_config, &s_panel_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create ST7789 panel driver: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
 #else
     ret = esp_lcd_new_panel_ili9341(io_handle, &panel_config, &s_panel_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create ILI9341 panel driver: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
 #endif
 
@@ -130,34 +135,34 @@ esp_err_t tft_display_init(void) {
     ret = esp_lcd_panel_reset(s_panel_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to reset panel: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
     ret = esp_lcd_panel_init(s_panel_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init panel: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
     ret = esp_lcd_panel_disp_on_off(s_panel_handle, true);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to turn display ON: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
 
     // 7. Setup screen layout (Landscape 320x240)
     ret = esp_lcd_panel_swap_xy(s_panel_handle, true);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to swap XY axes: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
     ret = esp_lcd_panel_mirror(s_panel_handle, true, false);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set mirroring: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
     ret = esp_lcd_panel_set_gap(s_panel_handle, 0, 0);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set panel gap: %s", esp_err_to_name(ret));
-        return ret;
+        goto err;
     }
 #ifdef APP_TEMPLATE_TFT_PANEL_ST7789
     ESP_LOGI(TAG, "Panel driver: ST7789 (build-time #ifdef); layout: swap_xy=true, mirror=(true,false), gap=(0,0)");
@@ -168,6 +173,28 @@ esp_err_t tft_display_init(void) {
 
     ESP_LOGI(TAG, "TFT display successfully initialized");
     return ESP_OK;
+
+err:
+    if (s_panel_handle) {
+        esp_lcd_panel_del(s_panel_handle);
+        s_panel_handle = NULL;
+    }
+    if (io_handle) {
+        esp_lcd_panel_io_del(io_handle);
+        io_handle = NULL;
+    }
+    if (spi_initialized) {
+        spi_bus_free(SPI3_HOST);
+    }
+    if (s_tft_mutex) {
+        vSemaphoreDelete(s_tft_mutex);
+        s_tft_mutex = NULL;
+    }
+    if (s_trans_done_sem) {
+        vSemaphoreDelete(s_trans_done_sem);
+        s_trans_done_sem = NULL;
+    }
+    return ret;
 }
 
 void tft_clear(uint16_t color) {
