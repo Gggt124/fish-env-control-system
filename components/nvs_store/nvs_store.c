@@ -89,6 +89,7 @@ static bool cooling_settings_valid(const nvs_store_cooling_settings_t *settings)
            settings->hysteresis_c_x10 <= 500 &&
            settings->test_timeout_sec > 0 &&
            settings->test_timeout_sec <= 3600 &&
+           settings->compressor_min_off_sec >= 60 &&
            settings->compressor_min_off_sec <= 86400 &&
            hardware_map_cooling_mode_valid(settings->mode) &&
            hardware_map_polarity_valid(settings->relay_polarity);
@@ -1122,6 +1123,10 @@ nvs_store_cooling_settings_load_status_t nvs_store_load_cooling_settings(nvs_sto
     loaded.relay_polarity = relay_active_low
         ? HARDWARE_RELAY_ACTIVE_LOW
         : HARDWARE_RELAY_ACTIVE_HIGH;
+
+    if (loaded.compressor_min_off_sec < 60) {
+        loaded.compressor_min_off_sec = APP_TEMPLATE_COOLING_MIN_OFF_SEC;
+    }
 
     if (!cooling_settings_valid(&loaded)) {
         return NVS_STORE_COOLING_SETTINGS_DEFAULTS_INVALID;
