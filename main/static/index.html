@@ -1643,15 +1643,15 @@
             <form id="force-pwd-form" onsubmit="event.preventDefault(); submitForcePasswordChange();">
                 <div class="form-group">
                     <label>รหัสผ่านปัจจุบัน</label>
-                    <input type="password" id="force-pwd-current" required>
+                    <input type="password" id="force-pwd-current" class="input-field" required>
                 </div>
                 <div class="form-group">
                     <label>รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)</label>
-                    <input type="password" id="force-pwd-new" required minlength="8">
+                    <input type="password" id="force-pwd-new" class="input-field" required minlength="8">
                 </div>
                 <div class="form-group">
                     <label>ยืนยันรหัสผ่านใหม่</label>
-                    <input type="password" id="force-pwd-confirm" required minlength="8">
+                    <input type="password" id="force-pwd-confirm" class="input-field" required minlength="8">
                 </div>
                 <div id="force-pwd-error" class="error-msg hidden" style="color: var(--danger-color); margin-top: 0.5rem;"></div>
                 <div class="modal-actions">
