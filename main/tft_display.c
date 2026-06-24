@@ -6,11 +6,7 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
-#ifdef APP_TEMPLATE_TFT_PANEL_ST7789
 #include "esp_lcd_panel_st7789.h"
-#else
-#include "esp_lcd_ili9341.h"
-#endif
 
 
 #include "freertos/FreeRTOS.h"
@@ -116,19 +112,11 @@ esp_err_t tft_display_init(void) {
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .bits_per_pixel = 16,
     };
-#ifdef APP_TEMPLATE_TFT_PANEL_ST7789
     ret = esp_lcd_new_panel_st7789(io_handle, &panel_config, &s_panel_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create ST7789 panel driver: %s", esp_err_to_name(ret));
         goto err;
     }
-#else
-    ret = esp_lcd_new_panel_ili9341(io_handle, &panel_config, &s_panel_handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to create ILI9341 panel driver: %s", esp_err_to_name(ret));
-        goto err;
-    }
-#endif
 
 
     // 6. Reset and initialize display panel hardware
@@ -140,6 +128,11 @@ esp_err_t tft_display_init(void) {
     ret = esp_lcd_panel_init(s_panel_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init panel: %s", esp_err_to_name(ret));
+        goto err;
+    }
+    ret = esp_lcd_panel_invert_color(s_panel_handle, true);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to invert color: %s", esp_err_to_name(ret));
         goto err;
     }
     ret = esp_lcd_panel_disp_on_off(s_panel_handle, true);
@@ -164,11 +157,7 @@ esp_err_t tft_display_init(void) {
         ESP_LOGE(TAG, "Failed to set panel gap: %s", esp_err_to_name(ret));
         goto err;
     }
-#ifdef APP_TEMPLATE_TFT_PANEL_ST7789
-    ESP_LOGI(TAG, "Panel driver: ST7789 (build-time #ifdef); layout: swap_xy=true, mirror=(true,false), gap=(0,0)");
-#else
-    ESP_LOGI(TAG, "Panel driver: ILI9341 (default); layout: swap_xy=true, mirror=(true,false), gap=(0,0)");
-#endif
+    ESP_LOGI(TAG, "Panel driver: ST7789; layout: swap_xy=true, mirror=(true,false), gap=(0,0)");
 
 
     ESP_LOGI(TAG, "TFT display successfully initialized");
