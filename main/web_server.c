@@ -84,6 +84,7 @@ extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_end[]   asm("_binary
 static bool s_wifi_disconnect_task_pending = false;
 static portMUX_TYPE s_wifi_disconnect_task_lock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE s_web_diag_lock = portMUX_INITIALIZER_UNLOCKED;
+static SemaphoreHandle_t s_login_rate_limit_mutex = NULL;
 static char s_auth_nonce[33] = {0};
 static httpd_handle_t s_server = NULL;
 static uint32_t s_json_send_failures = 0;
@@ -2274,7 +2275,11 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     int64_t now = esp_timer_get_time() / 1000000;
 
-    taskENTER_CRITICAL(&s_web_diag_lock);
+
+    if (s_login_rate_limit_mutex) {
+        xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
+    }
+
     login_rate_limit_t *rl = NULL;
     int target_idx = -1;
     for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
@@ -2308,7 +2313,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     rl->last_seen = now;
     
     int64_t block_until = rl->block_until;
-    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    if (s_login_rate_limit_mutex) {
+        xSemaphoreGive(s_login_rate_limit_mutex);
+    }
 
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
@@ -2370,12 +2378,12 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        taskENTER_CRITICAL(&s_web_diag_lock);
+        if (s_login_rate_limit_mutex) xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
         s_rate_limits[target_idx].attempts++;
         if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
             s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
         }
-        taskEXIT_CRITICAL(&s_web_diag_lock);
+        if (s_login_rate_limit_mutex) xSemaphoreGive(s_login_rate_limit_mutex);
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
@@ -2390,12 +2398,12 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (strcmp(username, stored_user) != 0 || strcmp(password, stored_pass) != 0) {
         ESP_LOGW(TAG, "Login failed");
-        taskENTER_CRITICAL(&s_web_diag_lock);
+        if (s_login_rate_limit_mutex) xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
         s_rate_limits[target_idx].attempts++;
         if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
             s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
         }
-        taskEXIT_CRITICAL(&s_web_diag_lock);
+        if (s_login_rate_limit_mutex) xSemaphoreGive(s_login_rate_limit_mutex);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
@@ -2404,10 +2412,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    taskENTER_CRITICAL(&s_web_diag_lock);
+    if (s_login_rate_limit_mutex) xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
     s_rate_limits[target_idx].attempts = 0;
     s_rate_limits[target_idx].block_until = 0;
-    taskEXIT_CRITICAL(&s_web_diag_lock);
+    if (s_login_rate_limit_mutex) xSemaphoreGive(s_login_rate_limit_mutex);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
@@ -3898,6 +3906,12 @@ bool web_server_check_health(uint32_t timeout_ms)
 
 bool web_server_start(void)
 {
+    /* --- One-time resource allocation (safe here: task context, no ISR) --- */
+    if (s_login_rate_limit_mutex == NULL) {
+        s_login_rate_limit_mutex = xSemaphoreCreateMutex();
+        configASSERT(s_login_rate_limit_mutex != NULL);
+    }
+
     if (s_server) {
         return true;
     }
