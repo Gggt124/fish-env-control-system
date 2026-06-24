@@ -130,7 +130,7 @@ esp_err_t tft_display_init(void) {
         ESP_LOGE(TAG, "Failed to init panel: %s", esp_err_to_name(ret));
         goto err;
     }
-    ret = esp_lcd_panel_invert_color(s_panel_handle, true);
+    ret = esp_lcd_panel_invert_color(s_panel_handle, false);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to invert color: %s", esp_err_to_name(ret));
         goto err;
