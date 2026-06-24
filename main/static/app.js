@@ -3640,7 +3640,17 @@ function initOta() {
                 // Error case
                 uploadBtn.disabled = false;
                 fileInput.disabled = false;
-                msgEl.textContent = 'เกิดข้อผิดพลาดในการอัปเดต (HTTP ' + xhr.status + ')';
+                
+                if (xhr.status === 401) {
+                    msgEl.textContent = 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่...';
+                    setTimeout(function() {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (xhr.status === 413) {
+                    msgEl.textContent = 'ไฟล์มีขนาดใหญ่เกินไป (HTTP 413)';
+                } else {
+                    msgEl.textContent = 'เกิดข้อผิดพลาดในการอัปเดต (HTTP ' + xhr.status + ')';
+                }
                 msgEl.classList.remove('hidden');
                 msgEl.style.color = 'var(--error)';
                 msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';

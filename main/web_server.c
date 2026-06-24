@@ -3781,6 +3781,10 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
                 return send_json(req, "{\"ok\":false,\"error\":\"ota_write_failed\"}", "500 Internal Server Error");
             }
             remaining -= recv_len;
+            
+            // Yield CPU to IDLE task periodically to prevent Task Watchdog panic
+            // during large firmware uploads (IDLE task needs to reset its WDT).
+            vTaskDelay(1);
         } else if (recv_len == 0) {
             break;
         }
