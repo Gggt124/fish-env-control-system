@@ -7,6 +7,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -466,7 +467,12 @@ static esp_err_t read_temperature_with_recovery(float *temperature_c)
 static void cooling_task(void *arg)
 {
     (void)arg;
+    esp_err_t err = esp_task_wdt_add(NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register cooling_task to TWDT: %s", esp_err_to_name(err));
+    }
     while (!s_task_stop) {
+        esp_task_wdt_reset();
         float temperature_c = 0.0f;
         esp_err_t ret = read_temperature_with_recovery(&temperature_c);
 
@@ -488,9 +494,14 @@ static void cooling_task(void *arg)
 
         uint32_t waited_ms = 0;
         while (!s_task_stop && waited_ms < COOLING_CONTROL_POLL_MS) {
+            esp_task_wdt_reset();
             vTaskDelay(pdMS_TO_TICKS(100));
             waited_ms += 100;
         }
+    }
+    esp_err_t del_err = esp_task_wdt_delete(NULL);
+    if (del_err != ESP_OK && del_err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "Failed to remove cooling_task from TWDT: %s", esp_err_to_name(del_err));
     }
     s_cooling_task = NULL;
     vTaskDelete(NULL);

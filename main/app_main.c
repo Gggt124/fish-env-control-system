@@ -845,9 +845,18 @@ void app_main(void)
     xTaskCreate(hardware_ui_task, "hardware_ui_task", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
 
     /* 8. Initialize task watchdog (10s timeout with panic) */
+    // WDT strategy: Main task is registered here. Cooling task registers itself. Pump runs via esp_timer, 
+    // so we rely on idle task WDT checks (enabled via sdkconfig.defaults) to catch timer task starvation.
+    uint32_t idle_mask = 0;
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    idle_mask |= (1 << 0);
+#endif
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    idle_mask |= (1 << 1);
+#endif
     esp_task_wdt_config_t wdt_config = {
         .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
-        .idle_core_mask = 0,
+        .idle_core_mask = idle_mask,
         .trigger_panic = true,
     };
     esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
