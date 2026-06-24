@@ -52,6 +52,8 @@ function handleUnauthorized() {
     s_handlingUnauthorized = true;
     cleanupCurrentView();
     document.cookie = 'session=; Path=/; Max-Age=0';
+    var forcePwdModal = document.getElementById('force-pwd-modal');
+    if (forcePwdModal && forcePwdModal.open) forcePwdModal.close();
     navigateTo('/login');
     s_handlingUnauthorized = false;
 }
