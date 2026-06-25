@@ -58,6 +58,7 @@ function handleUnauthorized() {
     s_handlingUnauthorized = true;
     cleanupCurrentView();
     document.cookie = 'session=; Path=/; Max-Age=0';
+    document.cookie = 'logged_in=; Path=/; Max-Age=0';
     var forcePwdModal = document.getElementById('force-pwd-modal');
     if (forcePwdModal && forcePwdModal.open) forcePwdModal.close();
     navigateTo('/login');
@@ -428,6 +429,7 @@ function doLogout() {
     showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function () {
         apiPost('/api/logout', {}, function () {
             document.cookie = 'session=; Path=/; Max-Age=0';
+            document.cookie = 'logged_in=; Path=/; Max-Age=0';
             navigateTo('/login');
         });
     }, true);
@@ -3341,6 +3343,7 @@ function doChangePassword(e) {
             showToast('เปลี่ยนรหัสผ่านเรียบร้อย ระบบจะนำคุณออกเพื่อล็อกอินใหม่', 'success');
             setTimeout(function () {
                 document.cookie = 'session=; Path=/; Max-Age=0';
+                document.cookie = 'logged_in=; Path=/; Max-Age=0';
                 navigateTo('/login');
             }, 2500);
         });
