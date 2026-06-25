@@ -22,9 +22,10 @@ CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=y
 # HTTP server plus captive DNS need socket headroom during browser refreshes.
 CONFIG_LWIP_MAX_SOCKETS=16
 
-# Soak diagnostics: collect per-core idle runtime deltas using the 1 MHz ESP timer.
-CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
-CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
+# Runtime stats disabled for production: causes CPU overhead on every context switch.
+# Re-enable temporarily during soak diagnostics only.
+# CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS is not set
+# CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER is not set
 
 # Stack overflow detection: method 2 (stack pointer canary check) panics on overflow instead of silently corrupting memory.
 CONFIG_FREERTOS_CHECK_STACKOVERFLOW=2
