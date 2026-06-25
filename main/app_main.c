@@ -28,7 +28,7 @@ atomic_bool s_trigger_rollback = ATOMIC_VAR_INIT(false);
 atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
 #define s_cancel_rollback g_cancel_rollback_timer
 
-static volatile bool s_trigger_factory_reset = false;
+static atomic_bool s_trigger_factory_reset = ATOMIC_VAR_INIT(false);
 
 static esp_timer_handle_t s_confirm_timer = NULL;
 static esp_timer_handle_t s_wifi_timer = NULL;
@@ -36,7 +36,7 @@ static esp_timer_handle_t s_wifi_timer = NULL;
 static void confirm_timer_cb(void *arg)
 {
     (void)arg;
-    s_trigger_rollback = true;
+    atomic_store(&s_trigger_rollback, true);
     ESP_LOGW(TAG, "Rollback confirm timer expired!");
 }
 
@@ -44,7 +44,7 @@ static void wifi_timer_cb(void *arg)
 {
     (void)arg;
     if (!wifi_manager_is_sta_connected()) {
-        s_trigger_rollback = true;
+        atomic_store(&s_trigger_rollback, true);
         ESP_LOGW(TAG, "Wi-Fi connection staging timeout! Triggering rollback.");
     }
 }
@@ -573,7 +573,7 @@ static void hardware_ui_task(void *pvParameters)
                 set_leds(((press_duration_ms / 500) % 2) == 0 ? 1 : 0);
             } else {
                 if (!factory_reset_triggered) {
-                    s_trigger_factory_reset = true;
+                    atomic_store(&s_trigger_factory_reset, true);
                     factory_reset_triggered = true;
                     ESP_LOGI(TAG, "Factory reset triggered by button hold");
                 }
@@ -891,7 +891,7 @@ void app_main(void)
     while (1) {
         esp_task_wdt_reset();
 
-        if (s_cancel_rollback) {
+        if (atomic_load(&s_cancel_rollback)) {
             ESP_LOGI(TAG, "Staging confirmed. Stopping rollback timers.");
             if (s_confirm_timer) {
                 esp_timer_stop(s_confirm_timer);
@@ -903,11 +903,11 @@ void app_main(void)
                 esp_timer_delete(s_wifi_timer);
                 s_wifi_timer = NULL;
             }
-            s_cancel_rollback = false;
-            s_trigger_rollback = false;
+            atomic_store(&s_cancel_rollback, false);
+            atomic_store(&s_trigger_rollback, false);
         }
 
-        if (s_trigger_rollback) {
+        if (atomic_load(&s_trigger_rollback)) {
             uint8_t stg_type = 0;
             if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
                 ESP_LOGW(TAG, "Staged config timeout! Rolling back changes type=%d", stg_type);
@@ -916,10 +916,10 @@ void app_main(void)
                 vTaskDelay(pdMS_TO_TICKS(1000));
                 esp_restart();
             }
-            s_trigger_rollback = false;
+            atomic_store(&s_trigger_rollback, false);
         }
 
-        if (s_trigger_factory_reset) {
+        if (atomic_load(&s_trigger_factory_reset)) {
             ESP_LOGW(TAG, "Factory reset requested by button hold. Resetting credentials...");
             if (nvs_store_factory_reset_credentials()) {
                 ESP_LOGI(TAG, "Credentials reset to defaults successful");
@@ -927,7 +927,7 @@ void app_main(void)
                 ESP_LOGE(TAG, "Credentials reset to defaults failed");
             }
             session_invalidate_all();
-            s_trigger_factory_reset = false;
+            atomic_store(&s_trigger_factory_reset, false);
         }
 
         if (s_http_server_retry) {
@@ -937,11 +937,24 @@ void app_main(void)
             }
         }
 
-        web_server_queue_health_check();
-        if (!web_server_check_health(15000)) {
-            ESP_LOGE(TAG, "FATAL: HTTP server task hang detected (>15s without processing work queue). Rebooting!");
-            vTaskDelay(pdMS_TO_TICKS(100)); // Allow logs to flush
-            esp_restart();
+        static uint8_t queue_full_count = 0;
+        bool queued = web_server_queue_health_check();
+        if (!queued) {
+            queue_full_count++;
+            if (queue_full_count >= 3) {
+                ESP_LOGE(TAG, "FATAL: HTTP server queue full for 3 consecutive checks (15s). Rebooting!");
+                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                esp_restart();
+            } else {
+                ESP_LOGW(TAG, "Health check queue full — server busy, skipping restart (count=%d/3)", queue_full_count);
+            }
+        } else {
+            queue_full_count = 0;
+            if (!web_server_check_health(15000)) {
+                ESP_LOGE(TAG, "HTTP thread hung — triggering restart");
+                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                esp_restart();
+            }
         }
 
         loop_counter++;

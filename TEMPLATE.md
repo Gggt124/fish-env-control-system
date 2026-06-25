@@ -14,7 +14,7 @@ Edit `components/app_config/app_config.h`:
 
 ```c
 #define APP_TEMPLATE_NAME               "My Product"
-#define APP_TEMPLATE_FIRMWARE_VERSION   "v0.1.0"
+#define APP_TEMPLATE_FIRMWARE_VERSION   "v0.1.3"
 #define APP_TEMPLATE_AP_SSID            "MyProduct-Setup"
 #define APP_TEMPLATE_MDNS_HOSTNAME      "myproduct"
 #define APP_TEMPLATE_DEFAULT_USERNAME   "admin"

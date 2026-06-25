@@ -1276,9 +1276,16 @@ uint8_t nvs_store_commit_staging(void)
         esp_err_t err_pass = nvs_get_str(handle, NVS_KEY_STG_CRED_PASS, pass, &pass_len);
         
         if (err_user == ESP_OK && err_pass == ESP_OK) {
-            nvs_set_str(handle, "admin_user", user);
-            nvs_set_str(handle, "admin_pass", pass);
-            nvs_commit(handle);
+            bool cred_ok = true;
+            if (nvs_set_str(handle, "admin_user", user) != ESP_OK) cred_ok = false;
+            if (nvs_set_str(handle, "admin_pass", pass) != ESP_OK) cred_ok = false;
+            if (cred_ok && nvs_commit(handle) != ESP_OK) cred_ok = false;
+
+            if (!cred_ok) {
+                ESP_LOGE(TAG, "CRITICAL: Failed to commit staging credentials — preserving staging state for rollback");
+                nvs_close(handle);
+                return 0;
+            }
         }
         nvs_close(handle);
     } else {

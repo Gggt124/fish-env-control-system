@@ -92,6 +92,7 @@ static uint32_t s_json_send_failures = 0;
 static uint32_t s_static_send_failures = 0;
 static uint32_t s_static_cache_hits = 0;
 static uint32_t s_static_deadline_aborts = 0;
+static volatile uint32_t s_httpd_last_alive_ms = 0;
 
 typedef esp_err_t (*web_route_handler_t)(httpd_req_t *req);
 
@@ -2515,7 +2516,7 @@ static esp_err_t handle_api_auth_nonce(httpd_req_t *req)
 static void delayed_reboot_task(void *pvParameters)
 {
     (void)pvParameters;
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
     ESP_LOGI(TAG, "Executing scheduled reboot...");
     esp_restart();
     vTaskDelete(NULL);
@@ -3785,6 +3786,7 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
             // Yield CPU to IDLE task periodically to prevent Task Watchdog panic
             // during large firmware uploads (IDLE task needs to reset its WDT).
             vTaskDelay(1);
+            s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
         } else if (recv_len == 0) {
             break;
         }
@@ -3999,7 +4001,9 @@ void web_server_log_diagnostics(void)
     }
 }
 
-static volatile uint32_t s_httpd_last_alive_ms = 0;
+// ============================================================================
+// HEALTH CHECK
+// ============================================================================
 
 static void httpd_health_check_work(void *arg)
 {
@@ -4007,11 +4011,12 @@ static void httpd_health_check_work(void *arg)
     s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
 }
 
-void web_server_queue_health_check(void)
+bool web_server_queue_health_check(void)
 {
     if (s_server) {
-        httpd_queue_work(s_server, httpd_health_check_work, NULL);
+        return (httpd_queue_work(s_server, httpd_health_check_work, NULL) == ESP_OK);
     }
+    return true;
 }
 
 bool web_server_check_health(uint32_t timeout_ms)
@@ -4048,6 +4053,7 @@ bool web_server_start(void)
     config.recv_wait_timeout = APP_TEMPLATE_HTTP_RECV_TIMEOUT_SEC;
     config.send_wait_timeout = APP_TEMPLATE_HTTP_SEND_TIMEOUT_SEC;
     config.lru_purge_enable = true;
+    config.stack_size = 8192;   /* A7 audit: handlers allocate large on-stack structs; 4096 default insufficient */
     config.keep_alive_enable = true;
     config.keep_alive_idle = APP_TEMPLATE_HTTP_KEEP_ALIVE_IDLE_SEC;
     config.keep_alive_interval = APP_TEMPLATE_HTTP_KEEP_ALIVE_INTERVAL_SEC;

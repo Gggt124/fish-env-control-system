@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.0"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.3"
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
 #define APP_TEMPLATE_AP_SSID               "FishPump-Setup"
@@ -51,7 +51,7 @@ extern "C" {
 #define APP_TEMPLATE_HTTP_KEEP_ALIVE_INTERVAL_SEC 3
 #define APP_TEMPLATE_HTTP_KEEP_ALIVE_COUNT 3
 #define APP_TEMPLATE_HTTP_SLOW_REQUEST_MS  1000
-#define APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS   10000
+#define APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS   15000
 #define APP_TEMPLATE_STATUS_LOG_INTERVALS  6
 
 #define APP_TEMPLATE_PUMP_FLOAT_GPIO        32
