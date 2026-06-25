@@ -2470,13 +2470,24 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);
 
-    char cookie[384];
+    /* Cookie buffers — one for HttpOnly session token, one for JS-readable marker */
+    char cookie_session[400];
+    char cookie_marker[128];
+
     if (remember) {
-        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax; Max-Age=31536000", token);
+        snprintf(cookie_session, sizeof(cookie_session),
+            "session=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000", token);
+        snprintf(cookie_marker, sizeof(cookie_marker),
+            "logged_in=1; Path=/; SameSite=Lax; Max-Age=31536000");
     } else {
-        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
+        snprintf(cookie_session, sizeof(cookie_session),
+            "session=%s; Path=/; HttpOnly; SameSite=Lax", token);
+        snprintf(cookie_marker, sizeof(cookie_marker),
+            "logged_in=1; Path=/; SameSite=Lax");
     }
-    httpd_resp_set_hdr(req, "Set-Cookie", cookie);
+    httpd_resp_set_hdr(req, "Set-Cookie", cookie_session);
+    /* In ESP-IDF v6, httpd_resp_set_hdr appends headers instead of overwriting, so this works */
+    httpd_resp_set_hdr(req, "Set-Cookie", cookie_marker);
 
     ESP_LOGI(TAG, "Login success");
     esp_err_t result = send_json(req, json_str, "200 OK");
@@ -2498,7 +2509,10 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
 
     /* Clear cookie */
     httpd_resp_set_hdr(req, "Set-Cookie",
-        "session=; Path=/; Max-Age=0; SameSite=Lax");
+        "session=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax");
+    /* Clear marker cookie too — same multi-header concern applies */
+    httpd_resp_set_hdr(req, "Set-Cookie",
+        "logged_in=; Path=/; Max-Age=0; SameSite=Lax");
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }

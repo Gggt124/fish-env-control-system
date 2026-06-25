@@ -21,8 +21,14 @@ function cleanupCurrentView() {
 /* ======== Session / Auth ======== */
 
 function getSessionToken() {
-    var c = document.cookie.match(/session=([^;]+)/);
-    return c ? c[1] : null;
+    /* 
+     * Security note: logged_in=1 is a non-secret routing hint only.
+     * The actual auth validation is always server-side via the HttpOnly session cookie.
+     * If this marker is stale (session expired), the next authenticated API call will
+     * return 401 -> handleUnauthorized() -> redirect to /login.
+     */
+    var c = document.cookie.match(/logged_in=1/);
+    return c ? "1" : null;
 }
 
 function isAuthenticated() {
