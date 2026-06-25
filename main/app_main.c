@@ -284,7 +284,11 @@ static void log_board_and_hardware_diagnostics(void)
     uint32_t total_load_x10 = 0;
 
     for (int core = 0; core < portNUM_PROCESSORS; core++) {
+#if configGENERATE_RUN_TIME_STATS
         idle_runtime[core] = (uint32_t)ulTaskGetIdleRunTimeCounterForCore(core);
+#else
+        idle_runtime[core] = 0;
+#endif
     }
 
     if (cpu_sample_valid) {

@@ -81,7 +81,7 @@ if (-not (Test-Path $exportScript)) {
     throw "ESP-IDF export script not found: $exportScript"
 }
 
-& $exportScript
+. $exportScript
 
 idf.py --version
 if ($FullClean) {
