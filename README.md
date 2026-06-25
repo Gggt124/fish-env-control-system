@@ -18,6 +18,8 @@ idf.py build
 idf.py -p COMx flash monitor
 ```
 
+> **Warning:** The partition table has been updated (the `nvs` partition was expanded). If you are flashing an existing device, you **must** run `idf.py -p COMx erase-flash` before flashing to prevent NVS and OTA state corruption.
+
 ## Quick Start
 
 1. Connect your ESP32 DevKit V1 to your computer.

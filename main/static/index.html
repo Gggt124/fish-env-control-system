@@ -1393,6 +1393,24 @@
 
                 <div class="alert-banner hidden" id="hardware-reboot-banner"></div>
 
+                <div class="alert-banner mt-md" style="align-items: flex-start;">
+                    <div>
+                        <strong>⚠️ GPIO 0 — Strapping Pin:</strong>
+                        ปุ่ม Factory Reset ใช้ GPIO 0 ซึ่งเป็น strapping pin ของ ESP32
+                        <strong>ห้ามกดค้างขณะเปิดเครื่อง</strong> เพราะจะทำให้บอร์ดเข้า Download Mode แทนที่จะ boot ปกติ
+                        หากต้องการความปลอดภัยมากขึ้น ให้ย้ายสาย Factory Reset ไปใช้ <span class="mono">GPIO 14</span> แทน
+                    </div>
+                </div>
+
+                <div class="alert-banner" style="align-items: flex-start; margin-top: var(--space-3); margin-bottom: var(--space-4);">
+                    <div>
+                        <strong>💡 Float Switch — External Pull-up แนะนำ:</strong>
+                        ควรติด Resistor ขนาด <span class="mono">4.7kΩ</span> ระหว่างขา Signal ของลูกลอยกับ 3.3V
+                        เพื่อป้องกันสัญญาณรบกวนจากคอยล์แม่เหล็กของปั๊ม
+                        Pull-up ภายในชิป ESP32 (~45kΩ) อ่อนเกินไปสำหรับสภาพแวดล้อมใกล้มอเตอร์ไฟฟ้า
+                    </div>
+                </div>
+
                 <div class="hardware-wiring-grid">
                     <article class="hardware-wire-item">
                         <span class="hardware-wire-icon"><svg viewBox="0 0 24 24" width="20" height="20"
@@ -1455,7 +1473,7 @@
             <section class="section-card hardware-install" id="tft-wiring">
                 <div class="section-heading-row">
                     <div>
-                        <h3>จอ TFT <span class="mono text-xs text-muted">ILI9341 &middot; SPI</span></h3>
+                        <h3>จอ TFT <span class="mono text-xs text-muted">ST7789V &middot; SPI</span></h3>
                         <p>พินถูกล็อคโดยเฟิร์มแวร์</p>
                     </div>
                 </div>
@@ -1556,7 +1574,7 @@
 
             <div class="hardware-card" style="max-width: 600px; margin: 0 auto; background: var(--bg-100); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-6);">
                 <div class="hardware-header" style="margin-bottom: var(--space-4);">
-                    <h3 class="hardware-title" style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-900);">
+                    <h3 class="hardware-title" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-900);">
                         <svg class="label-icon" style="width:20px; height:20px; vertical-align:-4px; margin-right: var(--space-2); color: var(--primary-500);">
                             <use href="#icon-sync"></use>
                         </svg> อัปเดตผ่าน Web OTA (<span lang="en">Over-The-Air Update</span>)
