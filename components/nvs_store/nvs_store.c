@@ -36,6 +36,10 @@ static const char *TAG = "nvs_store";
 #define NVS_PUMP_KEY_T1_START    "t1_start"
 #define NVS_PUMP_KEY_T2_START    "t2_start"
 
+/* A6 audit: atomic blob key — replaces 10 individual pump keys */
+#define NVS_PUMP_KEY_SETTINGS_BLOB  "pump_blob"
+#define NVS_PUMP_BLOB_VERSION       1   /* increment if struct layout changes */
+
 #define NVS_HW_NAMESPACE         "hw_cfg"
 #define NVS_HW_KEY_ACT_FLOAT     "act_float"
 #define NVS_HW_KEY_ACT_R1        "act_r1"
@@ -684,6 +688,7 @@ void nvs_store_pump_settings_defaults(nvs_store_pump_settings_t *out)
     if (!out) {
         return;
     }
+    memset(out, 0, sizeof(*out));
 
     out->timer1_on_sec = APP_TEMPLATE_PUMP_TIMER1_ON_SEC;
     out->timer1_off_sec = APP_TEMPLATE_PUMP_TIMER1_OFF_SEC;
@@ -721,62 +726,92 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
 
     nvs_store_pump_settings_t loaded = {0};
     nvs_store_pump_settings_defaults(&loaded);
-    bool relay_active_low = false;
-    bool relay1_active_low = loaded.relay1_active_low;
-    bool relay2_active_low = loaded.relay2_active_low;
-    bool auto_start = false;
-    uint8_t timer1_start = (uint8_t)loaded.timer1_start_phase;
-    uint8_t timer2_start = (uint8_t)loaded.timer2_start_phase;
 
-    esp_err_t results[] = {
-        load_u32_key(handle, NVS_PUMP_KEY_T1_ON, &loaded.timer1_on_sec),
-        load_u32_key(handle, NVS_PUMP_KEY_T1_OFF, &loaded.timer1_off_sec),
-        load_u32_key(handle, NVS_PUMP_KEY_T2_ON, &loaded.timer2_on_sec),
-        load_u32_key(handle, NVS_PUMP_KEY_T2_OFF, &loaded.timer2_off_sec),
-        load_bool_key(handle, NVS_PUMP_KEY_RELAY_LOW, &relay_active_low),
-        load_bool_key(handle, NVS_PUMP_KEY_AUTO_START, &auto_start),
-    };
+    /* A6 audit: try blob first (new format), fallback to legacy keys for migration */
+    /* Use a fixed buffer size for forward compatibility if struct grows */
+    uint8_t blob[64];
+    size_t blob_len = sizeof(blob);
+    esp_err_t blob_err = nvs_get_blob(handle, NVS_PUMP_KEY_SETTINGS_BLOB, blob, &blob_len);
 
-    for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
-        if (results[i] == ESP_ERR_NVS_NOT_FOUND) {
+    if (blob_err == ESP_OK) {
+        if (blob_len > 0 && blob[0] == NVS_PUMP_BLOB_VERSION) {
+            size_t copy_len = blob_len - 1;
+            if (copy_len > sizeof(nvs_store_pump_settings_t)) {
+                copy_len = sizeof(nvs_store_pump_settings_t);
+            }
+            memcpy(&loaded, blob + 1, copy_len);
+            ESP_LOGI(TAG, "Pump settings loaded from blob (v%d)", NVS_PUMP_BLOB_VERSION);
+        } else {
+            ESP_LOGW(TAG, "Incompatible blob version or format");
+        }
+        nvs_close(handle);
+    } else if (blob_err == ESP_ERR_NVS_NOT_FOUND) {
+        /* Fallback: read legacy individual keys (for devices upgrading from old firmware) */
+        ESP_LOGW(TAG, "Pump blob not found, trying legacy keys");
+        
+        bool relay_active_low = false;
+        bool relay1_active_low = loaded.relay1_active_low;
+        bool relay2_active_low = loaded.relay2_active_low;
+        bool auto_start = false;
+        uint8_t timer1_start = (uint8_t)loaded.timer1_start_phase;
+        uint8_t timer2_start = (uint8_t)loaded.timer2_start_phase;
+
+        esp_err_t results[] = {
+            load_u32_key(handle, NVS_PUMP_KEY_T1_ON, &loaded.timer1_on_sec),
+            load_u32_key(handle, NVS_PUMP_KEY_T1_OFF, &loaded.timer1_off_sec),
+            load_u32_key(handle, NVS_PUMP_KEY_T2_ON, &loaded.timer2_on_sec),
+            load_u32_key(handle, NVS_PUMP_KEY_T2_OFF, &loaded.timer2_off_sec),
+            load_bool_key(handle, NVS_PUMP_KEY_RELAY_LOW, &relay_active_low),
+            load_bool_key(handle, NVS_PUMP_KEY_AUTO_START, &auto_start),
+        };
+
+        for (size_t i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
+            if (results[i] == ESP_ERR_NVS_NOT_FOUND) {
+                nvs_close(handle);
+                return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+            }
+            if (results[i] != ESP_OK) {
+                ESP_LOGW(TAG, "Invalid pump settings in NVS (%s)", esp_err_to_name(results[i]));
+                nvs_close(handle);
+                return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+            }
+        }
+
+        esp_err_t r1_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY1_LOW, &relay1_active_low);
+        if (r1_ret == ESP_ERR_NVS_NOT_FOUND) {
+            relay1_active_low = relay_active_low;
+        } else if (r1_ret != ESP_OK) {
             nvs_close(handle);
             return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
         }
-        if (results[i] != ESP_OK) {
-            ESP_LOGW(TAG, "Invalid pump settings in NVS (%s)", esp_err_to_name(results[i]));
+
+        esp_err_t r2_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY2_LOW, &relay2_active_low);
+        if (r2_ret != ESP_OK && r2_ret != ESP_ERR_NVS_NOT_FOUND) {
             nvs_close(handle);
             return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
         }
-    }
 
-    esp_err_t r1_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY1_LOW, &relay1_active_low);
-    if (r1_ret == ESP_ERR_NVS_NOT_FOUND) {
-        relay1_active_low = relay_active_low;
-    } else if (r1_ret != ESP_OK) {
+        esp_err_t t1_ret = load_u8_key(handle, NVS_PUMP_KEY_T1_START, &timer1_start);
+        esp_err_t t2_ret = load_u8_key(handle, NVS_PUMP_KEY_T2_START, &timer2_start);
         nvs_close(handle);
-        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
-    }
+        if ((t1_ret != ESP_OK && t1_ret != ESP_ERR_NVS_NOT_FOUND) ||
+            (t2_ret != ESP_OK && t2_ret != ESP_ERR_NVS_NOT_FOUND)) {
+            return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+        }
 
-    esp_err_t r2_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY2_LOW, &relay2_active_low);
-    if (r2_ret != ESP_OK && r2_ret != ESP_ERR_NVS_NOT_FOUND) {
-        nvs_close(handle);
-        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
-    }
+        loaded.relay1_active_low = relay1_active_low;
+        loaded.relay2_active_low = relay2_active_low;
+        loaded.relay_active_low = relay1_active_low;
+        loaded.timer1_start_phase = (hardware_timer_start_phase_t)timer1_start;
+        loaded.timer2_start_phase = (hardware_timer_start_phase_t)timer2_start;
+        loaded.auto_start = auto_start;
 
-    esp_err_t t1_ret = load_u8_key(handle, NVS_PUMP_KEY_T1_START, &timer1_start);
-    esp_err_t t2_ret = load_u8_key(handle, NVS_PUMP_KEY_T2_START, &timer2_start);
-    nvs_close(handle);
-    if ((t1_ret != ESP_OK && t1_ret != ESP_ERR_NVS_NOT_FOUND) ||
-        (t2_ret != ESP_OK && t2_ret != ESP_ERR_NVS_NOT_FOUND)) {
-        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+        /* After successful legacy read, migrate to blob immediately */
+        if (pump_settings_valid(&loaded)) {
+            nvs_store_save_pump_settings(&loaded);  /* migrate on next boot */
+            ESP_LOGI(TAG, "Migrated pump settings from legacy keys to blob");
+        }
     }
-
-    loaded.relay1_active_low = relay1_active_low;
-    loaded.relay2_active_low = relay2_active_low;
-    loaded.relay_active_low = relay1_active_low;
-    loaded.timer1_start_phase = (hardware_timer_start_phase_t)timer1_start;
-    loaded.timer2_start_phase = (hardware_timer_start_phase_t)timer2_start;
-    loaded.auto_start = auto_start;
     if (!pump_settings_valid(&loaded)) {
         return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
     }
@@ -794,19 +829,21 @@ bool nvs_store_save_pump_settings(const nvs_store_pump_settings_t *settings)
     nvs_handle_t handle;
     if (nvs_open(NVS_PUMP_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
 
-    bool ok = true;
-    if (nvs_set_u32(handle, NVS_PUMP_KEY_T1_ON, settings->timer1_on_sec) != ESP_OK) ok = false;
-    if (nvs_set_u32(handle, NVS_PUMP_KEY_T1_OFF, settings->timer1_off_sec) != ESP_OK) ok = false;
-    if (nvs_set_u32(handle, NVS_PUMP_KEY_T2_ON, settings->timer2_on_sec) != ESP_OK) ok = false;
-    if (nvs_set_u32(handle, NVS_PUMP_KEY_T2_OFF, settings->timer2_off_sec) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY_LOW, settings->relay1_active_low ? 1 : 0) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY1_LOW, settings->relay1_active_low ? 1 : 0) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_RELAY2_LOW, settings->relay2_active_low ? 1 : 0) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_T1_START, (uint8_t)settings->timer1_start_phase) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_T2_START, (uint8_t)settings->timer2_start_phase) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_PUMP_KEY_AUTO_START, settings->auto_start ? 1 : 0) != ESP_OK) ok = false;
+    /* A6 audit: write all 10 fields in one atomic blob to prevent partial-write
+     * corruption on power loss. Version byte at index 0 for future migration. */
+    uint8_t blob[sizeof(nvs_store_pump_settings_t) + 1];
+    memset(blob, 0, sizeof(blob));
+    blob[0] = NVS_PUMP_BLOB_VERSION;
+    memcpy(blob + 1, settings, sizeof(nvs_store_pump_settings_t));
 
-    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
+    bool ok = (nvs_set_blob(handle, NVS_PUMP_KEY_SETTINGS_BLOB, blob, sizeof(blob)) == ESP_OK);
+    if (ok) {
+        ok = (nvs_commit(handle) == ESP_OK);
+    }
+    if (!ok) {
+        ESP_LOGE(TAG, "Failed to save pump settings blob to NVS");
+    }
+
     nvs_close(handle);
     return ok;
 }
@@ -817,6 +854,7 @@ bool nvs_store_clear_pump_settings(void)
     if (nvs_open(NVS_PUMP_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) return false;
 
     bool ok = true;
+    if (!erase_optional_key(handle, NVS_PUMP_KEY_SETTINGS_BLOB)) ok = false;
     if (!erase_optional_key(handle, NVS_PUMP_KEY_T1_ON)) ok = false;
     if (!erase_optional_key(handle, NVS_PUMP_KEY_T1_OFF)) ok = false;
     if (!erase_optional_key(handle, NVS_PUMP_KEY_T2_ON)) ok = false;

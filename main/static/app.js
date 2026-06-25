@@ -925,6 +925,7 @@ function applyPumpStatus(status, authoritative) {
     setPumpAlert('pump-status-error', status.fault ? 'พบ relay fault ระบบบังคับปิด Relay 1 และ Relay 2 แล้ว' :
         (status.config_valid === false ? 'ค่าตั้งเวลายังไม่พร้อมใช้งาน' : ''));
     updatePumpButtons();
+    updateSystemControlsInfo(status);
 }
 
 function handlePumpStatusFailure() {
@@ -1353,6 +1354,29 @@ function renderSettingsStatus(value, autoStart) {
     }
     var autoIcon = autoStart ? renderSvgIcon('icon-auto', 'status-success') : renderSvgIcon('icon-stop', 'status-danger');
     return prefix + autoIcon + ' Auto-start: ' + (autoStart ? 'ON' : 'OFF');
+}
+
+function updateSystemControlsInfo(status) {
+    if (!status) return;
+    
+    var ledStateDesc = status.led_state || '--';
+    if (ledStateDesc === 'on') ledStateDesc = '<span class="status-success">เปิด (ON)</span>';
+    else if (ledStateDesc === 'off') ledStateDesc = '<span class="text-muted">ปิด (OFF)</span>';
+    else if (ledStateDesc === 'staging_pending') ledStateDesc = '<span class="status-warning">รอการยืนยัน (Double Blink)</span>';
+    else if (ledStateDesc === 'btn_hold_short') ledStateDesc = '<span class="status-success">กดค้าง (Solid)</span>';
+    else if (ledStateDesc === 'recovery_ap') ledStateDesc = '<span class="status-warning">Recovery AP (Slow Blink)</span>';
+    else if (ledStateDesc === 'factory_reset') ledStateDesc = '<span class="status-danger">Factory Reset (Fast Blink)</span>';
+
+    var bootBtn = status.boot_btn_gpio !== undefined ? 'GPIO ' + status.boot_btn_gpio : '--';
+    var extBtn = status.ext_btn_gpio !== undefined ? 'GPIO ' + status.ext_btn_gpio : '--';
+    var led = status.status_led_gpio !== undefined ? 'GPIO ' + status.status_led_gpio : '--';
+    var extLed = status.ext_led_gpio !== undefined ? 'GPIO ' + status.ext_led_gpio : '--';
+
+    setHtml('wire-boot-btn', bootBtn);
+    setHtml('wire-ext-btn', extBtn);
+    setHtml('wire-status-led', led);
+    setHtml('wire-ext-led', extLed);
+    setHtml('wire-led-state', ledStateDesc);
 }
 
 /* ======== Cooling Dashboard ======== */
@@ -3668,4 +3692,17 @@ function initOta() {
             xhr.send(file);
         };
     }
+}
+
+// A9: Wake screen — POST to pump status endpoint to trigger
+//     tft_display_reset_idle_timer() on firmware side.
+//     Does NOT reset via GET /api/status to avoid auto-polling keeping screen on forever.
+function wakeScreen() {
+    apiPost('/api/display/wake', {}, function(data) {
+        var btn = document.getElementById('btn-wake-screen');
+        if (btn) {
+            btn.textContent = '✅ หน้าจอเปิดแล้ว';
+            setTimeout(function() { btn.textContent = '🔆 เปิดหน้าจอทันที'; }, 2000);
+        }
+    });
 }

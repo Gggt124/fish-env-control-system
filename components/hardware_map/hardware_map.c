@@ -4,10 +4,20 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-/* TFT SPI display pins (APP_TEMPLATE_TFT_PIN_*) are reserved:
- * GPIO 5 (CS), 18 (CLK), 21 (DC), 22 (RST), 23 (MOSI).
- * These must NOT appear in any selectable hardware map options.
- * See components/app_config/app_config.h for TFT pin assignments. */
+/* === RESERVED GPIO PINS — must NOT appear in any option array ===
+ *
+ * TFT SPI display (APP_TEMPLATE_TFT_PIN_*):
+ *   GPIO  5 (CS)   18 (CLK)   21 (DC)   22 (RST)   23 (MOSI)
+ *
+ * Factory Reset / Status UI (APP_CONFIG_*_GPIO in app_config.h):
+ *   GPIO  0  — Boot/Factory-Reset button  (strapping pin; BOOT_BTN)
+ *   GPIO  2  — Status LED                 (strapping pin; LED)
+ *   GPIO 13  — External status LED        (EXT_LED)
+ *   GPIO 14  — External Factory-Reset btn (EXT_BTN)
+ *
+ * None of the above may be offered to the user as selectable GPIO.
+ * If APP_CONFIG_* values change in app_config.h, update this list too.
+ * =================================================================== */
 
 static const hardware_gpio_option_t s_float_options[] = {
     {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_32, true, true, true, true, "GPIO32"},

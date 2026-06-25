@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.3"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.4"
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
 #define APP_TEMPLATE_AP_SSID               "FishPump-Setup"
@@ -54,6 +54,10 @@ extern "C" {
 #define APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS   15000
 #define APP_TEMPLATE_STATUS_LOG_INTERVALS  6
 
+/* FLOAT SWITCH PULL-UP NOTE: ESP32 internal pull-up (~45kΩ) may be insufficient
+ * to reject EMI from the pump's electromagnetic field.
+ * Recommended: add a 4.7kΩ external pull-up resistor between FLOAT_GPIO and 3.3V.
+ * See hardware installation guide in the web dashboard for wiring diagram. */
 #define APP_TEMPLATE_PUMP_FLOAT_GPIO        32
 #define APP_TEMPLATE_PUMP_FLOAT_ACTIVE_LOW  true
 #define APP_TEMPLATE_PUMP_RELAY_GPIO        26
@@ -100,7 +104,13 @@ extern "C" {
 #define APP_CONFIG_ROLLBACK_CONFIRM_TIMEOUT_MS    180000
 
 // Hardware recovery buttons and LEDs GPIO mapping
-#define APP_CONFIG_BOOT_BTN_GPIO                  0   // Strapping pin, MUST NOT be held LOW during power-on unless entering Download Mode. Bootloader veto in software will ignore holds that start before app boot.
+/* STRAPPING PIN WARNING: GPIO 0 is ESP32's boot-mode strapping pin.
+ * Holding it LOW during power-on forces Download Mode.
+ * For production: move factory-reset button to GPIO 14 (APP_CONFIG_EXT_BTN_GPIO)
+ * which is already defined above and free of boot-mode side effects.
+ * Current GPIO 0 assignment is acceptable for development if no external
+ * component pulls it LOW at power-on. Do NOT add external pull-down to GPIO 0. */
+#define APP_CONFIG_BOOT_BTN_GPIO                  0
 #define APP_CONFIG_EXT_BTN_GPIO                   14
 #define APP_CONFIG_LED_GPIO                       2   // Strapping pin, avoid external pull-ups that might affect boot mode.
 #define APP_CONFIG_EXT_LED_GPIO                   13

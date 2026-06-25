@@ -101,6 +101,28 @@ void tft_display_draw_dashboard_skeleton(void);
  */
 void tft_display_start_task(void);
 
+/**
+ * @brief Control TFT backlight on/off
+ * @param on true = backlight on, false = backlight off (screen saver)
+ */
+void tft_display_set_backlight(bool on);
+
+/**
+ * @brief Reset the backlight idle timer.
+ * Call from BOTH hardware events (pump state change, float switch change, phase
+ * transition) AND web API activity. Backlight auto-off after
+ * APP_TEMPLATE_SCREEN_TIMEOUT_MS of inactivity from any source.
+ *
+ * Rationale: TFT is a 24/7 status display (shows IP/mDNS/pump state without
+ * browser) — idle must be measured from real device activity, not only web usage.
+ */
+void tft_display_reset_idle_timer(void);
+
+/** Screen off timeout: 30 min. Long because TFT is primary status display.
+ *  Burn-in risk is low: dynamic content (countdown, temp) changes every second.
+ *  Only static labels risk burn-in if pump is completely idle for hours. */
+#define APP_TEMPLATE_SCREEN_TIMEOUT_MS   (30 * 60 * 1000)
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,8 +5,10 @@
 #include "nvs_store.h"
 #include "pump_control.h"
 #include "session.h"
+#include "tft_display.h"
 #include "wifi_manager.h"
 #include "dns_server.h"
+#include "app_main.h"
 #include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
@@ -55,18 +57,12 @@ extern const uint8_t _binary_ibm_plex_sans_thai_400_latin_woff2_start[] asm("_bi
 extern const uint8_t _binary_ibm_plex_sans_thai_400_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_400_latin_woff2_end");
 extern const uint8_t _binary_ibm_plex_sans_thai_400_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_400_thai_woff2_start");
 extern const uint8_t _binary_ibm_plex_sans_thai_400_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_400_thai_woff2_end");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_600_latin_woff2_start");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_600_latin_woff2_end");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_600_thai_woff2_start");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_600_thai_woff2_end");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_700_latin_woff2_start");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_700_latin_woff2_end");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_700_thai_woff2_start");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_700_thai_woff2_end");
 extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_start[] asm("_binary_jetbrains_mono_400_latin_woff2_start");
 extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_end[]   asm("_binary_jetbrains_mono_400_latin_woff2_end");
-extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_start[] asm("_binary_jetbrains_mono_700_latin_woff2_start");
-extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_end[]   asm("_binary_jetbrains_mono_700_latin_woff2_end");
 
 
 /*
@@ -1170,6 +1166,14 @@ static bool api_pump_add_status_fields_gen(json_gen_t *gen)
     json_gen_add_bool(gen, "hardware_reboot_required", hardware_reboot_status_ok && hardware_reboot_required);
     json_gen_add_string(gen, "hardware_map_status", api_hardware_map_status_name(map_status));
     json_gen_add_bool(gen, "auto_start", settings.auto_start);
+    
+    /* V: factory reset button and LED GPIO info */
+    json_gen_add_number(gen, "boot_btn_gpio",  (double)APP_CONFIG_BOOT_BTN_GPIO);
+    json_gen_add_number(gen, "ext_btn_gpio",   (double)APP_CONFIG_EXT_BTN_GPIO);
+    json_gen_add_number(gen, "status_led_gpio",(double)APP_CONFIG_LED_GPIO);
+    json_gen_add_number(gen, "ext_led_gpio",   (double)APP_CONFIG_EXT_LED_GPIO);
+    json_gen_add_string(gen, "led_state",      app_led_state_name(app_get_led_state()));
+
     json_gen_add_string(gen, "settings_status", api_pump_settings_status_name(settings_status));
     return true;
 }
@@ -1230,6 +1234,14 @@ static bool api_pump_add_status_fields(cJSON *root)
                           hardware_reboot_status_ok && hardware_reboot_required);
     cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
+    
+    /* V: factory reset button and LED GPIO info */
+    cJSON_AddNumberToObject(root, "boot_btn_gpio", APP_CONFIG_BOOT_BTN_GPIO);
+    cJSON_AddNumberToObject(root, "ext_btn_gpio", APP_CONFIG_EXT_BTN_GPIO);
+    cJSON_AddNumberToObject(root, "status_led_gpio", APP_CONFIG_LED_GPIO);
+    cJSON_AddNumberToObject(root, "ext_led_gpio", APP_CONFIG_EXT_LED_GPIO);
+    cJSON_AddStringToObject(root, "led_state", app_led_state_name(app_get_led_state()));
+
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
     return true;
 }
@@ -2157,12 +2169,9 @@ static esp_err_t handle_app_js(httpd_req_t *req)
 
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_400_latin)
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_400_thai)
-DECLARE_FONT_HANDLER(ibm_plex_sans_thai_600_latin)
-DECLARE_FONT_HANDLER(ibm_plex_sans_thai_600_thai)
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_700_latin)
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_700_thai)
 DECLARE_FONT_HANDLER(jetbrains_mono_400_latin)
-DECLARE_FONT_HANDLER(jetbrains_mono_700_latin)
 
 /* GET /favicon.ico - browsers request this automatically; avoid repeated 404 sockets. */
 static esp_err_t handle_favicon(httpd_req_t *req)
@@ -3818,6 +3827,12 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
 
 /* --------------- Server Start --------------- */
 
+/* A9: display wake endpoint — resets backlight idle timer */
+static esp_err_t handle_display_wake(httpd_req_t *req) {
+    tft_display_reset_idle_timer();
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
 static web_route_diag_t s_routes[] = {
     { .uri = "/",              .method = HTTP_GET,  .handler = handle_root },
     { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login },
@@ -3831,12 +3846,9 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js },
     { .uri = "/ibm_plex_sans_thai_400_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_latin_woff2 },
     { .uri = "/ibm_plex_sans_thai_400_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_thai_woff2 },
-    { .uri = "/ibm_plex_sans_thai_600_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_600_latin_woff2 },
-    { .uri = "/ibm_plex_sans_thai_600_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_600_thai_woff2 },
     { .uri = "/ibm_plex_sans_thai_700_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_700_latin_woff2 },
     { .uri = "/ibm_plex_sans_thai_700_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_700_thai_woff2 },
     { .uri = "/jetbrains_mono_400_latin.woff2", .method = HTTP_GET, .handler = handle_jetbrains_mono_400_latin_woff2 },
-    { .uri = "/jetbrains_mono_700_latin.woff2", .method = HTTP_GET, .handler = handle_jetbrains_mono_700_latin_woff2 },
     { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon },
     { .uri = "/connecttest.txt", .method = HTTP_GET, .handler = handle_captive_probe },
     { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe },
@@ -3869,6 +3881,7 @@ static web_route_diag_t s_routes[] = {
 
     { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start },
     { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop },
+    { .uri = "/api/display/wake",.method = HTTP_POST, .handler = handle_display_wake },
 };
 
 static esp_err_t handle_instrumented_route(httpd_req_t *req)
@@ -3889,6 +3902,10 @@ static esp_err_t handle_instrumented_route(httpd_req_t *req)
         s_web_diag.peak_active_handlers = s_web_diag.active_handlers;
     }
     taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    if (route->method == HTTP_POST) {
+        tft_display_reset_idle_timer();
+    }
 
     esp_err_t result = route->handler(req);
     uint32_t duration_ms = (uint32_t)((esp_timer_get_time() / 1000) - start_ms);

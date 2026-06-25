@@ -8,6 +8,7 @@
 #include "web_server.h"
 #include "dns_server.h"
 #include "tft_display.h"
+#include "app_main.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_err.h"
@@ -29,6 +30,24 @@ atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
 #define s_cancel_rollback g_cancel_rollback_timer
 
 static atomic_bool s_trigger_factory_reset = ATOMIC_VAR_INIT(false);
+
+static volatile app_led_state_t s_led_state = LED_STATE_OFF;
+
+app_led_state_t app_get_led_state(void) {
+    return s_led_state;
+}
+
+const char *app_led_state_name(app_led_state_t state) {
+    switch (state) {
+        case LED_STATE_OFF:             return "off";
+        case LED_STATE_ON:              return "on";
+        case LED_STATE_STAGING_PENDING: return "staging_pending";
+        case LED_STATE_BTN_HOLD_SHORT:  return "btn_hold_short";
+        case LED_STATE_RECOVERY_AP:     return "recovery_ap";
+        case LED_STATE_FACTORY_RESET:   return "factory_reset";
+        default:                        return "unknown";
+    }
+}
 
 static esp_timer_handle_t s_confirm_timer = NULL;
 static esp_timer_handle_t s_wifi_timer = NULL;
@@ -563,6 +582,7 @@ static void hardware_ui_task(void *pvParameters)
             release_ticks = 0;
 
             if (press_duration_ms < 2000) {
+                s_led_state = LED_STATE_BTN_HOLD_SHORT;
                 set_leds(1);
             } else if (press_duration_ms < 5000) {
                 if (!recovery_ap_triggered) {
@@ -570,6 +590,7 @@ static void hardware_ui_task(void *pvParameters)
                     recovery_ap_triggered = true;
                     ESP_LOGI(TAG, "Recovery AP triggered by button hold");
                 }
+                s_led_state = LED_STATE_RECOVERY_AP;
                 set_leds(((press_duration_ms / 500) % 2) == 0 ? 1 : 0);
             } else {
                 if (!factory_reset_triggered) {
@@ -577,6 +598,7 @@ static void hardware_ui_task(void *pvParameters)
                     factory_reset_triggered = true;
                     ESP_LOGI(TAG, "Factory reset triggered by button hold");
                 }
+                s_led_state = LED_STATE_FACTORY_RESET;
                 set_leds(((press_duration_ms / 100) % 2) == 0 ? 1 : 0);
             }
         } else {
@@ -588,6 +610,7 @@ static void hardware_ui_task(void *pvParameters)
             uint8_t stg_type = 0;
             nvs_store_get_staging_type(&stg_type);
             if (stg_type > 0) {
+                s_led_state = LED_STATE_STAGING_PENDING;
                 uint32_t phase = release_ticks % 20;
                 if (phase < 2) {
                     set_leds(1);
@@ -600,8 +623,10 @@ static void hardware_ui_task(void *pvParameters)
                 }
             } else {
                 if (wifi_manager_is_ap_active()) {
+                    s_led_state = LED_STATE_ON;
                     set_leds(1);
                 } else {
+                    s_led_state = LED_STATE_OFF;
                     set_leds(0);
                 }
             }
@@ -968,12 +993,13 @@ void app_main(void)
                 (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
                 (unsigned long)uxTaskGetStackHighWaterMark(NULL));
 
-            char *task_list_buf = malloc(1024);
-            if (task_list_buf) {
-                vTaskList(task_list_buf);
-                ESP_LOGI(TAG, "\n--- Task List ---\nName          State  Priority  Stack   Num\n%s-----------------", task_list_buf);
-                free(task_list_buf);
-            }
+            /* A9 audit: vTaskList uses 32-bit counters that overflow in ~71 min.
+             * Use heap/stack HWM directly instead of vTaskList for reliable diagnostics. */
+            ESP_LOGI(TAG, "[TASKS] MainStack_HWM=%lu  FreeHeap=%lu  MinHeap=%lu  LargestBlock=%lu",
+                (unsigned long)uxTaskGetStackHighWaterMark(NULL),
+                (unsigned long)esp_get_free_heap_size(),
+                (unsigned long)esp_get_minimum_free_heap_size(),
+                (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
 
             log_board_and_hardware_diagnostics();
             wifi_manager_log_diagnostics();

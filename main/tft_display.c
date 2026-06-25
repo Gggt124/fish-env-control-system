@@ -25,6 +25,7 @@ static const char *TAG = "TFT_DISPLAY";
 static esp_lcd_panel_handle_t s_panel_handle = NULL;
 static SemaphoreHandle_t s_trans_done_sem = NULL;
 static SemaphoreHandle_t s_tft_mutex = NULL;
+static volatile uint32_t s_last_activity_sec = 0;   /* set at init */
 
 // Helper to swap bytes for 16-bit RGB565 to match big-endian SPI transmission
 #define SWAP_BYTES(val) ((((val) & 0xff) << 8) | (((val) & 0xff00) >> 8))
@@ -72,6 +73,7 @@ esp_err_t tft_display_init(void) {
     }
     gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, 1);
     ESP_LOGI(TAG, "Backlight turned ON");
+    s_last_activity_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);  /* start idle timer from boot */
 
     // 3. Initialize SPI Bus on SPI3_HOST (VSPI)
     spi_bus_config_t buscfg = {
@@ -367,6 +369,22 @@ void tft_display_draw_dashboard_skeleton(void) {
     tft_draw_string(175, 170, "LOCK  :", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
 }
 
+static volatile bool s_backlight_on = true;
+
+void tft_display_set_backlight(bool on)
+{
+    if (s_backlight_on == on) return;
+    s_backlight_on = on;
+    gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, on ? 1 : 0);
+    ESP_LOGI(TAG, "Backlight %s (screen saver)", on ? "ON" : "OFF");
+}
+
+void tft_display_reset_idle_timer(void)
+{
+    s_last_activity_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
+    tft_display_set_backlight(true);
+}
+
 static void tft_display_task(void *pvParameters) {
     ESP_LOGI(TAG, "TFT display background update task started");
     
@@ -549,6 +567,28 @@ static void tft_display_task(void *pvParameters) {
             tft_draw_string(235, 170, lockout_formatted, lockout_color, TFT_COLOR_DARK_NAVY);
         }
         
+        static bool s_prev_relay_energized = false;
+        static pump_control_float_state_t s_prev_float_state = PUMP_CONTROL_FLOAT_UNKNOWN;
+
+        if (s_cache_valid) {
+            if (pump_running_changed || pump_timer_changed || pump_phase_changed ||
+                s_prev_relay_energized != pump.relay_energized ||
+                s_prev_float_state != pump.float_state) {
+                tft_display_reset_idle_timer();
+            }
+        }
+        s_prev_relay_energized = pump.relay_energized;
+        s_prev_float_state = pump.float_state;
+
+        /* A9 audit: auto-off backlight after 30 min inactivity (burn-in prevention).
+         * No touch screen — activity is signaled via web API calls instead.
+         * Only turn off if pump is completely stopped to match UI behavior. */
+        uint32_t now_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
+        uint32_t idle_ms = (now_sec - s_last_activity_sec) * 1000;
+        if (!pump_running && idle_ms > APP_TEMPLATE_SCREEN_TIMEOUT_MS) {
+            tft_display_set_backlight(false);
+        }
+
         s_cache_valid = true;
         
         vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(200));
