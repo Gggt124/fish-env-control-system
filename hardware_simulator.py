@@ -250,7 +250,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "cpu_freq_mhz": state["cpu_freq_mhz"],
                     "idf_version": "v6.0.1-Simulator",
                     "project_name": "Fish Pump Relay Timer Control",
-                    "project_version": "v0.1.4",
+                    "project_version": "v0.1.5",
                     "reset_reason": "POWERON_RESET",
                     "mac_sta": "24:6F:28:1A:2B:3C",
                     "mac_ap": "24:6F:28:1A:2B:3D",
