@@ -28,8 +28,6 @@ idf_component_register(
     SRCS
         "app_main.c"
         "web_server.c"
-        "dns_server.c"
-        "tft_display.c"
     INCLUDE_DIRS
         "."
     EMBED_FILES
@@ -48,15 +46,16 @@ idf_component_register(
         app_update
         app_config
         cooling_control
+        dns_server
         hardware_map
         nvs_store
         pump_control
         session
+        tft_display
         wifi_manager
         esp_http_server
         esp_wifi
         cjson
         mdns
-        esp_lcd
 )
 
