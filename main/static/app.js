@@ -64,23 +64,37 @@ function handleUnauthorized() {
     s_handlingUnauthorized = false;
 }
 
-function apiGet(url, cb, customTimeout) {
+function apiGet(url, cb, customTimeout, _retryState) {
+    var MAX_RETRIES = 2;       // up to 2 automatic retries (3 total attempts)
+    var RETRY_BASE_MS = 1500;  // 1.5s, 3s backoff
+    var state = _retryState || { attempt: 0 };
+
     var xhr = new XMLHttpRequest();
     var done = false;
+
     function finish(err, data) {
         if (done) return;
         done = true;
+        // Retry only on transient errors (network / timeout), not on HTTP 4xx/5xx
+        if (err && state.attempt < MAX_RETRIES &&
+            (err.message === 'Network error' || err.message === 'Request timeout')) {
+            state.attempt++;
+            var delay = RETRY_BASE_MS * state.attempt;
+            setTimeout(function() {
+                apiGet(url, cb, customTimeout, state);
+            }, delay);
+            return;
+        }
         cb(err, data);
     }
+
     xhr.open('GET', url, true);
     xhr.timeout = customTimeout || API_TIMEOUT_MS;
     xhr.onload = function () {
         if (xhr.status === 403) {
             try {
                 var data = JSON.parse(xhr.responseText);
-                if (data.error === 'force_password_change') {
-                    showForcePasswordModal();
-                }
+                if (data.error === 'force_password_change') { showForcePasswordModal(); }
             } catch(e) {}
             finish(new Error('HTTP 403 Forbidden'), null);
             return;
@@ -91,25 +105,21 @@ function apiGet(url, cb, customTimeout) {
                 if (url === '/api/status' && data && data.ok) {
                     var banner = document.getElementById('staging-banner');
                     if (banner) {
-                        if (data.stg_type > 0) {
-                            banner.classList.remove('hidden');
-                        } else {
-                            banner.classList.add('hidden');
-                        }
+                        if (data.stg_type > 0) { banner.classList.remove('hidden'); }
+                        else { banner.classList.add('hidden'); }
                     }
                 }
                 finish(null, data);
-            }
-            catch (e) { finish(e, null); }
+            } catch (e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.onerror   = function () { finish(new Error('Network error'), null); };
     xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
+    xhr.onabort   = function () { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
