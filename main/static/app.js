@@ -3618,6 +3618,7 @@ function initOta() {
     var progressBar = document.getElementById('ota-progress-bar');
     var progressText = document.getElementById('ota-progress-text');
     var msgEl = document.getElementById('ota-message');
+    var progressAria = document.getElementById('ota-progress-aria');
 
     if (fileInput && uploadBtn) {
         fileInput.onchange = function() {
@@ -3637,9 +3638,8 @@ function initOta() {
             var file = fileInput.files[0];
             if (file.size > 0x1F0000) {
                 msgEl.textContent = 'ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ~2MB)';
+                msgEl.className = 'field-error ota-message-base ota-message-error';
                 msgEl.classList.remove('hidden');
-                msgEl.style.color = 'var(--error)';
-                msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';
                 return;
             }
 
@@ -3658,6 +3658,7 @@ function initOta() {
                     var percent = Math.round((e.loaded / e.total) * 100);
                     progressBar.style.width = percent + '%';
                     progressText.textContent = 'กำลังอัปโหลด: ' + percent + '%';
+                    if (progressAria) progressAria.setAttribute('aria-valuenow', percent);
                 }
             };
 
@@ -3668,10 +3669,10 @@ function initOta() {
                         if (res.ok) {
                             progressText.textContent = 'อัปเดตสำเร็จ! ระบบกำลังรีสตาร์ท...';
                             progressBar.style.width = '100%';
+                            if (progressAria) progressAria.setAttribute('aria-valuenow', 100);
                             msgEl.textContent = 'อัปเดตสำเร็จ! ระบบจะรีบูตในไม่ช้า กรุณารอสักครู่แล้วเชื่อมต่อใหม่';
+                            msgEl.className = 'field-error ota-message-base ota-message-success';
                             msgEl.classList.remove('hidden');
-                            msgEl.style.color = 'var(--success-700, #047857)';
-                            msgEl.style.backgroundColor = 'var(--success-50, #ecfdf5)';
                             setTimeout(function() {
                                 window.location.href = '/login';
                             }, 5000);
@@ -3694,18 +3695,16 @@ function initOta() {
                 } else {
                     msgEl.textContent = 'เกิดข้อผิดพลาดในการอัปเดต (HTTP ' + xhr.status + ')';
                 }
+                msgEl.className = 'field-error ota-message-base ota-message-error';
                 msgEl.classList.remove('hidden');
-                msgEl.style.color = 'var(--error)';
-                msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';
             };
 
             xhr.onerror = function() {
                 uploadBtn.disabled = false;
                 fileInput.disabled = false;
                 msgEl.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย';
+                msgEl.className = 'field-error ota-message-base ota-message-error';
                 msgEl.classList.remove('hidden');
-                msgEl.style.color = 'var(--error)';
-                msgEl.style.backgroundColor = 'var(--error-light, #fef2f2)';
             };
 
             xhr.send(file);
