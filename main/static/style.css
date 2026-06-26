@@ -1232,6 +1232,7 @@ button.nav-item {
 
 .card-header h3 {
     color: var(--on-surface-variant);
+    font-size: var(--text-lg);
     font-weight: 500;
 }
 

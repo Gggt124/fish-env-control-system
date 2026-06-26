@@ -1077,6 +1077,7 @@ function handlePumpVisibilityChange() {
     } else {
         startPumpLiveTimers();
         syncPumpStatus(true);
+        refreshStatus(true);
     }
 }
 
@@ -1853,6 +1854,7 @@ function handleCoolingVisibilityChange() {
     } else {
         startCoolingStatusTimer();
         syncCoolingStatus(true);
+        refreshStatus(true);
     }
 }
 
@@ -2310,8 +2312,8 @@ function setHtml(id, val) {
     }
 }
 
-function refreshStatus() {
-    if (document.hidden) return;
+function refreshStatus(force) {
+    if (document.hidden && !force) return;
     if (statusSummaryRequestInFlight) return;
     statusSummaryRequestInFlight = true;
     apiGet('/api/status', function (err, data) {
@@ -2324,66 +2326,8 @@ function refreshStatus() {
                 dot.className = 'status-dot off';
                 txt.textContent = 'Offline';
             }
+            clearStatusSkeletonsToOffline();
             return;
-        }
-
-        /* AP Status */
-        var apStatus = document.getElementById('card-ap-status');
-        var apIp = document.getElementById('card-ap-ip');
-        if (apStatus) apStatus.textContent = data.ap_enabled ? 'Active' : 'Off';
-        if (apIp) apIp.textContent = data.ap_enabled ? 'IP: ' + data.ap_ip : 'IP: --';
-
-        /* STA Status */
-        var staStatus = document.getElementById('card-sta-status');
-        var staSsid = document.getElementById('card-sta-ssid');
-        if (staStatus) staStatus.textContent = data.sta_connected ? '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27' : '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
-        if (staSsid) {
-            if (data.sta_connected) {
-                staSsid.textContent = 'Station: ' + (data.sta_ssid || '--');
-                staSsid.className = 'card-sub good';
-            } else {
-                staSsid.textContent = 'Station: \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
-                staSsid.className = 'card-sub neutral';
-            }
-        }
-
-        /* STA IP */
-        var staIp = document.getElementById('card-sta-ip');
-        if (staIp) {
-            if (data.sta_connected && data.sta_ip) {
-                staIp.textContent = 'IP: ' + data.sta_ip;
-                staIp.className = 'card-sub good';
-            } else {
-                staIp.textContent = 'Station IP: --';
-                staIp.className = 'card-sub neutral';
-            }
-        }
-
-        /* Memory */
-        var heapEl = document.getElementById('card-heap');
-        var heapBar = document.getElementById('card-heap-bar');
-        if (heapEl) heapEl.textContent = (data.free_heap / 1024).toFixed(0) + ' KB free';
-        if (heapBar) {
-            var pct = Math.min(100, Math.max(5, ((300000 - data.free_heap) / 300000) * 100));
-            heapBar.style.width = pct.toFixed(0) + '%';
-        }
-
-        /* Uptime */
-        var uptimeEl = document.getElementById('card-uptime');
-        if (uptimeEl) {
-            var secs = Math.floor(data.uptime_ms / 1000);
-            var mins = Math.floor(secs / 60);
-            var hrs = Math.floor(mins / 60);
-            mins = mins % 60;
-            if (hrs > 24) {
-                var days = Math.floor(hrs / 24);
-                hrs = hrs % 24;
-                uptimeEl.textContent = days + 'd ' + hrs + 'h';
-            } else if (hrs > 0) {
-                uptimeEl.textContent = hrs + 'h ' + mins + 'm';
-            } else {
-                uptimeEl.textContent = mins + 'm ' + (secs % 60) + 's';
-            }
         }
 
         /* Sidebar status dot */
@@ -2401,20 +2345,6 @@ function refreshStatus() {
                 txt.textContent = 'Offline';
             }
         }
-
-        /* Dashboard summary */
-        setText('card-version', data.project_version || '--');
-        setText('dash-chip', data.chip_model || '--');
-        setText('dash-project-version', data.project_version || '--');
-        setText('dash-wifi-mode', data.wifi_mode || '--');
-        setText('dash-ap-clients', data.ap_enabled ? '' + data.ap_clients : '--');
-        if (data.sta_connected && data.sta_rssi !== undefined) {
-            setText('dash-rssi', data.sta_rssi + ' dBm');
-        } else {
-            setText('dash-rssi', '--');
-        }
-        var dashPct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100).toFixed(1) : '--';
-        setText('dash-heap-pct', dashPct !== '--' ? dashPct + '%' : '--');
     });
 }
 
