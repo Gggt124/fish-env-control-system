@@ -115,6 +115,9 @@ extern "C" {
 #define APP_CONFIG_LED_GPIO                       2   // Strapping pin, avoid external pull-ups that might affect boot mode.
 #define APP_CONFIG_EXT_LED_GPIO                   13
 
+// 32-byte (256-bit) AES key in hex format for Pre-Encrypted OTA.
+#define APP_CONFIG_OTA_ENCRYPTION_KEY "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
+
 #ifdef __cplusplus
 }
 #endif

@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <stdatomic.h>
 #include "esp_ota_ops.h"
+#include "mbedtls/aes.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -3787,6 +3788,24 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
 
     char buf[1024];
     int remaining = req->content_len;
+    
+    // --- Pre-Encrypted OTA Setup ---
+    unsigned char iv[16];
+    size_t iv_received = 0;
+    unsigned char stream_block[16] = {0};
+    size_t nc_off = 0;
+    
+    mbedtls_aes_context aes;
+    mbedtls_aes_init(&aes);
+    
+    unsigned char key[32];
+    const char* key_hex = APP_CONFIG_OTA_ENCRYPTION_KEY;
+    for (int i = 0; i < 32; i++) {
+        sscanf(key_hex + 2*i, "%2hhx", &key[i]);
+    }
+    mbedtls_aes_setkey_enc(&aes, key, 256);
+    // -------------------------------
+
     while (remaining > 0) {
         int recv_len = httpd_req_recv(req, buf, remaining < sizeof(buf) ? remaining : sizeof(buf));
         if (recv_len < 0) {
@@ -3795,25 +3814,45 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
             }
             ESP_LOGE(TAG, "Error receiving OTA data");
             esp_ota_abort(ota_handle);
+            mbedtls_aes_free(&aes);
             return send_json(req, "{\"ok\":false,\"error\":\"recv_failed\"}", "500 Internal Server Error");
         }
+        
         if (recv_len > 0) {
-            err = esp_ota_write(ota_handle, buf, recv_len);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "esp_ota_write failed (%s)", esp_err_to_name(err));
-                esp_ota_abort(ota_handle);
-                return send_json(req, "{\"ok\":false,\"error\":\"ota_write_failed\"}", "500 Internal Server Error");
-            }
-            remaining -= recv_len;
+            int process_offset = 0;
             
-            // Yield CPU to IDLE task periodically to prevent Task Watchdog panic
-            // during large firmware uploads (IDLE task needs to reset its WDT).
+            if (iv_received < 16) {
+                int to_copy = 16 - iv_received;
+                if (to_copy > recv_len) to_copy = recv_len;
+                memcpy(iv + iv_received, buf, to_copy);
+                iv_received += to_copy;
+                process_offset += to_copy;
+            }
+            
+            if (iv_received == 16 && process_offset < recv_len) {
+                int data_len = recv_len - process_offset;
+                unsigned char *data_ptr = (unsigned char *)buf + process_offset;
+                
+                mbedtls_aes_crypt_ctr(&aes, data_len, &nc_off, iv, stream_block, data_ptr, data_ptr);
+                
+                err = esp_ota_write(ota_handle, data_ptr, data_len);
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "esp_ota_write failed (%s)", esp_err_to_name(err));
+                    esp_ota_abort(ota_handle);
+                    mbedtls_aes_free(&aes);
+                    return send_json(req, "{\"ok\":false,\"error\":\"ota_write_failed\"}", "500 Internal Server Error");
+                }
+            }
+            
+            remaining -= recv_len;
             vTaskDelay(1);
             s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
         } else if (recv_len == 0) {
             break;
         }
     }
+    
+    mbedtls_aes_free(&aes);
 
     if (remaining > 0) {
         ESP_LOGE(TAG, "Incomplete OTA transfer");

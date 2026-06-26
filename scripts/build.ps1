@@ -88,4 +88,26 @@ if ($FullClean) {
     idf.py fullclean
 }
 
+# Run the build
 idf.py build
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Build successful. Generating encrypted OTA binary..." -ForegroundColor Green
+    
+    $configFile = "components\app_config\app_config.h"
+    $keyLine = Select-String -Path $configFile -Pattern 'APP_CONFIG_OTA_ENCRYPTION_KEY\s+"([0-9A-Fa-f]+)"'
+    
+    if ($keyLine) {
+        $keyHex = $keyLine.Matches.Groups[1].Value
+        $binPath = "build\fish_pump_relay_timer_control.bin"
+        $encBinPath = "build\fish_pump_relay_timer_control_encrypted.bin"
+        
+        if (Test-Path $binPath) {
+            python scripts\encrypt_ota.py $binPath $encBinPath $keyHex
+        } else {
+            Write-Host "Warning: $binPath not found. Skipping encryption." -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "Warning: APP_CONFIG_OTA_ENCRYPTION_KEY not found in app_config.h. Skipping encryption." -ForegroundColor Yellow
+    }
+}
