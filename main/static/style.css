@@ -469,6 +469,12 @@ html {
     scrollbar-color: var(--outline-variant) transparent;
 }
 
+button, input, select, textarea, optgroup {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
 body {
     font-family: var(--font-ui);
     background: var(--bg-body);
