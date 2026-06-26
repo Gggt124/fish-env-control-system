@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <stdatomic.h>
 #include "esp_ota_ops.h"
-#include "mbedtls/aes.h"
+#include "aes/esp_aes.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -3795,15 +3795,15 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
     unsigned char stream_block[16] = {0};
     size_t nc_off = 0;
     
-    mbedtls_aes_context aes;
-    mbedtls_aes_init(&aes);
+    esp_aes_context aes;
+    esp_aes_init(&aes);
     
     unsigned char key[32];
     const char* key_hex = APP_CONFIG_OTA_ENCRYPTION_KEY;
     for (int i = 0; i < 32; i++) {
         sscanf(key_hex + 2*i, "%2hhx", &key[i]);
     }
-    mbedtls_aes_setkey_enc(&aes, key, 256);
+    esp_aes_setkey(&aes, key, 256);
     // -------------------------------
 
     while (remaining > 0) {
@@ -3814,7 +3814,7 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
             }
             ESP_LOGE(TAG, "Error receiving OTA data");
             esp_ota_abort(ota_handle);
-            mbedtls_aes_free(&aes);
+            esp_aes_free(&aes);
             return send_json(req, "{\"ok\":false,\"error\":\"recv_failed\"}", "500 Internal Server Error");
         }
         
@@ -3833,13 +3833,13 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
                 int data_len = recv_len - process_offset;
                 unsigned char *data_ptr = (unsigned char *)buf + process_offset;
                 
-                mbedtls_aes_crypt_ctr(&aes, data_len, &nc_off, iv, stream_block, data_ptr, data_ptr);
+                esp_aes_crypt_ctr(&aes, data_len, &nc_off, iv, stream_block, data_ptr, data_ptr);
                 
                 err = esp_ota_write(ota_handle, data_ptr, data_len);
                 if (err != ESP_OK) {
                     ESP_LOGE(TAG, "esp_ota_write failed (%s)", esp_err_to_name(err));
                     esp_ota_abort(ota_handle);
-                    mbedtls_aes_free(&aes);
+                    esp_aes_free(&aes);
                     return send_json(req, "{\"ok\":false,\"error\":\"ota_write_failed\"}", "500 Internal Server Error");
                 }
             }
@@ -3852,7 +3852,7 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
         }
     }
     
-    mbedtls_aes_free(&aes);
+    esp_aes_free(&aes);
 
     if (remaining > 0) {
         ESP_LOGE(TAG, "Incomplete OTA transfer");
