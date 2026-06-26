@@ -222,6 +222,11 @@
                 <polyline points="1 20 1 14 7 14"></polyline>
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </symbol>
+            <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </symbol>
         </defs>
     </svg>
 
@@ -1096,15 +1101,24 @@
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">SSID</span>
-                            <div class="status-kv-value" id="st-sta-ssid"><span class="skeleton">SSID_NAME</span></div>
+                            <div class="status-kv-value copy-pill" onclick="copyToClipboard(document.getElementById('st-sta-ssid').textContent, 'Station SSID')">
+                                <span id="st-sta-ssid" class="mono"><span class="skeleton">SSID_NAME</span></span>
+                                <svg class="copy-icon"><use href="#icon-copy"></use></svg>
+                            </div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">IP</span>
-                            <div class="status-kv-value" id="st-sta-ip"><span class="skeleton">192.168.1.100</span></div>
+                            <div class="status-kv-value copy-pill" onclick="copyToClipboard(document.getElementById('st-sta-ip').textContent, 'Station IP')">
+                                <span id="st-sta-ip" class="mono"><span class="skeleton">192.168.1.100</span></span>
+                                <svg class="copy-icon"><use href="#icon-copy"></use></svg>
+                            </div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">MAC</span>
-                            <div class="status-kv-value" id="st-mac-sta"><span class="skeleton">00:00:00:00:00:00</span></div>
+                            <div class="status-kv-value copy-pill" onclick="copyToClipboard(document.getElementById('st-mac-sta').textContent, 'Station MAC')">
+                                <span id="st-mac-sta" class="mono"><span class="skeleton">00:00:00:00:00:00</span></span>
+                                <svg class="copy-icon"><use href="#icon-copy"></use></svg>
+                            </div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">RSSI</span>
@@ -1136,11 +1150,17 @@
                     <div class="status-kv-list">
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">SSID</span>
-                            <div class="status-kv-value" id="st-ap-ssid"><span class="skeleton">FishPump-Setup</span></div>
+                            <div class="status-kv-value copy-pill" onclick="copyToClipboard(document.getElementById('st-ap-ssid').textContent, 'AP SSID')">
+                                <span id="st-ap-ssid" class="mono"><span class="skeleton">FishPump-Setup</span></span>
+                                <svg class="copy-icon"><use href="#icon-copy"></use></svg>
+                            </div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">IP</span>
-                            <div class="status-kv-value" id="st-ap-ip"><span class="skeleton">192.168.4.1</span></div>
+                            <div class="status-kv-value copy-pill" onclick="copyToClipboard(document.getElementById('st-ap-ip').textContent, 'AP IP')">
+                                <span id="st-ap-ip" class="mono"><span class="skeleton">192.168.4.1</span></span>
+                                <svg class="copy-icon"><use href="#icon-copy"></use></svg>
+                            </div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Clients</span>
@@ -1148,7 +1168,10 @@
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">MAC</span>
-                            <div class="status-kv-value" id="st-mac-ap"><span class="skeleton">00:00:00:00:00:00</span></div>
+                            <div class="status-kv-value copy-pill" onclick="copyToClipboard(document.getElementById('st-mac-ap').textContent, 'AP MAC')">
+                                <span id="st-mac-ap" class="mono"><span class="skeleton">00:00:00:00:00:00</span></span>
+                                <svg class="copy-icon"><use href="#icon-copy"></use></svg>
+                            </div>
                         </div>
                         <div class="status-kv-item" style="grid-column: 1 / -1;">
                             <span class="status-kv-label" lang="en">Weakest RSSI</span>
@@ -1604,15 +1627,27 @@
                 <div class="header-left">
                     <h1 lang="en">Firmware Update</h1>
                 </div>
+                <div class="header-actions">
+                    <button class="theme-toggle mobile-theme-toggle" onclick="cycleTheme()" aria-label="สลับธีม" role="switch" aria-checked="false">
+                        <span class="theme-toggle-thumb">
+                            <svg class="theme-toggle-icon">
+                                <use href="#icon-moon"></use>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
             </div>
 
-            <div class="hardware-card ota-card">
-                <div class="hardware-header ota-header">
-                    <h3 class="hardware-title ota-title">
-                        <svg class="label-icon ota-title-icon">
-                            <use href="#icon-sync"></use>
-                        </svg> อัปเดตผ่าน Web OTA (<span lang="en">Over-The-Air Update</span>)
-                    </h3>
+            <section class="section-card ota-card" id="hardware-ota">
+                <div class="section-heading-row">
+                    <div>
+                        <h3>
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-accent" style="margin-right: 8px; vertical-align: text-bottom;">
+                                <use href="#icon-sync"></use>
+                            </svg>
+                            อัปเดตผ่าน Web OTA (<span lang="en">Over-The-Air Update</span>)
+                        </h3>
+                    </div>
                 </div>
                 <div class="hardware-body">
                     <p class="settings-intro-text ota-intro-text">
@@ -1622,8 +1657,13 @@
                     <div class="form-group" style="margin-bottom: var(--space-6);">
                         <label for="ota-file-input" class="ota-label">ไฟล์เฟิร์มแวร์ (<span lang="en">Firmware File</span>)</label>
                         <div class="ota-dropzone">
+                            <div class="ota-dropzone-content">
+                                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-muted" style="margin-bottom: var(--space-2);">
+                                    <use href="#icon-arrow-up"></use>
+                                </svg>
+                                <span class="ota-dropzone-text">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</span>
+                            </div>
                             <input type="file" id="ota-file-input" class="ota-dropzone-input" accept=".bin">
-                            <span class="ota-dropzone-text">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</span>
                         </div>
                     </div>
                     
@@ -1632,7 +1672,7 @@
                             <span id="ota-progress-text">กำลังอัปโหลด: 0%</span>
                         </div>
                         <div class="hero-progress-bar-container" style="height: 12px; background: var(--bg-300); border-radius: 999px; overflow: hidden;" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="ota-progress-aria">
-                            <div class="hero-progress-bar-fill" id="ota-progress-bar" style="height: 100%; width: 0%; transition: width 0.3s; background: var(--primary-500);"></div>
+                            <div class="hero-progress-bar-fill" id="ota-progress-bar" style="height: 100%; width: 100%; transform: scaleX(0); transform-origin: left; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: var(--primary-500);"></div>
                         </div>
                     </div>
 
@@ -1641,7 +1681,7 @@
                     <div class="settings-actions ota-actions">
                         <div class="settings-button-row ota-actions-row">
                             <button class="btn btn-primary ota-upload-btn" id="ota-upload-btn" type="button" disabled>
-                                <svg class="label-icon"><use href="#icon-sync"></use></svg> เริ่มการอัปเดต
+                                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="label-icon"><use href="#icon-sync"></use></svg> เริ่มการอัปเดต
                             </button>
                         </div>
                     </div>

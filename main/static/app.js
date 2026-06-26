@@ -226,6 +226,45 @@ function showToast(msg, type) {
     }, 3000);
 }
 
+/* ======== Copy to Clipboard ======== */
+
+function copyToClipboard(text, labelName) {
+    labelName = labelName || 'ข้อมูล';
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('คัดลอก ' + labelName + ' เรียบร้อยแล้ว', 'success');
+        }).catch(function() {
+            fallbackCopyTextToClipboard(text, labelName);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text, labelName);
+    }
+}
+
+function fallbackCopyTextToClipboard(text, labelName) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        var successful = document.execCommand('copy');
+        if (successful) {
+            showToast('คัดลอก ' + labelName + ' เรียบร้อยแล้ว', 'success');
+        } else {
+            showToast('คัดลอก ' + labelName + ' ไม่สำเร็จ', 'error');
+        }
+    } catch (err) {
+        showToast('คัดลอก ' + labelName + ' ไม่สำเร็จ', 'error');
+    }
+
+    document.body.removeChild(textArea);
+}
+
 /* ======== Focus Trap & Dialog Keyboard Helpers ======== */
 var activeFocusTrap = null;
 var previousFocusedElement = null;
@@ -3646,7 +3685,7 @@ function initOta() {
             uploadBtn.disabled = true;
             fileInput.disabled = true;
             progressContainer.classList.remove('hidden');
-            progressBar.style.width = '0%';
+            progressBar.style.transform = 'scaleX(0)';
             progressText.textContent = 'กำลังอัปโหลด: 0%';
             msgEl.classList.add('hidden');
 
@@ -3656,7 +3695,7 @@ function initOta() {
             xhr.upload.onprogress = function(e) {
                 if (e.lengthComputable) {
                     var percent = Math.round((e.loaded / e.total) * 100);
-                    progressBar.style.width = percent + '%';
+                    progressBar.style.transform = 'scaleX(' + (percent / 100) + ')';
                     progressText.textContent = 'กำลังอัปโหลด: ' + percent + '%';
                     if (progressAria) progressAria.setAttribute('aria-valuenow', percent);
                 }
@@ -3668,7 +3707,7 @@ function initOta() {
                         var res = JSON.parse(xhr.responseText);
                         if (res.ok) {
                             progressText.textContent = 'อัปเดตสำเร็จ! ระบบกำลังรีสตาร์ท...';
-                            progressBar.style.width = '100%';
+                            progressBar.style.transform = 'scaleX(1)';
                             if (progressAria) progressAria.setAttribute('aria-valuenow', 100);
                             msgEl.textContent = 'อัปเดตสำเร็จ! ระบบจะรีบูตในไม่ช้า กรุณารอสักครู่แล้วเชื่อมต่อใหม่';
                             msgEl.className = 'field-error ota-message-base ota-message-success';

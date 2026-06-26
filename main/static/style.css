@@ -438,6 +438,46 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 /* === Typography === */
+
+/* Centralized utility to prevent text selection */
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Tap-to-Copy Pill for Mobile-First UX */
+.copy-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.15s ease-out;
+    -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+    .copy-pill:hover {
+        background-color: var(--surface-container-high);
+    }
+}
+.copy-pill:active {
+    background-color: var(--outline-variant);
+}
+.copy-pill .copy-icon {
+    width: 14px;
+    height: 14px;
+    stroke: var(--text-muted);
+    stroke-width: 2px;
+    fill: none;
+    transition: stroke 0.15s ease-out;
+}
+.copy-pill:hover .copy-icon,
+.copy-pill:active .copy-icon {
+    stroke: var(--accent);
+}
+
 h1 { font-size: var(--text-xl); font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; text-wrap: balance; }
 h2 { font-size: var(--text-lg); font-weight: 400; line-height: 1.3; text-wrap: balance; }
 h3 { font-size: var(--text-base); font-weight: 400; line-height: 1.4; text-wrap: balance; }
@@ -1061,7 +1101,6 @@ button.nav-item {
     font-weight: 400;
     font-size: var(--text-base);
     list-style: none;
-    user-select: none;
 }
 .settings-collapsible > summary::-webkit-details-marker { display: none; }
 .settings-collapsible > summary .chevron-icon {
@@ -2547,7 +2586,6 @@ select:disabled {
     font-weight: 400;
     color: var(--on-surface-variant);
     cursor: pointer;
-    user-select: none;
     margin-top: var(--space-2);
 }
 
@@ -3125,7 +3163,6 @@ select.invalid {
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
     border-radius: var(--radius-sm);
     color: transparent !important;
-    user-select: none;
     pointer-events: none;
     min-width: 3ch;
 }
@@ -3373,7 +3410,6 @@ body.login-active .app-footer {
     color: var(--on-surface-variant);
     font-weight: 400;
     margin-top: 1px;
-    user-select: none;
     transition: color 0.2s ease;
 }
 
@@ -3388,7 +3424,6 @@ body.login-active .app-footer {
     font-weight: 800;
     color: var(--on-surface-variant);
     margin-top: -16px;
-    user-select: none;
     padding: 0 var(--space-2);
 }
 
@@ -3498,26 +3533,6 @@ select:hover:not(:disabled) {
 .ota-card {
     max-width: 600px;
     margin: 0 auto;
-    background: var(--bg-100);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-6);
-}
-.ota-header {
-    margin-bottom: var(--space-4);
-}
-.ota-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-900);
-}
-.ota-title-icon {
-    width: 20px;
-    height: 20px;
-    vertical-align: -4px;
-    margin-right: var(--space-2);
-    color: var(--primary-500);
 }
 .ota-intro-text {
     color: var(--text-500);
@@ -3533,16 +3548,29 @@ select:hover:not(:disabled) {
 .ota-dropzone {
     position: relative;
     overflow: hidden;
-    border: 2px dashed var(--border-hover);
+    border: 2px dashed var(--outline-variant);
     border-radius: var(--radius-md);
-    padding: var(--space-4);
+    padding: var(--space-6) var(--space-4);
     text-align: center;
+    background: var(--surface);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.ota-dropzone:hover {
+    border-color: var(--primary-500);
     background: var(--bg-50);
-    transition: all 0.2s;
 }
 .ota-dropzone:focus-within {
     box-shadow: 0 0 0 2px var(--focus-ring-primary);
     border-color: var(--primary-500);
+    background: var(--bg-50);
+}
+.ota-dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
 }
 .ota-dropzone-input {
     position: absolute;
