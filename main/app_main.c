@@ -916,6 +916,7 @@ void app_main(void)
     ESP_LOGI(TAG, "========================================");
 
     /* Main loop — reset WDT every 5s, retry HTTP server, log status every 30s */
+    uint8_t oom_strike_count = 0;
     uint32_t loop_counter = 0;
     while (1) {
         esp_task_wdt_reset();
@@ -983,6 +984,37 @@ void app_main(void)
                 ESP_LOGE(TAG, "HTTP thread hung — triggering restart");
                 vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
                 esp_restart();
+            }
+        }
+
+        uint32_t free_heap = esp_get_free_heap_size();
+        uint32_t largest_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
+        
+        bool below_critical = (free_heap < APP_CONFIG_OOM_MIN_FREE_HEAP_BYTES || 
+                               largest_block < APP_CONFIG_OOM_MIN_LARGEST_BLOCK_BYTES);
+                               
+        bool fully_recovered = (free_heap > APP_CONFIG_OOM_RECOVER_FREE_HEAP_BYTES && 
+                                largest_block > APP_CONFIG_OOM_RECOVER_LARGEST_BLOCK_BYTES);
+
+        // Increment strike if we just dipped below critical OR if we are already in an OOM state and haven't recovered
+        if (below_critical || (oom_strike_count > 0 && !fully_recovered)) {
+            
+            oom_strike_count++;
+            ESP_LOGW(TAG, "OOM WARNING: Free heap (%lu) or largest block (%lu) in danger zone! Strike %d/%d",
+                     (unsigned long)free_heap, (unsigned long)largest_block, 
+                     oom_strike_count, APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART);
+                     
+            if (oom_strike_count >= APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART) {
+                ESP_LOGE(TAG, "FATAL: Out of Memory condition sustained for %d intervals. Rebooting!", oom_strike_count);
+                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                esp_restart();
+            }
+        } 
+        else if (fully_recovered) {
+            if (oom_strike_count > 0) {
+                ESP_LOGI(TAG, "OOM condition recovered. Free heap: %lu, Largest block: %lu", 
+                         (unsigned long)free_heap, (unsigned long)largest_block);
+                oom_strike_count = 0;
             }
         }
 

@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.7"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.1.8"
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
 #define APP_TEMPLATE_AP_SSID               "FishPump-Setup"
@@ -117,6 +117,16 @@ extern "C" {
 
 // 32-byte (256-bit) AES key in hex format for Pre-Encrypted OTA.
 #define APP_CONFIG_OTA_ENCRYPTION_KEY "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
+
+// Critical thresholds (below these = add a strike)
+#define APP_CONFIG_OOM_MIN_FREE_HEAP_BYTES         10240  // 10KB
+#define APP_CONFIG_OOM_MIN_LARGEST_BLOCK_BYTES     5120   // 5KB
+
+// Recovery thresholds (must exceed BOTH of these to reset strikes to 0)
+#define APP_CONFIG_OOM_RECOVER_FREE_HEAP_BYTES     15360  // 15KB
+#define APP_CONFIG_OOM_RECOVER_LARGEST_BLOCK_BYTES 8192   // 8KB
+
+#define APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART 3     // 15 seconds (3 * 5s loop)
 
 #ifdef __cplusplus
 }
