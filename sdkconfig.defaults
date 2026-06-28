@@ -39,8 +39,7 @@ CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
 CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
 CONFIG_ESP_COREDUMP_CHECKSUM_CRC32=y
 
-# Brownout detector: raise threshold to level 6 (~2.80V) to force clean reset
-# before relay-induced voltage sag causes logic instability.
-# Level 6 chosen over level 7 (~2.97V) to avoid false resets on USB dev boards.
+# Brownout detector: lowered threshold to level 2 (~2.53V) 
+# to be more tolerant of relay-induced voltage sags while preventing logic instability.
 CONFIG_ESP_BROWNOUT_DET=y
-CONFIG_ESP_BROWNOUT_DET_LVL_SEL_6=y
+CONFIG_ESP_BROWNOUT_DET_LVL_SEL_2=y
