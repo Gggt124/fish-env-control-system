@@ -148,6 +148,12 @@
     --eyebrow-error-text: var(--error);
     --eyebrow-error-border: rgba(197, 48, 48, 0.2);
 
+    /* Alert Banner Tokens */
+    --alert-warn-bg: var(--warning-soft);
+    --alert-warn-text: #965f00;
+    --alert-warn-border: rgba(196, 125, 0, 0.2);
+    --alert-warn-strong: #7a4d00;
+
     /* Connection Status Tokens */
     --connection-connected-bg: var(--success-soft);
     --connection-connected-border: rgba(14, 154, 92, 0.2);
@@ -343,6 +349,12 @@
     --eyebrow-error-bg: var(--error-soft);
     --eyebrow-error-text: var(--error);
     --eyebrow-error-border: rgba(240, 96, 96, 0.3);
+
+    /* Alert Banner Tokens overrides */
+    --alert-warn-bg: var(--warning-soft);
+    --alert-warn-text: #fcd385;
+    --alert-warn-border: rgba(240, 168, 48, 0.3);
+    --alert-warn-strong: #fde6b3;
 
     /* Connection overrides */
     --connection-connected-bg: var(--success-soft);
@@ -2631,7 +2643,7 @@ select:disabled {
     margin: 0 0 var(--space-1);
     font-size: var(--text-base);
     line-height: 1.4rem;
-    color: var(--on-surface-variant);
+    color: var(--on-surface);
 }
 
 .hardware-wire-item p {

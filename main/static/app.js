@@ -1629,7 +1629,7 @@ function buildCoolingConfigPayload() {
     var threshold = readCoolingX10('cooling-threshold-input', 'อุณหภูมิเป้าหมาย', -550, 1250);
     var hysteresis = readCoolingX10('cooling-hysteresis-input', 'ช่วงอุณหภูมิเบี่ยงเบน', 1, 500);
     var testTimeout = readCoolingU32('cooling-test-timeout', 'ระยะเวลาเปิดทดสอบ', 1, 3600);
-    var minOff = readCoolingU32('cooling-min-off', 'เวลาล็อกป้องกันซ้ำ', 0, 86400);
+    var minOff = readCoolingU32('cooling-min-off', 'เวลาล็อกป้องกันซ้ำ', 120, 86400);
     if (!threshold.ok) return threshold;
     if (!hysteresis.ok) return hysteresis;
     if (!testTimeout.ok) return testTimeout;

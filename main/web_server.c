@@ -1354,7 +1354,7 @@ static bool api_cooling_add_limits(cJSON *root)
     cJSON_AddNumberToObject(limits, "hysteresis_c_x10_max", 500);
     cJSON_AddNumberToObject(limits, "test_timeout_sec_min", 1);
     cJSON_AddNumberToObject(limits, "test_timeout_sec_max", 3600);
-    cJSON_AddNumberToObject(limits, "compressor_min_off_sec_min", 60);
+    cJSON_AddNumberToObject(limits, "compressor_min_off_sec_min", 120);
     cJSON_AddNumberToObject(limits, "compressor_min_off_sec_max", 86400);
 
     cJSON *modes = cJSON_AddArrayToObject(root, "modes");
@@ -1714,15 +1714,15 @@ static bool api_cooling_parse_config_payload(const cJSON *root,
         !api_cooling_required_u32_range(root, "test_timeout_sec", 1, 3600,
                                         &settings->test_timeout_sec,
                                         error_code, error_message) ||
-        !api_cooling_required_u32_range(root, "compressor_min_off_sec", 0, 86400,
+        !api_cooling_required_u32_range(root, "compressor_min_off_sec", 120, 86400,
                                         &settings->compressor_min_off_sec,
                                         error_code, error_message)) {
         return false;
     }
 
-    if (settings->compressor_min_off_sec < 60) {
+    if (settings->compressor_min_off_sec < 120) {
         *error_code = "hardware_safety";
-        *error_message = "min_off_sec must be >= 60 (hardware safety minimum)";
+        *error_message = "min_off_sec must be >= 120 (hardware safety minimum)";
         return false;
     }
 
