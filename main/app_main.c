@@ -769,6 +769,32 @@ void app_main(void)
              cooling_settings.auto_enable ? "true" : "false",
              (unsigned long)cooling_settings.compressor_min_off_sec);
 
+    /* 2. Initialize task watchdog (10s timeout with panic) */
+    uint32_t idle_mask = 0;
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    idle_mask |= (1 << 0);
+#endif
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    idle_mask |= (1 << 1);
+#endif
+    esp_task_wdt_config_t wdt_config = {
+        .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
+        .idle_core_mask = idle_mask,
+        .trigger_panic = true,
+    };
+    esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
+    if (wdt_ret == ESP_OK) {
+        esp_task_wdt_add(NULL);
+        ESP_LOGI(TAG, "TWDT initialized (%d ms timeout, panic on trigger)",
+                 APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS);
+    } else if (wdt_ret == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "TWDT already initialized, adding main task (timeout may differ)");
+        esp_task_wdt_add(NULL);
+    } else {
+        ESP_LOGE(TAG, "TWDT init failed: %s (continuing without watchdog)",
+                 esp_err_to_name(wdt_ret));
+    }
+
     if (cooling_control_init(&cooling_config)) {
         ESP_LOGI(TAG,
                  "Cooling runtime initialized: ds18b20 GPIO=%d, relay GPIO=%d, auto_enable=%s, min_off=%lu sec",
@@ -872,34 +898,6 @@ void app_main(void)
 
     // Start hardware UI/recovery task
     xTaskCreate(hardware_ui_task, "hardware_ui_task", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
-
-    /* 8. Initialize task watchdog (10s timeout with panic) */
-    // WDT strategy: Main task is registered here. Cooling task registers itself. Pump runs via esp_timer, 
-    // so we rely on idle task WDT checks (enabled via sdkconfig.defaults) to catch timer task starvation.
-    uint32_t idle_mask = 0;
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    idle_mask |= (1 << 0);
-#endif
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    idle_mask |= (1 << 1);
-#endif
-    esp_task_wdt_config_t wdt_config = {
-        .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
-        .idle_core_mask = idle_mask,
-        .trigger_panic = true,
-    };
-    esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
-    if (wdt_ret == ESP_OK) {
-        esp_task_wdt_add(NULL);
-        ESP_LOGI(TAG, "TWDT initialized (%d ms timeout, panic on trigger)",
-                 APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS);
-    } else if (wdt_ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "TWDT already initialized, adding main task (timeout may differ)");
-        esp_task_wdt_add(NULL);
-    } else {
-        ESP_LOGE(TAG, "TWDT init failed: %s (continuing without watchdog)",
-                 esp_err_to_name(wdt_ret));
-    }
 
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  System Ready");
