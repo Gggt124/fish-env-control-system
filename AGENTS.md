@@ -307,3 +307,8 @@ git so this template stays usable on other machines.
 **Impeccable Skill Script Path Rule:**
 On this workspace, the `impeccable` skill files are installed in the global user path rather than being mirrored to the local `.agents/skills/impeccable/` directory.
 Always check `AGENTS.local.md` or fallback to the global directory (`C:\Users\Copter\.gemini\config\skills\impeccable\scripts\`) when executing any `/impeccable` script (e.g. `context.mjs`, `palette.mjs`, `context-signals.mjs`, `detect.mjs`, `pin.mjs`). Do NOT use the local `.agents/skills/...` path as it will throw `MODULE_NOT_FOUND`.
+
+## Agent Execution & Planning Rules
+
+**Superpowers & Code Modifications Rule:**
+When using the `/using-superpowers` skill or generally executing tasks, you MUST NOT make any modifications to the codebase unless you have created an implementation plan and the user has explicitly verified and approved it. Furthermore, you must wait for the user to explicitly say that you can implement the plan before writing any code. **Even if an implementation plan exists, if the user only asks a question, or answers a question, DO NOT assume it is permission to implement. Permission to implement must be an explicit command to start implementing (e.g. "go ahead and implement").** If you want to modify a codebase file without a formal plan, you MUST obtain explicit permission from the user to edit that specific file first.
