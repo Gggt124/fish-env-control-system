@@ -23,3 +23,6 @@ main/static_compressed/
 .superpowers/
 build_task*/
 build_integration/
+
+# Agent Plans
+docs/superpowers/plans/
