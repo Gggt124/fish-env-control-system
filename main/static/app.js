@@ -3153,7 +3153,7 @@ function pollWifiConnection(attempt) {
                 setWifiModalInputsDisabled(false);
                 toggleStaticIp();
                 if (statusEl) {
-                    statusEl.textContent = '❌ การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
+                    statusEl.innerHTML = '<svg class="label-icon"><use href="#icon-x-circle"></use></svg> การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
                     statusEl.style.color = 'var(--error)';
                 }
                 var banner = document.getElementById('reconnect-banner');
@@ -3176,14 +3176,14 @@ function pollWifiConnection(attempt) {
             if (!err && data && data.ok && !data.sta_connected) {
                 /* We are still connected to SoftAP, and connection to STA failed/timed out */
                 if (statusEl) {
-                    statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ: หมดเวลาการเชื่อมต่อ';
+                    statusEl.innerHTML = '<svg class="label-icon"><use href="#icon-x-circle"></use></svg> เชื่อมต่อไม่สำเร็จ: หมดเวลาการเชื่อมต่อ';
                     statusEl.style.color = 'var(--error)';
                 }
                 updateStepper(2);
             } else {
                 /* Connection to SoftAP lost, assume device moved to new network */
                 if (statusEl) {
-                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ';
+                    statusEl.innerHTML = '<svg class="label-icon"><use href="#icon-check-circle"></use></svg> อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ';
                     statusEl.style.color = 'var(--secondary)';
                 }
                 updateStepper(3, true);
@@ -3688,8 +3688,8 @@ function wakeScreen() {
     apiPost('/api/display/wake', {}, function(data) {
         var btn = document.getElementById('btn-wake-screen');
         if (btn) {
-            btn.textContent = '✅ หน้าจอเปิดแล้ว';
-            setTimeout(function() { btn.textContent = '🔆 เปิดหน้าจอทันที'; }, 2000);
+            btn.innerHTML = '<svg class="label-icon"><use href="#icon-check-circle"></use></svg> หน้าจอเปิดแล้ว';
+            setTimeout(function() { btn.innerHTML = '<svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที'; }, 2000);
         }
     });
 }

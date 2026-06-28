@@ -308,7 +308,7 @@
     <!-- Main Content -->
     <main id="app-content" class="main-content" aria-label="Application content">
         <div id="staging-banner" class="alert-banner hidden">
-            <span>⚠️ <strong>กำลังทดสอบการตั้งค่าใหม่:</strong> ระบบจะกู้คืนการตั้งค่าเดิมโดยอัตโนมัติใน 3 นาที
+            <span><svg class="label-icon"><use href="#icon-alert-triangle"></use></svg> <strong>กำลังทดสอบการตั้งค่าใหม่:</strong> ระบบจะกู้คืนการตั้งค่าเดิมโดยอัตโนมัติใน 3 นาที
                 หากคุณไม่ยืนยันว่าการทำงานปกติ</span>
             <div class="banner-actions">
                 <button class="btn btn-primary" onclick="confirmStaging()">ยืนยันใช้งาน (<span
@@ -1001,7 +1001,7 @@
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Firmware</span>
-                            <div class="status-kv-value" id="st-project-version"><span class="skeleton">0.1.8</span></div>
+                            <div class="status-kv-value" id="st-project-version"><span class="skeleton">0.1.9</span></div>
                         </div>
                         <div class="status-kv-item" style="grid-column: 1 / -1;">
                             <span class="status-kv-label" lang="en">Reset Reason</span>
@@ -1418,7 +1418,7 @@
 
                 <div class="alert-banner mt-md" style="align-items: flex-start;">
                     <div>
-                        <strong>⚠️ GPIO 0 — Strapping Pin:</strong>
+                        <strong><svg class="label-icon"><use href="#icon-alert-triangle"></use></svg> GPIO 0 — Strapping Pin:</strong>
                         ปุ่ม Factory Reset ใช้ GPIO 0 ซึ่งเป็น strapping pin ของ ESP32
                         <strong>ห้ามกดค้างขณะเปิดเครื่อง</strong> เพราะจะทำให้บอร์ดเข้า Download Mode แทนที่จะ boot ปกติ
                         หากต้องการความปลอดภัยมากขึ้น ให้ย้ายสาย Factory Reset ไปใช้ <span class="mono">GPIO 14</span> แทน
@@ -1427,7 +1427,7 @@
 
                 <div class="alert-banner" style="align-items: flex-start; margin-top: var(--space-3); margin-bottom: var(--space-4);">
                     <div>
-                        <strong>💡 Float Switch — External Pull-up แนะนำ:</strong>
+                        <strong><svg class="label-icon"><use href="#icon-info"></use></svg> Float Switch — External Pull-up แนะนำ:</strong>
                         ควรติด Resistor ขนาด <span class="mono">4.7kΩ</span> ระหว่างขา Signal ของลูกลอยกับ 3.3V
                         เพื่อป้องกันสัญญาณรบกวนจากคอยล์แม่เหล็กของปั๊ม
                         Pull-up ภายในชิป ESP32 (~45kΩ) อ่อนเกินไปสำหรับสภาพแวดล้อมใกล้มอเตอร์ไฟฟ้า
@@ -1537,8 +1537,8 @@
                     </div>
                 </div>
                 <div class="form-row mt-md">
-                    <button id="btn-wake-screen" class="btn btn-secondary btn-sm" onclick="wakeScreen()">
-                        🔆 เปิดหน้าจอทันที
+                    <button id="btn-wake-screen" class="btn btn-outline btn-sm" onclick="wakeScreen()">
+                        <svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที
                     </button>
                     <span class="text-muted text-sm ml-sm">ใช้เมื่อหน้าจอดับขณะปั๊มหยุดอยู่</span>
                 </div>
@@ -1594,7 +1594,7 @@
                         <label class="form-group hardware-role-field" for="hardware-ds18b20-gpio">
                             <span class="flex align-center gap-1">
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="svg-icon text-muted"><use href="#icon-temp"></use></svg>
-                                DS18B20 <small class="text-xs status-warning block-helper">ค่าตั้งต้น: 33 <span class="mono">⚠ Pull-up 4.7k&Omega;</span></small>
+                                DS18B20 <small class="text-xs status-warning block-helper">ค่าตั้งต้น: 33 <span class="mono"><svg class="label-icon" style="width: 14px; height: 14px;"><use href="#icon-alert-triangle"></use></svg> Pull-up 4.7k&Omega;</span></small>
                             </span>
                             <select id="hardware-ds18b20-gpio" name="ds18b20_gpio" required></select>
                         </label>
@@ -1725,7 +1725,7 @@
                 </div>
 
                 <p class="text-sm text-error my-sm">
-                    ⚠️ คำเตือน: หลังจากเปลี่ยนรหัสผ่านสำเร็จ อุปกรณ์อื่น ๆ ทั้งหมดจะถูกบังคับให้ออกจากระบบทันที
+                    <svg class="label-icon"><use href="#icon-alert-triangle"></use></svg> คำเตือน: หลังจากเปลี่ยนรหัสผ่านสำเร็จ อุปกรณ์อื่น ๆ ทั้งหมดจะถูกบังคับให้ออกจากระบบทันที
                 </p>
                 <div id="password-error" class="pump-alert hidden mt-sm"></div>
 
@@ -1802,7 +1802,7 @@
                 </div>
                 <div id="force-pwd-error" class="error-msg hidden" style="color: var(--danger-color); margin-top: 0.5rem;"></div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="handleUnauthorized()">ออกจากระบบ</button>
+                    <button type="button" class="btn btn-outline" onclick="handleUnauthorized()">ออกจากระบบ</button>
                     <button type="submit" class="btn btn-primary" id="force-pwd-submit">เปลี่ยนรหัสผ่าน</button>
                 </div>
             </form>
