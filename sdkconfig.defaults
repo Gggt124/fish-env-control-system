@@ -20,7 +20,9 @@ CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=y
 CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=y
 
 # HTTP server plus captive DNS need socket headroom during browser refreshes.
-CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_LWIP_MAX_SOCKETS=32
+CONFIG_LWIP_MAX_ACTIVE_TCP=32
+CONFIG_LWIP_MAX_TIME_WAIT_TCP=32
 
 # Runtime stats disabled for production: causes CPU overhead on every context switch.
 # Re-enable temporarily during soak diagnostics only.
