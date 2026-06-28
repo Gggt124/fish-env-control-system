@@ -4120,6 +4120,7 @@ bool web_server_start(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = APP_TEMPLATE_HTTP_MAX_URI_HANDLERS;
     config.max_open_sockets = APP_TEMPLATE_HTTP_MAX_OPEN_SOCKETS;
+    config.backlog_conn = 12; // Add this line to prevent dropping SYNs during brief blocks
     config.recv_wait_timeout = APP_TEMPLATE_HTTP_RECV_TIMEOUT_SEC;
     config.send_wait_timeout = APP_TEMPLATE_HTTP_SEND_TIMEOUT_SEC;
     config.lru_purge_enable = true;
