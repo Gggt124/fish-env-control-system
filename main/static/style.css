@@ -261,12 +261,12 @@
     /* hover / nested surface */
     --border-color: #1e2333;
     /* subtle structural border */
-    --text-primary: #e8edf5;
-    /* near-white, ไม่จ้าเกินไป */
-    --text-secondary: #7a8899;
-    /* labels และ meta */
-    --text-muted: #64748b;
-    /* placeholder, divider text */
+    --text-primary: #f5f5f5;
+    /* neutral off-white, สว่างคมชัดแต่ไม่แสบตา */
+    --text-secondary: #a3a3a3;
+    /* neutral light gray */
+    --text-muted: #7a7a7a;
+    /* neutral gray */
 
     --accent: #00c8a0;
     /* teal operational — pump active, focus ring */
