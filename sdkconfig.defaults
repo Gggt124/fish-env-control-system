@@ -24,10 +24,13 @@ CONFIG_LWIP_MAX_SOCKETS=32
 CONFIG_LWIP_MAX_ACTIVE_TCP=32
 CONFIG_LWIP_MAX_TIME_WAIT_TCP=32
 
-# Runtime stats disabled for production: causes CPU overhead on every context switch.
-# Re-enable temporarily during soak diagnostics only.
-# CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS is not set
-# CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER is not set
+# Runtime stats: enables CPU load measurement via idle task counters.
+# Adds ~1µs overhead per context switch (negligible at 160MHz).
+CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
+CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
+
+# Main task stack: default 3584 too tight (HWM=932). Increase for safety margin.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=4608
 
 # Stack overflow detection: method 2 (stack pointer canary check) panics on overflow instead of silently corrupting memory.
 CONFIG_FREERTOS_CHECK_STACKOVERFLOW=2

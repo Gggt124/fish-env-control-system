@@ -280,16 +280,20 @@ static void log_board_and_hardware_diagnostics(void)
     uint32_t idle_runtime[portNUM_PROCESSORS] = {0};
     uint32_t core_load_x10[portNUM_PROCESSORS] = {0};
     uint32_t elapsed_us = 0;
-    bool cpu_sample_valid = s_last_board_diag_us != 0;
+    bool cpu_stats_available = false;
+    bool cpu_sample_valid = false;
     uint32_t total_load_x10 = 0;
 
     for (int core = 0; core < portNUM_PROCESSORS; core++) {
 #if configGENERATE_RUN_TIME_STATS
         idle_runtime[core] = (uint32_t)ulTaskGetIdleRunTimeCounterForCore(core);
+        cpu_stats_available = true;
 #else
         idle_runtime[core] = 0;
 #endif
     }
+
+    cpu_sample_valid = cpu_stats_available && (s_last_board_diag_us != 0);
 
     if (cpu_sample_valid) {
         elapsed_us = (uint32_t)(now_us - s_last_board_diag_us);
@@ -314,7 +318,7 @@ static void log_board_and_hardware_diagnostics(void)
              "[BOARD_DIAG] uptime_ms=%llu cpu_mhz=%d cpu_sample=%s cpu_window_ms=%lu cpu_load_pct=%lu.%lu core0_pct=%lu.%lu core1_pct=%lu.%lu tasks=%lu twdt_main=%s reset=%s heap_free=%lu heap_min=%lu heap_largest=%lu heap_alloc_blocks=%lu heap_free_blocks=%lu main_stack_hwm=%lu die_temp=unsupported external_temp_source=ds18b20",
              (unsigned long long)(now_us / 1000),
              CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
-             cpu_sample_valid ? "valid" : "warming_up",
+             !cpu_stats_available ? "unsupported" : (cpu_sample_valid ? "valid" : "warming_up"),
              (unsigned long)(elapsed_us / 1000),
              (unsigned long)(total_load_x10 / 10),
              (unsigned long)(total_load_x10 % 10),
