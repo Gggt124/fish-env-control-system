@@ -3941,7 +3941,10 @@ static esp_err_t handle_api_display_config_post(httpd_req_t *req)
     }
 
     tft_display_set_idle_dim_percent(new_dim);
-    tft_display_reset_idle_timer();
+    
+    /* A9 UX: Preview the new dim setting immediately instead of waking to 100%.
+     * (handle_instrumented_route already woke it, we override it here). */
+    tft_display_set_brightness(new_dim);
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
