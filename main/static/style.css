@@ -3964,9 +3964,21 @@ body.login-active .app-footer {
 }
 
 .timer-card-panel.active-timer {
-    border-color: var(--accent) !important;
-    background: transparent !important;
-    box-shadow: inset 3px 0 0 var(--accent) !important;
+    /* Flat surface rule: intentionally empty to prevent structural changes */
+}
+
+.timer-card-panel.active-timer .timer-badge {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.timer-card-panel.active-timer .timer-card-title::after {
+    content: "• ACTIVE";
+    color: var(--success);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-left: auto;
 }
 
 .timer-card-header {
