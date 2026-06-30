@@ -8,6 +8,7 @@ idf_component_register(
         wifi_manager
         esp_lcd
         esp_driver_gpio
+        esp_driver_ledc
         esp_timer
         freertos
 )

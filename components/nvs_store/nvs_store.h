@@ -167,6 +167,9 @@ bool nvs_store_rollback_staging(void);
 uint8_t nvs_store_commit_staging(void);
 bool nvs_store_factory_reset_credentials(void);
 
+bool nvs_store_load_display_settings(uint8_t *dim_percent_out);
+bool nvs_store_save_display_settings(uint8_t dim_percent);
+
 #ifdef __cplusplus
 }
 #endif

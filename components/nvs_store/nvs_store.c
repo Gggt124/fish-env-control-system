@@ -62,6 +62,9 @@ static const char *TAG = "nvs_store";
 #define NVS_COOL_KEY_MIN_OFF     "min_off_s"
 #define NVS_COOL_KEY_RELAY_LOW   "relay_low"
 
+#define NVS_DISP_NAMESPACE  "disp_cfg"
+#define NVS_DISP_KEY_DIM    "dim_pct"
+
 static bool pump_duration_valid(uint32_t seconds)
 {
     return seconds >= APP_TEMPLATE_PUMP_TIMER_MIN_SEC &&
@@ -1354,4 +1357,26 @@ bool nvs_store_factory_reset_credentials(void)
     return ok;
 }
 
+bool nvs_store_load_display_settings(uint8_t *dim_percent_out)
+{
+    nvs_handle_t h;
+    if (nvs_open(NVS_DISP_NAMESPACE, NVS_READONLY, &h) != ESP_OK) {
+        *dim_percent_out = 15;
+        return false;
+    }
+    uint8_t val = 15;
+    nvs_get_u8(h, NVS_DISP_KEY_DIM, &val);
+    nvs_close(h);
+    *dim_percent_out = (val <= 100) ? val : 15;
+    return true;
+}
 
+bool nvs_store_save_display_settings(uint8_t dim_percent)
+{
+    nvs_handle_t h;
+    if (nvs_open(NVS_DISP_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) return false;
+    esp_err_t err = nvs_set_u8(h, NVS_DISP_KEY_DIM, dim_percent);
+    if (err == ESP_OK) nvs_commit(h);
+    nvs_close(h);
+    return err == ESP_OK;
+}

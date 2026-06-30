@@ -523,14 +523,14 @@
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer1-on-min">
                                                             <input id="timer1-on-min" type="number" min="0" max="99"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 1 ระยะเวลาทำงาน (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer1-on-sec">
                                                             <input id="timer1-on-sec" type="number" min="0" max="59"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 1 ระยะเวลาทำงาน (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
@@ -546,14 +546,14 @@
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer1-off-min">
                                                             <input id="timer1-off-min" type="number" min="0" max="99"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 1 ระยะเวลาหยุดพัก (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer1-off-sec">
                                                             <input id="timer1-off-sec" type="number" min="0" max="59"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 1 ระยะเวลาหยุดพัก (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
@@ -596,14 +596,14 @@
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer2-on-min">
                                                             <input id="timer2-on-min" type="number" min="0" max="99"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 2 ระยะเวลาทำงาน (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer2-on-sec">
                                                             <input id="timer2-on-sec" type="number" min="0" max="59"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 2 ระยะเวลาทำงาน (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
@@ -619,14 +619,14 @@
                                                     <div class="duration-picker">
                                                         <label class="duration-part" for="timer2-off-min">
                                                             <input id="timer2-off-min" type="number" min="0" max="99"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 2 ระยะเวลาหยุดพัก (นาที)">
                                                             <span class="duration-label">นาที</span>
                                                         </label>
                                                         <div class="duration-divider">:</div>
                                                         <label class="duration-part" for="timer2-off-sec">
                                                             <input id="timer2-off-sec" type="number" min="0" max="59"
-                                                                step="1" inputmode="numeric" placeholder="00"
+                                                                step="1" inputmode="numeric" placeholder="-"
                                                                 aria-label="Timer 2 ระยะเวลาหยุดพัก (วินาที)">
                                                             <span class="duration-label">วินาที</span>
                                                         </label>
@@ -1559,6 +1559,27 @@
                         <svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที
                     </button>
                     <span class="text-muted text-sm ml-sm">ใช้เมื่อหน้าจอดับขณะปั๊มหยุดอยู่</span>
+                </div>
+                <div class="form-group mt-md pt-md" style="border-top: 1px solid var(--outline-variant);" id="dim-setting-row">
+                    <label for="input-dim-percent" class="form-label">
+                        ความสว่างขณะ Idle
+                        <span class="text-muted text-sm">(Dim %)</span>
+                    </label>
+                    <div class="flex align-center gap-sm">
+                        <input
+                            type="range"
+                            id="input-dim-percent"
+                            min="0" max="100" step="1"
+                            value="15"
+                            class="range-slider"
+                            oninput="updateDimLabel(this.value)"
+                            style="flex-grow: 1; max-width: 250px;"
+                        />
+                        <span id="dim-percent-label" class="mono text-sm" style="min-width:3ch">15%</span>
+                    </div>
+                    <button id="btn-save-dim" class="btn btn-primary btn-sm mt-sm" onclick="saveDimSetting()">
+                        <svg class="label-icon"><use href="#icon-save"></use></svg> บันทึก
+                    </button>
                 </div>
             </section>
 

@@ -3886,6 +3886,66 @@ static esp_err_t handle_display_wake(httpd_req_t *req) {
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
 
+/* GET /api/display/config - protected, return current display idle dim setting */
+static esp_err_t handle_api_display_config_get(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    uint8_t dim_pct = tft_display_get_idle_dim_percent();
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddNumberToObject(root, "dim_percent", dim_pct);
+    char *json_str = cJSON_PrintUnformatted(root);
+    esp_err_t ret = send_json(req, json_str, "200 OK");
+    free(json_str);
+    cJSON_Delete(root);
+    return ret;
+}
+
+/* POST /api/display/config - protected, save new display idle dim setting */
+static esp_err_t handle_api_display_config_post(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req, false)) {
+        return send_api_error(req, "forbidden", "Cross-origin display config save blocked", "403 Forbidden");
+    }
+
+    char body[128] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
+    }
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root || !cJSON_IsObject(root)) {
+        if (root) cJSON_Delete(root);
+        return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
+    }
+
+    cJSON *dim_item = cJSON_GetObjectItemCaseSensitive(root, "dim_percent");
+    if (!cJSON_IsNumber(dim_item) || dim_item->valueint < 0 || dim_item->valueint > 100) {
+        cJSON_Delete(root);
+        return send_api_error(req, "invalid_parameter", "dim_percent must be an integer between 0 and 100", "400 Bad Request");
+    }
+
+    uint8_t new_dim = (uint8_t)dim_item->valueint;
+    cJSON_Delete(root);
+
+    if (!nvs_store_save_display_settings(new_dim)) {
+        ESP_LOGE(TAG, "Failed to save display settings to NVS");
+        return send_api_error(req, "save_failed", "Failed to save to NVS", "500 Internal Server Error");
+    }
+
+    tft_display_set_idle_dim_percent(new_dim);
+    tft_display_reset_idle_timer();
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
 static web_route_diag_t s_routes[] = {
     { .uri = "/",              .method = HTTP_GET,  .handler = handle_root },
     { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login },
@@ -3935,6 +3995,8 @@ static web_route_diag_t s_routes[] = {
     { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start },
     { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop },
     { .uri = "/api/display/wake",.method = HTTP_POST, .handler = handle_display_wake },
+    { .uri = "/api/display/config", .method = HTTP_GET,  .handler = handle_api_display_config_get },
+    { .uri = "/api/display/config", .method = HTTP_POST, .handler = handle_api_display_config_post },
 };
 
 static esp_err_t handle_instrumented_route(httpd_req_t *req)

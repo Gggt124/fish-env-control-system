@@ -588,6 +588,9 @@ static void hardware_ui_task(void *pvParameters)
         if (any_pressed) {
             press_duration_ms += 50;
             release_ticks = 0;
+            
+            // Wake TFT backlight on any button press
+            tft_display_reset_idle_timer();
 
             if (press_duration_ms < 2000) {
                 s_led_state = LED_STATE_BTN_HOLD_SHORT;
@@ -695,6 +698,11 @@ void app_main(void)
 
     /* Initialize TFT display */
     if (tft_display_init() == ESP_OK) {
+        uint8_t dim_pct;
+        nvs_store_load_display_settings(&dim_pct);
+        tft_display_set_idle_dim_percent(dim_pct);
+        ESP_LOGI(TAG, "TFT idle dim loaded: %u%%", dim_pct);
+
         tft_clear(TFT_COLOR_BLACK);
         // Draw centered high-contrast "Booting..." splash screen
         tft_draw_string_x2(80, 60, "Booting...", TFT_COLOR_GREEN, TFT_COLOR_BLACK);

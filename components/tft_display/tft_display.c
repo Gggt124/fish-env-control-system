@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "driver/ledc.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -58,21 +59,35 @@ esp_err_t tft_display_init(void) {
         goto err;
     }
 
-    // 2. Turn on LED backlight pin
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << APP_TEMPLATE_TFT_LED_GPIO),
-        .mode = GPIO_MODE_OUTPUT,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
+    // 2. Configure LEDC PWM for backlight dimming
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode       = LEDC_LOW_SPEED_MODE,
+        .timer_num        = LEDC_TIMER_0,
+        .duty_resolution  = LEDC_TIMER_8_BIT,
+        .freq_hz          = 1000,
+        .clk_cfg          = LEDC_AUTO_CLK
     };
-    ret = gpio_config(&io_conf);
+    ret = ledc_timer_config(&ledc_timer);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure backlight GPIO: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to configure LEDC timer: %s", esp_err_to_name(ret));
         goto err;
     }
-    gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, 1);
-    ESP_LOGI(TAG, "Backlight turned ON");
+
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_LOW_SPEED_MODE,
+        .channel        = LEDC_CHANNEL_0,
+        .timer_sel      = LEDC_TIMER_0,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = APP_TEMPLATE_TFT_LED_GPIO,
+        .duty           = 255, // 100% on boot
+        .hpoint         = 0
+    };
+    ret = ledc_channel_config(&ledc_channel);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure LEDC channel: %s", esp_err_to_name(ret));
+        goto err;
+    }
+    ESP_LOGI(TAG, "Backlight PWM configured at 100%%");
     s_last_activity_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);  /* start idle timer from boot */
 
     // 3. Initialize SPI Bus on SPI3_HOST (VSPI)
@@ -369,20 +384,33 @@ void tft_display_draw_dashboard_skeleton(void) {
     tft_draw_string(175, 170, "LOCK  :", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
 }
 
-static volatile bool s_backlight_on = true;
+static volatile uint8_t s_current_brightness = 100;
+static uint8_t s_idle_dim_percent = APP_TEMPLATE_TFT_DIM_PERCENT;
 
-void tft_display_set_backlight(bool on)
+void tft_display_set_idle_dim_percent(uint8_t percent) {
+    s_idle_dim_percent = (percent <= 100) ? percent : APP_TEMPLATE_TFT_DIM_PERCENT;
+}
+
+uint8_t tft_display_get_idle_dim_percent(void) {
+    return s_idle_dim_percent;
+}
+
+void tft_display_set_brightness(uint8_t percent)
 {
-    if (s_backlight_on == on) return;
-    s_backlight_on = on;
-    gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, on ? 1 : 0);
-    ESP_LOGI(TAG, "Backlight %s (screen saver)", on ? "ON" : "OFF");
+    if (percent > 100) percent = 100;
+    if (s_current_brightness == percent) return;
+    
+    s_current_brightness = percent;
+    uint32_t duty = (255 * percent) / 100;
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    ESP_LOGI(TAG, "Backlight set to %d%%", percent);
 }
 
 void tft_display_reset_idle_timer(void)
 {
     s_last_activity_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
-    tft_display_set_backlight(true);
+    tft_display_set_brightness(100);
 }
 
 static void tft_display_task(void *pvParameters) {
@@ -567,26 +595,12 @@ static void tft_display_task(void *pvParameters) {
             tft_draw_string(235, 170, lockout_formatted, lockout_color, TFT_COLOR_DARK_NAVY);
         }
         
-        static bool s_prev_relay_energized = false;
-        static pump_control_float_state_t s_prev_float_state = PUMP_CONTROL_FLOAT_UNKNOWN;
-
-        if (s_cache_valid) {
-            if (pump_running_changed || pump_timer_changed || pump_phase_changed ||
-                s_prev_relay_energized != pump.relay_energized ||
-                s_prev_float_state != pump.float_state) {
-                tft_display_reset_idle_timer();
-            }
-        }
-        s_prev_relay_energized = pump.relay_energized;
-        s_prev_float_state = pump.float_state;
-
-        /* A9 audit: auto-off backlight after 30 min inactivity (burn-in prevention).
-         * No touch screen — activity is signaled via web API calls instead.
-         * Only turn off if pump is completely stopped to match UI behavior. */
+        /* A9 audit: auto-dim backlight after 5 min inactivity (burn-in prevention).
+         * No touch screen — activity is signaled via web API calls or buttons. */
         uint32_t now_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
         uint32_t idle_ms = (now_sec - s_last_activity_sec) * 1000;
-        if (!pump_running && idle_ms > APP_TEMPLATE_SCREEN_TIMEOUT_MS) {
-            tft_display_set_backlight(false);
+        if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS && s_current_brightness != s_idle_dim_percent) {
+            tft_display_set_brightness(s_idle_dim_percent);
         }
 
         s_cache_valid = true;

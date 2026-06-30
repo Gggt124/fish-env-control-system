@@ -69,6 +69,7 @@
     /* near-black text */
     --text-secondary: #4a5568;
     --text-muted: #8fa0b4;
+    --input-placeholder: #c2ceda;
 
     --accent: #0097a7;
     /* dark teal สำหรับ light bg — same hue, darker */
@@ -266,6 +267,7 @@
     --text-secondary: #a3a3a3;
     /* neutral light gray */
     --text-muted: #7a7a7a;
+    --input-placeholder: #484848;
     /* neutral gray */
 
     --accent: #00c8a0;
@@ -333,7 +335,7 @@
     --tertiary-text: var(--warning);
 
     --error-hover: #ef4444;
-    --on-error: #7f1d1d;
+    --on-error: #0f172a;
     --error-container: var(--error-soft);
     --error-text: var(--error);
 
@@ -3962,8 +3964,9 @@ body.login-active .app-footer {
 }
 
 .timer-card-panel.active-timer {
-    background: var(--accent-soft) !important;
     border-color: var(--accent) !important;
+    background: transparent !important;
+    box-shadow: inset 3px 0 0 var(--accent) !important;
 }
 
 .timer-card-header {
@@ -4114,21 +4117,21 @@ body.login-active .app-footer {
 }
 
 .duration-part input:focus {
-    color: var(--accent) !important;
-    background: var(--primary-fixed-dim) !important;
-    box-shadow: 0 2px 0 0 var(--accent) !important;
+    background: transparent !important;
+    color: var(--on-surface) !important;
+    box-shadow: none !important;
 }
 
 .duration-part input.invalid:focus {
     color: var(--error-text) !important;
     background: var(--error-container) !important;
-    box-shadow: 0 2px 0 0 var(--error) !important;
+    box-shadow: none !important;
 }
 
 .duration-part input::placeholder {
     color: var(--input-placeholder) !important;
     font-weight: 400 !important;
-    opacity: 0.6 !important;
+    opacity: 1 !important;
 }
 
 .duration-label {
@@ -4359,4 +4362,33 @@ select:hover:not(:disabled) {
 
 .ota-upload-btn {
     min-width: 150px;
+}
+
+/* === Range slider — dim control === */
+.range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--outline-variant);
+    outline: none;
+    cursor: pointer;
+}
+.range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: var(--primary);
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+.range-slider::-webkit-slider-thumb:hover {
+    background: var(--primary-hover);
+}
+.range-slider:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }

@@ -102,26 +102,40 @@ void tft_display_draw_dashboard_skeleton(void);
 void tft_display_start_task(void);
 
 /**
- * @brief Control TFT backlight on/off
- * @param on true = backlight on, false = backlight off (screen saver)
+ * @brief Control TFT backlight brightness using LEDC PWM
+ * @param percent 0-100% brightness level
  */
-void tft_display_set_backlight(bool on);
+void tft_display_set_brightness(uint8_t percent);
 
 /**
  * @brief Reset the backlight idle timer.
  * Call from BOTH hardware events (pump state change, float switch change, phase
- * transition) AND web API activity. Backlight auto-off after
- * APP_TEMPLATE_SCREEN_TIMEOUT_MS of inactivity from any source.
+ * transition) AND web API activity. Backlight dims to APP_TEMPLATE_TFT_DIM_PERCENT
+ * after APP_TEMPLATE_TFT_DIM_TIMEOUT_MS of inactivity from any source.
  *
  * Rationale: TFT is a 24/7 status display (shows IP/mDNS/pump state without
  * browser) — idle must be measured from real device activity, not only web usage.
  */
 void tft_display_reset_idle_timer(void);
 
-/** Screen off timeout: 30 min. Long because TFT is primary status display.
+/**
+ * @brief Set the idle dim brightness level at runtime (persisted via NVS separately).
+ *        Call after loading from NVS on boot, or after user saves new value via web API.
+ * @param percent 0-100 brightness to apply when display enters idle state
+ */
+void tft_display_set_idle_dim_percent(uint8_t percent);
+
+/**
+ * @brief Get the current idle dim brightness level.
+ * @return brightness percent (0-100)
+ */
+uint8_t tft_display_get_idle_dim_percent(void);
+
+/** Screen saver config: dims after 5 min. Long because TFT is primary status display.
  *  Burn-in risk is low: dynamic content (countdown, temp) changes every second.
  *  Only static labels risk burn-in if pump is completely idle for hours. */
-#define APP_TEMPLATE_SCREEN_TIMEOUT_MS   (30 * 60 * 1000)
+#define APP_TEMPLATE_TFT_DIM_PERCENT     15
+#define APP_TEMPLATE_TFT_DIM_TIMEOUT_MS  (5 * 60 * 1000)
 
 #ifdef __cplusplus
 }

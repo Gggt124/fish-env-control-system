@@ -1918,6 +1918,7 @@ function initHardwareInstall() {
     wireHardwareForm();
     updateHardwareSaveButton();
     loadHardwareMap();
+    loadDimSetting();
 }
 
 function hardwareEl(id) {
@@ -3698,11 +3699,48 @@ function initOta() {
 //     tft_display_reset_idle_timer() on firmware side.
 //     Does NOT reset via GET /api/status to avoid auto-polling keeping screen on forever.
 function wakeScreen() {
-    apiPost('/api/display/wake', {}, function(data) {
+    apiPost('/api/display/wake', {}, function(err, data) {
         var btn = document.getElementById('btn-wake-screen');
         if (btn) {
             btn.innerHTML = '<svg class="label-icon"><use href="#icon-check-circle"></use></svg> หน้าจอเปิดแล้ว';
             setTimeout(function() { btn.innerHTML = '<svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที'; }, 2000);
+        }
+    });
+}
+
+// Load dim setting from API
+function loadDimSetting() {
+    apiGet('/api/display/config', function(err, data) {
+        if (!err && data && data.ok) {
+            var pct = data.dim_percent;
+            var slider = document.getElementById('input-dim-percent');
+            var label  = document.getElementById('dim-percent-label');
+            if (slider) slider.value = pct;
+            if (label)  label.textContent = pct + '%';
+        }
+    });
+}
+
+// Live label update while dragging
+function updateDimLabel(val) {
+    var label = document.getElementById('dim-percent-label');
+    if (label) label.textContent = val + '%';
+}
+
+// Save dim setting via API
+function saveDimSetting() {
+    var slider = document.getElementById('input-dim-percent');
+    if (!slider) return;
+    var pct = parseInt(slider.value, 10);
+    var btn = document.getElementById('btn-save-dim');
+    if (btn) btn.disabled = true;
+
+    apiPost('/api/display/config', { dim_percent: pct }, function(err, data) {
+        if (btn) btn.disabled = false;
+        if (!err && data && data.ok) {
+            showToast('บันทึกความสว่าง Idle: ' + pct + '%', 'success');
+        } else {
+            showToast('บันทึกไม่สำเร็จ', 'error');
         }
     });
 }
