@@ -1554,13 +1554,7 @@
                         </p>
                     </div>
                 </div>
-                <div class="form-row mt-md">
-                    <button id="btn-wake-screen" class="btn btn-outline btn-sm" onclick="wakeScreen()">
-                        <svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที
-                    </button>
-                    <span class="text-muted text-sm ml-sm">ใช้เมื่อหน้าจอดับขณะปั๊มหยุดอยู่</span>
-                </div>
-                <div class="form-group mt-md pt-md" style="border-top: 1px solid var(--outline-variant);" id="dim-setting-row">
+                <div class="form-group mt-md">
                     <label for="input-dim-percent" class="form-label">
                         ความสว่างขณะ Idle
                         <span class="text-muted text-sm">(Dim %)</span>
@@ -1570,17 +1564,23 @@
                             <input
                                 type="range"
                                 id="input-dim-percent"
-                                min="0" max="100" step="1"
+                                min="0" max="80" step="1"
                                 value="15"
                                 class="range-slider"
                                 oninput="updateDimLabel(this.value)"
                             />
-                            <span id="dim-percent-label" class="mono text-sm" style="min-width:4ch; transform: translateY(1px);">15%</span>
                         </div>
+                        <span id="dim-percent-label" class="mono text-sm" style="min-width: 14ch; transform: translateY(1px);">15%</span>
                         <button id="btn-save-dim" class="btn btn-primary btn-sm" onclick="saveDimSetting()">
                             <svg class="label-icon"><use href="#icon-save"></use></svg> บันทึก
                         </button>
                     </div>
+                </div>
+                <div class="mt-md pt-md flex align-center gap-md" style="border-top: 1px solid var(--outline-variant); flex-wrap: wrap;">
+                    <button id="btn-wake-screen" class="btn btn-outline btn-sm" onclick="wakeScreen()">
+                        <svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที
+                    </button>
+                    <span class="text-muted text-sm">คำสั่งด่วน: ใช้เมื่อหน้าจอดับขณะปั๊มหยุดอยู่</span>
                 </div>
             </section>
 

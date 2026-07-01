@@ -3716,7 +3716,13 @@ function loadDimSetting() {
             var slider = document.getElementById('input-dim-percent');
             var label  = document.getElementById('dim-percent-label');
             if (slider) slider.value = pct;
-            if (label)  label.textContent = pct + '%';
+            if (label) {
+                if (pct == 0) {
+                    label.textContent = '0% (ปิดหน้าจอ)';
+                } else {
+                    label.textContent = pct + '%';
+                }
+            }
         }
     });
 }
@@ -3724,7 +3730,13 @@ function loadDimSetting() {
 // Live label update while dragging
 function updateDimLabel(val) {
     var label = document.getElementById('dim-percent-label');
-    if (label) label.textContent = val + '%';
+    if (label) {
+        if (val == 0) {
+            label.textContent = '0% (ปิดหน้าจอ)';
+        } else {
+            label.textContent = val + '%';
+        }
+    }
 }
 
 // Save dim setting via API
