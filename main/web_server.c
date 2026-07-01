@@ -3911,9 +3911,13 @@ static esp_err_t handle_api_display_config_get(httpd_req_t *req)
     }
 
     uint8_t dim_pct = tft_display_get_idle_dim_percent();
+    uint8_t nvs_dim = dim_pct;
+    nvs_store_load_display_settings(&nvs_dim);
+
     cJSON *root = cJSON_CreateObject();
     cJSON_AddBoolToObject(root, "ok", true);
     cJSON_AddNumberToObject(root, "dim_percent", dim_pct);
+    cJSON_AddNumberToObject(root, "nvs_dim_percent", nvs_dim);
     char *json_str = cJSON_PrintUnformatted(root);
     esp_err_t ret = send_json(req, json_str, "200 OK");
     free(json_str);
@@ -3949,18 +3953,25 @@ static esp_err_t handle_api_display_config_post(httpd_req_t *req)
         return send_api_error(req, "invalid_parameter", "dim_percent must be an integer between 0 and 100", "400 Bad Request");
     }
 
+    cJSON *save_item = cJSON_GetObjectItemCaseSensitive(root, "save");
+    bool do_save = true;
+    if (cJSON_IsBool(save_item)) {
+        do_save = cJSON_IsTrue(save_item);
+    }
+
     uint8_t new_dim = (uint8_t)dim_item->valueint;
     cJSON_Delete(root);
 
-    if (!nvs_store_save_display_settings(new_dim)) {
-        ESP_LOGE(TAG, "Failed to save display settings to NVS");
-        return send_api_error(req, "save_failed", "Failed to save to NVS", "500 Internal Server Error");
+    if (do_save) {
+        if (!nvs_store_save_display_settings(new_dim)) {
+            ESP_LOGE(TAG, "Failed to save display settings to NVS");
+            return send_api_error(req, "save_failed", "Failed to save to NVS", "500 Internal Server Error");
+        }
     }
 
     tft_display_set_idle_dim_percent(new_dim);
     
-    /* A9 UX: Preview the new dim setting immediately instead of waking to 100%.
-     * (handle_instrumented_route already woke it, we override it here). */
+    /* A9 UX: Preview the new dim setting immediately instead of waking to 100%. */
     tft_display_set_brightness(new_dim);
 
     return send_json(req, "{\"ok\":true}", "200 OK");
@@ -4039,7 +4050,10 @@ static esp_err_t handle_instrumented_route(httpd_req_t *req)
     taskEXIT_CRITICAL(&s_web_diag_lock);
 
     if (route->method == HTTP_POST) {
-        tft_display_reset_idle_timer();
+        /* Do not wake screen for config/preview adjustments */
+        if (strcmp(route->uri, "/api/display/config") != 0) {
+            tft_display_reset_idle_timer();
+        }
     }
 
     esp_err_t result = route->handler(req);

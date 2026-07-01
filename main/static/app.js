@@ -3708,34 +3708,50 @@ function wakeScreen() {
     });
 }
 
+var currentSavedDim = null;
+var dimPreviewTimeout = null;
+
 // Load dim setting from API
 function loadDimSetting() {
     apiGet('/api/display/config', function(err, data) {
         if (!err && data && data.ok) {
             var pct = data.dim_percent;
+            currentSavedDim = (data.nvs_dim_percent !== undefined) ? data.nvs_dim_percent : pct;
+            
             var slider = document.getElementById('input-dim-percent');
-            var label  = document.getElementById('dim-percent-label');
             if (slider) slider.value = pct;
-            if (label) {
-                if (pct == 0) {
-                    label.textContent = '0% (ปิดหน้าจอ)';
-                } else {
-                    label.textContent = pct + '%';
-                }
-            }
+            
+            updateDimLabel(pct, true);
         }
     });
 }
 
 // Live label update while dragging
-function updateDimLabel(val) {
+function updateDimLabel(val, skipPreview) {
     var label = document.getElementById('dim-percent-label');
+    var valInt = parseInt(val, 10);
+    
     if (label) {
-        if (val == 0) {
-            label.textContent = '0% (ปิดหน้าจอ)';
+        var displayStr = valInt == 0 ? '0% (ปิดหน้าจอ)' : (valInt + '%');
+        if (currentSavedDim !== null && valInt !== currentSavedDim) {
+            label.innerHTML = '<span class="text-muted">' + currentSavedDim + '% &rarr;</span> ' + displayStr;
         } else {
-            label.textContent = val + '%';
+            label.textContent = displayStr;
         }
+    }
+    
+    var btn = document.getElementById('btn-save-dim');
+    if (btn && currentSavedDim !== null) {
+        btn.disabled = (valInt === currentSavedDim);
+    }
+
+    if (!skipPreview) {
+        if (dimPreviewTimeout) {
+            clearTimeout(dimPreviewTimeout);
+        }
+        dimPreviewTimeout = setTimeout(function() {
+            apiPost('/api/display/config', { dim_percent: valInt, save: false }, function() {});
+        }, 100);
     }
 }
 
@@ -3747,11 +3763,15 @@ function saveDimSetting() {
     var btn = document.getElementById('btn-save-dim');
     if (btn) btn.disabled = true;
 
-    apiPost('/api/display/config', { dim_percent: pct }, function(err, data) {
-        if (btn) btn.disabled = false;
+    apiPost('/api/display/config', { dim_percent: pct, save: true }, function(err, data) {
         if (!err && data && data.ok) {
+            currentSavedDim = pct;
+            if (btn) btn.disabled = true;
+            // Reset label to pure value format without arrow
+            updateDimLabel(pct, true); 
             showToast('บันทึกความสว่าง Idle: ' + pct + '%', 'success');
         } else {
+            if (btn) btn.disabled = false;
             showToast('บันทึกไม่สำเร็จ', 'error');
         }
     });
