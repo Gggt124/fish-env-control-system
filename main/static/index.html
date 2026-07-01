@@ -1565,21 +1565,22 @@
                         ความสว่างขณะ Idle
                         <span class="text-muted text-sm">(Dim %)</span>
                     </label>
-                    <div class="flex align-center gap-sm">
-                        <input
-                            type="range"
-                            id="input-dim-percent"
-                            min="0" max="100" step="1"
-                            value="15"
-                            class="range-slider"
-                            oninput="updateDimLabel(this.value)"
-                            style="flex-grow: 1; max-width: 250px;"
-                        />
-                        <span id="dim-percent-label" class="mono text-sm" style="min-width:3ch">15%</span>
+                    <div class="flex align-center gap-md" style="flex-wrap: wrap;">
+                        <div class="flex align-center gap-sm" style="flex-grow: 1; max-width: 250px;">
+                            <input
+                                type="range"
+                                id="input-dim-percent"
+                                min="0" max="100" step="1"
+                                value="15"
+                                class="range-slider"
+                                oninput="updateDimLabel(this.value)"
+                            />
+                            <span id="dim-percent-label" class="mono text-sm" style="min-width:4ch; transform: translateY(1px);">15%</span>
+                        </div>
+                        <button id="btn-save-dim" class="btn btn-primary btn-sm" onclick="saveDimSetting()">
+                            <svg class="label-icon"><use href="#icon-save"></use></svg> บันทึก
+                        </button>
                     </div>
-                    <button id="btn-save-dim" class="btn btn-primary btn-sm mt-sm" onclick="saveDimSetting()">
-                        <svg class="label-icon"><use href="#icon-save"></use></svg> บันทึก
-                    </button>
                 </div>
             </section>
 
