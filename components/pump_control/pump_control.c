@@ -260,6 +260,10 @@ static bool configure_gpio_locked(const pump_control_config_t *config)
         return false;
     }
 
+    if (config->float_gpio >= 34 && config->float_gpio <= 39) {
+        ESP_LOGW(TAG, "Float GPIO %d is input-only. Internal pull-up/down will not work. Ensure external resistor is installed!", config->float_gpio);
+    }
+
     gpio_config_t float_cfg = {
         .pin_bit_mask = (1ULL << (uint32_t)config->float_gpio),
         .mode = GPIO_MODE_INPUT,

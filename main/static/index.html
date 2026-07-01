@@ -1437,16 +1437,23 @@
                         <ul class="text-sm text-muted mt-sm" style="padding-left: 1.5rem; list-style-type: disc;">
                             <li class="mb-sm">
                                 <strong>ระดับไฟ 3.3V เท่านั้น:</strong> 
-                                ขา <span class="mono">GPIO</span> ของ ESP32 รับไฟได้สูงสุด 3.3V ห้ามต่อกับไฟ 5V เด็ดขาด
+                                ขา <span class="mono">GPIO</span> ของ ESP32 รับไฟได้สูงสุด 3.3V (Not 5V-tolerant) การต่อกับอุปกรณ์ 5V โดยตรงอาจทำให้ชิปเสียหายได้ ต้องใช้ Level Shifter หรือ Voltage Divider
+                            </li>
+                            <li class="mb-sm">
+                                <strong>ขา Input-only (GPIO 34-39):</strong>
+                                สำหรับ ESP32 รุ่น classic ขากลุ่มนี้จะไม่มี Internal Pull-up/Pull-down หากนำมาต่อลูกลอย <strong>ต้องต่อตัวต้านทานภายนอกเสมอ</strong> (ไม่ใช่แค่คำแนะนำ)
                             </li>
                             <li class="mb-sm">
                                 <strong>สายสั้น (ไม่เกิน 2 เมตร):</strong> 
-                                แนะนำให้ต่อตัวต้านทาน <span class="mono">Pull-up 4.7k&Omega;</span> จาก <span class="mono">3.3V</span> เข้ากับสายลูกลอย/เซนเซอร์ เพื่อป้องกันสัญญาณรบกวนจากคอยล์แม่เหล็กของปั๊ม เนื่องจาก Pull-up ภายในชิป ESP32 (~45k&Omega;) อ่อนเกินไปสำหรับสภาพแวดล้อมใกล้มอเตอร์ไฟฟ้า
+                                แนะนำให้ต่อตัวต้านทาน <span class="mono">Pull-up 4.7k&Omega;</span> จาก <span class="mono">3.3V</span> เข้ากับสายลูกลอย/เซนเซอร์ เพื่อลดอิมพีแดนซ์ป้องกันสัญญาณรบกวนจากมอเตอร์ (Pull-up ภายในชิป ~45k&Omega; อ่อนเกินไปสำหรับสภาพแวดล้อมที่มีสัญญาณรบกวน)
                             </li>
                             <li>
                                 <strong>สายยาว (2 - 10 เมตร):</strong> 
-                                ลดตัวต้านทาน <span class="mono">Pull-up</span> เหลือ <span class="mono">1k&Omega; - 2.2k&Omega;</span> 
-                                และควรเพิ่ม <span class="mono">Capacitor 0.1&mu;F</span> (104) คร่อมระหว่างขา <span class="mono">GPIO</span> กับ <span class="mono">GND</span> เพื่อกันสัญญาณรบกวน (Hardware Debounce)
+                                <ul style="padding-left: 1.25rem; list-style-type: circle; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                                    <li class="mb-1">แนะนำใช้สาย <strong>Shielded</strong> หรือ <strong>Twisted Pair</strong> เพื่อตัดปัญหา Common-mode noise จากสายยาว</li>
+                                    <li class="mb-1">ลด <span class="mono">Pull-up</span> เหลือ <span class="mono">1k&Omega; - 2.2k&Omega;</span> ให้กระแสไหลผ่านสูงขึ้นเพื่อทน noise (ที่ 1k&Omega; ขณะสวิตช์ปิดจะกินกระแส ~3.3mA ไม่เป็นปัญหากับ ESP แต่ควรพิจารณาหากใช้แบตเตอรี่)</li>
+                                    <li>เพิ่ม <span class="mono">Capacitor 0.1&mu;F</span> (104) คร่อมขา <span class="mono">GPIO</span> กับ <span class="mono">GND</span> เพื่อเป็นตัวกรอง <strong>EMI Noise ความถี่สูง</strong> (เฟิร์มแวร์มีระบบ <strong>Software Debounce 100ms</strong> จัดการปัญหาสัญญาณหน้าสัมผัสแกว่งให้แล้ว)</li>
+                                </ul>
                             </li>
                         </ul>
                     </div>
@@ -1548,8 +1555,8 @@
                         <h3>พักหน้าจอ TFT <span class="mono text-xs text-muted">Screen Timeout</span></h3>
                         <p>
                             หน้าจอจะลดความสว่างเป็นระดับ Idle อัตโนมัติหลัง 5 นาที
-                            <strong>เมื่อปั๊มหยุดทำงาน</strong>และไม่มีการใช้งาน Web UI
-                            ความสว่างจะกลับเป็นปกติเมื่อสถานะปั๊มเปลี่ยนแปลง
+                            เมื่อไม่มีการสั่งงานผ่าน Web UI หรือไม่มีการกดปุ่ม (Boot หรือปุ่มเสริม)
+                            ความสว่างจะกลับเป็นปกติเมื่อมีการสั่งงานอีกครั้ง
                         </p>
                     </div>
                 </div>
