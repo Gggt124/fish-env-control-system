@@ -1171,12 +1171,6 @@ static bool api_pump_add_status_fields_gen(json_gen_t *gen)
     json_gen_add_string(gen, "hardware_map_status", api_hardware_map_status_name(map_status));
     json_gen_add_bool(gen, "auto_start", settings.auto_start);
     
-    /* V: factory reset button and LED GPIO info */
-    json_gen_add_number(gen, "boot_btn_gpio",  (double)APP_CONFIG_BOOT_BTN_GPIO);
-    json_gen_add_number(gen, "ext_btn_gpio",   (double)APP_CONFIG_EXT_BTN_GPIO);
-    json_gen_add_number(gen, "status_led_gpio",(double)APP_CONFIG_LED_GPIO);
-    json_gen_add_number(gen, "ext_led_gpio",   (double)APP_CONFIG_EXT_LED_GPIO);
-    json_gen_add_string(gen, "led_state",      app_led_state_name(app_get_led_state()));
 
     json_gen_add_string(gen, "settings_status", api_pump_settings_status_name(settings_status));
     return true;
@@ -1239,12 +1233,6 @@ static bool api_pump_add_status_fields(cJSON *root)
     cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
     
-    /* V: factory reset button and LED GPIO info */
-    cJSON_AddNumberToObject(root, "boot_btn_gpio", APP_CONFIG_BOOT_BTN_GPIO);
-    cJSON_AddNumberToObject(root, "ext_btn_gpio", APP_CONFIG_EXT_BTN_GPIO);
-    cJSON_AddNumberToObject(root, "status_led_gpio", APP_CONFIG_LED_GPIO);
-    cJSON_AddNumberToObject(root, "ext_led_gpio", APP_CONFIG_EXT_LED_GPIO);
-    cJSON_AddStringToObject(root, "led_state", app_led_state_name(app_get_led_state()));
 
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
     return true;
