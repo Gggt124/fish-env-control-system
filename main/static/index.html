@@ -1434,25 +1434,31 @@
                         <svg class="chevron-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </summary>
                     <div class="settings-body">
-                        <ul class="text-sm text-muted mt-sm" style="padding-left: 1.5rem; list-style-type: disc;">
+                        <ul class="text-sm text-muted mt-sm" style="padding-left: 1.5rem; list-style-type: decimal;">
                             <li class="mb-sm">
-                                <strong>ระดับไฟ 3.3V เท่านั้น:</strong> 
-                                ขา <span class="mono">GPIO</span> ของ ESP32 รับไฟได้สูงสุด 3.3V (Not 5V-tolerant) การต่อกับอุปกรณ์ 5V โดยตรงอาจทำให้ชิปเสียหายได้ ต้องใช้ Level Shifter หรือ Voltage Divider
+                                <strong>ข้อควรระวังเรื่องระดับไฟ (ห้าม GPIO รับไฟเกิน 3.3V):</strong> 
+                                ขา <span class="mono">GPIO</span> ของ ESP32 <strong>เมื่อทำหน้าที่เป็นขารับสัญญาณ (Input)</strong> จะรับไฟได้สูงสุดเพียง 3.3V (Not 5V-tolerant) หากนำเซนเซอร์ที่ส่งสัญญาณออกเป็น 5V มาต่อตรง ๆ ชิปจะเสียหาย ต้องใช้ Voltage Divider หรือ Level Shifter ส่วนขาที่ทำหน้าที่ <strong>ส่งสัญญาณ (Output)</strong> เช่น สั่งงานโมดูลรีเลย์ 5V การส่งลอจิก 3.3V ออกไปทริกสามารถทำได้ปกติ (แต่ควรใช้โมดูลรีเลย์แบบมี Optocoupler เพื่อป้องกันไฟ 5V ย้อนกลับ)
                             </li>
                             <li class="mb-sm">
-                                <strong>ขา Input-only (GPIO 34-39):</strong>
-                                สำหรับ ESP32 รุ่น classic ขากลุ่มนี้จะไม่มี Internal Pull-up/Pull-down หากนำมาต่อลูกลอย <strong>ต้องต่อตัวต้านทานภายนอกเสมอ</strong> (ไม่ใช่แค่คำแนะนำ)
-                            </li>
-                            <li class="mb-sm">
-                                <strong>สายสั้น (ไม่เกิน 2 เมตร):</strong> 
-                                แนะนำให้ต่อตัวต้านทาน <span class="mono">Pull-up 4.7k&Omega;</span> จาก <span class="mono">3.3V</span> เข้ากับสายลูกลอย/เซนเซอร์ เพื่อลดอิมพีแดนซ์ป้องกันสัญญาณรบกวนจากมอเตอร์ (Pull-up ภายในชิป ~45k&Omega; อ่อนเกินไปสำหรับสภาพแวดล้อมที่มีสัญญาณรบกวน)
+                                <strong>สำหรับสวิตช์ลูกลอยและปุ่มกด (Mechanical Switches):</strong>
+                                <ul style="padding-left: 1.25rem; list-style-type: disc; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                                    <li class="mb-1"><strong>ขา Input-only (GPIO 34-39):</strong> รุ่น classic จะไม่มีวงจร Pull-up ภายใน <strong>ต้องต่อ Pull-up ภายนอกเสมอ</strong></li>
+                                    <li class="mb-1"><strong>สายสั้น (ไม่เกิน 2 เมตร):</strong> แนะนำให้ต่อ R Pull-up 4.7k&Omega; ภายนอก (แม้จะใช้พินปกติ) เพื่อลดอิมพีแดนซ์สู้กับสัญญาณรบกวนจากมอเตอร์</li>
+                                    <li><strong>สายยาว (2 - 10 เมตร):</strong> 
+                                        <ul style="padding-left: 1.25rem; list-style-type: circle; margin-top: 0.25rem;">
+                                            <li>แนะนำใช้สาย <strong>Shielded</strong> หรือ <strong>Twisted Pair</strong></li>
+                                            <li>ลดค่า <span class="mono">Pull-up</span> เหลือ <span class="mono">1k&Omega; - 2.2k&Omega;</span> เพื่อให้ทนต่อ noise ได้ดีขึ้น</li>
+                                            <li>สามารถเพิ่ม <span class="mono">Capacitor 0.1&mu;F</span> คร่อมขาพินกับ <span class="mono">GND</span> เพื่อกรอง <strong>EMI Noise ความถี่สูง</strong> (สำหรับการกันหน้าสัมผัสสวิตช์เด้ง เฟิร์มแวร์มีระบบ <strong>Software Debounce 100ms</strong> จัดการให้แล้ว)</li>
+                                        </ul>
+                                    </li>
+                                </ul>
                             </li>
                             <li>
-                                <strong>สายยาว (2 - 10 เมตร):</strong> 
-                                <ul style="padding-left: 1.25rem; list-style-type: circle; margin-top: 0.25rem; margin-bottom: 0.25rem;">
-                                    <li class="mb-1">แนะนำใช้สาย <strong>Shielded</strong> หรือ <strong>Twisted Pair</strong> เพื่อตัดปัญหา Common-mode noise จากสายยาว</li>
-                                    <li class="mb-1">ลด <span class="mono">Pull-up</span> เหลือ <span class="mono">1k&Omega; - 2.2k&Omega;</span> ให้กระแสไหลผ่านสูงขึ้นเพื่อทน noise (ที่ 1k&Omega; ขณะสวิตช์ปิดจะกินกระแส ~3.3mA ไม่เป็นปัญหากับ ESP แต่ควรพิจารณาหากใช้แบตเตอรี่)</li>
-                                    <li>เพิ่ม <span class="mono">Capacitor 0.1&mu;F</span> (104) คร่อมขา <span class="mono">GPIO</span> กับ <span class="mono">GND</span> เพื่อเป็นตัวกรอง <strong>EMI Noise ความถี่สูง</strong> (เฟิร์มแวร์มีระบบ <strong>Software Debounce 100ms</strong> จัดการปัญหาสัญญาณหน้าสัมผัสแกว่งให้แล้ว)</li>
+                                <strong>สำหรับเซนเซอร์วัดอุณหภูมิ (DS18B20):</strong>
+                                <ul style="padding-left: 1.25rem; list-style-type: disc; margin-top: 0.25rem; margin-bottom: 0.25rem;">
+                                    <li class="mb-1"><strong>สายสั้น (ทั่วไป):</strong> ต้องต่อตัวต้านทาน Pull-up 4.7k&Omega; ที่สาย Data เสมอตามมาตรฐานการสื่อสารแบบ 1-Wire</li>
+                                    <li class="mb-1"><strong>สายยาว (เกิน 5 เมตร):</strong> ค่าความจุไฟฟ้าของสายที่ยาวจะทำให้รูปคลื่นสัญญาณผิดเพี้ยน แนะนำให้ <strong>ลดตัวต้านทาน Pull-up ลงเหลือ 2.2k&Omega; หรือ 1k&Omega;</strong> เพื่อช่วยให้ขอบสัญญาณ (Rising Edge) คมชัดขึ้น</li>
+                                    <li><strong>ข้อควรระวัง:</strong> ห้ามใช้ Capacitor กรองสัญญาณมาต่อคร่อมที่ขานี้เด็ดขาด เพราะจะทำให้ความถี่การสื่อสารข้อมูลพังและอ่านค่าไม่ได้</li>
                                 </ul>
                             </li>
                         </ul>
