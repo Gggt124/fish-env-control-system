@@ -79,6 +79,9 @@ extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_end[]   asm("_binary
 #define WIFI_DISCONNECT_TASK_STACK_BYTES 2048
 #define WIFI_DISCONNECT_DELAY_MS 500
 
+#define STATIC_SEND_RETRY_MAX          2
+#define STATIC_SEND_RETRY_DELAY_TICKS  pdMS_TO_TICKS(100)
+
 static bool s_wifi_disconnect_task_pending = false;
 static portMUX_TYPE s_wifi_disconnect_task_lock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE s_web_diag_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -2026,7 +2029,21 @@ static esp_err_t serve_static(httpd_req_t *req,
         size_t chunk_len = remaining > APP_TEMPLATE_HTTP_STATIC_CHUNK_BYTES
             ? APP_TEMPLATE_HTTP_STATIC_CHUNK_BYTES
             : remaining;
-        esp_err_t ret = httpd_resp_send_chunk(req, (const char *)(start + offset), chunk_len);
+
+        esp_err_t ret = ESP_FAIL;
+        for (int attempt = 0; attempt <= STATIC_SEND_RETRY_MAX; attempt++) {
+            ret = httpd_resp_send_chunk(req, (const char *)(start + offset), chunk_len);
+            if (ret == ESP_OK) {
+                break;
+            }
+            if (attempt < STATIC_SEND_RETRY_MAX) {
+                ESP_LOGD(TAG, "Static chunk retry: uri=%s fd=%d offset=%lu/%lu attempt=%d",
+                         req->uri, httpd_req_to_sockfd(req),
+                         (unsigned long)offset, (unsigned long)len, attempt + 1);
+                vTaskDelay(STATIC_SEND_RETRY_DELAY_TICKS);
+            }
+        }
+
         if (ret != ESP_OK) {
             uint32_t failure_count = increment_static_send_failures();
             ESP_LOGW(TAG, "Static response send failed: uri=%s fd=%d offset=%lu/%lu err=%s count=%lu",
