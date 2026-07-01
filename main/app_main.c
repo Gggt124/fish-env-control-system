@@ -698,7 +698,7 @@ void app_main(void)
 
     /* Initialize TFT display */
     if (tft_display_init() == ESP_OK) {
-        uint8_t dim_pct;
+        uint8_t dim_pct = tft_display_get_idle_dim_percent();
         nvs_store_load_display_settings(&dim_pct);
         tft_display_set_idle_dim_percent(dim_pct);
         ESP_LOGI(TAG, "TFT idle dim loaded: %u%%", dim_pct);

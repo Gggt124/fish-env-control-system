@@ -1361,13 +1361,13 @@ bool nvs_store_load_display_settings(uint8_t *dim_percent_out)
 {
     nvs_handle_t h;
     if (nvs_open(NVS_DISP_NAMESPACE, NVS_READONLY, &h) != ESP_OK) {
-        *dim_percent_out = 15;
         return false;
     }
-    uint8_t val = 15;
-    nvs_get_u8(h, NVS_DISP_KEY_DIM, &val);
+    uint8_t val = *dim_percent_out;
+    if (nvs_get_u8(h, NVS_DISP_KEY_DIM, &val) == ESP_OK) {
+        *dim_percent_out = (val <= 100) ? val : *dim_percent_out;
+    }
     nvs_close(h);
-    *dim_percent_out = (val <= 100) ? val : 15;
     return true;
 }
 

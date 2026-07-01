@@ -134,7 +134,7 @@ uint8_t tft_display_get_idle_dim_percent(void);
 /** Screen saver config: dims after 5 min. Long because TFT is primary status display.
  *  Burn-in risk is low: dynamic content (countdown, temp) changes every second.
  *  Only static labels risk burn-in if pump is completely idle for hours. */
-#define APP_TEMPLATE_TFT_DIM_PERCENT     15
+#define APP_TEMPLATE_TFT_DIM_PERCENT     70
 #define APP_TEMPLATE_TFT_DIM_TIMEOUT_MS  (5 * 60 * 1000)
 
 #ifdef __cplusplus
