@@ -3397,6 +3397,10 @@ select:disabled {
     margin-top: var(--space-4) !important;
 }
 
+.pt-md {
+    padding-top: var(--space-4) !important;
+}
+
 .mt-lg {
     margin-top: var(--space-6) !important;
 }
@@ -4382,6 +4386,8 @@ select:hover:not(:disabled) {
     appearance: none;
     width: 100%;
     height: 6px;
+    min-height: 6px;
+    margin: 10px 0;
     border-radius: 9999px;
     background: var(--outline-variant);
     outline: none;
