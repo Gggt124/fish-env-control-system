@@ -113,4 +113,13 @@ if ($LASTEXITCODE -eq 0) {
 
     Write-Host "Generating merged binary for easy factory flashing..." -ForegroundColor Green
     python -m esptool --chip esp32 merge-bin -o build\fish_pump_relay_timer_control_merged.bin --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 build\bootloader\bootloader.bin 0x10000 build\partition_table\partition-table.bin 0x17000 build\ota_data_initial.bin 0x20000 build\fish_pump_relay_timer_control.bin
+
+    # --- Post-flash: AP Password pipeline ---
+    Write-Host ""
+    Write-Host "=== Post-Flash Step ===" -ForegroundColor Cyan
+    Write-Host "After flashing the board, run to get the board-specific AP password:" -ForegroundColor White
+    Write-Host "  .\scripts\show_ap_password.ps1 -Port COMx" -ForegroundColor Yellow
+    Write-Host "(Replace COMx with the board's COM port, e.g. COM5)" -ForegroundColor Gray
+    Write-Host "Write the displayed password on a label and attach it to the device." -ForegroundColor Gray
+    Write-Host ""
 }
