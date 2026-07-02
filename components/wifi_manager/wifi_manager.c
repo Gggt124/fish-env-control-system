@@ -9,6 +9,7 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
+#include "esp_mac.h"
 #include "lwip/ip4_addr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -305,18 +306,58 @@ static void configure_radio_stability(const char *reason)
              country.policy);
 }
 
+/* --------------- AP Password from MAC --------------- */
+
+/**
+ * Build a WPA2-compliant AP password derived from the board's base MAC address.
+ * Format: "AABBCCDD" (8 uppercase hex chars, no dash, from MAC bytes 2-5).
+ * Minimum buffer size: 9 bytes (8 chars + NUL).
+ * Falls back to APP_TEMPLATE_AP_PASSWORD on MAC read failure.
+ *
+ * SECURITY: password value is never logged. MAC bytes are logged at INFO
+ * level only to confirm the source, not the derived password itself.
+ */
+void wifi_manager_build_ap_password(char *out_buf, size_t buf_len)
+{
+    if (!out_buf || buf_len < 9) {
+        ESP_LOGE(TAG, "wifi_manager_build_ap_password: buffer too small (%zu)", buf_len);
+        if (out_buf && buf_len > 0) out_buf[0] = '\0';
+        return;
+    }
+
+    uint8_t mac[6] = {0};
+    esp_err_t err = esp_base_mac_addr_get(mac);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to read base MAC (%s); using default AP password",
+                 esp_err_to_name(err));
+        strlcpy(out_buf, APP_TEMPLATE_AP_PASSWORD, buf_len);
+        return;
+    }
+
+    /* Use bytes 2-5 of the 6-byte MAC: 8 uppercase hex chars, no dash */
+    snprintf(out_buf, buf_len, "%02X%02X%02X%02X",
+             mac[2], mac[3], mac[4], mac[5]);
+
+    /* Log MAC source only — do NOT log the derived password */
+    ESP_LOGI(TAG, "[AP_CFG] AP password derived from base MAC %02X:%02X:xx:xx:xx:xx",
+             mac[0], mac[1]);
+}
+
 static bool configure_ap(void)
 {
+    char ap_password[16] = {0};  /* "AABBCCDD" = 8 chars + NUL, with headroom */
+    wifi_manager_build_ap_password(ap_password, sizeof(ap_password));
+
     wifi_config_t ap_cfg = {
         .ap = {
             .ssid = APP_TEMPLATE_AP_SSID,
-            .password = APP_TEMPLATE_AP_PASSWORD,
             .ssid_len = strlen(APP_TEMPLATE_AP_SSID),
             .channel = APP_TEMPLATE_AP_CHANNEL,
             .authmode = WIFI_AUTH_WPA2_PSK,
             .max_connection = APP_TEMPLATE_AP_MAX_CONN,
         },
     };
+    strlcpy((char *)ap_cfg.ap.password, ap_password, sizeof(ap_cfg.ap.password));
 
     esp_err_t err = esp_wifi_set_config(WIFI_IF_AP, &ap_cfg);
     if (err != ESP_OK) {
