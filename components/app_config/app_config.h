@@ -19,7 +19,6 @@ extern "C" {
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
 #define APP_TEMPLATE_AP_SSID               "FishPump-Setup"
-#define APP_TEMPLATE_AP_PASSWORD           "admin123"
 #define APP_TEMPLATE_AP_CHANNEL            1
 #define APP_TEMPLATE_AP_MAX_CONN           4
 #define APP_TEMPLATE_WIFI_SCAN_MAX         20

@@ -37,7 +37,7 @@ try {
 }
 
 # Parse line like: "MAC: aa:bb:cc:dd:ee:ff"
-$macLine = $output | Select-String -Pattern "MAC:\s*([0-9a-fA-F:]{17})"
+$macLine = $output | Select-String -Pattern "MAC:\s*([0-9a-fA-F:]{17})" | Select-Object -First 1
 if (-not $macLine) {
     Write-Host "ERROR: Could not find MAC address in esptool output:" -ForegroundColor Red
     Write-Host ($output -join "`n")
@@ -52,8 +52,12 @@ if ($macBytes.Count -ne 6) {
     exit 1
 }
 
-# Same formula as firmware: mac[2..5] (0-indexed), uppercase hex, no dash
-$password = "{0:X2}{1:X2}{2:X2}{3:X2}" -f $macBytes[2], $macBytes[3], $macBytes[4], $macBytes[5]
+# Same formula as firmware: (mac[2..5] ^ 0x5A), uppercase hex, no dash
+$salt = 0x5A
+$password = "{0:X2}{1:X2}{2:X2}{3:X2}" -f ($macBytes[2] -bxor $salt), 
+                                          ($macBytes[3] -bxor $salt), 
+                                          ($macBytes[4] -bxor $salt), 
+                                          ($macBytes[5] -bxor $salt)
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan

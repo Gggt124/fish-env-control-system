@@ -54,7 +54,7 @@ const char* wifi_auth_mode_to_string(wifi_auth_mode_t mode);
 void wifi_manager_start_recovery_ap(void);
 void wifi_manager_reset_ap_timeout(void);
 bool wifi_manager_is_ap_active(void);
-void wifi_manager_build_ap_password(char *out_buf, size_t buf_len);
+bool wifi_manager_build_ap_password(char *out_buf, size_t buf_len);
 
 #ifdef __cplusplus
 }

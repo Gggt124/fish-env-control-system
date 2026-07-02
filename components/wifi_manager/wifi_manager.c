@@ -310,43 +310,42 @@ static void configure_radio_stability(const char *reason)
 
 /**
  * Build a WPA2-compliant AP password derived from the board's base MAC address.
- * Format: "AABBCCDD" (8 uppercase hex chars, no dash, from MAC bytes 2-5).
- * Minimum buffer size: 9 bytes (8 chars + NUL).
- * Falls back to APP_TEMPLATE_AP_PASSWORD on MAC read failure.
- *
- * SECURITY: password value is never logged. MAC bytes are logged at INFO
- * level only to confirm the source, not the derived password itself.
+ * Format: "AABBCCDD" (8 uppercase hex chars, no dash).
+ * Applies an XOR salt (0x5A) to prevent trivial derivation from broadcasted BSSID.
  */
-void wifi_manager_build_ap_password(char *out_buf, size_t buf_len)
+bool wifi_manager_build_ap_password(char *out_buf, size_t buf_len)
 {
     if (!out_buf || buf_len < 9) {
-        ESP_LOGE(TAG, "wifi_manager_build_ap_password: buffer too small (%zu)", buf_len);
+        ESP_LOGE(TAG, "Buffer too small for AP password");
         if (out_buf && buf_len > 0) out_buf[0] = '\0';
-        return;
+        return false;
     }
 
     uint8_t mac[6] = {0};
     esp_err_t err = esp_base_mac_addr_get(mac);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to read base MAC (%s); using default AP password",
+        ESP_LOGE(TAG, "CRITICAL: Failed to read base MAC (%s). Cannot generate AP password.",
                  esp_err_to_name(err));
-        strlcpy(out_buf, APP_TEMPLATE_AP_PASSWORD, buf_len);
-        return;
+        out_buf[0] = '\0';
+        return false;
     }
 
-    /* Use bytes 2-5 of the 6-byte MAC: 8 uppercase hex chars, no dash */
+    const uint8_t SALT = 0x5A;
     snprintf(out_buf, buf_len, "%02X%02X%02X%02X",
-             mac[2], mac[3], mac[4], mac[5]);
+             mac[2] ^ SALT, mac[3] ^ SALT, mac[4] ^ SALT, mac[5] ^ SALT);
 
-    /* Log MAC source only — do NOT log the derived password */
-    ESP_LOGI(TAG, "[AP_CFG] AP password derived from base MAC %02X:%02X:xx:xx:xx:xx",
+    ESP_LOGI(TAG, "[AP_CFG] AP password derived from base MAC %02X:%02X:xx:xx:xx:xx (salted)",
              mac[0], mac[1]);
+    return true;
 }
 
 static bool configure_ap(void)
 {
-    char ap_password[16] = {0};  /* "AABBCCDD" = 8 chars + NUL, with headroom */
-    wifi_manager_build_ap_password(ap_password, sizeof(ap_password));
+    char ap_password[16] = {0};
+    if (!wifi_manager_build_ap_password(ap_password, sizeof(ap_password))) {
+        ESP_LOGE(TAG, "Aborting AP configuration due to missing password");
+        return false;
+    }
 
     wifi_config_t ap_cfg = {
         .ap = {
