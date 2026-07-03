@@ -8,7 +8,7 @@
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_st7789.h"
-
+#include <stdatomic.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -26,7 +26,7 @@ static const char *TAG = "TFT_DISPLAY";
 static esp_lcd_panel_handle_t s_panel_handle = NULL;
 static SemaphoreHandle_t s_trans_done_sem = NULL;
 static SemaphoreHandle_t s_tft_mutex = NULL;
-static volatile uint32_t s_last_activity_sec = 0;   /* set at init */
+static atomic_uint_fast32_t s_last_activity_sec = ATOMIC_VAR_INIT(0);   /* set at init */
 
 // Helper to swap bytes for 16-bit RGB565 to match big-endian SPI transmission
 #define SWAP_BYTES(val) ((((val) & 0xff) << 8) | (((val) & 0xff00) >> 8))
@@ -88,7 +88,7 @@ esp_err_t tft_display_init(void) {
         goto err;
     }
     ESP_LOGI(TAG, "Backlight PWM configured at 100%%");
-    s_last_activity_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);  /* start idle timer from boot */
+    atomic_store(&s_last_activity_sec, (uint32_t)(esp_timer_get_time() / 1000000ULL));  /* start idle timer from boot */
 
     // 3. Initialize SPI Bus on SPI3_HOST (VSPI)
     spi_bus_config_t buscfg = {
@@ -409,7 +409,7 @@ void tft_display_set_brightness(uint8_t percent)
 
 void tft_display_reset_idle_timer(void)
 {
-    s_last_activity_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
+    atomic_store(&s_last_activity_sec, (uint32_t)(esp_timer_get_time() / 1000000ULL));
     tft_display_set_brightness(100);
 }
 
@@ -598,7 +598,7 @@ static void tft_display_task(void *pvParameters) {
         /* A9 audit: auto-dim backlight after 5 min inactivity (burn-in prevention).
          * No touch screen — activity is signaled via web API calls or buttons. */
         uint32_t now_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
-        uint32_t idle_ms = (now_sec - s_last_activity_sec) * 1000;
+        uint32_t idle_ms = (now_sec - (uint32_t)atomic_load(&s_last_activity_sec)) * 1000;
         if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS && s_current_brightness != s_idle_dim_percent) {
             tft_display_set_brightness(s_idle_dim_percent);
         }

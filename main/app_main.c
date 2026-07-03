@@ -618,9 +618,16 @@ static void hardware_ui_task(void *pvParameters)
             factory_reset_triggered = false;
             release_ticks++;
 
-            uint8_t stg_type = 0;
-            nvs_store_get_staging_type(&stg_type);
-            if (stg_type > 0) {
+            /* PM-7: Cache staging type; refresh from NVS at most 1 Hz to avoid
+             * blocking UI task during concurrent NVS writes (rollback/factory reset). */
+            static uint8_t cached_stg_type = 0;
+            static uint32_t last_stg_check_ms = 0;
+            uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
+            if (now_ms - last_stg_check_ms >= 1000) {
+                nvs_store_get_staging_type(&cached_stg_type);
+                last_stg_check_ms = now_ms;
+            }
+            if (cached_stg_type > 0) {
                 s_led_state = LED_STATE_STAGING_PENDING;
                 uint32_t phase = release_ticks % 20;
                 if (phase < 2) {
