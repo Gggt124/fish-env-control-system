@@ -3771,7 +3771,7 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
     if (req->content_len == 0) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_file\"}", "400 Bad Request");
     }
-    if (req->content_len > 0x1F0000) {
+    if (req->content_len > 0x1E0000) {
         return send_json(req, "{\"ok\":false,\"error\":\"file_too_large\"}", "413 Payload Too Large");
     }
 

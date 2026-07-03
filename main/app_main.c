@@ -22,8 +22,41 @@
 #include "esp_task_wdt.h"
 #include "driver/gpio.h"
 #include <stdatomic.h>
+#include <inttypes.h>
+#include "esp_ota_ops.h"
 
 static const char *TAG = "app_main";
+
+static void log_ota_partition_state(void)
+{
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    const esp_partition_t *boot    = esp_ota_get_boot_partition();
+    const esp_partition_t *next    = esp_ota_get_next_update_partition(NULL);
+
+    if (running) {
+        ESP_LOGI(TAG, "[OTA] Running: %s @ 0x%08"PRIx32, running->label, running->address);
+    }
+    if (boot) {
+        ESP_LOGI(TAG, "[OTA] Boot:    %s @ 0x%08"PRIx32, boot->label, boot->address);
+    }
+    if (next) {
+        ESP_LOGI(TAG, "[OTA] Update:  %s @ 0x%08"PRIx32, next->label, next->address);
+    }
+
+    esp_ota_img_states_t ota_state;
+    if (running && esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        const char *state_name =
+            ota_state == ESP_OTA_IMG_NEW            ? "NEW"            :
+            ota_state == ESP_OTA_IMG_PENDING_VERIFY ? "PENDING_VERIFY" :
+            ota_state == ESP_OTA_IMG_VALID          ? "VALID"          :
+            ota_state == ESP_OTA_IMG_INVALID        ? "INVALID"        :
+            ota_state == ESP_OTA_IMG_ABORTED        ? "ABORTED"        : "UNDEFINED";
+        ESP_LOGI(TAG, "[OTA] State:   %s (%d)", state_name, (int)ota_state);
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            ESP_LOGW(TAG, "[OTA] Firmware is PENDING_VERIFY — will mark valid after services start");
+        }
+    }
+}
 
 atomic_bool s_trigger_rollback = ATOMIC_VAR_INIT(false);
 atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
@@ -677,6 +710,8 @@ void app_main(void)
     }
     ESP_LOGI(TAG, "NVS initialized");
 
+    log_ota_partition_state();
+
     uint8_t stg_type = 0;
     nvs_store_get_staging_type(&stg_type);
     if (stg_type > 0) {
@@ -889,6 +924,16 @@ void app_main(void)
         s_http_server_retry = true;
     } else {
         ESP_LOGI(TAG, "HTTP server started");
+        
+        /* Mark OTA firmware as valid (cancels bootloader rollback timer) */
+        esp_err_t ota_err = esp_ota_mark_app_valid_cancel_rollback();
+        if (ota_err == ESP_OK) {
+            ESP_LOGI(TAG, "OTA firmware validated (PENDING_VERIFY -> VALID)");
+        } else if (ota_err == ESP_ERR_INVALID_STATE) {
+            ESP_LOGD(TAG, "OTA mark_valid: not in PENDING_VERIFY state (ok)");
+        } else {
+            ESP_LOGW(TAG, "OTA mark_valid returned: %s", esp_err_to_name(ota_err));
+        }
     }
 
     /* 5. Disable Wi-Fi power save (prevents mMC multicast loss) */
