@@ -744,7 +744,7 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
                 copy_len = sizeof(nvs_store_pump_settings_t);
             }
             memcpy(&loaded, blob + 1, copy_len);
-            ESP_LOGI(TAG, "Pump settings loaded from blob (v%d)", NVS_PUMP_BLOB_VERSION);
+            ESP_LOGD(TAG, "Pump settings loaded from blob (v%d)", NVS_PUMP_BLOB_VERSION);
         } else {
             ESP_LOGW(TAG, "Incompatible blob version or format");
         }
