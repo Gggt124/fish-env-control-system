@@ -3233,12 +3233,36 @@ function openPasswordModal() {
         document.getElementById('current-password').value = '';
         document.getElementById('new-username').value = '';
         document.getElementById('new-password').value = '';
+        
+        var currentInput = document.getElementById('current-password');
+        var newInput = document.getElementById('new-password');
+        if(currentInput) currentInput.type = 'password';
+        if(newInput) newInput.type = 'password';
+        
+        var eyes = modal.querySelectorAll('.pwd-eye-btn use');
+        for (var i = 0; i < eyes.length; i++) {
+            eyes[i].setAttribute('href', '#icon-eye');
+        }
+
         var errEl = document.getElementById('password-error');
         if (errEl) {
             errEl.classList.add('hidden');
             errEl.textContent = '';
         }
         modal.showModal();
+    }
+}
+
+function togglePwdVisibility(inputId, btnEl) {
+    var input = document.getElementById(inputId);
+    if (!input || !btnEl) return;
+    var iconUse = btnEl.querySelector('use');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (iconUse) iconUse.setAttribute('href', '#icon-eye-off');
+    } else {
+        input.type = 'password';
+        if (iconUse) iconUse.setAttribute('href', '#icon-eye');
     }
 }
 
@@ -3516,6 +3540,25 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
 function showForcePasswordModal() {
     var modal = document.getElementById('force-pwd-modal');
     if (modal && !modal.open) {
+        var curr = document.getElementById('force-pwd-current');
+        var newp = document.getElementById('force-pwd-new');
+        var conf = document.getElementById('force-pwd-confirm');
+        
+        if (curr) { curr.value = ''; curr.type = 'password'; }
+        if (newp) { newp.value = ''; newp.type = 'password'; }
+        if (conf) { conf.value = ''; conf.type = 'password'; }
+        
+        var eyes = modal.querySelectorAll('.pwd-eye-btn use');
+        for (var i = 0; i < eyes.length; i++) {
+            eyes[i].setAttribute('href', '#icon-eye');
+        }
+
+        var errEl = document.getElementById('force-pwd-error');
+        if (errEl) {
+            errEl.classList.add('hidden');
+            errEl.textContent = '';
+        }
+
         modal.showModal();
         // Prevent canceling via Escape key
         modal.addEventListener('cancel', function(e) {

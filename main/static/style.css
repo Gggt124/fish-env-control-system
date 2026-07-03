@@ -3525,7 +3525,6 @@ select:disabled {
     padding: var(--space-8);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-login);
-    border: 1px solid var(--outline-variant);
     width: 90%;
     max-width: 400px;
     max-height: 90vh;
@@ -3566,6 +3565,99 @@ select:disabled {
     justify-content: flex-end;
     gap: var(--space-3);
     margin-top: var(--space-4);
+}
+
+@media (max-width: 420px) {
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+    .modal-actions .btn {
+        width: 100%;
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+/* Password modals always stack buttons — Thai+English text is too long for 400px card */
+#password-modal .modal-actions,
+#force-pwd-modal .modal-actions {
+    flex-direction: column-reverse;
+}
+
+#password-modal .modal-actions .btn,
+#force-pwd-modal .modal-actions .btn {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Password Modal Specific Styles */
+.pwd-field-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pwd-field-wrapper .input-field {
+    flex: 1;
+    padding-right: 48px; /* make room for the eye button */
+}
+
+.pwd-eye-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--on-surface-variant);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: var(--radius-full);
+}
+
+.pwd-eye-btn:hover {
+    color: var(--on-surface);
+    background: var(--surface-variant);
+}
+
+.badge-optional {
+    display: inline-block;
+    background-color: rgba(0, 151, 167, 0.1);
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.form-error-msg {
+    color: var(--error-text);
+    font-size: var(--text-sm);
+    margin-top: var(--space-2);
+}
+
+.modal-warning-block {
+    background-color: rgba(196, 125, 0, 0.05);
+    border-left: 4px solid var(--tertiary);
+    padding: var(--space-3) var(--space-4);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    color: var(--on-surface-variant);
+    font-size: var(--text-sm);
+    margin: var(--space-4) 0;
+    display: flex;
+    gap: var(--space-2);
+}
+
+.modal-warning-block .label-icon {
+    color: var(--tertiary);
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
 #connect-status {
