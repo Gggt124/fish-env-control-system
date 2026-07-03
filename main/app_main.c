@@ -1006,7 +1006,19 @@ void app_main(void)
         ESP_LOGI(TAG, "  URL: http://%s.local (desktop/iOS on LAN)", APP_TEMPLATE_MDNS_HOSTNAME);
     }
     ESP_LOGI(TAG, "  Login user: %s", APP_TEMPLATE_DEFAULT_USERNAME);
-    ESP_LOGI(TAG, "  WARNING: Change default credentials!");
+    
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    if (nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass))) {
+        if (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0 ||
+            strcmp(stored_user, APP_TEMPLATE_DEFAULT_USERNAME) == 0) {
+            ESP_LOGW(TAG, "  WARNING: Change default credentials!");
+        } else {
+            ESP_LOGI(TAG, "  Credentials OK");
+        }
+    } else {
+        ESP_LOGW(TAG, "  WARNING: Change default credentials!");
+    }
     ESP_LOGI(TAG, "========================================");
 
     /* Main loop — reset WDT every 5s, retry HTTP server, log status every 30s */
@@ -1141,23 +1153,6 @@ void app_main(void)
 
         loop_counter++;
         if (loop_counter >= APP_TEMPLATE_STATUS_LOG_INTERVALS) {
-            ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu, HeapMin=%lu, Largest=%lu, MainStackHWM=%lu",
-                wifi_manager_is_ap_enabled() ? "ON" : "OFF",
-                wifi_manager_get_ap_ip(),
-                wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "disconnected",
-                (unsigned long)wifi_manager_get_free_heap(),
-                (unsigned long)esp_get_minimum_free_heap_size(),
-                (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
-                (unsigned long)uxTaskGetStackHighWaterMark(NULL));
-
-            /* A9 audit: vTaskList uses 32-bit counters that overflow in ~71 min.
-             * Use heap/stack HWM directly instead of vTaskList for reliable diagnostics. */
-            ESP_LOGI(TAG, "[TASKS] MainStack_HWM=%lu  FreeHeap=%lu  MinHeap=%lu  LargestBlock=%lu",
-                (unsigned long)uxTaskGetStackHighWaterMark(NULL),
-                (unsigned long)esp_get_free_heap_size(),
-                (unsigned long)esp_get_minimum_free_heap_size(),
-                (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
-
             log_board_and_hardware_diagnostics();
             wifi_manager_log_diagnostics();
             web_server_log_diagnostics();

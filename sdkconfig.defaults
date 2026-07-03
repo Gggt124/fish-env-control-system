@@ -5,7 +5,10 @@ CONFIG_PARTITION_TABLE_OFFSET=0x10000
 
 # Development workflow: plain idf.py flash. Re-enable encryption only for production hardening.
 # CONFIG_SECURE_FLASH_ENC_ENABLED is not set
-# CONFIG_NVS_ENCRYPTION is not set
+CONFIG_NVS_ENCRYPTION=y
+CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME_FLASH_ENC_BASED=y
+# Note: NVS remains plaintext until Flash Encryption is fully enabled in Release mode.
+# When Flash Encryption is enabled, NVS will automatically be encrypted.
 
 # Bootloader defaults
 CONFIG_BOOTLOADER_COMPILE_TIME_DATE=n
