@@ -1026,6 +1026,12 @@ void app_main(void)
             if (web_server_start()) {
                 ESP_LOGI(TAG, "HTTP server started on retry");
                 s_http_server_retry = false;
+
+                /* Mark OTA firmware as valid (cancels bootloader rollback timer) */
+                esp_err_t ota_err = esp_ota_mark_app_valid_cancel_rollback();
+                if (ota_err == ESP_OK) {
+                    ESP_LOGI(TAG, "OTA firmware validated on retry (PENDING_VERIFY -> VALID)");
+                }
             }
         }
 
