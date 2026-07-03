@@ -22,7 +22,6 @@ CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=y
 # HTTP server plus captive DNS need socket headroom during browser refreshes.
 CONFIG_LWIP_MAX_SOCKETS=32
 CONFIG_LWIP_MAX_ACTIVE_TCP=32
-CONFIG_LWIP_MAX_TIME_WAIT_TCP=32
 
 # Runtime stats: enables CPU load measurement via idle task counters.
 # Adds ~1µs overhead per context switch (negligible at 160MHz).
@@ -33,7 +32,7 @@ CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=4608
 
 # Stack overflow detection: method 2 (stack pointer canary check) panics on overflow instead of silently corrupting memory.
-CONFIG_FREERTOS_CHECK_STACKOVERFLOW=2
+CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY=y
 
 # Task list formatting for debugging
 CONFIG_FREERTOS_USE_TRACE_FACILITY=y
@@ -41,8 +40,6 @@ CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 
 # Coredump configuration for crash analysis
 CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
-CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF=y
-CONFIG_ESP_COREDUMP_CHECKSUM_CRC32=y
 
 # Brownout detector: lowered threshold to level 2 (~2.53V) 
 # to be more tolerant of relay-induced voltage sags while preventing logic instability.

@@ -2553,6 +2553,12 @@ static void delayed_reboot_task(void *pvParameters)
 
 static void schedule_delayed_reboot(void)
 {
+    static bool s_reboot_scheduled = false;
+    if (s_reboot_scheduled) {
+        ESP_LOGW(TAG, "Reboot already scheduled — ignoring duplicate request");
+        return;
+    }
+    s_reboot_scheduled = true;
     xTaskCreate(delayed_reboot_task, "delayed_reboot", 2048, NULL, tskIDLE_PRIORITY + 1, NULL);
 }
 
@@ -2616,6 +2622,7 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     }
 
     cJSON_Delete(root);
+    nvs_store_set_restart_detail("CRED_CHANGE");
     schedule_delayed_reboot();
     return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
 }
@@ -3619,6 +3626,11 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     json_gen_add_string(&gen, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
     json_gen_add_string(&gen, "reset_reason", reset_reason_to_string(esp_reset_reason()));
 
+    const char *rst_detail = app_get_last_restart_detail();
+    if (rst_detail && rst_detail[0]) {
+        json_gen_add_string(&gen, "reset_detail", rst_detail);
+    }
+
     /* ---------- MAC addresses ---------- */
     uint8_t mac[6];
     char mac_str[18];
@@ -3753,6 +3765,7 @@ static esp_err_t handle_api_confirm_delete(httpd_req_t *req)
 
     g_cancel_rollback_timer = true;
 
+    nvs_store_set_restart_detail("USER_ROLLBACK");
     schedule_delayed_reboot();
 
     return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
@@ -3878,6 +3891,7 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
     }
 
     ESP_LOGI(TAG, "OTA successful, rebooting...");
+    nvs_store_set_restart_detail("OTA_REBOOT");
     schedule_delayed_reboot();
 
     return send_json(req, "{\"ok\":true}", "200 OK");

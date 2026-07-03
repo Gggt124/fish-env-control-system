@@ -2216,7 +2216,11 @@ function refreshFullStatus() {
         setText('st-cpu-freq', data.cpu_freq_mhz + ' MHz');
         setText('st-idf-version', data.idf_version);
         setText('st-project-version', data.project_version);
-        setText('st-reset-reason', data.reset_reason || '--');
+        var resetText = data.reset_reason || '--';
+        if (data.reset_detail) {
+            resetText += ' (' + escHtml(data.reset_detail) + ')';
+        }
+        setText('st-reset-reason', resetText);
 
         /* Memory */
         var freeKb = (data.free_heap / 1024).toFixed(0);

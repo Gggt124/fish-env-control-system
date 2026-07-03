@@ -16,6 +16,10 @@ typedef enum {
 app_led_state_t app_get_led_state(void);
 const char *app_led_state_name(app_led_state_t state);
 
+/** Returns the restart detail string from the previous boot (e.g. "OOM", "HTTP_HUNG").
+ *  Returns "" if no detail was recorded (normal power-on, etc.). */
+const char *app_get_last_restart_detail(void);
+
 #ifdef __cplusplus
 }
 #endif

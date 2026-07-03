@@ -64,6 +64,14 @@ atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
 
 static atomic_bool s_trigger_factory_reset = ATOMIC_VAR_INIT(false);
 
+/** Stores the restart detail string read from NVS on boot. Persists in RAM for the session. */
+static char s_last_restart_detail[32] = {0};
+
+const char *app_get_last_restart_detail(void)
+{
+    return s_last_restart_detail;
+}
+
 static volatile app_led_state_t s_led_state = LED_STATE_OFF;
 
 app_led_state_t app_get_led_state(void) {
@@ -710,6 +718,17 @@ void app_main(void)
     }
     ESP_LOGI(TAG, "NVS initialized");
 
+    /* Read and clear the "last words" restart detail from NVS */
+    if (nvs_store_pop_restart_detail(s_last_restart_detail, sizeof(s_last_restart_detail))) {
+        if (s_last_restart_detail[0]) {
+            ESP_LOGW(TAG, "Last restart detail: %s", s_last_restart_detail);
+        } else {
+            ESP_LOGI(TAG, "Last restart detail: none");
+        }
+    } else {
+        ESP_LOGW(TAG, "Failed to read restart detail from NVS");
+    }
+
     log_ota_partition_state();
 
     uint8_t stg_type = 0;
@@ -1003,10 +1022,23 @@ void app_main(void)
             uint8_t stg_type = 0;
             if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
                 ESP_LOGW(TAG, "Staged config timeout! Rolling back changes type=%d", stg_type);
-                nvs_store_rollback_staging();
-                session_invalidate_all();
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                esp_restart();
+                if (nvs_store_rollback_staging()) {
+                    /* Rollback succeeded — stg_type is now 0 in NVS, safe to restart */
+                    session_invalidate_all();
+                    nvs_store_set_restart_detail("STAGING_ROLLBACK");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    esp_restart();
+                } else {
+                    /* Rollback NVS write failed — stg_type is still >0 in flash.
+                     * If we restart now, the boot sequence will see stg_type>0 again,
+                     * start a new 180s timer, fail again, and loop forever.
+                     * Better to keep running with the staged (unconfirmed) config
+                     * and let the user fix it via the web UI or reflash. */
+                    ESP_LOGE(TAG, "FATAL: Rollback NVS write failed! "
+                             "Skipping restart to avoid infinite reboot loop. "
+                             "Device continues with staged config (type=%d). "
+                             "Manual intervention required.", stg_type);
+                }
             }
             atomic_store(&s_trigger_rollback, false);
         }
@@ -1041,6 +1073,7 @@ void app_main(void)
             queue_full_count++;
             if (queue_full_count >= 3) {
                 ESP_LOGE(TAG, "FATAL: HTTP server queue full for 3 consecutive checks (15s). Rebooting!");
+                nvs_store_set_restart_detail("HTTP_QUEUE_FULL");
                 vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
                 esp_restart();
             } else {
@@ -1050,6 +1083,7 @@ void app_main(void)
             queue_full_count = 0;
             if (!web_server_check_health(15000)) {
                 ESP_LOGE(TAG, "HTTP thread hung — triggering restart");
+                nvs_store_set_restart_detail("HTTP_HUNG");
                 vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
                 esp_restart();
             }
@@ -1064,26 +1098,32 @@ void app_main(void)
         bool fully_recovered = (free_heap > APP_CONFIG_OOM_RECOVER_FREE_HEAP_BYTES && 
                                 largest_block > APP_CONFIG_OOM_RECOVER_LARGEST_BLOCK_BYTES);
 
-        // Increment strike if we just dipped below critical OR if we are already in an OOM state and haven't recovered
-        if (below_critical || (oom_strike_count > 0 && !fully_recovered)) {
-            
+        if (below_critical) {
+            /* Memory is critically low — increment strike counter */
             oom_strike_count++;
-            ESP_LOGW(TAG, "OOM WARNING: Free heap (%lu) or largest block (%lu) in danger zone! Strike %d/%d",
-                     (unsigned long)free_heap, (unsigned long)largest_block, 
+            ESP_LOGW(TAG, "OOM WARNING: Free heap (%lu) or largest block (%lu) below critical! Strike %d/%d",
+                     (unsigned long)free_heap, (unsigned long)largest_block,
                      oom_strike_count, APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART);
-                     
+
             if (oom_strike_count >= APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART) {
                 ESP_LOGE(TAG, "FATAL: Out of Memory condition sustained for %d intervals. Rebooting!", oom_strike_count);
+                nvs_store_set_restart_detail("OOM");
                 vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
                 esp_restart();
             }
-        } 
-        else if (fully_recovered) {
+        } else if (fully_recovered) {
+            /* Memory is comfortably above recovery threshold — clear strikes */
             if (oom_strike_count > 0) {
-                ESP_LOGI(TAG, "OOM condition recovered. Free heap: %lu, Largest block: %lu", 
+                ESP_LOGI(TAG, "OOM condition recovered. Free heap: %lu, Largest block: %lu",
                          (unsigned long)free_heap, (unsigned long)largest_block);
                 oom_strike_count = 0;
             }
+        } else if (oom_strike_count > 0) {
+            /* Gray zone: above critical but below recovery threshold — hold steady, don't increment.
+             * This prevents false-positive restarts when memory briefly dips then partially recovers. */
+            ESP_LOGW(TAG, "OOM gray zone: Free heap (%lu), Largest block (%lu). Strikes held at %d/%d",
+                     (unsigned long)free_heap, (unsigned long)largest_block,
+                     oom_strike_count, APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART);
         }
 
         loop_counter++;

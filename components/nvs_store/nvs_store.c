@@ -20,6 +20,7 @@ static const char *TAG = "nvs_store";
 #define NVS_KEY_STG_PASS      "stg_sta_pass"
 #define NVS_KEY_STG_USER      "stg_admin_user"
 #define NVS_KEY_STG_CRED_PASS "stg_admin_pass"
+#define NVS_KEY_RST_DETAIL    "rst_detail"
 
 #define NVS_SESSION_NAMESPACE "session"
 #define NVS_KEY_JWT_SECRET "jwt_secret"
@@ -1379,4 +1380,53 @@ bool nvs_store_save_display_settings(uint8_t dim_percent)
     if (err == ESP_OK) nvs_commit(h);
     nvs_close(h);
     return err == ESP_OK;
+}
+
+bool nvs_store_set_restart_detail(const char *detail)
+{
+    if (!detail) return false;
+    nvs_handle_t h;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) {
+        ESP_LOGE(TAG, "rst_detail: NVS open failed");
+        return false;
+    }
+    esp_err_t err = nvs_set_str(h, NVS_KEY_RST_DETAIL, detail);
+    if (err == ESP_OK) {
+        nvs_commit(h);
+    } else {
+        ESP_LOGE(TAG, "rst_detail: nvs_set_str failed: %s", esp_err_to_name(err));
+    }
+    nvs_close(h);
+    return err == ESP_OK;
+}
+
+bool nvs_store_pop_restart_detail(char *buf, size_t buf_size)
+{
+    if (!buf || buf_size == 0) return false;
+    buf[0] = '\0';
+
+    nvs_handle_t h;
+    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &h) != ESP_OK) {
+        return false;
+    }
+
+    size_t required = 0;
+    esp_err_t err = nvs_get_str(h, NVS_KEY_RST_DETAIL, NULL, &required);
+    if (err == ESP_OK && required <= buf_size) {
+        nvs_get_str(h, NVS_KEY_RST_DETAIL, buf, &required);
+        /* Erase after reading — one-shot "last words" */
+        nvs_erase_key(h, NVS_KEY_RST_DETAIL);
+        nvs_commit(h);
+    } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+        /* No detail stored — normal case (power-on, external reset, etc.) */
+        buf[0] = '\0';
+    } else {
+        ESP_LOGW(TAG, "rst_detail: read error or buf too small (%s, need=%u, have=%u)",
+                 esp_err_to_name(err), (unsigned)required, (unsigned)buf_size);
+        nvs_close(h);
+        return false;
+    }
+
+    nvs_close(h);
+    return true;
 }
