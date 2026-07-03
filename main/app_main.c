@@ -697,12 +697,25 @@ static void hardware_ui_task(void *pvParameters)
 
 void app_main(void)
 {
-    /* Reduce noise from Wi-Fi, LwIP, HTTPD, and other noisy components */
-    esp_log_level_set("*", ESP_LOG_WARN);
-    esp_log_level_set("app_main", ESP_LOG_INFO);
-    esp_log_level_set("cooling_control", ESP_LOG_INFO);
-    esp_log_level_set("web_server", ESP_LOG_INFO);
-    esp_log_level_set("TFT_DISPLAY", ESP_LOG_INFO);
+    /* ── Production log-level filter ─────────────────────────────────────────
+     * Global floor = WARN  (matches sdkconfig.defaults CONFIG_LOG_DEFAULT_LEVEL)
+     * Noisy 3rd-party components stay at WARN.
+     * Application modules raised to INFO for field observability.
+     * ESP_LOGD/LOGV are compile-time stripped (CONFIG_LOG_MAXIMUM_LEVEL=INFO).
+     * Runtime adjustment: esp_log_level_set("<tag>", ESP_LOG_INFO) — no reflash.
+     * ─────────────────────────────────────────────────────────────────────── */
+    esp_log_level_set("*", ESP_LOG_WARN);            /* 3rd-party: Wi-Fi, LwIP, HTTPD stay quiet */
+
+    /* Application modules — INFO for state transitions and field diagnostics */
+    esp_log_level_set("app_main",          ESP_LOG_INFO);
+    esp_log_level_set("pump_control",      ESP_LOG_INFO);
+    esp_log_level_set("cooling_control",   ESP_LOG_INFO);
+    esp_log_level_set("nvs_store",         ESP_LOG_INFO);
+    esp_log_level_set("web_server",        ESP_LOG_INFO);
+    esp_log_level_set("TFT_DISPLAY",       ESP_LOG_INFO);
+    esp_log_level_set("wifi_mgr",          ESP_LOG_INFO);
+    esp_log_level_set("dns_server",        ESP_LOG_WARN); /* DNS very chatty — WARN only */
+    esp_log_level_set("session",           ESP_LOG_WARN); /* session tokens — security: WARN only */
 
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  %s %s", APP_TEMPLATE_NAME, APP_TEMPLATE_FIRMWARE_VERSION);
