@@ -8,7 +8,7 @@ param(
     [string]$Port = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 chcp 65001 > $null
 
 # Script อยู่ใน flash-package/tools/ → firmware อยู่ใน flash-package/firmware/

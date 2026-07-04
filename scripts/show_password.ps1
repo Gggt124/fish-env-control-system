@@ -8,7 +8,7 @@ param(
     [string]$Port = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 chcp 65001 > $null
 
 Write-Host ""
