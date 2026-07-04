@@ -1,10 +1,10 @@
 ﻿<#
 .SYNOPSIS
-    สร้าง flash-package/ สำหรับส่งให้ลูกค้า
+    à¹€à¸à¹‡à¸šà¹„à¸Ÿà¸¥à¹Œ .bin à¸ˆà¸²à¸ build/ à¹à¸¥à¸°à¸ªà¸„à¸£à¸´à¸›à¸•à¹Œà¹€à¸ªà¸£à¸´à¸¡ à¹€à¸žà¸·à¹ˆà¸­à¹€à¸•à¸£à¸µà¸¢à¸¡à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œ flash-package/ à¸ªà¸³à¸«à¸£à¸±à¸šà¹à¸ˆà¸à¸¥à¸¹à¸à¸„à¹‰à¸²
 .PARAMETER OutputDir
-    Path ของ flash-package/ (default: .\flash-package)
+    Path à¸›à¸¥à¸²à¸¢à¸—à¸²à¸‡à¸‚à¸­à¸‡ flash-package/ (default: .\flash-package)
 .PARAMETER Zip
-    ถ้า pass flag นี้ จะ zip flash-package/ เป็น flash-package.zip ด้วย
+    à¹€à¸›à¸´à¸”à¹€à¸žà¸·à¹ˆà¸­ pass flag à¸™à¸µà¹‰à¹€à¸žà¸·à¹ˆà¸­à¸ªà¸±à¹ˆà¸‡ zip flash-package/ à¹€à¸›à¹‡à¸™ flash-package.zip à¸”à¹‰à¸§à¸¢
 .EXAMPLE
     .\scripts\package.ps1
     .\scripts\package.ps1 -Zip
@@ -15,12 +15,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+chcp 65001 > $null
 
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
 $BuildDir    = Join-Path $ProjectRoot "build"
 $ScriptsDir  = $PSScriptRoot
 
-# --- ตรวจสอบ binary ที่ต้องการ ---
+# --- à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹„à¸Ÿà¸¥à¹Œ binary à¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™à¸•à¹‰à¸­à¸‡à¹ƒà¸Šà¹‰ ---
 $RequiredBinaries = [ordered]@{
     "bootloader/bootloader.bin"                 = "firmware\bootloader.bin"
     "partition_table/partition-table.bin"       = "firmware\partition-table.bin"
@@ -35,7 +36,7 @@ foreach ($src in $RequiredBinaries.Keys) {
     }
 }
 
-# --- เตรียม output directory ---
+# --- à¹€à¸•à¸£à¸µà¸¢à¸¡à¹‚à¸„à¸£à¸‡à¸ªà¸£à¹‰à¸²à¸‡ output directory ---
 $FirmwareDir = Join-Path $OutputDir "firmware"
 $ToolsDir    = Join-Path $OutputDir "tools"
 
@@ -64,14 +65,14 @@ foreach ($tool in @("flash_and_show.ps1", "show_password.ps1")) {
         Copy-Item -LiteralPath $src -Destination $dest -Force
         Write-Host "  OK  tools\$tool" -ForegroundColor Green
     } else {
-        Write-Warning "  MISSING  scripts\$tool — skipping"
+        Write-Warning "  MISSING  scripts\$tool - skipping"
     }
 }
 
 # --- Copy batch launchers & README ---
 Write-Host "[package] Copying batch launchers & README..." -ForegroundColor Cyan
-$extraFiles = @("FLASH.bat", "README_password.bat", "README_customer.md")
-$extraFiles += (Get-ChildItem -Path $ScriptsDir -Filter "README_*.md").Name | Where-Object { $_ -ne "README_customer.md" }
+$extraFiles = @("FLASH.bat", "SHOW_PASSWORD.bat", "README_customer.md")
+$extraFiles += (Get-ChildItem -Path $ScriptsDir -Filter "README_*.md" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name | Where-Object { $_ -ne "README_customer.md" })
 
 foreach ($file in $extraFiles) {
     if ([string]::IsNullOrWhiteSpace($file)) { continue }
@@ -81,7 +82,7 @@ foreach ($file in $extraFiles) {
         Copy-Item -LiteralPath $src -Destination $dest -Force
         Write-Host "  OK  $file" -ForegroundColor Green
     } else {
-        Write-Warning "  MISSING  scripts\$file — skipping"
+        Write-Warning "  MISSING  scripts\$file - skipping"
     }
 }
 

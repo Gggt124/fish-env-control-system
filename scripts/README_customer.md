@@ -20,7 +20,7 @@ This folder contains the firmware and updater tools for your Fish Pump control b
 Your Wi-Fi AP password is automatically generated based on your board's hardware MAC address. 
 If you forget it:
 1. Connect the board via USB.
-2. Double-click **`README_password.bat`**.
+2. Double-click **`SHOW_PASSWORD.bat`**.
 3. The script will read the hardware ID and display your Wi-Fi password without reflashing.
 
 ## Default Credentials
