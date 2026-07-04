@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Flash firmware ลง ESP32 แล้วแสดง AP password
 .PARAMETER Port
@@ -120,7 +120,7 @@ Write-Host ""
 Write-Host "กำลังอ่าน MAC address ของบอร์ด..." -ForegroundColor Cyan
 Start-Sleep -Milliseconds 1500
 
-$macOutput = python -m esptool --chip esp32 --port $Port read_mac 2>&1
+$macOutput = python -m esptool --chip esp32 --baud 230400 --port $Port read_mac 2>&1
 $macLine   = $macOutput | Select-String -Pattern "MAC:\s*([0-9a-fA-F:]{17})" | Select-Object -First 1
 
 if (-not $macLine) {
