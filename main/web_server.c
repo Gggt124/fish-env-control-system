@@ -3949,6 +3949,9 @@ static esp_err_t handle_api_ota(httpd_req_t *req)
     
     unsigned char key[32];
     const char* key_hex = APP_CONFIG_OTA_ENCRYPTION_KEY;
+    if (strlen(key_hex) != 64) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_ota_key\"}", "500 Internal Server Error");
+    }
     for (int i = 0; i < 32; i++) {
         sscanf(key_hex + 2*i, "%2hhx", &key[i]);
     }

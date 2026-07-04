@@ -81,6 +81,7 @@ $flashArgs = @(
     "--port", $Port,
     "--baud", "230400",
     "write_flash",
+    "--erase-all",
     "--flash-mode", "dio",
     "--flash-freq", "40m",
     "--flash-size", "4MB",
