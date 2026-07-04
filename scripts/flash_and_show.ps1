@@ -1,8 +1,8 @@
-﻿<#
+<#
 .SYNOPSIS
-    Flash firmware ?? ESP32 ???????? AP password
+    Flash firmware to ESP32 and show AP password
 .PARAMETER Port
-    COM port ???? COM5 ???????????? auto-detect ???????
+    COM port (e.g. COM5). If not specified, it will auto-detect or ask.
 #>
 param(
     [string]$Port = ""
@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Continue"
 chcp 65001 > $null
 
-# Script ?????? flash-package/tools/ ? firmware ?????? flash-package/firmware/
+# Script is in flash-package/tools/ -> firmware is in flash-package/firmware/
 $ScriptDir   = $PSScriptRoot
 $PackageRoot = Split-Path $ScriptDir -Parent
 $FirmwareDir = Join-Path $PackageRoot "firmware"
@@ -25,50 +25,54 @@ $Bins = [ordered]@{
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Fish Pump Relay Timer � Flash Installer  " -ForegroundColor Cyan
+Write-Host "  Fish Pump Relay Timer - Flash Installer   " -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# --- ??????? esptool.exe ---
+# --- Check esptool.exe ---
 $esptoolExe = Join-Path $ScriptDir "esptool.exe"
 if (-not (Test-Path $esptoolExe)) {
-    Write-Host "ERROR: ????? esptool.exe ?????????? tools/" -ForegroundColor Red
-    Read-Host "?? Enter ????????"; exit 1
+    Write-Host "ERROR: esptool.exe not found in tools/ folder!" -ForegroundColor Red
+    Read-Host "Press Enter to exit"; exit 1
 }
 Write-Host "[OK] esptool ready" -ForegroundColor Green
 
-# --- ??????? binary ??? ---
+# --- Check required binaries ---
 foreach ($entry in $Bins.GetEnumerator()) {
     if (-not (Test-Path $entry.Value)) {
-        Write-Host "ERROR: ????? $($entry.Value)" -ForegroundColor Red
-        Read-Host "?? Enter ????????"; exit 1
+        Write-Host "ERROR: Missing file $($entry.Value)" -ForegroundColor Red
+        Read-Host "Press Enter to exit"; exit 1
     }
 }
 
-# --- Auto-detect / ??? COM port ---
+# --- Auto-detect / Ask COM port ---
 if (-not $Port) {
     $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
     if ($ports.Count -eq 1) {
         $Port = $ports[0]
-        Write-Host "[AUTO] ?????? COM port: $Port" -ForegroundColor Green
+        Write-Host "[AUTO] Detected COM port: $Port" -ForegroundColor Green
     } elseif ($ports.Count -gt 1) {
-        Write-Host "?????? COM port:" -ForegroundColor Yellow
+        Write-Host "Multiple COM ports found:" -ForegroundColor Yellow
         $ports | ForEach-Object { Write-Host "  - $_" }
-        $Port = Read-Host "???? COM port (???? COM5)"
+        $Port = Read-Host "Enter COM port (e.g. COM5)"
     } else {
-        Write-Host "????? COM port ?????????? ESP32 ?????? Enter"
+        Write-Host "No COM port found. Please plug in the ESP32 via USB and press Enter."
         Read-Host "..."
         $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
         $Port  = $ports | Select-Object -First 1
         if (-not $Port) {
-            Write-Host "ERROR: ???????? COM port" -ForegroundColor Red
-            Read-Host "?? Enter ????????"; exit 1
+            Write-Host "ERROR: Still no COM port detected." -ForegroundColor Red
+            Read-Host "Press Enter to exit"; exit 1
         }
     }
 }
 
+if ($Port -match '^\d+$') {
+    $Port = "COM$Port"
+}
+
 Write-Host ""
-Write-Host "Flash ????? $Port ..." -ForegroundColor Cyan
+Write-Host "Flashing to $Port ..." -ForegroundColor Cyan
 Write-Host ""
 
 # --- Flash ---
@@ -89,27 +93,27 @@ $flashArgs = @(
 & $esptoolExe @flashArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "ERROR: Flash ????????? ???????:" -ForegroundColor Red
-    Write-Host "  - ????? USB ????????" -ForegroundColor Yellow
-    Write-Host "  - COM port ???????? ($Port)" -ForegroundColor Yellow
-    Write-Host "  - ??????-???????? USB ??????? FLASH.bat ????" -ForegroundColor Yellow
-    Read-Host "?? Enter ????????"; exit 1
+    Write-Host "ERROR: Flash failed! Please check:" -ForegroundColor Red
+    Write-Host "  - Is the USB cable connected properly?" -ForegroundColor Yellow
+    Write-Host "  - Is the COM port correct? ($Port)" -ForegroundColor Yellow
+    Write-Host "  - Try unplugging and replugging the USB, then run FLASH.bat again." -ForegroundColor Yellow
+    Read-Host "Press Enter to exit"; exit 1
 }
 
 Write-Host ""
-Write-Host "[OK] Flash ??????!" -ForegroundColor Green
+Write-Host "[OK] Flash Successful!" -ForegroundColor Green
 Write-Host ""
 
-# --- ???? MAC ???????? AP Password ---
-Write-Host "????????? MAC address ????????..." -ForegroundColor Cyan
+# --- Read MAC and Calculate AP Password ---
+Write-Host "Reading board MAC address..." -ForegroundColor Cyan
 Start-Sleep -Milliseconds 1500
 
 $macOutput = & $esptoolExe --chip esp32 --baud 230400 --port $Port read_mac 2>&1
 $macLine   = $macOutput | Select-String -Pattern "MAC:\s*([0-9a-fA-F:]{17})" | Select-Object -First 1
 
 if (-not $macLine) {
-    Write-Host "WARNING: ???? MAC ??????" -ForegroundColor Yellow
-    Write-Host "??? SHOW_PASSWORD.bat ????????????? password" -ForegroundColor Gray
+    Write-Host "WARNING: Could not read MAC address." -ForegroundColor Yellow
+    Write-Host "Run SHOW_PASSWORD.bat later to view your Wi-Fi password." -ForegroundColor Gray
 } else {
     $macStr   = $macLine.Matches.Groups[1].Value.Trim()
     $macBytes = $macStr -split ":" | ForEach-Object { [Convert]::ToInt32($_.Trim(), 16) }
@@ -120,7 +124,7 @@ if (-not $macLine) {
 
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Green
-    Write-Host "  Flash ?????????!                         " -ForegroundColor Green
+    Write-Host "  Flash Completed!                          " -ForegroundColor Green
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Wi-Fi SSID    : FishPump-Setup           " -ForegroundColor White
@@ -128,12 +132,12 @@ if (-not $macLine) {
     Write-Host "  Web Dashboard : http://192.168.4.1       " -ForegroundColor White
     Write-Host "  Login         : admin / admin123         " -ForegroundColor White
     Write-Host ""
-    Write-Host "  >>> ?????? Password ???????! <<<        " -ForegroundColor Red
+    Write-Host "  >>> Please save this Password! <<<        " -ForegroundColor Red
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Password ???????????????????????" -ForegroundColor Gray
-    Write-Host "??????: ??? SHOW_PASSWORD.bat (????????? USB)" -ForegroundColor Gray
+    Write-Host "This password is unique to this specific board." -ForegroundColor Gray
+    Write-Host "If you forget it: Run SHOW_PASSWORD.bat (USB required)" -ForegroundColor Gray
 }
 
 Write-Host ""
-Read-Host "?? Enter ????????"
+Read-Host "Press Enter to exit"
