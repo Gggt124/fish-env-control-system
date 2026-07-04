@@ -3899,11 +3899,6 @@ body.login-active .main-content {
     .form-group {
         margin-bottom: var(--space-4) !important;
     }
-
-    /* 6-item bottom nav: ลด label font-size 1px เพื่อ fit ในพื้นที่ที่แคบลง */
-    .mobile-nav-item {
-        font-size: 9px;
-    }
 }
 
 /* Accessibility hardening overrides */
@@ -4468,4 +4463,90 @@ select:hover:not(:disabled) {
 .range-slider:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
+}
+
+/* ======== Mobile More Menu ======== */
+.mobile-more-menu {
+    position: fixed;
+    bottom: 74px; /* Above the 64px nav bar + margin */
+    right: 12px;
+    background: var(--surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-md);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform-origin: bottom right;
+}
+
+.mobile-more-menu.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.95);
+}
+
+.mobile-menu-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: background-color 150ms ease, color 150ms ease;
+    gap: var(--space-2);
+}
+
+.mobile-menu-item:hover,
+.mobile-menu-item:focus-visible {
+    background: var(--bg-100);
+    color: var(--text-primary);
+}
+
+.mobile-menu-item.active {
+    color: var(--accent);
+    background: var(--accent-50, rgba(13, 148, 136, 0.1));
+}
+
+@media (min-width: 1024px) {
+    .mobile-more-menu {
+        display: none !important;
+    }
+}
+
+/* ======== Refactored OTA Inline Styles ======== */
+.ota-heading-icon {
+    margin-right: 8px;
+    vertical-align: text-bottom;
+}
+
+.ota-version-text {
+    color: var(--text-primary);
+}
+
+.ota-form-group {
+    margin-bottom: var(--space-6);
+}
+
+.ota-dropzone-icon {
+    margin-bottom: var(--space-2);
+}
+
+.ota-progress-container-override {
+    height: 12px;
+    background: var(--bg-300);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.ota-progress-fill-override {
+    height: 100%;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--primary-500);
 }
