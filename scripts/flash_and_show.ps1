@@ -1,8 +1,8 @@
 ﻿<#
 .SYNOPSIS
-    Flash firmware ลง ESP32 แล้วแสดง AP password
+    Flash firmware ?? ESP32 ???????? AP password
 .PARAMETER Port
-    COM port เช่น COM5 ถ้าไม่ระบุจะ auto-detect หรือถาม
+    COM port ???? COM5 ???????????? auto-detect ???????
 #>
 param(
     [string]$Port = ""
@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Continue"
 chcp 65001 > $null
 
-# Script อยู่ใน flash-package/tools/ → firmware อยู่ใน flash-package/firmware/
+# Script ?????? flash-package/tools/ ? firmware ?????? flash-package/firmware/
 $ScriptDir   = $PSScriptRoot
 $PackageRoot = Split-Path $ScriptDir -Parent
 $FirmwareDir = Join-Path $PackageRoot "firmware"
@@ -25,66 +25,50 @@ $Bins = [ordered]@{
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Fish Pump Relay Timer — Flash Installer  " -ForegroundColor Cyan
+Write-Host "  Fish Pump Relay Timer � Flash Installer  " -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# --- ตรวจสอบ Python ---
-try {
-    $pyVer = python --version 2>&1
-    Write-Host "[OK] Python: $pyVer" -ForegroundColor Green
-} catch {
-    Write-Host "ERROR: Python ไม่พบ กรุณาติดตั้งจาก https://python.org" -ForegroundColor Red
-    Read-Host "กด Enter เพื่อปิด"
-    exit 1
+# --- ??????? esptool.exe ---
+$esptoolExe = Join-Path $ScriptDir "esptool.exe"
+if (-not (Test-Path $esptoolExe)) {
+    Write-Host "ERROR: ????? esptool.exe ?????????? tools/" -ForegroundColor Red
+    Read-Host "?? Enter ????????"; exit 1
 }
+Write-Host "[OK] esptool ready" -ForegroundColor Green
 
-# --- ติดตั้ง esptool ถ้ายังไม่มี ---
-$esptoolVer = python -m esptool version 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "[...] ติดตั้ง esptool..." -ForegroundColor Yellow
-    python -m pip install esptool --quiet
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: ติดตั้ง esptool ไม่สำเร็จ" -ForegroundColor Red
-        Read-Host "กด Enter เพื่อปิด"; exit 1
-    }
-    Write-Host "[OK] esptool installed" -ForegroundColor Green
-} else {
-    Write-Host "[OK] esptool ready" -ForegroundColor Green
-}
-
-# --- ตรวจสอบ binary ครบ ---
+# --- ??????? binary ??? ---
 foreach ($entry in $Bins.GetEnumerator()) {
     if (-not (Test-Path $entry.Value)) {
-        Write-Host "ERROR: ไม่พบ $($entry.Value)" -ForegroundColor Red
-        Read-Host "กด Enter เพื่อปิด"; exit 1
+        Write-Host "ERROR: ????? $($entry.Value)" -ForegroundColor Red
+        Read-Host "?? Enter ????????"; exit 1
     }
 }
 
-# --- Auto-detect / ถาม COM port ---
+# --- Auto-detect / ??? COM port ---
 if (-not $Port) {
     $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
     if ($ports.Count -eq 1) {
         $Port = $ports[0]
-        Write-Host "[AUTO] ตรวจพบ COM port: $Port" -ForegroundColor Green
+        Write-Host "[AUTO] ?????? COM port: $Port" -ForegroundColor Green
     } elseif ($ports.Count -gt 1) {
-        Write-Host "พบหลาย COM port:" -ForegroundColor Yellow
+        Write-Host "?????? COM port:" -ForegroundColor Yellow
         $ports | ForEach-Object { Write-Host "  - $_" }
-        $Port = Read-Host "กรอก COM port (เช่น COM5)"
+        $Port = Read-Host "???? COM port (???? COM5)"
     } else {
-        Write-Host "ไม่พบ COM port กรุณาเสียบ ESP32 แล้วกด Enter"
+        Write-Host "????? COM port ?????????? ESP32 ?????? Enter"
         Read-Host "..."
         $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
         $Port  = $ports | Select-Object -First 1
         if (-not $Port) {
-            Write-Host "ERROR: ยังไม่พบ COM port" -ForegroundColor Red
-            Read-Host "กด Enter เพื่อปิด"; exit 1
+            Write-Host "ERROR: ???????? COM port" -ForegroundColor Red
+            Read-Host "?? Enter ????????"; exit 1
         }
     }
 }
 
 Write-Host ""
-Write-Host "Flash ไปที่ $Port ..." -ForegroundColor Cyan
+Write-Host "Flash ????? $Port ..." -ForegroundColor Cyan
 Write-Host ""
 
 # --- Flash ---
@@ -102,30 +86,30 @@ $flashArgs = @(
     "0x20000", $Bins["0x20000"]
 )
 
-python -m esptool @flashArgs
+& $esptoolExe @flashArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "ERROR: Flash ไม่สำเร็จ ตรวจสอบ:" -ForegroundColor Red
-    Write-Host "  - เสียบ USB ถูกต้อง?" -ForegroundColor Yellow
-    Write-Host "  - COM port ถูกต้อง? ($Port)" -ForegroundColor Yellow
-    Write-Host "  - ลองถอด-เสียบสาย USB แล้วรัน FLASH.bat ใหม่" -ForegroundColor Yellow
-    Read-Host "กด Enter เพื่อปิด"; exit 1
+    Write-Host "ERROR: Flash ????????? ???????:" -ForegroundColor Red
+    Write-Host "  - ????? USB ????????" -ForegroundColor Yellow
+    Write-Host "  - COM port ???????? ($Port)" -ForegroundColor Yellow
+    Write-Host "  - ??????-???????? USB ??????? FLASH.bat ????" -ForegroundColor Yellow
+    Read-Host "?? Enter ????????"; exit 1
 }
 
 Write-Host ""
-Write-Host "[OK] Flash สำเร็จ!" -ForegroundColor Green
+Write-Host "[OK] Flash ??????!" -ForegroundColor Green
 Write-Host ""
 
-# --- อ่าน MAC และคำนวณ AP Password ---
-Write-Host "กำลังอ่าน MAC address ของบอร์ด..." -ForegroundColor Cyan
+# --- ???? MAC ???????? AP Password ---
+Write-Host "????????? MAC address ????????..." -ForegroundColor Cyan
 Start-Sleep -Milliseconds 1500
 
-$macOutput = python -m esptool --chip esp32 --baud 230400 --port $Port read_mac 2>&1
+$macOutput = & $esptoolExe --chip esp32 --baud 230400 --port $Port read_mac 2>&1
 $macLine   = $macOutput | Select-String -Pattern "MAC:\s*([0-9a-fA-F:]{17})" | Select-Object -First 1
 
 if (-not $macLine) {
-    Write-Host "WARNING: อ่าน MAC ไม่ได้" -ForegroundColor Yellow
-    Write-Host "รัน SHOW_PASSWORD.bat ทีหลังเพื่อดู password" -ForegroundColor Gray
+    Write-Host "WARNING: ???? MAC ??????" -ForegroundColor Yellow
+    Write-Host "??? SHOW_PASSWORD.bat ????????????? password" -ForegroundColor Gray
 } else {
     $macStr   = $macLine.Matches.Groups[1].Value.Trim()
     $macBytes = $macStr -split ":" | ForEach-Object { [Convert]::ToInt32($_.Trim(), 16) }
@@ -136,7 +120,7 @@ if (-not $macLine) {
 
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Green
-    Write-Host "  Flash เสร็จแล้ว!                         " -ForegroundColor Green
+    Write-Host "  Flash ?????????!                         " -ForegroundColor Green
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Wi-Fi SSID    : FishPump-Setup           " -ForegroundColor White
@@ -144,12 +128,12 @@ if (-not $macLine) {
     Write-Host "  Web Dashboard : http://192.168.4.1       " -ForegroundColor White
     Write-Host "  Login         : admin / admin123         " -ForegroundColor White
     Write-Host ""
-    Write-Host "  >>> บันทึก Password ไว้ด้วย! <<<        " -ForegroundColor Red
+    Write-Host "  >>> ?????? Password ???????! <<<        " -ForegroundColor Red
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Password ขึ้นกับบอร์ดนี้เท่านั้น" -ForegroundColor Gray
-    Write-Host "ถ้าลืม: รัน SHOW_PASSWORD.bat (ต้องเสียบ USB)" -ForegroundColor Gray
+    Write-Host "Password ???????????????????????" -ForegroundColor Gray
+    Write-Host "??????: ??? SHOW_PASSWORD.bat (????????? USB)" -ForegroundColor Gray
 }
 
 Write-Host ""
-Read-Host "กด Enter เพื่อปิด"
+Read-Host "?? Enter ????????"

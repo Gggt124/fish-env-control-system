@@ -1,10 +1,10 @@
 ﻿<#
 .SYNOPSIS
-    à¹€à¸à¹‡à¸šà¹„à¸Ÿà¸¥à¹Œ .bin à¸ˆà¸²à¸ build/ à¹à¸¥à¸°à¸ªà¸„à¸£à¸´à¸›à¸•à¹Œà¹€à¸ªà¸£à¸´à¸¡ à¹€à¸žà¸·à¹ˆà¸­à¹€à¸•à¸£à¸µà¸¢à¸¡à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œ flash-package/ à¸ªà¸³à¸«à¸£à¸±à¸šà¹à¸ˆà¸à¸¥à¸¹à¸à¸„à¹‰à¸²
+    เก็บไฟล์ .bin จาก build/ และสคริปต์เสริม เพื่อเตรียมโฟลเดอร์ flash-package/ สำหรับแจกลูกค้า
 .PARAMETER OutputDir
-    Path à¸›à¸¥à¸²à¸¢à¸—à¸²à¸‡à¸‚à¸­à¸‡ flash-package/ (default: .\flash-package)
+    Path ปลายทางของ flash-package/ (default: .\flash-package)
 .PARAMETER Zip
-    à¹€à¸›à¸´à¸”à¹€à¸žà¸·à¹ˆà¸­ pass flag à¸™à¸µà¹‰à¹€à¸žà¸·à¹ˆà¸­à¸ªà¸±à¹ˆà¸‡ zip flash-package/ à¹€à¸›à¹‡à¸™ flash-package.zip à¸”à¹‰à¸§à¸¢
+    เปิดเพื่อ pass flag นี้เพื่อสั่ง zip flash-package/ เป็น flash-package.zip ด้วย
 .EXAMPLE
     .\scripts\package.ps1
     .\scripts\package.ps1 -Zip
@@ -21,7 +21,7 @@ $ProjectRoot = Split-Path $PSScriptRoot -Parent
 $BuildDir    = Join-Path $ProjectRoot "build"
 $ScriptsDir  = $PSScriptRoot
 
-# --- à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹„à¸Ÿà¸¥à¹Œ binary à¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™à¸•à¹‰à¸­à¸‡à¹ƒà¸Šà¹‰ ---
+# --- ตรวจสอบไฟล์ binary ที่จำเป็นต้องใช้ ---
 $RequiredBinaries = [ordered]@{
     "bootloader/bootloader.bin"                 = "firmware\bootloader.bin"
     "partition_table/partition-table.bin"       = "firmware\partition-table.bin"
@@ -36,7 +36,25 @@ foreach ($src in $RequiredBinaries.Keys) {
     }
 }
 
-# --- เตรียมโครงสร้าง output directory ---
+Write-Host "[package] Checking standalone esptool.exe..." -ForegroundColor Cyan
+$esptoolExe = Join-Path $ScriptsDir "esptool.exe"
+if (-not (Test-Path $esptoolExe)) {
+    Write-Host "  esptool.exe not found. Downloading v5.3.1 from GitHub..." -ForegroundColor Yellow
+    $url = "https://github.com/espressif/esptool/releases/download/v5.3.1/esptool-v5.3.1-windows-amd64.zip"
+    $zipPath = Join-Path $ScriptsDir "esptool.zip"
+    $tmpDir = Join-Path $ScriptsDir "esptool_tmp"
+    
+    # Use SilentlyContinue to speed up download in PS 5.1
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $url -OutFile $zipPath
+    Expand-Archive -Path $zipPath -DestinationPath $tmpDir -Force
+    Copy-Item (Join-Path $tmpDir "esptool-windows-amd64\esptool.exe") -Destination $esptoolExe -Force
+    Remove-Item $tmpDir -Recurse -Force
+    Remove-Item $zipPath -Force
+    Write-Host "  Downloaded esptool.exe" -ForegroundColor Green
+}
+
+# --- ??????????????? output directory ---
 if (Test-Path $OutputDir) {
     Remove-Item $OutputDir -Recurse -Force
 }
@@ -61,7 +79,7 @@ foreach ($entry in $RequiredBinaries.GetEnumerator()) {
 
 # --- Copy tools (ps1 scripts) ---
 Write-Host "[package] Copying tools..." -ForegroundColor Cyan
-foreach ($tool in @("flash_and_show.ps1", "show_password.ps1")) {
+foreach ($tool in @("flash_and_show.ps1", "show_password.ps1", "esptool.exe")) {
     $src  = Join-Path $ScriptsDir $tool
     $dest = Join-Path $ToolsDir $tool
     if (Test-Path $src) {
