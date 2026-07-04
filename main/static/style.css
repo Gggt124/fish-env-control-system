@@ -3899,6 +3899,11 @@ body.login-active .main-content {
     .form-group {
         margin-bottom: var(--space-4) !important;
     }
+
+    /* 6-item bottom nav: ลด label font-size 1px เพื่อ fit ในพื้นที่ที่แคบลง */
+    .mobile-nav-item {
+        font-size: 9px;
+    }
 }
 
 /* Accessibility hardening overrides */
