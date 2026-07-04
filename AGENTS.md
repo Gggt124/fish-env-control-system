@@ -144,7 +144,7 @@ main (app_main + web_server + dns_server + static)
 
 ### Managed Dependencies
 - `espressif/cjson` at `^1.7.19` — JSON request/response handling
-- `espressif/mdns` at `^1.7.0` — `fish-pump.local` service discovery
+- `espressif/mdns` at `^1.7.0` — `fishpump.local` service discovery
 
 ### Build Configuration
 - `sdkconfig.defaults`: custom partition table, development flash workflow, 4 MB flash, manual task watchdog init

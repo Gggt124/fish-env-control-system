@@ -22,7 +22,7 @@ Edit `components/app_config/app_config.h`:
 ```
 
 Keep `APP_TEMPLATE_AP_SSID` at 32 bytes or fewer.
-Keep `APP_TEMPLATE_MDNS_HOSTNAME` lowercase ASCII with no spaces.
+Keep `APP_TEMPLATE_MDNS_HOSTNAME` lowercase ASCII letters and digits only — no spaces, no hyphens (`-`). Example: `"fishpump"`, not `"fish-pump"`.
 
 ## 3. Keep Core Modules Stable
 

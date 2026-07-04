@@ -27,7 +27,7 @@ extern "C" {
 #define APP_TEMPLATE_WIFI_SCAN_ACTIVE_MAX_MS 60
 #define APP_TEMPLATE_WIFI_SCAN_HOME_DWELL_MS 30
 
-#define APP_TEMPLATE_MDNS_HOSTNAME         "fish-pump"
+#define APP_TEMPLATE_MDNS_HOSTNAME         "fishpump"
 #define APP_TEMPLATE_MDNS_INSTANCE_NAME    "Fish Pump Dashboard"
 
 #define APP_TEMPLATE_DEFAULT_USERNAME      "admin"

@@ -369,7 +369,7 @@ void tft_display_draw_dashboard_skeleton(void) {
     tft_draw_string(185, 32, "COOLING CHANNEL", TFT_COLOR_BLACK, TFT_COLOR_CYAN);
     
     // Status bar static labels
-    tft_draw_string(4, 5, "fish-pump.local", TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
+    tft_draw_string(4, 5, APP_TEMPLATE_MDNS_HOSTNAME ".local", TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
     
     // Static Labels Left Card
     tft_draw_string(15, 120, "TIMER :", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
