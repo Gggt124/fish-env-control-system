@@ -1,8 +1,8 @@
-﻿<#
+<#
 .SYNOPSIS
-    Flash firmware à¸¥à¸‡ ESP32 à¹à¸¥à¹‰à¸§à¹à¸ªà¸”à¸‡ AP password
+    Flash firmware ลง ESP32 แล้วแสดง AP password
 .PARAMETER Port
-    COM port à¹€à¸Šà¹ˆà¸™ COM5 à¸–à¹‰à¸²à¹„à¸¡à¹ˆà¸£à¸°à¸šà¸¸à¸ˆà¸° auto-detect à¸«à¸£à¸·à¸­à¸–à¸²à¸¡
+    COM port เช่น COM5 ถ้าไม่ระบุจะ auto-detect หรือถาม
 #>
 param(
     [string]$Port = ""
@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 chcp 65001 > $null
 
-# Script à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ flash-package/tools/ â†’ firmware à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ flash-package/firmware/
+# Script อยู่ใน flash-package/tools/ → firmware อยู่ใน flash-package/firmware/
 $ScriptDir   = $PSScriptRoot
 $PackageRoot = Split-Path $ScriptDir -Parent
 $FirmwareDir = Join-Path $PackageRoot "firmware"
@@ -25,66 +25,66 @@ $Bins = [ordered]@{
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Fish Pump Relay Timer â€” Flash Installer  " -ForegroundColor Cyan
+Write-Host "  Fish Pump Relay Timer — Flash Installer  " -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-# --- à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š Python ---
+# --- ตรวจสอบ Python ---
 try {
     $pyVer = python --version 2>&1
     Write-Host "[OK] Python: $pyVer" -ForegroundColor Green
 } catch {
-    Write-Host "ERROR: Python à¹„à¸¡à¹ˆà¸žà¸š à¸à¸£à¸¸à¸“à¸²à¸•à¸´à¸”à¸•à¸±à¹‰à¸‡à¸ˆà¸²à¸ https://python.org" -ForegroundColor Red
-    Read-Host "à¸à¸” Enter à¹€à¸žà¸·à¹ˆà¸­à¸›à¸´à¸”"
+    Write-Host "ERROR: Python ไม่พบ กรุณาติดตั้งจาก https://python.org" -ForegroundColor Red
+    Read-Host "กด Enter เพื่อปิด"
     exit 1
 }
 
-# --- à¸•à¸´à¸”à¸•à¸±à¹‰à¸‡ esptool à¸–à¹‰à¸²à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µ ---
+# --- ติดตั้ง esptool ถ้ายังไม่มี ---
 $esptoolVer = python -m esptool version 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[...] à¸•à¸´à¸”à¸•à¸±à¹‰à¸‡ esptool..." -ForegroundColor Yellow
+    Write-Host "[...] ติดตั้ง esptool..." -ForegroundColor Yellow
     python -m pip install esptool --quiet
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: à¸•à¸´à¸”à¸•à¸±à¹‰à¸‡ esptool à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ" -ForegroundColor Red
-        Read-Host "à¸à¸” Enter à¹€à¸žà¸·à¹ˆà¸­à¸›à¸´à¸”"; exit 1
+        Write-Host "ERROR: ติดตั้ง esptool ไม่สำเร็จ" -ForegroundColor Red
+        Read-Host "กด Enter เพื่อปิด"; exit 1
     }
     Write-Host "[OK] esptool installed" -ForegroundColor Green
 } else {
     Write-Host "[OK] esptool ready" -ForegroundColor Green
 }
 
-# --- à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š binary à¸„à¸£à¸š ---
+# --- ตรวจสอบ binary ครบ ---
 foreach ($entry in $Bins.GetEnumerator()) {
     if (-not (Test-Path $entry.Value)) {
-        Write-Host "ERROR: à¹„à¸¡à¹ˆà¸žà¸š $($entry.Value)" -ForegroundColor Red
-        Read-Host "à¸à¸” Enter à¹€à¸žà¸·à¹ˆà¸­à¸›à¸´à¸”"; exit 1
+        Write-Host "ERROR: ไม่พบ $($entry.Value)" -ForegroundColor Red
+        Read-Host "กด Enter เพื่อปิด"; exit 1
     }
 }
 
-# --- Auto-detect / à¸–à¸²à¸¡ COM port ---
+# --- Auto-detect / ถาม COM port ---
 if (-not $Port) {
     $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
     if ($ports.Count -eq 1) {
         $Port = $ports[0]
-        Write-Host "[AUTO] à¸•à¸£à¸§à¸ˆà¸žà¸š COM port: $Port" -ForegroundColor Green
+        Write-Host "[AUTO] ตรวจพบ COM port: $Port" -ForegroundColor Green
     } elseif ($ports.Count -gt 1) {
-        Write-Host "à¸žà¸šà¸«à¸¥à¸²à¸¢ COM port:" -ForegroundColor Yellow
+        Write-Host "พบหลาย COM port:" -ForegroundColor Yellow
         $ports | ForEach-Object { Write-Host "  - $_" }
-        $Port = Read-Host "à¸à¸£à¸­à¸ COM port (à¹€à¸Šà¹ˆà¸™ COM5)"
+        $Port = Read-Host "กรอก COM port (เช่น COM5)"
     } else {
-        Write-Host "à¹„à¸¡à¹ˆà¸žà¸š COM port à¸à¸£à¸¸à¸“à¸²à¹€à¸ªà¸µà¸¢à¸š ESP32 à¹à¸¥à¹‰à¸§à¸à¸” Enter"
+        Write-Host "ไม่พบ COM port กรุณาเสียบ ESP32 แล้วกด Enter"
         Read-Host "..."
         $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
         $Port  = $ports | Select-Object -First 1
         if (-not $Port) {
-            Write-Host "ERROR: à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸žà¸š COM port" -ForegroundColor Red
-            Read-Host "à¸à¸” Enter à¹€à¸žà¸·à¹ˆà¸­à¸›à¸´à¸”"; exit 1
+            Write-Host "ERROR: ยังไม่พบ COM port" -ForegroundColor Red
+            Read-Host "กด Enter เพื่อปิด"; exit 1
         }
     }
 }
 
 Write-Host ""
-Write-Host "Flash à¹„à¸›à¸—à¸µà¹ˆ $Port ..." -ForegroundColor Cyan
+Write-Host "Flash ไปที่ $Port ..." -ForegroundColor Cyan
 Write-Host ""
 
 # --- Flash ---
@@ -105,27 +105,27 @@ $flashArgs = @(
 python -m esptool @flashArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "ERROR: Flash à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š:" -ForegroundColor Red
-    Write-Host "  - à¹€à¸ªà¸µà¸¢à¸š USB à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡?" -ForegroundColor Yellow
-    Write-Host "  - COM port à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡? ($Port)" -ForegroundColor Yellow
-    Write-Host "  - à¸¥à¸­à¸‡à¸–à¸­à¸”-à¹€à¸ªà¸µà¸¢à¸šà¸ªà¸²à¸¢ USB à¹à¸¥à¹‰à¸§à¸£à¸±à¸™ FLASH.bat à¹ƒà¸«à¸¡à¹ˆ" -ForegroundColor Yellow
-    Read-Host "à¸à¸” Enter à¹€à¸žà¸·à¹ˆà¸­à¸›à¸´à¸”"; exit 1
+    Write-Host "ERROR: Flash ไม่สำเร็จ ตรวจสอบ:" -ForegroundColor Red
+    Write-Host "  - เสียบ USB ถูกต้อง?" -ForegroundColor Yellow
+    Write-Host "  - COM port ถูกต้อง? ($Port)" -ForegroundColor Yellow
+    Write-Host "  - ลองถอด-เสียบสาย USB แล้วรัน FLASH.bat ใหม่" -ForegroundColor Yellow
+    Read-Host "กด Enter เพื่อปิด"; exit 1
 }
 
 Write-Host ""
-Write-Host "[OK] Flash à¸ªà¸³à¹€à¸£à¹‡à¸ˆ!" -ForegroundColor Green
+Write-Host "[OK] Flash สำเร็จ!" -ForegroundColor Green
 Write-Host ""
 
-# --- à¸­à¹ˆà¸²à¸™ MAC à¹à¸¥à¸°à¸„à¸³à¸™à¸§à¸“ AP Password ---
-Write-Host "à¸à¸³à¸¥à¸±à¸‡à¸­à¹ˆà¸²à¸™ MAC address à¸‚à¸­à¸‡à¸šà¸­à¸£à¹Œà¸”..." -ForegroundColor Cyan
+# --- อ่าน MAC และคำนวณ AP Password ---
+Write-Host "กำลังอ่าน MAC address ของบอร์ด..." -ForegroundColor Cyan
 Start-Sleep -Milliseconds 1500
 
 $macOutput = python -m esptool --chip esp32 --baud 230400 --port $Port read_mac 2>&1
 $macLine   = $macOutput | Select-String -Pattern "MAC:\s*([0-9a-fA-F:]{17})" | Select-Object -First 1
 
 if (-not $macLine) {
-    Write-Host "WARNING: à¸­à¹ˆà¸²à¸™ MAC à¹„à¸¡à¹ˆà¹„à¸”à¹‰" -ForegroundColor Yellow
-    Write-Host "à¸£à¸±à¸™ README_password.bat à¸—à¸µà¸«à¸¥à¸±à¸‡à¹€à¸žà¸·à¹ˆà¸­à¸”à¸¹ password" -ForegroundColor Gray
+    Write-Host "WARNING: อ่าน MAC ไม่ได้" -ForegroundColor Yellow
+    Write-Host "รัน SHOW_PASSWORD.bat ทีหลังเพื่อดู password" -ForegroundColor Gray
 } else {
     $macStr   = $macLine.Matches.Groups[1].Value.Trim()
     $macBytes = $macStr -split ":" | ForEach-Object { [Convert]::ToInt32($_.Trim(), 16) }
@@ -136,7 +136,7 @@ if (-not $macLine) {
 
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Green
-    Write-Host "  Flash à¹€à¸ªà¸£à¹‡à¸ˆà¹à¸¥à¹‰à¸§!                         " -ForegroundColor Green
+    Write-Host "  Flash เสร็จแล้ว!                         " -ForegroundColor Green
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Wi-Fi SSID    : FishPump-Setup           " -ForegroundColor White
@@ -144,12 +144,12 @@ if (-not $macLine) {
     Write-Host "  Web Dashboard : http://192.168.4.1       " -ForegroundColor White
     Write-Host "  Login         : admin / admin123         " -ForegroundColor White
     Write-Host ""
-    Write-Host "  >>> à¸šà¸±à¸™à¸—à¸¶à¸ Password à¹„à¸§à¹‰à¸”à¹‰à¸§à¸¢! <<<        " -ForegroundColor Red
+    Write-Host "  >>> บันทึก Password ไว้ด้วย! <<<        " -ForegroundColor Red
     Write-Host "============================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Password à¸‚à¸¶à¹‰à¸™à¸à¸±à¸šà¸šà¸­à¸£à¹Œà¸”à¸™à¸µà¹‰à¹€à¸—à¹ˆà¸²à¸™à¸±à¹‰à¸™" -ForegroundColor Gray
-    Write-Host "à¸–à¹‰à¸²à¸¥à¸·à¸¡: à¸£à¸±à¸™ README_password.bat (à¸•à¹‰à¸­à¸‡à¹€à¸ªà¸µà¸¢à¸š USB)" -ForegroundColor Gray
+    Write-Host "Password ขึ้นกับบอร์ดนี้เท่านั้น" -ForegroundColor Gray
+    Write-Host "ถ้าลืม: รัน SHOW_PASSWORD.bat (ต้องเสียบ USB)" -ForegroundColor Gray
 }
 
 Write-Host ""
-Read-Host "à¸à¸” Enter à¹€à¸žà¸·à¹ˆà¸­à¸›à¸´à¸”"
+Read-Host "กด Enter เพื่อปิด"
