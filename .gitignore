@@ -29,3 +29,7 @@ docs/superpowers/plans/
 
 # Secrets
 components/app_config/secrets.h
+
+# Customer Release Package
+/flash-package/
+flash-package.zip

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     สร้าง flash-package/ สำหรับส่งให้ลูกค้า
 .PARAMETER OutputDir
@@ -69,7 +69,12 @@ foreach ($tool in @("flash_and_show.ps1", "show_password.ps1")) {
 }
 
 # --- Copy batch launchers & README ---
-foreach ($file in @("FLASH.bat", "README_password.bat", "README_ลูกค้า.md", "README_customer.md")) {
+Write-Host "[package] Copying batch launchers & README..." -ForegroundColor Cyan
+$extraFiles = @("FLASH.bat", "README_password.bat", "README_customer.md")
+$extraFiles += (Get-ChildItem -Path $ScriptsDir -Filter "README_*.md").Name | Where-Object { $_ -ne "README_customer.md" }
+
+foreach ($file in $extraFiles) {
+    if ([string]::IsNullOrWhiteSpace($file)) { continue }
     $src  = Join-Path $ScriptsDir $file
     $dest = Join-Path $OutputDir $file
     if (Test-Path $src) {
