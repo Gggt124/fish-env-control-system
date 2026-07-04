@@ -2289,7 +2289,10 @@ static esp_err_t handle_api_change_password(httpd_req_t *req)
     }
 
     if (s_password_state_mutex) {
-        xSemaphoreTake(s_password_state_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_password_state_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] password_state timeout in change_password");
+            return send_json(req, "{\"ok\":false,\"error\":\"server_busy\"}", "503 Service Unavailable");
+        }
     }
     s_is_password_default_cached = false;
     s_password_state_initialized = true;
@@ -2312,7 +2315,10 @@ typedef struct {
 
 static bool is_password_default(void) {
     if (s_password_state_mutex) {
-        xSemaphoreTake(s_password_state_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_password_state_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] password_state timeout in is_password_default — assuming not default");
+            return false;   /* fail-safe: assume password is NOT default (more restrictive) */
+        }
     }
     if (s_password_state_initialized) {
         bool result = s_is_password_default_cached;
@@ -2342,7 +2348,10 @@ static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
 static void update_login_rate_limit(const char *ip, int64_t now, bool is_success)
 {
     if (s_login_rate_limit_mutex) {
-        xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_login_rate_limit_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] login_rate_limit timeout in update — skipping update for ip=%s", ip);
+            return;  /* skip rate-limit update; caller sends response normally */
+        }
     }
     int current_idx = -1;
     for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
@@ -2397,7 +2406,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
 
     if (s_login_rate_limit_mutex) {
-        xSemaphoreTake(s_login_rate_limit_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_login_rate_limit_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] login_rate_limit timeout in handle_api_login");
+            return send_json(req, "{\"ok\":false,\"error\":\"server_busy\"}", "503 Service Unavailable");
+        }
     }
 
     login_rate_limit_t *rl = NULL;
@@ -3848,11 +3860,15 @@ static esp_err_t handle_api_confirm_post(httpd_req_t *req)
             session_invalidate_others(NULL);
         }
         if (s_password_state_mutex) {
-            xSemaphoreTake(s_password_state_mutex, portMAX_DELAY);
-        }
-        s_password_state_initialized = false;
-        if (s_password_state_mutex) {
-            xSemaphoreGive(s_password_state_mutex);
+            if (xSemaphoreTake(s_password_state_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+                ESP_LOGE(TAG, "[MUTEX] password_state timeout in confirm_post — cache may be stale");
+                /* Non-fatal: cache will be invalidated on next read; continue with response */
+            } else {
+                s_password_state_initialized = false;
+                xSemaphoreGive(s_password_state_mutex);
+            }
+        } else {
+            s_password_state_initialized = false;
         }
     }
 
