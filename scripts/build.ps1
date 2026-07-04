@@ -83,6 +83,13 @@ if (-not (Test-Path $exportScript)) {
 
 . $exportScript
 
+# Auto-generate secrets.h if missing
+$SecretsFile = Join-Path $PSScriptRoot "..\components\app_config\secrets.h"
+if (-not (Test-Path $SecretsFile)) {
+    Write-Host "[build] secrets.h not found - generating new OTA key..." -ForegroundColor Yellow
+    & "$PSScriptRoot\generate_secrets.ps1"
+}
+
 idf.py --version
 if ($FullClean) {
     idf.py fullclean
@@ -94,8 +101,8 @@ idf.py build
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Build successful. Generating encrypted OTA binary..." -ForegroundColor Green
     
-    $configFile = "components\app_config\app_config.h"
-    $keyLine = Select-String -Path $configFile -Pattern 'APP_CONFIG_OTA_ENCRYPTION_KEY\s+"([0-9A-Fa-f]+)"'
+    $configFile = "components\app_config\secrets.h"
+    $keyLine = Select-String -Path $configFile -Pattern "APP_CONFIG_OTA_ENCRYPTION_KEY\s+`"([0-9A-Fa-f]+)`""
     
     if ($keyLine) {
         $keyHex = $keyLine.Matches.Groups[1].Value
@@ -108,7 +115,7 @@ if ($LASTEXITCODE -eq 0) {
             Write-Host "Warning: $binPath not found. Skipping encryption." -ForegroundColor Yellow
         }
     } else {
-        Write-Host "Warning: APP_CONFIG_OTA_ENCRYPTION_KEY not found in app_config.h. Skipping encryption." -ForegroundColor Yellow
+        Write-Host "Warning: APP_CONFIG_OTA_ENCRYPTION_KEY not found in secrets.h. Skipping encryption." -ForegroundColor Yellow
     }
 
     Write-Host "Generating merged binary for easy factory flashing..." -ForegroundColor Green

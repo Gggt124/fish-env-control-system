@@ -4327,44 +4327,6 @@ select:hover:not(:disabled) {
     background-color: var(--accent-hover);
 }
 
-/* Wi-Fi Desktop Bento Grid Overrides */
-@media (min-width: 1024px) {
-    #view-wifi .dashboard-col-side #wifi-connect-modal.modal-dialog {
-        display: none !important;
-        position: static !important;
-        width: 100% !important;
-        height: auto !important;
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        z-index: auto !important;
-        box-shadow: none !important;
-        border: none !important;
-        max-width: none !important;
-        max-height: none !important;
-    }
-
-    #view-wifi .dashboard-col-side #wifi-connect-modal.modal-dialog[open] {
-        display: block !important;
-    }
-
-    #view-wifi .dashboard-col-side #wifi-connect-modal.modal-dialog::backdrop {
-        display: none !important;
-    }
-
-    #view-wifi .dashboard-col-side #wifi-connect-modal.modal-dialog .modal-card {
-        width: 100% !important;
-        max-width: none !important;
-        max-height: none !important;
-        box-shadow: none !important;
-        transform: none !important;
-        border: 1px solid var(--border-color) !important;
-        background: var(--bg-surface) !important;
-        padding: var(--space-6) !important;
-        margin-bottom: var(--space-6) !important;
-        transition: none !important;
-    }
-}
 
 /* ======== OTA Firmware Update ======== */
 .ota-card {

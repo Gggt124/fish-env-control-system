@@ -86,6 +86,8 @@ static bool s_wifi_disconnect_task_pending = false;
 static portMUX_TYPE s_wifi_disconnect_task_lock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE s_web_diag_lock = portMUX_INITIALIZER_UNLOCKED;
 static SemaphoreHandle_t s_login_rate_limit_mutex = NULL;
+static SemaphoreHandle_t s_password_state_mutex = NULL;
+static bool s_reboot_scheduled = false;
 static char s_auth_nonce[33] = {0};
 static httpd_handle_t s_server = NULL;
 static uint32_t s_json_send_failures = 0;
@@ -324,6 +326,16 @@ static bool is_valid_utf8_printable(const char *s, size_t max_len)
         if (c < 0x20 && c != '\t') return false;
     }
     return true;
+}
+
+static void json_gen_add_string_safe(json_gen_t *gen, const char *key, const char *val) {
+    if (!val || val[0] == '\0') {
+        json_gen_add_string(gen, key, val);
+    } else if (is_valid_utf8_printable(val, 128)) {
+        json_gen_add_string(gen, key, val);
+    } else {
+        json_gen_add_string(gen, key, NULL);
+    }
 }
 
 static void get_client_ip(httpd_req_t *req, char *ipstr, size_t ipstr_len)
@@ -2213,7 +2225,9 @@ static esp_err_t captive_portal_404_handler(httpd_req_t *req, httpd_err_code_t e
 
     set_no_store_response_headers(req);
     httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "http://192.168.4.1/");
+    char loc[64];
+    snprintf(loc, sizeof(loc), "http://%s/", wifi_manager_get_ap_ip());
+    httpd_resp_set_hdr(req, "Location", loc);
     return httpd_resp_send(req, NULL, 0);
 }
 
@@ -2231,6 +2245,9 @@ static esp_err_t handle_api_change_password(httpd_req_t *req)
     }
 
     char body[256] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"payload_too_large\"}", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
     }
@@ -2271,8 +2288,14 @@ static esp_err_t handle_api_change_password(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"storage_error\"}", "500 Internal Server Error");
     }
 
+    if (s_password_state_mutex) {
+        xSemaphoreTake(s_password_state_mutex, portMAX_DELAY);
+    }
     s_is_password_default_cached = false;
     s_password_state_initialized = true;
+    if (s_password_state_mutex) {
+        xSemaphoreGive(s_password_state_mutex);
+    }
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
@@ -2288,8 +2311,15 @@ typedef struct {
 } login_rate_limit_t;
 
 static bool is_password_default(void) {
+    if (s_password_state_mutex) {
+        xSemaphoreTake(s_password_state_mutex, portMAX_DELAY);
+    }
     if (s_password_state_initialized) {
-        return s_is_password_default_cached;
+        bool result = s_is_password_default_cached;
+        if (s_password_state_mutex) {
+            xSemaphoreGive(s_password_state_mutex);
+        }
+        return result;
     }
 
     char stored_user[64] = {0};
@@ -2300,7 +2330,11 @@ static bool is_password_default(void) {
         s_is_password_default_cached = (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0);
     }
     s_password_state_initialized = true;
-    return s_is_password_default_cached;
+    bool result = s_is_password_default_cached;
+    if (s_password_state_mutex) {
+        xSemaphoreGive(s_password_state_mutex);
+    }
+    return result;
 }
 
 static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
@@ -2317,7 +2351,27 @@ static void update_login_rate_limit(const char *ip, int64_t now, bool is_success
             break;
         }
     }
+    if (current_idx == -1 && !is_success) {
+        int oldest_idx = 0;
+        int64_t oldest_time = s_rate_limits[0].last_seen;
+        for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+            if (s_rate_limits[i].ip[0] == '\0') {
+                oldest_idx = i;
+                break;
+            }
+            if (s_rate_limits[i].last_seen < oldest_time) {
+                oldest_time = s_rate_limits[i].last_seen;
+                oldest_idx = i;
+            }
+        }
+        current_idx = oldest_idx;
+        strncpy(s_rate_limits[current_idx].ip, ip, sizeof(s_rate_limits[current_idx].ip) - 1);
+        s_rate_limits[current_idx].ip[sizeof(s_rate_limits[current_idx].ip) - 1] = '\0';
+        s_rate_limits[current_idx].attempts = 0;
+        s_rate_limits[current_idx].block_until = 0;
+    }
     if (current_idx != -1) {
+        s_rate_limits[current_idx].last_seen = now;
         if (is_success) {
             s_rate_limits[current_idx].attempts = 0;
             s_rate_limits[current_idx].block_until = 0;
@@ -2393,6 +2447,9 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     char body[256] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"payload_too_large\"}", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "401 Unauthorized");
     }
@@ -2553,12 +2610,14 @@ static void delayed_reboot_task(void *pvParameters)
 
 static void schedule_delayed_reboot(void)
 {
-    static bool s_reboot_scheduled = false;
+    taskENTER_CRITICAL(&s_wifi_disconnect_task_lock);
     if (s_reboot_scheduled) {
+        taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
         ESP_LOGW(TAG, "Reboot already scheduled — ignoring duplicate request");
         return;
     }
     s_reboot_scheduled = true;
+    taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
     xTaskCreate(delayed_reboot_task, "delayed_reboot", 2048, NULL, tskIDLE_PRIORITY + 1, NULL);
 }
 
@@ -2573,6 +2632,9 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     }
 
     char body[512] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"payload_too_large\"}", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
     }
@@ -3227,6 +3289,9 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
     }
 
     char body[512] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_api_error(req, "payload_too_large", "Payload Too Large", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
     }
@@ -3617,7 +3682,7 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     /* ---------- System ---------- */
     esp_chip_info_t chip;
     esp_chip_info(&chip);
-    json_gen_add_string(&gen, "chip_model", chip_model_to_string(chip.model));
+    json_gen_add_string_safe(&gen, "chip_model", chip_model_to_string(chip.model));
     json_gen_add_number(&gen, "chip_revision", (double)(chip.revision));
     json_gen_add_number(&gen, "chip_cores", (double)(chip.cores));
     json_gen_add_number(&gen, "cpu_freq_mhz", (double)(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ));
@@ -3628,7 +3693,7 @@ static esp_err_t handle_api_status(httpd_req_t *req)
 
     const char *rst_detail = app_get_last_restart_detail();
     if (rst_detail && rst_detail[0]) {
-        json_gen_add_string(&gen, "reset_detail", rst_detail);
+        json_gen_add_string_safe(&gen, "reset_detail", rst_detail);
     }
 
     /* ---------- MAC addresses ---------- */
@@ -3689,7 +3754,7 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     json_gen_add_bool(&gen, "sta_connecting", wifi_manager_is_sta_connecting());
     json_gen_add_bool(&gen, "sta_retry_blocked", wifi_manager_is_sta_retry_blocked());
     json_gen_add_string(&gen, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
-    json_gen_add_string(&gen, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
+    json_gen_add_string_safe(&gen, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
 
     if (sta_conn) {
         wifi_ap_record_t ap_rec;
@@ -3739,9 +3804,16 @@ static esp_err_t handle_api_confirm_post(httpd_req_t *req)
         } else {
             session_invalidate_others(NULL);
         }
+        if (s_password_state_mutex) {
+            xSemaphoreTake(s_password_state_mutex, portMAX_DELAY);
+        }
+        s_password_state_initialized = false;
+        if (s_password_state_mutex) {
+            xSemaphoreGive(s_password_state_mutex);
+        }
     }
 
-    g_cancel_rollback_timer = true;
+    atomic_store(&g_cancel_rollback_timer, true);
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
@@ -3763,7 +3835,7 @@ static esp_err_t handle_api_confirm_delete(httpd_req_t *req)
         ESP_LOGI(TAG, "Rolled back staged changes type=%d, rebooting", stg_type);
     }
 
-    g_cancel_rollback_timer = true;
+    atomic_store(&g_cancel_rollback_timer, true);
 
     nvs_store_set_restart_detail("USER_ROLLBACK");
     schedule_delayed_reboot();
@@ -4205,6 +4277,10 @@ bool web_server_start(void)
     if (s_login_rate_limit_mutex == NULL) {
         s_login_rate_limit_mutex = xSemaphoreCreateMutex();
         configASSERT(s_login_rate_limit_mutex != NULL);
+    }
+    if (s_password_state_mutex == NULL) {
+        s_password_state_mutex = xSemaphoreCreateMutex();
+        configASSERT(s_password_state_mutex != NULL);
     }
 
     if (s_server) {

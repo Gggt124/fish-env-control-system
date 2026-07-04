@@ -742,6 +742,10 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
             size_t copy_len = blob_len - 1;
             if (copy_len > sizeof(nvs_store_pump_settings_t)) {
                 copy_len = sizeof(nvs_store_pump_settings_t);
+            } else if (copy_len < sizeof(nvs_store_pump_settings_t)) {
+                ESP_LOGW(TAG, "Blob size mismatch: got %u bytes, struct expects %u. "
+                         "New fields will use defaults (firmware downgrade or struct growth).",
+                         (unsigned)copy_len, (unsigned)sizeof(nvs_store_pump_settings_t));
             }
             memcpy(&loaded, blob + 1, copy_len);
             ESP_LOGD(TAG, "Pump settings loaded from blob (v%d)", NVS_PUMP_BLOB_VERSION);

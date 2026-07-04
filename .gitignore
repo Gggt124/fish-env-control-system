@@ -26,3 +26,6 @@ build_integration/
 
 # Agent Plans
 docs/superpowers/plans/
+
+# Secrets
+components/app_config/secrets.h
