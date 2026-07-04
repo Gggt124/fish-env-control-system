@@ -21,14 +21,14 @@ Write-Host ""
 try {
     $null = python --version 2>&1
 } catch {
-    Write-Host "ERROR: ไม่พบ Python กรุณารัน FLASH.bat เพื่อติดตั้งเครื่องมือก่อน" -ForegroundColor Red
+    Write-Host "ERROR: Python ไม่พบ กรุณาติดตั้งจาก https://python.org" -ForegroundColor Red
     Read-Host "กด Enter เพื่อปิด"; exit 1
 }
 
 $esptoolVer = python -m esptool version 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: ไม่พบ esptool กรุณารัน FLASH.bat เพื่อติดตั้งเครื่องมือก่อน" -ForegroundColor Red
-    Read-Host "กด Enter เพื่อปิด"; exit 1
+    Write-Host "ติดตั้ง esptool..." -ForegroundColor Yellow
+    python -m pip install esptool --quiet
 }
 
 # --- Auto-detect / ถาม COM port ---
