@@ -4174,6 +4174,11 @@ static esp_err_t handle_instrumented_route(httpd_req_t *req)
     }
 
     int64_t start_ms = esp_timer_get_time() / 1000;
+    /* Touch alive timestamp: prevents false-positive HTTP_HUNG during
+     * legitimate slow handlers. The health-check work is queued-based
+     * and only runs when httpd task is idle; this ensures the clock
+     * resets when a handler starts, not only when the queue drains. */
+    s_httpd_last_alive_ms = (uint32_t)start_ms;
     taskENTER_CRITICAL(&s_web_diag_lock);
     s_web_diag.requests_started++;
     s_web_diag.active_handlers++;
