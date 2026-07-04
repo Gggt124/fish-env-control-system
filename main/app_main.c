@@ -8,6 +8,7 @@
 #include "web_server.h"
 #include "dns_server.h"
 #include "tft_display.h"
+#include "app_main.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_err.h"
@@ -21,14 +22,73 @@
 #include "esp_task_wdt.h"
 #include "driver/gpio.h"
 #include <stdatomic.h>
+#include <inttypes.h>
+#include "esp_ota_ops.h"
 
 static const char *TAG = "app_main";
+
+static void log_ota_partition_state(void)
+{
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    const esp_partition_t *boot    = esp_ota_get_boot_partition();
+    const esp_partition_t *next    = esp_ota_get_next_update_partition(NULL);
+
+    if (running) {
+        ESP_LOGI(TAG, "[OTA] Running: %s @ 0x%08"PRIx32, running->label, running->address);
+    }
+    if (boot) {
+        ESP_LOGI(TAG, "[OTA] Boot:    %s @ 0x%08"PRIx32, boot->label, boot->address);
+    }
+    if (next) {
+        ESP_LOGI(TAG, "[OTA] Update:  %s @ 0x%08"PRIx32, next->label, next->address);
+    }
+
+    esp_ota_img_states_t ota_state;
+    if (running && esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        const char *state_name =
+            ota_state == ESP_OTA_IMG_NEW            ? "NEW"            :
+            ota_state == ESP_OTA_IMG_PENDING_VERIFY ? "PENDING_VERIFY" :
+            ota_state == ESP_OTA_IMG_VALID          ? "VALID"          :
+            ota_state == ESP_OTA_IMG_INVALID        ? "INVALID"        :
+            ota_state == ESP_OTA_IMG_ABORTED        ? "ABORTED"        : "UNDEFINED";
+        ESP_LOGI(TAG, "[OTA] State:   %s (%d)", state_name, (int)ota_state);
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            ESP_LOGW(TAG, "[OTA] Firmware is PENDING_VERIFY — will mark valid after services start");
+        }
+    }
+}
 
 atomic_bool s_trigger_rollback = ATOMIC_VAR_INIT(false);
 atomic_bool g_cancel_rollback_timer = ATOMIC_VAR_INIT(false);
 #define s_cancel_rollback g_cancel_rollback_timer
 
-static volatile bool s_trigger_factory_reset = false;
+static atomic_bool s_trigger_factory_reset = ATOMIC_VAR_INIT(false);
+
+/** Stores the restart detail string read from NVS on boot. Persists in RAM for the session. */
+static char s_last_restart_detail[32] = {0};
+
+const char *app_get_last_restart_detail(void)
+{
+    return s_last_restart_detail;
+}
+
+static volatile app_led_state_t s_led_state = LED_STATE_OFF;
+
+app_led_state_t app_get_led_state(void) {
+    return s_led_state;
+}
+
+const char *app_led_state_name(app_led_state_t state) {
+    switch (state) {
+        case LED_STATE_OFF:             return "off";
+        case LED_STATE_ON:              return "on";
+        case LED_STATE_STAGING_PENDING: return "staging_pending";
+        case LED_STATE_BTN_HOLD_SHORT:  return "btn_hold_short";
+        case LED_STATE_RECOVERY_AP:     return "recovery_ap";
+        case LED_STATE_FACTORY_RESET:   return "factory_reset";
+        default:                        return "unknown";
+    }
+}
 
 static esp_timer_handle_t s_confirm_timer = NULL;
 static esp_timer_handle_t s_wifi_timer = NULL;
@@ -36,7 +96,7 @@ static esp_timer_handle_t s_wifi_timer = NULL;
 static void confirm_timer_cb(void *arg)
 {
     (void)arg;
-    s_trigger_rollback = true;
+    atomic_store(&s_trigger_rollback, true);
     ESP_LOGW(TAG, "Rollback confirm timer expired!");
 }
 
@@ -44,7 +104,7 @@ static void wifi_timer_cb(void *arg)
 {
     (void)arg;
     if (!wifi_manager_is_sta_connected()) {
-        s_trigger_rollback = true;
+        atomic_store(&s_trigger_rollback, true);
         ESP_LOGW(TAG, "Wi-Fi connection staging timeout! Triggering rollback.");
     }
 }
@@ -261,12 +321,20 @@ static void log_board_and_hardware_diagnostics(void)
     uint32_t idle_runtime[portNUM_PROCESSORS] = {0};
     uint32_t core_load_x10[portNUM_PROCESSORS] = {0};
     uint32_t elapsed_us = 0;
-    bool cpu_sample_valid = s_last_board_diag_us != 0;
+    bool cpu_stats_available = false;
+    bool cpu_sample_valid = false;
     uint32_t total_load_x10 = 0;
 
     for (int core = 0; core < portNUM_PROCESSORS; core++) {
+#if configGENERATE_RUN_TIME_STATS
         idle_runtime[core] = (uint32_t)ulTaskGetIdleRunTimeCounterForCore(core);
+        cpu_stats_available = true;
+#else
+        idle_runtime[core] = 0;
+#endif
     }
+
+    cpu_sample_valid = cpu_stats_available && (s_last_board_diag_us != 0);
 
     if (cpu_sample_valid) {
         elapsed_us = (uint32_t)(now_us - s_last_board_diag_us);
@@ -291,7 +359,7 @@ static void log_board_and_hardware_diagnostics(void)
              "[BOARD_DIAG] uptime_ms=%llu cpu_mhz=%d cpu_sample=%s cpu_window_ms=%lu cpu_load_pct=%lu.%lu core0_pct=%lu.%lu core1_pct=%lu.%lu tasks=%lu twdt_main=%s reset=%s heap_free=%lu heap_min=%lu heap_largest=%lu heap_alloc_blocks=%lu heap_free_blocks=%lu main_stack_hwm=%lu die_temp=unsupported external_temp_source=ds18b20",
              (unsigned long long)(now_us / 1000),
              CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
-             cpu_sample_valid ? "valid" : "warming_up",
+             !cpu_stats_available ? "unsupported" : (cpu_sample_valid ? "valid" : "warming_up"),
              (unsigned long)(elapsed_us / 1000),
              (unsigned long)(total_load_x10 / 10),
              (unsigned long)(total_load_x10 % 10),
@@ -561,8 +629,12 @@ static void hardware_ui_task(void *pvParameters)
         if (any_pressed) {
             press_duration_ms += 50;
             release_ticks = 0;
+            
+            // Wake TFT backlight on any button press
+            tft_display_reset_idle_timer();
 
             if (press_duration_ms < 2000) {
+                s_led_state = LED_STATE_BTN_HOLD_SHORT;
                 set_leds(1);
             } else if (press_duration_ms < 5000) {
                 if (!recovery_ap_triggered) {
@@ -570,13 +642,15 @@ static void hardware_ui_task(void *pvParameters)
                     recovery_ap_triggered = true;
                     ESP_LOGI(TAG, "Recovery AP triggered by button hold");
                 }
+                s_led_state = LED_STATE_RECOVERY_AP;
                 set_leds(((press_duration_ms / 500) % 2) == 0 ? 1 : 0);
             } else {
                 if (!factory_reset_triggered) {
-                    s_trigger_factory_reset = true;
+                    atomic_store(&s_trigger_factory_reset, true);
                     factory_reset_triggered = true;
                     ESP_LOGI(TAG, "Factory reset triggered by button hold");
                 }
+                s_led_state = LED_STATE_FACTORY_RESET;
                 set_leds(((press_duration_ms / 100) % 2) == 0 ? 1 : 0);
             }
         } else {
@@ -585,9 +659,17 @@ static void hardware_ui_task(void *pvParameters)
             factory_reset_triggered = false;
             release_ticks++;
 
-            uint8_t stg_type = 0;
-            nvs_store_get_staging_type(&stg_type);
-            if (stg_type > 0) {
+            /* PM-7: Cache staging type; refresh from NVS at most 1 Hz to avoid
+             * blocking UI task during concurrent NVS writes (rollback/factory reset). */
+            static uint8_t cached_stg_type = 0;
+            static uint32_t last_stg_check_ms = 0;
+            uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
+            if (now_ms - last_stg_check_ms >= 1000) {
+                nvs_store_get_staging_type(&cached_stg_type);
+                last_stg_check_ms = now_ms;
+            }
+            if (cached_stg_type > 0) {
+                s_led_state = LED_STATE_STAGING_PENDING;
                 uint32_t phase = release_ticks % 20;
                 if (phase < 2) {
                     set_leds(1);
@@ -600,8 +682,10 @@ static void hardware_ui_task(void *pvParameters)
                 }
             } else {
                 if (wifi_manager_is_ap_active()) {
+                    s_led_state = LED_STATE_ON;
                     set_leds(1);
                 } else {
+                    s_led_state = LED_STATE_OFF;
                     set_leds(0);
                 }
             }
@@ -613,6 +697,26 @@ static void hardware_ui_task(void *pvParameters)
 
 void app_main(void)
 {
+    /* ── Production log-level filter ─────────────────────────────────────────
+     * Global floor = WARN  (matches sdkconfig.defaults CONFIG_LOG_DEFAULT_LEVEL)
+     * Noisy 3rd-party components stay at WARN.
+     * Application modules raised to INFO for field observability.
+     * ESP_LOGD/LOGV are compile-time stripped (CONFIG_LOG_MAXIMUM_LEVEL=INFO).
+     * Runtime adjustment: esp_log_level_set("<tag>", ESP_LOG_INFO) — no reflash.
+     * ─────────────────────────────────────────────────────────────────────── */
+    esp_log_level_set("*", ESP_LOG_WARN);            /* 3rd-party: Wi-Fi, LwIP, HTTPD stay quiet */
+
+    /* Application modules — INFO for state transitions and field diagnostics */
+    esp_log_level_set("app_main",          ESP_LOG_INFO);
+    esp_log_level_set("pump_control",      ESP_LOG_INFO);
+    esp_log_level_set("cooling_control",   ESP_LOG_INFO);
+    esp_log_level_set("nvs_store",         ESP_LOG_INFO);
+    esp_log_level_set("web_server",        ESP_LOG_INFO);
+    esp_log_level_set("TFT_DISPLAY",       ESP_LOG_INFO);
+    esp_log_level_set("wifi_mgr",          ESP_LOG_INFO);
+    esp_log_level_set("dns_server",        ESP_LOG_WARN); /* DNS very chatty — WARN only */
+    esp_log_level_set("session",           ESP_LOG_WARN); /* session tokens — security: WARN only */
+
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  %s %s", APP_TEMPLATE_NAME, APP_TEMPLATE_FIRMWARE_VERSION);
     ESP_LOGI(TAG, "  %s", APP_TEMPLATE_PHASE_LABEL);
@@ -626,6 +730,19 @@ void app_main(void)
         return;
     }
     ESP_LOGI(TAG, "NVS initialized");
+
+    /* Read and clear the "last words" restart detail from NVS */
+    if (nvs_store_pop_restart_detail(s_last_restart_detail, sizeof(s_last_restart_detail))) {
+        if (s_last_restart_detail[0]) {
+            ESP_LOGW(TAG, "Last restart detail: %s", s_last_restart_detail);
+        } else {
+            ESP_LOGI(TAG, "Last restart detail: none");
+        }
+    } else {
+        ESP_LOGW(TAG, "Failed to read restart detail from NVS");
+    }
+
+    log_ota_partition_state();
 
     uint8_t stg_type = 0;
     nvs_store_get_staging_type(&stg_type);
@@ -655,6 +772,11 @@ void app_main(void)
 
     /* Initialize TFT display */
     if (tft_display_init() == ESP_OK) {
+        uint8_t dim_pct = tft_display_get_idle_dim_percent();
+        nvs_store_load_display_settings(&dim_pct);
+        tft_display_set_idle_dim_percent(dim_pct);
+        ESP_LOGI(TAG, "TFT idle dim loaded: %u%%", dim_pct);
+
         tft_clear(TFT_COLOR_BLACK);
         // Draw centered high-contrast "Booting..." splash screen
         tft_draw_string_x2(80, 60, "Booting...", TFT_COLOR_GREEN, TFT_COLOR_BLACK);
@@ -733,6 +855,32 @@ void app_main(void)
              cooling_settings.auto_enable ? "true" : "false",
              (unsigned long)cooling_settings.compressor_min_off_sec);
 
+    /* 2. Initialize task watchdog (10s timeout with panic) */
+    uint32_t idle_mask = 0;
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    idle_mask |= (1 << 0);
+#endif
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    idle_mask |= (1 << 1);
+#endif
+    esp_task_wdt_config_t wdt_config = {
+        .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
+        .idle_core_mask = idle_mask,
+        .trigger_panic = true,
+    };
+    esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
+    if (wdt_ret == ESP_OK) {
+        esp_task_wdt_add(NULL);
+        ESP_LOGI(TAG, "TWDT initialized (%d ms timeout, panic on trigger)",
+                 APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS);
+    } else if (wdt_ret == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "TWDT already initialized, adding main task (timeout may differ)");
+        esp_task_wdt_add(NULL);
+    } else {
+        ESP_LOGE(TAG, "TWDT init failed: %s (continuing without watchdog)",
+                 esp_err_to_name(wdt_ret));
+    }
+
     if (cooling_control_init(&cooling_config)) {
         ESP_LOGI(TAG,
                  "Cooling runtime initialized: ds18b20 GPIO=%d, relay GPIO=%d, auto_enable=%s, min_off=%lu sec",
@@ -808,6 +956,16 @@ void app_main(void)
         s_http_server_retry = true;
     } else {
         ESP_LOGI(TAG, "HTTP server started");
+        
+        /* Mark OTA firmware as valid (cancels bootloader rollback timer) */
+        esp_err_t ota_err = esp_ota_mark_app_valid_cancel_rollback();
+        if (ota_err == ESP_OK) {
+            ESP_LOGI(TAG, "OTA firmware validated (PENDING_VERIFY -> VALID)");
+        } else if (ota_err == ESP_ERR_INVALID_STATE) {
+            ESP_LOGD(TAG, "OTA mark_valid: not in PENDING_VERIFY state (ok)");
+        } else {
+            ESP_LOGW(TAG, "OTA mark_valid returned: %s", esp_err_to_name(ota_err));
+        }
     }
 
     /* 5. Disable Wi-Fi power save (prevents mMC multicast loss) */
@@ -837,25 +995,6 @@ void app_main(void)
     // Start hardware UI/recovery task
     xTaskCreate(hardware_ui_task, "hardware_ui_task", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
 
-    /* 8. Initialize task watchdog (10s timeout with panic) */
-    esp_task_wdt_config_t wdt_config = {
-        .timeout_ms = APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS,
-        .idle_core_mask = 0,
-        .trigger_panic = true,
-    };
-    esp_err_t wdt_ret = esp_task_wdt_init(&wdt_config);
-    if (wdt_ret == ESP_OK) {
-        esp_task_wdt_add(NULL);
-        ESP_LOGI(TAG, "TWDT initialized (%d ms timeout, panic on trigger)",
-                 APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS);
-    } else if (wdt_ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "TWDT already initialized, adding main task (timeout may differ)");
-        esp_task_wdt_add(NULL);
-    } else {
-        ESP_LOGE(TAG, "TWDT init failed: %s (continuing without watchdog)",
-                 esp_err_to_name(wdt_ret));
-    }
-
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "  System Ready");
     ESP_LOGI(TAG, "  AP SSID: %s", APP_TEMPLATE_AP_SSID);
@@ -867,15 +1006,28 @@ void app_main(void)
         ESP_LOGI(TAG, "  URL: http://%s.local (desktop/iOS on LAN)", APP_TEMPLATE_MDNS_HOSTNAME);
     }
     ESP_LOGI(TAG, "  Login user: %s", APP_TEMPLATE_DEFAULT_USERNAME);
-    ESP_LOGI(TAG, "  WARNING: Change default credentials!");
+    
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    if (nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass))) {
+        if (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0 ||
+            strcmp(stored_user, APP_TEMPLATE_DEFAULT_USERNAME) == 0) {
+            ESP_LOGW(TAG, "  WARNING: Change default credentials!");
+        } else {
+            ESP_LOGI(TAG, "  Credentials OK");
+        }
+    } else {
+        ESP_LOGW(TAG, "  WARNING: Change default credentials!");
+    }
     ESP_LOGI(TAG, "========================================");
 
     /* Main loop — reset WDT every 5s, retry HTTP server, log status every 30s */
+    uint8_t oom_strike_count = 0;
     uint32_t loop_counter = 0;
     while (1) {
         esp_task_wdt_reset();
 
-        if (s_cancel_rollback) {
+        if (atomic_load(&s_cancel_rollback)) {
             ESP_LOGI(TAG, "Staging confirmed. Stopping rollback timers.");
             if (s_confirm_timer) {
                 esp_timer_stop(s_confirm_timer);
@@ -887,23 +1039,36 @@ void app_main(void)
                 esp_timer_delete(s_wifi_timer);
                 s_wifi_timer = NULL;
             }
-            s_cancel_rollback = false;
-            s_trigger_rollback = false;
+            atomic_store(&s_cancel_rollback, false);
+            atomic_store(&s_trigger_rollback, false);
         }
 
-        if (s_trigger_rollback) {
+        if (atomic_load(&s_trigger_rollback)) {
             uint8_t stg_type = 0;
             if (nvs_store_get_staging_type(&stg_type) && stg_type > 0) {
                 ESP_LOGW(TAG, "Staged config timeout! Rolling back changes type=%d", stg_type);
-                nvs_store_rollback_staging();
-                session_invalidate_all();
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                esp_restart();
+                if (nvs_store_rollback_staging()) {
+                    /* Rollback succeeded — stg_type is now 0 in NVS, safe to restart */
+                    session_invalidate_all();
+                    nvs_store_set_restart_detail("STAGING_ROLLBACK");
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    esp_restart();
+                } else {
+                    /* Rollback NVS write failed — stg_type is still >0 in flash.
+                     * If we restart now, the boot sequence will see stg_type>0 again,
+                     * start a new 180s timer, fail again, and loop forever.
+                     * Better to keep running with the staged (unconfirmed) config
+                     * and let the user fix it via the web UI or reflash. */
+                    ESP_LOGE(TAG, "FATAL: Rollback NVS write failed! "
+                             "Skipping restart to avoid infinite reboot loop. "
+                             "Device continues with staged config (type=%d). "
+                             "Manual intervention required.", stg_type);
+                }
             }
-            s_trigger_rollback = false;
+            atomic_store(&s_trigger_rollback, false);
         }
 
-        if (s_trigger_factory_reset) {
+        if (atomic_load(&s_trigger_factory_reset)) {
             ESP_LOGW(TAG, "Factory reset requested by button hold. Resetting credentials...");
             if (nvs_store_factory_reset_credentials()) {
                 ESP_LOGI(TAG, "Credentials reset to defaults successful");
@@ -911,26 +1076,83 @@ void app_main(void)
                 ESP_LOGE(TAG, "Credentials reset to defaults failed");
             }
             session_invalidate_all();
-            s_trigger_factory_reset = false;
+            atomic_store(&s_trigger_factory_reset, false);
         }
 
         if (s_http_server_retry) {
             if (web_server_start()) {
                 ESP_LOGI(TAG, "HTTP server started on retry");
                 s_http_server_retry = false;
+
+                /* Mark OTA firmware as valid (cancels bootloader rollback timer) */
+                esp_err_t ota_err = esp_ota_mark_app_valid_cancel_rollback();
+                if (ota_err == ESP_OK) {
+                    ESP_LOGI(TAG, "OTA firmware validated on retry (PENDING_VERIFY -> VALID)");
+                }
             }
+        }
+
+        static uint8_t queue_full_count = 0;
+        bool queued = web_server_queue_health_check();
+        if (!queued) {
+            queue_full_count++;
+            if (queue_full_count >= 3) {
+                ESP_LOGE(TAG, "FATAL: HTTP server queue full for 3 consecutive checks (15s). Rebooting!");
+                nvs_store_set_restart_detail("HTTP_QUEUE_FULL");
+                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                esp_restart();
+            } else {
+                ESP_LOGW(TAG, "Health check queue full — server busy, skipping restart (count=%d/3)", queue_full_count);
+            }
+        } else {
+            queue_full_count = 0;
+            if (!web_server_check_health(15000)) {
+                ESP_LOGE(TAG, "HTTP thread hung — triggering restart");
+                nvs_store_set_restart_detail("HTTP_HUNG");
+                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                esp_restart();
+            }
+        }
+
+        uint32_t free_heap = esp_get_free_heap_size();
+        uint32_t largest_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
+        
+        bool below_critical = (free_heap < APP_CONFIG_OOM_MIN_FREE_HEAP_BYTES || 
+                               largest_block < APP_CONFIG_OOM_MIN_LARGEST_BLOCK_BYTES);
+                               
+        bool fully_recovered = (free_heap > APP_CONFIG_OOM_RECOVER_FREE_HEAP_BYTES && 
+                                largest_block > APP_CONFIG_OOM_RECOVER_LARGEST_BLOCK_BYTES);
+
+        if (below_critical) {
+            /* Memory is critically low — increment strike counter */
+            oom_strike_count++;
+            ESP_LOGW(TAG, "OOM WARNING: Free heap (%lu) or largest block (%lu) below critical! Strike %d/%d",
+                     (unsigned long)free_heap, (unsigned long)largest_block,
+                     oom_strike_count, APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART);
+
+            if (oom_strike_count >= APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART) {
+                ESP_LOGE(TAG, "FATAL: Out of Memory condition sustained for %d intervals. Rebooting!", oom_strike_count);
+                nvs_store_set_restart_detail("OOM");
+                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                esp_restart();
+            }
+        } else if (fully_recovered) {
+            /* Memory is comfortably above recovery threshold — clear strikes */
+            if (oom_strike_count > 0) {
+                ESP_LOGI(TAG, "OOM condition recovered. Free heap: %lu, Largest block: %lu",
+                         (unsigned long)free_heap, (unsigned long)largest_block);
+                oom_strike_count = 0;
+            }
+        } else if (oom_strike_count > 0) {
+            /* Gray zone: above critical but below recovery threshold — hold steady, don't increment.
+             * This prevents false-positive restarts when memory briefly dips then partially recovers. */
+            ESP_LOGW(TAG, "OOM gray zone: Free heap (%lu), Largest block (%lu). Strikes held at %d/%d",
+                     (unsigned long)free_heap, (unsigned long)largest_block,
+                     oom_strike_count, APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART);
         }
 
         loop_counter++;
         if (loop_counter >= APP_TEMPLATE_STATUS_LOG_INTERVALS) {
-            ESP_LOGI(TAG, "[STATUS] AP=%s, IP=%s, STA=%s, Heap=%lu, HeapMin=%lu, Largest=%lu, MainStackHWM=%lu",
-                wifi_manager_is_ap_enabled() ? "ON" : "OFF",
-                wifi_manager_get_ap_ip(),
-                wifi_manager_is_sta_connected() ? wifi_manager_get_sta_ip() : "disconnected",
-                (unsigned long)wifi_manager_get_free_heap(),
-                (unsigned long)esp_get_minimum_free_heap_size(),
-                (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
-                (unsigned long)uxTaskGetStackHighWaterMark(NULL));
             log_board_and_hardware_diagnostics();
             wifi_manager_log_diagnostics();
             web_server_log_diagnostics();

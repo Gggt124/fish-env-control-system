@@ -3,115 +3,18 @@ import re
 import gzip
 import sys
 
-def clean_js(code):
-    state = "normal"
-    out = []
-    i = 0
-    n = len(code)
-    
-    while i < n:
-        c = code[i]
-        
-        if state in ("string_single", "string_double"):
-            out.append(c)
-            if c == '\\':
-                if i + 1 < n:
-                    out.append(code[i+1])
-                    i += 2
-                    continue
-            elif (state == "string_single" and c == "'") or \
-                 (state == "string_double" and c == '"'):
-                state = "normal"
-            i += 1
-            continue
-            
-        if state == "regex":
-            out.append(c)
-            if c == '\\':
-                if i + 1 < n:
-                    out.append(code[i+1])
-                    i += 2
-                    continue
-            elif c == '/':
-                state = "normal"
-            i += 1
-            continue
-            
-        if state == "comment_line":
-            if c == '\n' or c == '\r':
-                state = "normal"
-                out.append(c)
-            i += 1
-            continue
-            
-        if state == "comment_block":
-            if c == '*' and i + 1 < n and code[i+1] == '/':
-                state = "normal"
-                i += 2
-            else:
-                i += 1
-            continue
-            
-        # normal state
-        next_c = code[i+1] if i + 1 < n else ""
-        if c == '/' and next_c == '/':
-            state = "comment_line"
-            i += 2
-        elif c == '/' and next_c == '*':
-            state = "comment_block"
-            i += 2
-        elif c == "'":
-            state = "string_single"
-            out.append(c)
-            i += 1
-        elif c == '"':
-            state = "string_double"
-            out.append(c)
-            i += 1
-        elif c == '/':
-            # regex or division heuristic
-            is_regex = False
-            idx = len(out) - 1
-            while idx >= 0 and out[idx].isspace():
-                idx -= 1
-            if idx >= 0:
-                last_char = out[idx]
-                if last_char in "=+(,;:[!&|?*~^%<>-":
-                    is_regex = True
-                else:
-                    word_chars = []
-                    while idx >= 0 and (out[idx].isalnum() or out[idx] == '_'):
-                        word_chars.append(out[idx])
-                        idx -= 1
-                    word = "".join(reversed(word_chars))
-                    if word in ("return", "match", "test", "throw", "typeof", "delete", "void", "in", "instanceof"):
-                        is_regex = True
-            else:
-                is_regex = True
-            
-            if is_regex:
-                state = "regex"
-                out.append(c)
-                i += 1
-            else:
-                out.append(c)
-                i += 1
-        else:
-            out.append(c)
-            i += 1
-            
-    cleaned_code = "".join(out)
-    
-    # Remove empty lines and trailing spaces
-    result_lines = []
-    for line in cleaned_code.splitlines():
-        line_stripped = line.strip()
-        if line_stripped:
-            result_lines.append(line.rstrip())
-            
-    return "\n".join(result_lines)
+def clean_js(source: str) -> str:
+    """
+    Pass-through: custom JS minification removed (2026-06-25).
+    Reason: naive state machine did not handle ES6 template literals,
+    causing silent truncation of '//' inside backtick strings.
+    GZIP compression at build time provides sufficient size reduction.
+    Future: use npm exec terser if minification is required.
+    """
+    return source
 
 def clean_css(css):
+    # CSS has no template literals — comment stripping is safe here.
     # Remove comments
     css = re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)
     # Compress whitespaces
@@ -121,6 +24,7 @@ def clean_css(css):
     return css.strip()
 
 def clean_html(html):
+    # HTML has no template literals — comment stripping is safe here.
     # Remove comments
     html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
     # Collapse multiple spaces and newlines

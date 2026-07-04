@@ -4,6 +4,21 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
+/* === RESERVED GPIO PINS — must NOT appear in any option array ===
+ *
+ * TFT SPI display (APP_TEMPLATE_TFT_PIN_*):
+ *   GPIO  5 (CS)   18 (CLK)   21 (DC)   22 (RST)   23 (MOSI)
+ *
+ * Factory Reset / Status UI (APP_CONFIG_*_GPIO in app_config.h):
+ *   GPIO  0  — Boot/Factory-Reset button  (strapping pin; BOOT_BTN)
+ *   GPIO  2  — Status LED                 (strapping pin; LED)
+ *   GPIO 13  — External status LED        (EXT_LED)
+ *   GPIO 14  — External Factory-Reset btn (EXT_BTN)
+ *
+ * None of the above may be offered to the user as selectable GPIO.
+ * If APP_CONFIG_* values change in app_config.h, update this list too.
+ * =================================================================== */
+
 static const hardware_gpio_option_t s_float_options[] = {
     {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_32, true, true, true, true, "GPIO32"},
     {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_33, true, true, true, false, "GPIO33"},
@@ -22,11 +37,7 @@ static const hardware_gpio_option_t s_pump_relay1_options[] = {
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_25, true, true, true, false, "GPIO25"},
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_32, true, true, true, false, "GPIO32"},
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_33, true, true, true, false, "GPIO33"},
-    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_18, true, true, true, false, "GPIO18"},
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_19, true, true, true, false, "GPIO19"},
-    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_21, true, true, true, false, "GPIO21"},
-    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_22, true, true, true, false, "GPIO22"},
-    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_23, true, true, true, false, "GPIO23"},
 };
 
 static const hardware_gpio_option_t s_pump_relay2_options[] = {
@@ -35,11 +46,7 @@ static const hardware_gpio_option_t s_pump_relay2_options[] = {
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_25, true, true, true, false, "GPIO25"},
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_32, true, true, true, false, "GPIO32"},
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_33, true, true, true, false, "GPIO33"},
-    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_18, true, true, true, false, "GPIO18"},
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_19, true, true, true, false, "GPIO19"},
-    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_21, true, true, true, false, "GPIO21"},
-    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_22, true, true, true, false, "GPIO22"},
-    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_23, true, true, true, false, "GPIO23"},
 };
 
 static const hardware_gpio_option_t s_ds18b20_options[] = {
@@ -48,11 +55,7 @@ static const hardware_gpio_option_t s_ds18b20_options[] = {
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_25, true, true, true, false, "GPIO25"},
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_26, true, true, true, false, "GPIO26"},
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_27, true, true, true, false, "GPIO27"},
-    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_18, true, true, true, false, "GPIO18"},
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_19, true, true, true, false, "GPIO19"},
-    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_21, true, true, true, false, "GPIO21"},
-    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_22, true, true, true, false, "GPIO22"},
-    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_23, true, true, true, false, "GPIO23"},
 };
 
 static const hardware_gpio_option_t s_cooling_relay_options[] = {
@@ -61,11 +64,7 @@ static const hardware_gpio_option_t s_cooling_relay_options[] = {
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_27, true, true, true, false, "GPIO27"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_32, true, true, true, false, "GPIO32"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_33, true, true, true, false, "GPIO33"},
-    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_18, true, true, true, false, "GPIO18"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_19, true, true, true, false, "GPIO19"},
-    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_21, true, true, true, false, "GPIO21"},
-    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_22, true, true, true, false, "GPIO22"},
-    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_23, true, true, true, false, "GPIO23"},
 };
 
 hardware_map_t hardware_map_defaults(void)

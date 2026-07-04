@@ -81,11 +81,52 @@ if (-not (Test-Path $exportScript)) {
     throw "ESP-IDF export script not found: $exportScript"
 }
 
-& $exportScript
+. $exportScript
+
+# Auto-generate secrets.h if missing
+$SecretsFile = Join-Path $PSScriptRoot "..\components\app_config\secrets.h"
+if (-not (Test-Path $SecretsFile)) {
+    Write-Host "[build] secrets.h not found - generating new OTA key..." -ForegroundColor Yellow
+    & "$PSScriptRoot\generate_secrets.ps1"
+}
 
 idf.py --version
 if ($FullClean) {
     idf.py fullclean
 }
 
+# Run the build
 idf.py build
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "Build successful. Generating encrypted OTA binary..." -ForegroundColor Green
+    
+    $configFile = "components\app_config\secrets.h"
+    $keyLine = Select-String -Path $configFile -Pattern "APP_CONFIG_OTA_ENCRYPTION_KEY\s+`"([0-9A-Fa-f]+)`""
+    
+    if ($keyLine) {
+        $keyHex = $keyLine.Matches.Groups[1].Value
+        $binPath = "build\fish_pump_relay_timer_control.bin"
+        $encBinPath = "build\fish_pump_relay_timer_control_encrypted.bin"
+        
+        if (Test-Path $binPath) {
+            python scripts\encrypt_ota.py $binPath $encBinPath $keyHex
+        } else {
+            Write-Host "Warning: $binPath not found. Skipping encryption." -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "Warning: APP_CONFIG_OTA_ENCRYPTION_KEY not found in secrets.h. Skipping encryption." -ForegroundColor Yellow
+    }
+
+    Write-Host "Generating merged binary for easy factory flashing..." -ForegroundColor Green
+    python -m esptool --chip esp32 merge-bin -o build\fish_pump_relay_timer_control_merged.bin --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 build\bootloader\bootloader.bin 0x10000 build\partition_table\partition-table.bin 0x17000 build\ota_data_initial.bin 0x20000 build\fish_pump_relay_timer_control.bin
+
+    # --- Post-flash: AP Password pipeline ---
+    Write-Host ""
+    Write-Host "=== Post-Flash Step ===" -ForegroundColor Cyan
+    Write-Host "After flashing the board, run to get the board-specific AP password:" -ForegroundColor White
+    Write-Host "  .\scripts\show_ap_password.ps1 -Port COMx" -ForegroundColor Yellow
+    Write-Host "(Replace COMx with the board's COM port, e.g. COM5)" -ForegroundColor Gray
+    Write-Host "Write the displayed password on a label and attach it to the device." -ForegroundColor Gray
+    Write-Host ""
+}

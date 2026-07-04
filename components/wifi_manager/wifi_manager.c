@@ -9,6 +9,7 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
+#include "esp_mac.h"
 #include "lwip/ip4_addr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -185,7 +186,10 @@ static const char *wifi_disconnect_reason_to_string(uint8_t reason)
 
 static void sta_connect_timer_cb(void *arg)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     bool should_connect = s_sta_configured &&
                           !s_sta_connected &&
                           !s_sta_connecting &&
@@ -208,7 +212,10 @@ static void sta_connect_timer_cb(void *arg)
         return;
     }
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     s_sta_connecting = false;
     bool should_recover = s_sta_configured && !s_sta_retry_blocked && !s_scan_in_progress;
     xSemaphoreGive(s_wifi_mutex);
@@ -231,7 +238,24 @@ static void schedule_sta_connect(void)
     }
 
     esp_timer_stop(s_sta_connect_timer);
-    esp_err_t err = esp_timer_start_once(s_sta_connect_timer, STA_CONNECT_DELAY_MS * 1000);
+    
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
+    int retry_count = s_sta_retry_count;
+    xSemaphoreGive(s_wifi_mutex);
+
+    uint32_t delay_ms = STA_CONNECT_DELAY_MS;
+    if (retry_count > 0) {
+        uint32_t backoff_seconds = (1 << (retry_count - 1));
+        if (backoff_seconds > 60 || retry_count > 7) {
+            backoff_seconds = 60;
+        }
+        delay_ms = backoff_seconds * 1000;
+    }
+
+    esp_err_t err = esp_timer_start_once(s_sta_connect_timer, (uint64_t)delay_ms * 1000);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to schedule STA connect: %s", esp_err_to_name(err));
     } else {
@@ -282,18 +306,57 @@ static void configure_radio_stability(const char *reason)
              country.policy);
 }
 
+/* --------------- AP Password from MAC --------------- */
+
+/**
+ * Build a WPA2-compliant AP password derived from the board's base MAC address.
+ * Format: "AABBCCDD" (8 uppercase hex chars, no dash).
+ * Applies an XOR salt (0x5A) to prevent trivial derivation from broadcasted BSSID.
+ */
+bool wifi_manager_build_ap_password(char *out_buf, size_t buf_len)
+{
+    if (!out_buf || buf_len < 9) {
+        ESP_LOGE(TAG, "Buffer too small for AP password");
+        if (out_buf && buf_len > 0) out_buf[0] = '\0';
+        return false;
+    }
+
+    uint8_t mac[6] = {0};
+    esp_err_t err = esp_base_mac_addr_get(mac);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "CRITICAL: Failed to read base MAC (%s). Cannot generate AP password.",
+                 esp_err_to_name(err));
+        out_buf[0] = '\0';
+        return false;
+    }
+
+    const uint8_t SALT = 0x5A;
+    snprintf(out_buf, buf_len, "%02X%02X%02X%02X",
+             mac[2] ^ SALT, mac[3] ^ SALT, mac[4] ^ SALT, mac[5] ^ SALT);
+
+    ESP_LOGI(TAG, "[AP_CFG] AP password derived from base MAC %02X:%02X:xx:xx:xx:xx (salted)",
+             mac[0], mac[1]);
+    return true;
+}
+
 static bool configure_ap(void)
 {
+    char ap_password[16] = {0};
+    if (!wifi_manager_build_ap_password(ap_password, sizeof(ap_password))) {
+        ESP_LOGE(TAG, "Aborting AP configuration due to missing password");
+        return false;
+    }
+
     wifi_config_t ap_cfg = {
         .ap = {
-            .ssid = AP_SSID,
-            .password = "",
-            .ssid_len = strlen(AP_SSID),
+            .ssid = APP_TEMPLATE_AP_SSID,
+            .ssid_len = strlen(APP_TEMPLATE_AP_SSID),
             .channel = APP_TEMPLATE_AP_CHANNEL,
-            .authmode = WIFI_AUTH_OPEN,
-            .max_connection = AP_MAX_CONN,
+            .authmode = WIFI_AUTH_WPA2_PSK,
+            .max_connection = APP_TEMPLATE_AP_MAX_CONN,
         },
     };
+    strlcpy((char *)ap_cfg.ap.password, ap_password, sizeof(ap_cfg.ap.password));
 
     esp_err_t err = esp_wifi_set_config(WIFI_IF_AP, &ap_cfg);
     if (err != ESP_OK) {
@@ -315,7 +378,10 @@ static void ap_stop_timer_cb(void *arg)
         return;
     }
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     if (!s_sta_connected) {
         ESP_LOGI(TAG, "Skipping AP auto-stop because STA is disconnected");
         xSemaphoreGive(s_wifi_mutex);
@@ -341,6 +407,19 @@ static void ap_timeout_timer_cb(void *arg)
         return;
     }
 
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
+    bool sta_connected = s_sta_connected;
+    xSemaphoreGive(s_wifi_mutex);
+
+    if (!sta_connected) {
+        ESP_LOGI(TAG, "AP timeout expired but STA is disconnected. Keeping AP active to prevent blackout.");
+        wifi_manager_reset_ap_timeout();
+        return;
+    }
+
     wifi_sta_list_t clients = {0};
     esp_err_t err = esp_wifi_ap_get_sta_list(&clients);
     if (err == ESP_OK && clients.num > 0) {
@@ -348,7 +427,10 @@ static void ap_timeout_timer_cb(void *arg)
         wifi_manager_reset_ap_timeout();
     } else {
         ESP_LOGI(TAG, "AP timeout expired with 0 clients, shutting down AP");
-        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+            ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+            return;
+        }
         esp_err_t ret = esp_wifi_set_mode(WIFI_MODE_STA);
         if (ret == ESP_OK) {
             s_ap_enabled = false;
@@ -362,7 +444,10 @@ static void ap_timeout_timer_cb(void *arg)
 void wifi_manager_reset_ap_timeout(void)
 {
     if (!s_wifi_mutex) return;
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     wifi_mode_t mode = WIFI_MODE_NULL;
     esp_wifi_get_mode(&mode);
     bool is_ap_active = (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) && s_ap_enabled;
@@ -383,7 +468,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     if (event_base == WIFI_EVENT) {
         switch (event_id) {
         case WIFI_EVENT_STA_START:
-            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+                ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                return;
+            }
             bool sta_configured = s_sta_configured;
             xSemaphoreGive(s_wifi_mutex);
             if (sta_configured) {
@@ -397,7 +485,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             s_wifi_diag.last_disconnect_reason = ev->reason;
             uint32_t disconnected_events = s_wifi_diag.sta_disconnected_events;
             taskEXIT_CRITICAL(&s_wifi_diag_lock);
-            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+                ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                return;
+            }
             s_sta_connected = false;
             s_sta_connecting = false;
             s_sta_ip[0] = '\0';
@@ -415,9 +506,6 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 s_sta_retry_count++;
             }
             bool retry_limit_reached = s_sta_retry_count > STA_MAX_RETRY;
-            if (retry_limit_reached) {
-                s_sta_retry_blocked = true;
-            }
             bool sta_configured = s_sta_configured;
             bool scan_in_progress = s_scan_in_progress;
             bool retry_blocked = s_sta_retry_blocked;
@@ -453,7 +541,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 
                         esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
                         
-                        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+                        if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+                            ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                            return;
+                        }
                         s_sta_configured = true;
                         s_sta_retry_count = 0;
                         s_sta_retry_blocked = false;
@@ -464,8 +555,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                         ensure_ap_started();
                     }
                 } else {
-                    ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback", STA_MAX_RETRY);
+                    ESP_LOGI(TAG, "STA retry limit (%d) reached, restoring AP as fallback but continuing background retries", STA_MAX_RETRY);
                     ensure_ap_started();
+                    schedule_sta_connect();
                 }
             } else if (sta_configured && !scan_in_progress) {
                 schedule_sta_connect();
@@ -515,7 +607,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                 esp_wifi_clear_ap_list();
             }
 
-            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+                ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                return;
+            }
             if (s_scan_cancel_pending) {
                 s_scan_cancel_pending = false;
                 xSemaphoreGive(s_wifi_mutex);
@@ -575,7 +670,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         switch (event_id) {
         case IP_EVENT_STA_GOT_IP: {
             ip_event_got_ip_t *ev = (ip_event_got_ip_t *)event_data;
-            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+                ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                return;
+            }
             if (!s_sta_configured) {
                 xSemaphoreGive(s_wifi_mutex);
                 ESP_LOGW(TAG, "Ignoring stale STA got IP after disconnect");
@@ -788,7 +886,10 @@ bool wifi_manager_init(void)
 bool wifi_manager_start_ap(void)
 {
     diag_increment(&s_wifi_diag.ap_restore_attempts);
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     wifi_mode_t mode = WIFI_MODE_NULL;
     esp_err_t mode_err = esp_wifi_get_mode(&mode);
     bool mode_changed = mode_err != ESP_OK || mode != WIFI_MODE_APSTA;
@@ -830,7 +931,10 @@ bool wifi_manager_start_ap(void)
 
 bool wifi_manager_stop_ap(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
@@ -849,7 +953,10 @@ bool wifi_manager_stop_ap(void)
 void wifi_manager_start_recovery_ap(void)
 {
     if (!s_wifi_mutex) return;
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     
     wifi_mode_t mode = WIFI_MODE_NULL;
     esp_err_t err = esp_wifi_get_mode(&mode);
@@ -888,7 +995,10 @@ void wifi_manager_start_recovery_ap(void)
 bool wifi_manager_is_ap_active(void)
 {
     if (!s_wifi_mutex) return false;
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     wifi_mode_t mode = WIFI_MODE_NULL;
     esp_wifi_get_mode(&mode);
     bool active = (mode == WIFI_MODE_AP || mode == WIFI_MODE_APSTA) && s_ap_enabled;
@@ -909,7 +1019,10 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         return false;
     }
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     bool scan_busy = s_scan_in_progress || s_scan_cancel_pending;
     bool connect_busy = s_sta_connecting || s_sta_manual_connect_pending;
     bool same_target = strncmp(s_sta_target_ssid, ssid, sizeof(s_sta_target_ssid)) == 0;
@@ -937,7 +1050,10 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         restore_sta_dhcp();
     }
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     s_sta_retry_count = 0;
     s_sta_connected = false;
     s_sta_configured = false;
@@ -966,13 +1082,19 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 
     if (esp_wifi_set_config(WIFI_IF_STA, &sta_cfg) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set STA config");
-        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+            ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+            return false;
+        }
         s_sta_manual_connect_pending = false;
         xSemaphoreGive(s_wifi_mutex);
         return false;
     }
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     s_sta_configured = true;
     xSemaphoreGive(s_wifi_mutex);
 
@@ -984,7 +1106,10 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
 bool wifi_manager_disconnect_sta(void)
 {
     diag_increment(&s_wifi_diag.sta_disconnect_requests);
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
@@ -1014,7 +1139,10 @@ bool wifi_manager_forget_sta(void)
 {
     uint32_t requests = diag_increment(&s_wifi_diag.sta_forget_requests);
     ESP_LOGI(TAG, "[WIFI_EVENT] sta_forget_requested requests=%lu", (unsigned long)requests);
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     if (s_ap_stop_timer) {
         esp_timer_stop(s_ap_stop_timer);
     }
@@ -1052,7 +1180,10 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
 {
     if (!callback) return false;
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     if (s_scan_in_progress || s_scan_cancel_pending) {
         xSemaphoreGive(s_wifi_mutex);
         ESP_LOGW(TAG, "Wi-Fi scan already in progress or awaiting cleanup");
@@ -1083,7 +1214,10 @@ bool wifi_manager_scan(void *user_ctx, wifi_scan_cb_t callback)
     esp_err_t ret = esp_wifi_scan_start(&scan_cfg, false);
     if (ret != ESP_OK) {
         diag_increment(&s_wifi_diag.scan_failures);
-        xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+        if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+            ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+            return false;
+        }
         s_scan_callback = NULL;
         s_scan_user_ctx = NULL;
         s_scan_in_progress = false;
@@ -1110,7 +1244,10 @@ void wifi_manager_cancel_scan(void)
     uint32_t cancel_requests = diag_increment(&s_wifi_diag.scan_cancel_requests);
     ESP_LOGW(TAG, "[WIFI_EVENT] scan_cancel_requested count=%lu",
              (unsigned long)cancel_requests);
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     bool scan_in_progress = s_scan_in_progress;
     s_scan_callback = NULL;
     s_scan_user_ctx = NULL;
@@ -1127,7 +1264,10 @@ void wifi_manager_cancel_scan(void)
         if (stop_err != ESP_OK) {
             diag_increment(&s_wifi_diag.scan_failures);
             ESP_LOGW(TAG, "Failed to stop Wi-Fi scan: %s", esp_err_to_name(stop_err));
-            xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+            if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+                ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                return;
+            }
             s_scan_cancel_pending = false;
             xSemaphoreGive(s_wifi_mutex);
         }
@@ -1143,7 +1283,10 @@ void wifi_manager_cancel_scan(void)
 
 bool wifi_manager_is_ap_enabled(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     bool v = s_ap_enabled;
     xSemaphoreGive(s_wifi_mutex);
     return v;
@@ -1151,7 +1294,10 @@ bool wifi_manager_is_ap_enabled(void)
 
 bool wifi_manager_is_sta_connected(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     bool v = s_sta_connected;
     xSemaphoreGive(s_wifi_mutex);
     return v;
@@ -1159,7 +1305,10 @@ bool wifi_manager_is_sta_connected(void)
 
 bool wifi_manager_is_sta_connecting(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     bool v = s_sta_connecting || s_sta_manual_connect_pending;
     xSemaphoreGive(s_wifi_mutex);
     return v;
@@ -1167,7 +1316,10 @@ bool wifi_manager_is_sta_connecting(void)
 
 bool wifi_manager_is_sta_retry_blocked(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     bool v = s_sta_retry_blocked;
     xSemaphoreGive(s_wifi_mutex);
     return v;
@@ -1180,14 +1332,20 @@ char* wifi_manager_get_ap_ip(void)
 
 char* wifi_manager_get_sta_ip(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     xSemaphoreGive(s_wifi_mutex);
     return s_sta_ip;
 }
 
 char* wifi_manager_get_sta_ssid(void)
 {
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return false;
+    }
     xSemaphoreGive(s_wifi_mutex);
     return s_sta_ssid;
 }
@@ -1227,7 +1385,10 @@ void wifi_manager_log_diagnostics(void)
     char sta_ssid[sizeof(s_sta_ssid)];
     char sta_target_ssid[sizeof(s_sta_target_ssid)];
 
-    xSemaphoreTake(s_wifi_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
+        ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+        return;
+    }
     ap_enabled = s_ap_enabled;
     sta_connected = s_sta_connected;
     sta_configured = s_sta_configured;

@@ -167,6 +167,23 @@ bool nvs_store_rollback_staging(void);
 uint8_t nvs_store_commit_staging(void);
 bool nvs_store_factory_reset_credentials(void);
 
+bool nvs_store_load_display_settings(uint8_t *dim_percent_out);
+bool nvs_store_save_display_settings(uint8_t dim_percent);
+
+/**
+ * Save a restart reason detail string to NVS (max 31 chars + null).
+ * Call immediately before esp_restart() to record why the restart happened.
+ * Returns true on success.
+ */
+bool nvs_store_set_restart_detail(const char *detail);
+
+/**
+ * Load the restart reason detail from NVS into buf, then erase the NVS key.
+ * If no detail was stored, sets buf[0] = '\0' and returns true.
+ * Returns false only on NVS open/read error.
+ */
+bool nvs_store_pop_restart_detail(char *buf, size_t buf_size);
+
 #ifdef __cplusplus
 }
 #endif

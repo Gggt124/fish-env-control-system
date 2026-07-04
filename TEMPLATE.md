@@ -14,7 +14,7 @@ Edit `components/app_config/app_config.h`:
 
 ```c
 #define APP_TEMPLATE_NAME               "My Product"
-#define APP_TEMPLATE_FIRMWARE_VERSION   "v0.1.0"
+#define APP_TEMPLATE_FIRMWARE_VERSION   "v0.1.8"
 #define APP_TEMPLATE_AP_SSID            "MyProduct-Setup"
 #define APP_TEMPLATE_MDNS_HOSTNAME      "myproduct"
 #define APP_TEMPLATE_DEFAULT_USERNAME   "admin"
@@ -22,7 +22,7 @@ Edit `components/app_config/app_config.h`:
 ```
 
 Keep `APP_TEMPLATE_AP_SSID` at 32 bytes or fewer.
-Keep `APP_TEMPLATE_MDNS_HOSTNAME` lowercase ASCII with no spaces.
+Keep `APP_TEMPLATE_MDNS_HOSTNAME` lowercase ASCII letters and digits only — no spaces, no hyphens (`-`). Example: `"fishpump"`, not `"fish-pump"`.
 
 ## 3. Keep Core Modules Stable
 

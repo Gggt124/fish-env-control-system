@@ -21,8 +21,14 @@ function cleanupCurrentView() {
 /* ======== Session / Auth ======== */
 
 function getSessionToken() {
-    var c = document.cookie.match(/session=([^;]+)/);
-    return c ? c[1] : null;
+    /* 
+     * Security note: logged_in=1 is a non-secret routing hint only.
+     * The actual auth validation is always server-side via the HttpOnly session cookie.
+     * If this marker is stale (session expired), the next authenticated API call will
+     * return 401 -> handleUnauthorized() -> redirect to /login.
+     */
+    var c = document.cookie.match(/logged_in=1/);
+    return c ? "1" : null;
 }
 
 function isAuthenticated() {
@@ -51,47 +57,83 @@ function handleUnauthorized() {
     if (s_handlingUnauthorized) return;
     s_handlingUnauthorized = true;
     cleanupCurrentView();
+    pumpStatusRequestInFlight = false;
+    statusSummaryRequestInFlight = false;
+    statusFullRequestInFlight = false;
+    coolingStatusRequestInFlight = false;
+    pumpLoadingConfig = false;
+    coolingLoadingConfig = false;
+    pumpSavingConfig = false;
+    coolingSavingConfig = false;
+    pumpPending = false;
+    coolingPending = false;
+    hardwareLoadingMap = false;
+    hardwareSavingMap = false;
+    hardwarePending = false;
     document.cookie = 'session=; Path=/; Max-Age=0';
+    document.cookie = 'logged_in=; Path=/; Max-Age=0';
+    var forcePwdModal = document.getElementById('force-pwd-modal');
+    if (forcePwdModal && forcePwdModal.open) forcePwdModal.close();
     navigateTo('/login');
     s_handlingUnauthorized = false;
 }
 
-function apiGet(url, cb, customTimeout) {
+function apiGet(url, cb, customTimeout, _retryState) {
+    var MAX_RETRIES = 2;       // up to 2 automatic retries (3 total attempts)
+    var RETRY_BASE_MS = 1500;  // 1.5s, 3s backoff
+    var state = _retryState || { attempt: 0 };
+
     var xhr = new XMLHttpRequest();
     var done = false;
+
     function finish(err, data) {
         if (done) return;
         done = true;
+        // Retry only on transient errors (network / timeout), not on HTTP 4xx/5xx
+        if (err && state.attempt < MAX_RETRIES &&
+            (err.message === 'Network error' || err.message === 'Request timeout')) {
+            state.attempt++;
+            var delay = RETRY_BASE_MS * state.attempt;
+            setTimeout(function() {
+                apiGet(url, cb, customTimeout, state);
+            }, delay);
+            return;
+        }
         cb(err, data);
     }
+
     xhr.open('GET', url, true);
     xhr.timeout = customTimeout || API_TIMEOUT_MS;
     xhr.onload = function () {
+        if (xhr.status === 403) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.error === 'force_password_change') { showForcePasswordModal(); }
+            } catch(e) {}
+            finish(new Error('HTTP 403 Forbidden'), null);
+            return;
+        }
         if (xhr.status === 200) {
             try {
                 var data = JSON.parse(xhr.responseText);
                 if (url === '/api/status' && data && data.ok) {
                     var banner = document.getElementById('staging-banner');
                     if (banner) {
-                        if (data.stg_type > 0) {
-                            banner.classList.remove('hidden');
-                        } else {
-                            banner.classList.add('hidden');
-                        }
+                        if (data.stg_type > 0) { banner.classList.remove('hidden'); }
+                        else { banner.classList.add('hidden'); }
                     }
                 }
                 finish(null, data);
-            }
-            catch (e) { finish(e, null); }
+            } catch (e) { finish(e, null); }
         } else if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
         } else {
             finish(new Error('HTTP ' + xhr.status), null);
         }
     };
-    xhr.onerror = function () { finish(new Error('Network error'), null); };
+    xhr.onerror   = function () { finish(new Error('Network error'), null); };
     xhr.ontimeout = function () { finish(new Error('Request timeout'), null); };
-    xhr.onabort = function () { finish(new Error('Request aborted'), null); };
+    xhr.onabort   = function () { finish(new Error('Request aborted'), null); };
     xhr.send();
 }
 
@@ -107,6 +149,16 @@ function apiPost(url, body, cb) {
     xhr.timeout = API_TIMEOUT_MS;
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onload = function () {
+        if (xhr.status === 403) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.error === 'force_password_change') {
+                    showForcePasswordModal();
+                }
+            } catch(e) {}
+            finish(new Error('HTTP 403 Forbidden'), null);
+            return;
+        }
         if (xhr.status === 401 && window.location.pathname !== '/login') {
             handleUnauthorized();
             return;
@@ -185,6 +237,45 @@ function showToast(msg, type) {
         el.style.transition = 'opacity 0.3s';
         setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
     }, 3000);
+}
+
+/* ======== Copy to Clipboard ======== */
+
+function copyToClipboard(text, labelName) {
+    labelName = labelName || 'ข้อมูล';
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('คัดลอก ' + labelName + ' เรียบร้อยแล้ว', 'success');
+        }).catch(function() {
+            fallbackCopyTextToClipboard(text, labelName);
+        });
+    } else {
+        fallbackCopyTextToClipboard(text, labelName);
+    }
+}
+
+function fallbackCopyTextToClipboard(text, labelName) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        var successful = document.execCommand('copy');
+        if (successful) {
+            showToast('คัดลอก ' + labelName + ' เรียบร้อยแล้ว', 'success');
+        } else {
+            showToast('คัดลอก ' + labelName + ' ไม่สำเร็จ', 'error');
+        }
+    } catch (err) {
+        showToast('คัดลอก ' + labelName + ' ไม่สำเร็จ', 'error');
+    }
+
+    document.body.removeChild(textArea);
 }
 
 /* ======== Focus Trap & Dialog Keyboard Helpers ======== */
@@ -374,7 +465,12 @@ function initLogin() {
                 return;
             }
 
-            navigateTo('/dashboard');
+            if (data && data.require_password_change) {
+                navigateTo('/dashboard');
+                showForcePasswordModal();
+            } else {
+                navigateTo('/dashboard');
+            }
         });
     };
 }
@@ -385,6 +481,7 @@ function doLogout() {
     showConfirmModal('ออกจากระบบ', 'คุณต้องการออกจากระบบใช่หรือไม่?', function () {
         apiPost('/api/logout', {}, function () {
             document.cookie = 'session=; Path=/; Max-Age=0';
+            document.cookie = 'logged_in=; Path=/; Max-Age=0';
             navigateTo('/login');
         });
     }, true);
@@ -409,9 +506,9 @@ var pumpStatusRequestInFlight = false;
 var pumpAwaitingRolloverSync = false;
 var pumpPollTimer = null;
 var pumpTickTimer = null;
-var PUMP_STATUS_POLL_MS = 1500;
+var PUMP_STATUS_POLL_MS = 5000;   /* A8 audit: reduce ESP32 CPU/Wi-Fi modem load */
 var PUMP_COUNTDOWN_TICK_MS = 250;
-var PUMP_STALE_MS = 5000;
+var PUMP_STALE_MS = 12000;
 var PUMP_DEADLINE_DRIFT_MS = 1500;
 var coolingConfig = null;
 var coolingConfigLoaded = false;
@@ -423,7 +520,7 @@ var coolingLastStatus = null;
 var coolingLastSyncMs = 0;
 var coolingStatusRequestInFlight = false;
 var coolingPollTimer = null;
-var COOLING_STATUS_POLL_MS = 4000;
+var COOLING_STATUS_POLL_MS = 5000; /* A8 audit: align with pump poll interval */
 var COOLING_STALE_MS = 12000;
 var statusSummaryRequestInFlight = false;
 var statusFullRequestInFlight = false;
@@ -992,6 +1089,7 @@ function handlePumpVisibilityChange() {
     } else {
         startPumpLiveTimers();
         syncPumpStatus(true);
+        refreshStatus(true);
     }
 }
 
@@ -1328,6 +1426,7 @@ function renderSettingsStatus(value, autoStart) {
     return prefix + autoIcon + ' Auto-start: ' + (autoStart ? 'ON' : 'OFF');
 }
 
+
 /* ======== Cooling Dashboard ======== */
 
 function wireCoolingForm() {
@@ -1520,7 +1619,7 @@ function buildCoolingConfigPayload() {
     var threshold = readCoolingX10('cooling-threshold-input', 'อุณหภูมิเป้าหมาย', -550, 1250);
     var hysteresis = readCoolingX10('cooling-hysteresis-input', 'ช่วงอุณหภูมิเบี่ยงเบน', 1, 500);
     var testTimeout = readCoolingU32('cooling-test-timeout', 'ระยะเวลาเปิดทดสอบ', 1, 3600);
-    var minOff = readCoolingU32('cooling-min-off', 'เวลาล็อกป้องกันซ้ำ', 0, 86400);
+    var minOff = readCoolingU32('cooling-min-off', 'เวลาล็อกป้องกันซ้ำ', 120, 86400);
     if (!threshold.ok) return threshold;
     if (!hysteresis.ok) return hysteresis;
     if (!testTimeout.ok) return testTimeout;
@@ -1745,6 +1844,7 @@ function handleCoolingVisibilityChange() {
     } else {
         startCoolingStatusTimer();
         syncCoolingStatus(true);
+        refreshStatus(true);
     }
 }
 
@@ -1795,6 +1895,7 @@ function initHardwareInstall() {
     wireHardwareForm();
     updateHardwareSaveButton();
     loadHardwareMap();
+    loadDimSetting();
 }
 
 function hardwareEl(id) {
@@ -2115,7 +2216,11 @@ function refreshFullStatus() {
         setText('st-cpu-freq', data.cpu_freq_mhz + ' MHz');
         setText('st-idf-version', data.idf_version);
         setText('st-project-version', data.project_version);
-        setText('st-reset-reason', data.reset_reason || '--');
+        var resetText = data.reset_reason || '--';
+        if (data.reset_detail) {
+            resetText += ' (' + escHtml(data.reset_detail) + ')';
+        }
+        setText('st-reset-reason', resetText);
 
         /* Memory */
         var freeKb = (data.free_heap / 1024).toFixed(0);
@@ -2202,8 +2307,8 @@ function setHtml(id, val) {
     }
 }
 
-function refreshStatus() {
-    if (document.hidden) return;
+function refreshStatus(force) {
+    if (document.hidden && !force) return;
     if (statusSummaryRequestInFlight) return;
     statusSummaryRequestInFlight = true;
     apiGet('/api/status', function (err, data) {
@@ -2216,66 +2321,8 @@ function refreshStatus() {
                 dot.className = 'status-dot off';
                 txt.textContent = 'Offline';
             }
+            clearStatusSkeletonsToOffline();
             return;
-        }
-
-        /* AP Status */
-        var apStatus = document.getElementById('card-ap-status');
-        var apIp = document.getElementById('card-ap-ip');
-        if (apStatus) apStatus.textContent = data.ap_enabled ? 'Active' : 'Off';
-        if (apIp) apIp.textContent = data.ap_enabled ? 'IP: ' + data.ap_ip : 'IP: --';
-
-        /* STA Status */
-        var staStatus = document.getElementById('card-sta-status');
-        var staSsid = document.getElementById('card-sta-ssid');
-        if (staStatus) staStatus.textContent = data.sta_connected ? '\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d\u0e41\u0e25\u0e49\u0e27' : '\u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
-        if (staSsid) {
-            if (data.sta_connected) {
-                staSsid.textContent = 'Station: ' + (data.sta_ssid || '--');
-                staSsid.className = 'card-sub good';
-            } else {
-                staSsid.textContent = 'Station: \u0e44\u0e21\u0e48\u0e44\u0e14\u0e49\u0e40\u0e0a\u0e37\u0e48\u0e2d\u0e21\u0e15\u0e48\u0e2d';
-                staSsid.className = 'card-sub neutral';
-            }
-        }
-
-        /* STA IP */
-        var staIp = document.getElementById('card-sta-ip');
-        if (staIp) {
-            if (data.sta_connected && data.sta_ip) {
-                staIp.textContent = 'IP: ' + data.sta_ip;
-                staIp.className = 'card-sub good';
-            } else {
-                staIp.textContent = 'Station IP: --';
-                staIp.className = 'card-sub neutral';
-            }
-        }
-
-        /* Memory */
-        var heapEl = document.getElementById('card-heap');
-        var heapBar = document.getElementById('card-heap-bar');
-        if (heapEl) heapEl.textContent = (data.free_heap / 1024).toFixed(0) + ' KB free';
-        if (heapBar) {
-            var pct = Math.min(100, Math.max(5, ((300000 - data.free_heap) / 300000) * 100));
-            heapBar.style.width = pct.toFixed(0) + '%';
-        }
-
-        /* Uptime */
-        var uptimeEl = document.getElementById('card-uptime');
-        if (uptimeEl) {
-            var secs = Math.floor(data.uptime_ms / 1000);
-            var mins = Math.floor(secs / 60);
-            var hrs = Math.floor(mins / 60);
-            mins = mins % 60;
-            if (hrs > 24) {
-                var days = Math.floor(hrs / 24);
-                hrs = hrs % 24;
-                uptimeEl.textContent = days + 'd ' + hrs + 'h';
-            } else if (hrs > 0) {
-                uptimeEl.textContent = hrs + 'h ' + mins + 'm';
-            } else {
-                uptimeEl.textContent = mins + 'm ' + (secs % 60) + 's';
-            }
         }
 
         /* Sidebar status dot */
@@ -2293,20 +2340,6 @@ function refreshStatus() {
                 txt.textContent = 'Offline';
             }
         }
-
-        /* Dashboard summary */
-        setText('card-version', data.project_version || '--');
-        setText('dash-chip', data.chip_model || '--');
-        setText('dash-project-version', data.project_version || '--');
-        setText('dash-wifi-mode', data.wifi_mode || '--');
-        setText('dash-ap-clients', data.ap_enabled ? '' + data.ap_clients : '--');
-        if (data.sta_connected && data.sta_rssi !== undefined) {
-            setText('dash-rssi', data.sta_rssi + ' dBm');
-        } else {
-            setText('dash-rssi', '--');
-        }
-        var dashPct = data.total_heap > 0 ? ((data.total_heap - data.free_heap) / data.total_heap * 100).toFixed(1) : '--';
-        setText('dash-heap-pct', dashPct !== '--' ? dashPct + '%' : '--');
     });
 }
 
@@ -3115,7 +3148,7 @@ function pollWifiConnection(attempt) {
                 setWifiModalInputsDisabled(false);
                 toggleStaticIp();
                 if (statusEl) {
-                    statusEl.textContent = '❌ การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
+                    statusEl.innerHTML = '<svg class="label-icon"><use href="#icon-x-circle"></use></svg> การเชื่อมต่อล้มเหลว: กรุณาตรวจสอบรหัสผ่านหรือความแรงสัญญาณ';
                     statusEl.style.color = 'var(--error)';
                 }
                 var banner = document.getElementById('reconnect-banner');
@@ -3138,14 +3171,14 @@ function pollWifiConnection(attempt) {
             if (!err && data && data.ok && !data.sta_connected) {
                 /* We are still connected to SoftAP, and connection to STA failed/timed out */
                 if (statusEl) {
-                    statusEl.textContent = '❌ เชื่อมต่อไม่สำเร็จ: หมดเวลาการเชื่อมต่อ';
+                    statusEl.innerHTML = '<svg class="label-icon"><use href="#icon-x-circle"></use></svg> เชื่อมต่อไม่สำเร็จ: หมดเวลาการเชื่อมต่อ';
                     statusEl.style.color = 'var(--error)';
                 }
                 updateStepper(2);
             } else {
                 /* Connection to SoftAP lost, assume device moved to new network */
                 if (statusEl) {
-                    statusEl.textContent = '✅ อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ';
+                    statusEl.innerHTML = '<svg class="label-icon"><use href="#icon-check-circle"></use></svg> อุปกรณ์ย้ายไปยังเครือข่ายใหม่แล้ว กรุณาเปลี่ยน Wi-Fi บนมือถือเพื่อใช้งานต่อ';
                     statusEl.style.color = 'var(--secondary)';
                 }
                 updateStepper(3, true);
@@ -3200,12 +3233,36 @@ function openPasswordModal() {
         document.getElementById('current-password').value = '';
         document.getElementById('new-username').value = '';
         document.getElementById('new-password').value = '';
+        
+        var currentInput = document.getElementById('current-password');
+        var newInput = document.getElementById('new-password');
+        if(currentInput) currentInput.type = 'password';
+        if(newInput) newInput.type = 'password';
+        
+        var eyes = modal.querySelectorAll('.pwd-eye-btn use');
+        for (var i = 0; i < eyes.length; i++) {
+            eyes[i].setAttribute('href', '#icon-eye');
+        }
+
         var errEl = document.getElementById('password-error');
         if (errEl) {
             errEl.classList.add('hidden');
             errEl.textContent = '';
         }
         modal.showModal();
+    }
+}
+
+function togglePwdVisibility(inputId, btnEl) {
+    var input = document.getElementById(inputId);
+    if (!input || !btnEl) return;
+    var iconUse = btnEl.querySelector('use');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (iconUse) iconUse.setAttribute('href', '#icon-eye-off');
+    } else {
+        input.type = 'password';
+        if (iconUse) iconUse.setAttribute('href', '#icon-eye');
     }
 }
 
@@ -3274,6 +3331,7 @@ function doChangePassword(e) {
             showToast('เปลี่ยนรหัสผ่านเรียบร้อย ระบบจะนำคุณออกเพื่อล็อกอินใหม่', 'success');
             setTimeout(function () {
                 document.cookie = 'session=; Path=/; Max-Age=0';
+                document.cookie = 'logged_in=; Path=/; Max-Age=0';
                 navigateTo('/login');
             }, 2500);
         });
@@ -3313,6 +3371,7 @@ function handleRoute() {
     else if (path === '/status') viewId = 'view-status';
     else if (path === '/wifi') viewId = 'view-wifi';
     else if (path === '/hardware') viewId = 'view-hardware';
+    else if (path === '/ota') viewId = 'view-ota';
 
     var activeView = document.getElementById(viewId);
     if (activeView) {
@@ -3334,11 +3393,24 @@ function handleRoute() {
         }
     }
 
-    var mNavItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item');
+    var mNavItems = document.querySelectorAll('.mobile-bottom-nav .mobile-nav-item, .mobile-more-menu .mobile-menu-item');
+    var isMoreMenuActive = false;
     for (var k = 0; k < mNavItems.length; k++) {
         mNavItems[k].classList.remove('active');
         if (mNavItems[k].getAttribute('href') === path) {
             mNavItems[k].classList.add('active');
+            if (mNavItems[k].classList.contains('mobile-menu-item')) {
+                isMoreMenuActive = true;
+            }
+        }
+    }
+    
+    var mNavMoreBtn = document.getElementById('m-nav-more');
+    if (mNavMoreBtn) {
+        if (isMoreMenuActive) {
+            mNavMoreBtn.classList.add('active');
+        } else {
+            mNavMoreBtn.classList.remove('active');
         }
     }
 
@@ -3358,6 +3430,8 @@ function handleRoute() {
         if (typeof initWifi === 'function') initWifi();
     } else if (path === '/hardware') {
         if (typeof initHardwareInstall === 'function') initHardwareInstall();
+    } else if (path === '/ota') {
+        if (typeof initOta === 'function') initOta();
     }
 
     window.scrollTo(0, 0);
@@ -3369,6 +3443,23 @@ window.addEventListener('popstate', handleRoute);
 
 (function () {
 
+    // Mobile More Menu Toggle Logic
+    document.addEventListener('click', function(e) {
+        var moreBtn = document.getElementById('m-nav-more');
+        var moreMenu = document.getElementById('mobile-more-menu');
+        if (!moreBtn || !moreMenu) return;
+        
+        var isClickInsideBtn = moreBtn.contains(e.target);
+        var isClickInsideMenu = moreMenu.contains(e.target);
+        var isLink = e.target.closest('a');
+        
+        if (isClickInsideBtn) {
+            moreMenu.classList.toggle('hidden');
+        } else if (!isClickInsideMenu || (isClickInsideMenu && isLink)) {
+            // Close if clicking outside, or if clicking a link inside the menu
+            moreMenu.classList.add('hidden');
+        }
+    });
 
     document.addEventListener('click', function (e) {
         var link = e.target.closest('a');
@@ -3476,3 +3567,266 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', fun
     }
 });
 
+function showForcePasswordModal() {
+    var modal = document.getElementById('force-pwd-modal');
+    if (modal && !modal.open) {
+        var curr = document.getElementById('force-pwd-current');
+        var newp = document.getElementById('force-pwd-new');
+        var conf = document.getElementById('force-pwd-confirm');
+        
+        if (curr) { curr.value = ''; curr.type = 'password'; }
+        if (newp) { newp.value = ''; newp.type = 'password'; }
+        if (conf) { conf.value = ''; conf.type = 'password'; }
+        
+        var eyes = modal.querySelectorAll('.pwd-eye-btn use');
+        for (var i = 0; i < eyes.length; i++) {
+            eyes[i].setAttribute('href', '#icon-eye');
+        }
+
+        var errEl = document.getElementById('force-pwd-error');
+        if (errEl) {
+            errEl.classList.add('hidden');
+            errEl.textContent = '';
+        }
+
+        modal.showModal();
+        // Prevent canceling via Escape key
+        modal.addEventListener('cancel', function(e) {
+            e.preventDefault();
+        });
+    }
+}
+
+function submitForcePasswordChange() {
+    var curr = document.getElementById('force-pwd-current').value;
+    var newp = document.getElementById('force-pwd-new').value;
+    var conf = document.getElementById('force-pwd-confirm').value;
+    var errEl = document.getElementById('force-pwd-error');
+    var btn = document.getElementById('force-pwd-submit');
+
+    if (newp !== conf) {
+        errEl.textContent = "รหัสผ่านใหม่ไม่ตรงกัน";
+        errEl.classList.remove('hidden');
+        return;
+    }
+    if (newp.length < 8) {
+        errEl.textContent = "รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร";
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    errEl.classList.add('hidden');
+    var origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "กำลังบันทึก...";
+
+    apiPost('/api/change-password', { current_password: curr, new_password: newp }, function(err, data) {
+        btn.disabled = false;
+        btn.textContent = origText;
+        if (err || !data.ok) {
+            errEl.textContent = (data && data.error === 'invalid_credentials') ? "รหัสผ่านปัจจุบันไม่ถูกต้อง" : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+            errEl.classList.remove('hidden');
+        } else {
+            var modal = document.getElementById('force-pwd-modal');
+            modal.close();
+            // Refresh current view to load data that was blocked
+            handleRoute();
+        }
+    });
+}
+
+/* ======== OTA Firmware Update ======== */
+function initOta() {
+    if (window.location.pathname !== '/ota') return;
+    apiGet('/api/status', function(err, data) {
+        var versionEl = document.getElementById('ota-current-version');
+        if (versionEl) {
+            if (err || !data || !data.ok) {
+                versionEl.textContent = 'ไม่สามารถดึงข้อมูลได้';
+            } else {
+                versionEl.textContent = data.project_version || 'ไม่ทราบเวอร์ชัน';
+            }
+        }
+    });
+
+    var fileInput = document.getElementById('ota-file-input');
+    var uploadBtn = document.getElementById('ota-upload-btn');
+    var progressContainer = document.getElementById('ota-progress-container');
+    var progressBar = document.getElementById('ota-progress-bar');
+    var progressText = document.getElementById('ota-progress-text');
+    var msgEl = document.getElementById('ota-message');
+    var progressAria = document.getElementById('ota-progress-aria');
+
+    if (fileInput && uploadBtn) {
+        fileInput.onchange = function() {
+            uploadBtn.disabled = !fileInput.files || fileInput.files.length === 0;
+            msgEl.classList.add('hidden');
+            if(fileInput.files && fileInput.files.length > 0) {
+                 var label = fileInput.parentElement.querySelector('span');
+                 if(label) label.textContent = fileInput.files[0].name;
+            } else {
+                 var label = fileInput.parentElement.querySelector('span');
+                 if(label) label.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่';
+            }
+        };
+
+        uploadBtn.onclick = function() {
+            if (!fileInput.files || fileInput.files.length === 0) return;
+            var file = fileInput.files[0];
+            if (file.size > 0x1F0000) {
+                msgEl.textContent = 'ไฟล์มีขนาดใหญ่เกินไป (สูงสุด ~2MB)';
+                msgEl.className = 'field-error ota-message-base ota-message-error';
+                msgEl.classList.remove('hidden');
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            fileInput.disabled = true;
+            progressContainer.classList.remove('hidden');
+            progressBar.style.transform = 'scaleX(0)';
+            progressText.textContent = 'กำลังอัปโหลด: 0%';
+            msgEl.classList.add('hidden');
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/ota', true);
+            
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    var percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.transform = 'scaleX(' + (percent / 100) + ')';
+                    progressText.textContent = 'กำลังอัปโหลด: ' + percent + '%';
+                    if (progressAria) progressAria.setAttribute('aria-valuenow', percent);
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        var res = JSON.parse(xhr.responseText);
+                        if (res.ok) {
+                            progressText.textContent = 'อัปเดตสำเร็จ! ระบบกำลังรีสตาร์ท...';
+                            progressBar.style.transform = 'scaleX(1)';
+                            if (progressAria) progressAria.setAttribute('aria-valuenow', 100);
+                            msgEl.textContent = 'อัปเดตสำเร็จ! ระบบจะรีบูตในไม่ช้า กรุณารอสักครู่แล้วเชื่อมต่อใหม่';
+                            msgEl.className = 'field-error ota-message-base ota-message-success';
+                            msgEl.classList.remove('hidden');
+                            setTimeout(function() {
+                                window.location.href = '/login';
+                            }, 5000);
+                            return;
+                        }
+                    } catch(e) {}
+                }
+                
+                // Error case
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+                
+                if (xhr.status === 401) {
+                    msgEl.textContent = 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่...';
+                    setTimeout(function() {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (xhr.status === 413) {
+                    msgEl.textContent = 'ไฟล์มีขนาดใหญ่เกินไป (HTTP 413)';
+                } else {
+                    msgEl.textContent = 'เกิดข้อผิดพลาดในการอัปเดต (HTTP ' + xhr.status + ')';
+                }
+                msgEl.className = 'field-error ota-message-base ota-message-error';
+                msgEl.classList.remove('hidden');
+            };
+
+            xhr.onerror = function() {
+                uploadBtn.disabled = false;
+                fileInput.disabled = false;
+                msgEl.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย';
+                msgEl.className = 'field-error ota-message-base ota-message-error';
+                msgEl.classList.remove('hidden');
+            };
+
+            xhr.send(file);
+        };
+    }
+}
+
+// A9: Wake screen — POST to pump status endpoint to trigger
+//     tft_display_reset_idle_timer() on firmware side.
+//     Does NOT reset via GET /api/status to avoid auto-polling keeping screen on forever.
+function wakeScreen() {
+    apiPost('/api/display/wake', {}, function(err, data) {
+        var btn = document.getElementById('btn-wake-screen');
+        if (btn) {
+            btn.innerHTML = '<svg class="label-icon"><use href="#icon-check-circle"></use></svg> หน้าจอเปิดแล้ว';
+            setTimeout(function() { btn.innerHTML = '<svg class="label-icon"><use href="#icon-sun"></use></svg> เปิดหน้าจอทันที'; }, 2000);
+        }
+    });
+}
+
+var currentSavedDim = null;
+var dimPreviewTimeout = null;
+
+// Load dim setting from API
+function loadDimSetting() {
+    apiGet('/api/display/config', function(err, data) {
+        if (!err && data && data.ok) {
+            var pct = data.dim_percent;
+            currentSavedDim = (data.nvs_dim_percent !== undefined) ? data.nvs_dim_percent : pct;
+            
+            var slider = document.getElementById('input-dim-percent');
+            if (slider) slider.value = pct;
+            
+            updateDimLabel(pct, true);
+        }
+    });
+}
+
+// Live label update while dragging
+function updateDimLabel(val, skipPreview) {
+    var label = document.getElementById('dim-percent-label');
+    var valInt = parseInt(val, 10);
+    
+    if (label) {
+        var displayStr = valInt == 0 ? '0% (ปิดหน้าจอ)' : (valInt + '%');
+        if (currentSavedDim !== null && valInt !== currentSavedDim) {
+            label.innerHTML = '<span class="text-muted">' + currentSavedDim + '% &rarr;</span> ' + displayStr;
+        } else {
+            label.textContent = displayStr;
+        }
+    }
+    
+    var btn = document.getElementById('btn-save-dim');
+    if (btn && currentSavedDim !== null) {
+        btn.disabled = (valInt === currentSavedDim);
+    }
+
+    if (!skipPreview) {
+        if (dimPreviewTimeout) {
+            clearTimeout(dimPreviewTimeout);
+        }
+        dimPreviewTimeout = setTimeout(function() {
+            apiPost('/api/display/config', { dim_percent: valInt, save: false }, function() {});
+        }, 100);
+    }
+}
+
+// Save dim setting via API
+function saveDimSetting() {
+    var slider = document.getElementById('input-dim-percent');
+    if (!slider) return;
+    var pct = parseInt(slider.value, 10);
+    var btn = document.getElementById('btn-save-dim');
+    if (btn) btn.disabled = true;
+
+    apiPost('/api/display/config', { dim_percent: pct, save: true }, function(err, data) {
+        if (!err && data && data.ok) {
+            currentSavedDim = pct;
+            if (btn) btn.disabled = true;
+            // Reset label to pure value format without arrow
+            updateDimLabel(pct, true); 
+            showToast('บันทึกความสว่าง Idle: ' + pct + '%', 'success');
+        } else {
+            if (btn) btn.disabled = false;
+            showToast('บันทึกไม่สำเร็จ', 'error');
+        }
+    });
+}

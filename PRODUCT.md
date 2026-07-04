@@ -37,8 +37,7 @@ terms where they improve precision.
 
 - Generic SaaS dashboards with equal-weight card grids and decorative metrics.
 - Marketing-style hero sections, excessive whitespace, and ornamental copy.
-- Decorative animation, gradients, glass effects, and dark-mode styling without
-  an operational reason.
+- Decorative animation, gradients, and glass effects. (Note: Dark Mode is intentionally implemented and fully supported for low-light/night operational monitoring, so it is not an anti-reference here).
 - External fonts, CDN assets, remote icon packages, and framework migrations
   that weaken offline ESP32 operation.
 - Dense installer screens that hide active versus pending GPIO state or reboot

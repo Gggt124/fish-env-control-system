@@ -250,7 +250,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "cpu_freq_mhz": state["cpu_freq_mhz"],
                     "idf_version": "v6.0.1-Simulator",
                     "project_name": "Fish Pump Relay Timer Control",
-                    "project_version": "v0.1.0",
+                    "project_version": "v0.1.7",
                     "reset_reason": "POWERON_RESET",
                     "mac_sta": "24:6F:28:1A:2B:3C",
                     "mac_ap": "24:6F:28:1A:2B:3D",
@@ -514,6 +514,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                 req_pass = payload.get("password", "")
                 if req_user == state["username"] and req_pass == state["password"]:
                     self.send_header('Set-Cookie', 'session=mock-token-12345; Path=/; Max-Age=3600')
+                    self.send_header('Set-Cookie', 'logged_in=1; Path=/; Max-Age=3600')
                     self.end_headers()
                     self.wfile.write(json.dumps({"ok": True}).encode('utf-8'))
                 else:
@@ -840,6 +841,47 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     start_time = time.time()
                     print("[Simulation] Device rebooted (Credentials updated).")
                 threading.Thread(target=do_reboot, daemon=True).start()
+                return
+
+            # API: Change Password
+            elif path == '/api/change-password':
+                curr_pass = payload.get("current_password", "")
+                new_pass = payload.get("new_password", "")
+                
+                if curr_pass != state["password"]:
+                    self.wfile.write(json.dumps({"ok": False, "error": "invalid_credentials"}).encode('utf-8'))
+                    return
+                    
+                state["password"] = new_pass
+                self.wfile.write(json.dumps({"ok": True, "reboot_pending": True}).encode('utf-8'))
+                
+                def do_reboot_pwd():
+                    time.sleep(1.0)
+                    global start_time
+                    start_time = time.time()
+                    print("[Simulation] Device rebooted (Password changed).")
+                threading.Thread(target=do_reboot_pwd, daemon=True).start()
+                return
+
+            # API: Display Wake
+            elif path == '/api/display/wake':
+                print("[Simulation] Display wake triggered.")
+                self.wfile.write(json.dumps({"ok": True}).encode('utf-8'))
+                return
+
+            # API: OTA Update
+            elif path == '/api/ota':
+                print("[Simulation] OTA Firmware Upload started...")
+                time.sleep(1.5) # Simulate upload time
+                print("[Simulation] OTA Firmware Upload successful. Rebooting...")
+                self.wfile.write(json.dumps({"ok": True, "reboot_pending": True}).encode('utf-8'))
+                
+                def do_reboot_ota():
+                    time.sleep(1.0)
+                    global start_time
+                    start_time = time.time()
+                    print("[Simulation] Device rebooted (OTA Update).")
+                threading.Thread(target=do_reboot_ota, daemon=True).start()
                 return
 
             self.wfile.write(json.dumps({"ok": True}).encode('utf-8'))

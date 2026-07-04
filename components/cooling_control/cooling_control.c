@@ -7,6 +7,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -466,28 +467,41 @@ static esp_err_t read_temperature_with_recovery(float *temperature_c)
 static void cooling_task(void *arg)
 {
     (void)arg;
+    esp_err_t err = esp_task_wdt_add(NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register cooling_task to TWDT: %s", esp_err_to_name(err));
+    }
     while (!s_task_stop) {
+        esp_task_wdt_reset();
         float temperature_c = 0.0f;
         esp_err_t ret = read_temperature_with_recovery(&temperature_c);
 
-        xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
-        int64_t now_ms = esp_timer_get_time() / 1000;
-        if (ret == ESP_OK && temperature_in_supported_range(temperature_c)) {
-            record_read_success_locked(temperature_c);
+        if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
+            int64_t now_ms = esp_timer_get_time() / 1000;
+            if (ret == ESP_OK && temperature_in_supported_range(temperature_c)) {
+                record_read_success_locked(temperature_c);
+            } else {
+                cooling_control_fault_code_t code =
+                    ret == ESP_OK ? COOLING_CONTROL_FAULT_OUT_OF_RANGE
+                                  : COOLING_CONTROL_FAULT_READ_FAILED;
+                record_read_failure_locked(code);
+            }
+            update_control_locked(now_ms);
+            xSemaphoreGive(s_cooling_mutex);
         } else {
-            cooling_control_fault_code_t code =
-                ret == ESP_OK ? COOLING_CONTROL_FAULT_OUT_OF_RANGE
-                              : COOLING_CONTROL_FAULT_READ_FAILED;
-            record_read_failure_locked(code);
+            ESP_LOGW(TAG, "cooling_task: failed to take mutex, skipping cycle");
         }
-        update_control_locked(now_ms);
-        xSemaphoreGive(s_cooling_mutex);
 
         uint32_t waited_ms = 0;
         while (!s_task_stop && waited_ms < COOLING_CONTROL_POLL_MS) {
+            esp_task_wdt_reset();
             vTaskDelay(pdMS_TO_TICKS(100));
             waited_ms += 100;
         }
+    }
+    esp_err_t del_err = esp_task_wdt_delete(NULL);
+    if (del_err != ESP_OK && del_err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "Failed to remove cooling_task from TWDT: %s", esp_err_to_name(del_err));
     }
     s_cooling_task = NULL;
     vTaskDelete(NULL);
@@ -522,7 +536,9 @@ bool cooling_control_init(const cooling_control_config_t *config)
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 
-    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     deinit_sensor();
     s_config = *config;
     reset_runtime_state_locked();
@@ -560,9 +576,10 @@ bool cooling_control_init(const cooling_control_config_t *config)
     s_task_stop = false;
     if (xTaskCreate(cooling_task, "cooling_control", COOLING_CONTROL_TASK_STACK_BYTES,
                     NULL, COOLING_CONTROL_TASK_PRIORITY, &s_cooling_task) != pdPASS) {
-        xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
-        mark_config_invalid_locked();
-        xSemaphoreGive(s_cooling_mutex);
+        if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
+            mark_config_invalid_locked();
+            xSemaphoreGive(s_cooling_mutex);
+        }
         deinit_sensor();
         return false;
     }
@@ -576,7 +593,9 @@ bool cooling_control_apply_config(const cooling_control_config_t *config)
         return false;
     }
 
-    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     if (!s_initialized || !s_config_valid ||
         config->ds18b20_gpio != s_config.ds18b20_gpio ||
         config->cooling_relay_gpio != s_config.cooling_relay_gpio ||
@@ -611,7 +630,9 @@ bool cooling_control_stop(void)
     if (!ensure_mutex()) {
         return false;
     }
-    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     int64_t now_ms = esp_timer_get_time() / 1000;
     set_relay_energized_locked(false, now_ms);
     s_mode = COOLING_CONTROL_MODE_FORCE_OFF;
@@ -628,7 +649,9 @@ bool cooling_control_get_status(cooling_control_status_t *out)
         return false;
     }
 
-    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     int64_t now_ms = esp_timer_get_time() / 1000;
     update_control_locked(now_ms);
     out->initialized = s_initialized;
@@ -663,7 +686,9 @@ bool cooling_control_set_mode(cooling_control_mode_t mode)
         return cooling_control_start_test();
     }
 
-    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     if (!s_initialized || !s_config_valid) {
         xSemaphoreGive(s_cooling_mutex);
         return false;
@@ -683,7 +708,9 @@ bool cooling_control_start_test(void)
         return false;
     }
 
-    xSemaphoreTake(s_cooling_mutex, portMAX_DELAY);
+    if (xSemaphoreTake(s_cooling_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
     if (!s_initialized || !s_config_valid) {
         xSemaphoreGive(s_cooling_mutex);
         return false;

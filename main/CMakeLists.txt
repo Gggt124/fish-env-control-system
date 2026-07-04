@@ -28,8 +28,6 @@ idf_component_register(
     SRCS
         "app_main.c"
         "web_server.c"
-        "dns_server.c"
-        "tft_display.c"
     INCLUDE_DIRS
         "."
     EMBED_FILES
@@ -41,24 +39,24 @@ idf_component_register(
         "static_compressed/app.js.gz"
         "static/ibm_plex_sans_thai_400_latin.woff2"
         "static/ibm_plex_sans_thai_400_thai.woff2"
-        "static/ibm_plex_sans_thai_600_latin.woff2"
-        "static/ibm_plex_sans_thai_600_thai.woff2"
         "static/ibm_plex_sans_thai_700_latin.woff2"
         "static/ibm_plex_sans_thai_700_thai.woff2"
         "static/jetbrains_mono_400_latin.woff2"
-        "static/jetbrains_mono_700_latin.woff2"
     REQUIRES
+        app_update
         app_config
         cooling_control
+        dns_server
         hardware_map
         nvs_store
         pump_control
         session
+        tft_display
         wifi_manager
         esp_http_server
         esp_wifi
         cjson
         mdns
-        esp_lcd
+        mbedtls
 )
 

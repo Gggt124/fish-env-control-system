@@ -2,29 +2,29 @@
 name: Fish-Pump-Control-design-system
 description: A clean, local-web operational control panel for the ESP32 Fish Pump controller using a Flat-by-Default layout, structured SVG status signals, and a high-contrast semantic color palette.
 colors:
-  primary: "#2563eb"
-  primary-hover: "#1d4ed8"
-  primary-container: "#eff6ff"
+  primary: "#0097a7"
+  primary-hover: "#007b85"
+  primary-container: "rgba(0, 151, 167, 0.10)"
   on-primary: "#ffffff"
-  secondary: "#10b981"
+  secondary: "#0e9a5c"
   on-secondary: "#ffffff"
-  tertiary: "#f59e0b"
+  tertiary: "#c47d00"
   on-tertiary: "#ffffff"
-  error: "#ef4444"
-  error-hover: "#dc2626"
+  error: "#c53030"
+  error-hover: "#b71c1c"
   on-error: "#ffffff"
-  bg-body: "#f1f5f9"
+  bg-body: "#f0f2f7"
   surface: "#ffffff"
-  surface-dim: "#f1f5f9"
-  surface-container: "#f1f5f9"
-  surface-container-highest: "#e2e8f0"
-  on-surface: "#0f172a"
-  on-surface-variant: "#64748b"
-  outline: "#64748b"
-  outline-variant: "#e2e8f0"
+  surface-dim: "#f0f2f7"
+  surface-container: "#f0f2f7"
+  surface-container-highest: "#d1d8e4"
+  on-surface: "#0d1320"
+  on-surface-variant: "#4a5568"
+  outline: "#d1d8e4"
+  outline-variant: "#e8ecf3"
 typography:
-  font-ui: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  font-mono: "'Courier New', Consolas, monospace"
+  font-ui: "'IBM Plex Sans Thai', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  font-mono: "'JetBrains Mono', 'Courier New', Consolas, monospace"
   display:
     fontFamily: "{typography.font-ui}"
     fontSize: "1.953rem"
@@ -69,12 +69,13 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
     rounded: "{rounded.md}"
-    padding: "10px 16px"
+    padding: "12px 16px"
+    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)"
   button-outline:
     backgroundColor: "transparent"
     textColor: "{colors.primary}"
     rounded: "{rounded.md}"
-    padding: "10px 16px"
+    padding: "12px 16px"
   card:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.lg}"
@@ -102,19 +103,19 @@ A primary principle of "The Clear Console" is the **SVG & Text-Reduction Directi
 Colors in this system represent physical appliance states and command structures. We use an **Operational Semantics** approach to define color roles, mapping them to standard hardware console alerts.
 
 ### Primary
-- **Console Blue** (`#2563eb`): Used for primary action buttons, active navigation markers, input focus rings, and positive progress indicators. It draws the operator's eye to active settings and confirmations.
+- **Teal** (`#0097a7` Light, `#00c8a0` Dark): Used for primary action buttons, active navigation markers, input focus rings, and positive progress indicators. It draws the operator's eye to active settings and confirmations.
 
 ### Secondary
-- **Active Green** (`#10b981` / `#006e28`): Indicates active, energized, healthy, and successful operations. Used for active pump relays, healthy sensor connection states, and successful Wi-Fi connections.
+- **Active Green** (`#0e9a5c` Light, `#22d47a` Dark): Indicates active, energized, healthy, and successful operations. Used for active pump relays, healthy sensor connection states, and successful Wi-Fi connections.
 
 ### Tertiary
-- **Warning Amber** (`#f59e0b` / `#9e3d00`): Represents transient or warning states, such as pending configurations, timer cooldowns, or temporary stabilization periods.
+- **Warning Amber** (`#c47d00` Light, `#f0a830` Dark): Represents transient or warning states, such as pending configurations, timer cooldowns, or temporary stabilization periods.
 
 ### Neutral
-- **Alarm Red** (`#ef4444` / `#ba1a1a`): Indicates critical faults, offline state, emergency stop alerts, or invalid configurations.
-- **Muted Slate** (`#64748b`): Used for units of measure, reference text, inactive options, and label descriptions.
-- **Canvas Background** (`#f1f5f9`): The low-saturation gray backplane resembling physical plastic console panels.
-- **Card Surface** (`#ffffff`): The high-contrast white container color for organizing controls.
+- **Alarm Red** (`#c53030` Light, `#f06060` Dark): Indicates critical faults, offline state, emergency stop alerts, or invalid configurations.
+- **Muted Slate** (`#8fa0b4`): Used for units of measure, reference text, inactive options, and label descriptions.
+- **Canvas Background** (`#f0f2f7` Light, `#08090d` Dark): The low-saturation blue-gray backplane resembling physical plastic console panels.
+- **Card Surface** (`#ffffff` Light, `#0f1117` Dark): The high-contrast container color for organizing controls.
 
 ### Named Rules
 **The Color-as-State Rule.** Saturated color must never be used decoratively. Green, orange, and red must strictly map to active, warning, and alarm status respectively. If a color is visible, it carries functional meaning that the operator must trust.
@@ -123,9 +124,9 @@ Colors in this system represent physical appliance states and command structures
 
 This system uses a single clean font family to handle display, labels, and text data, ensuring readability and consistency across all screen densities.
 
-**Display Font:** System UI stack (system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)
-**Body Font:** System UI stack
-**Label/Mono Font:** Courier New, Consolas, monospace (used for MAC addresses, IP addresses, and GPIO configurations)
+**Display Font:** IBM Plex Sans Thai, system-ui
+**Body Font:** IBM Plex Sans Thai, system-ui
+**Label/Mono Font:** JetBrains Mono, Courier New, Consolas, monospace (used for MAC addresses, IP addresses, and GPIO configurations)
 
 ### Hierarchy
 - **Display** (Bold, 31px / 1.953rem, Line-height: 2.5rem): Used for main page headers (e.g. Wi-Fi Setup, Dashboard) to orient the operator.
@@ -155,10 +156,11 @@ Surfaces use a tiered hierarchy of light-gray to white background layers to sepa
 
 ### Buttons
 - **Shape:** Gently rounded (8px / `--radius-md`).
-- **Primary:** Console Blue fill, white text, 10px 16px padding. Active state uses `#004493`.
-- **Outline:** Transparent background, Console Blue border and text, 10px 16px padding. Hover state uses `rgba(0, 88, 188, 0.05)`.
-- **Danger:** Alarm Red fill, white text, 10px 16px padding. Used for disconnect/reset.
-- **Scan/Refresh:** Pill-shaped (9999px / `--radius-full`), light blue background, 6px 12px padding.
+- **Primary:** Teal fill, white text, 12px 16px padding, subtle inset shadow for tactility. Active state uses `#006064`.
+- **Outline:** Transparent background, Teal border and text, 12px 16px padding. Hover state uses `rgba(0, 151, 167, 0.05)`.
+- **Danger:** Alarm Red fill, white text, 12px 16px padding. Used for disconnect/reset.
+- **Scan/Refresh:** Pill-shaped (9999px / `--radius-full`), light teal background, 6px 12px padding.
+- **Theme Toggle:** Pill switch (14px radius), toggles between Light and Dark mode.
 
 ### Inputs / Fields
 - **Style:** 1px solid border (`--outline-variant`), white background, 8px radius. Inputs have a left padding of 40px to accommodate absolute-positioned vector icons.

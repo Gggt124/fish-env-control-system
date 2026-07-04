@@ -5,8 +5,10 @@
 #include "nvs_store.h"
 #include "pump_control.h"
 #include "session.h"
+#include "tft_display.h"
 #include "wifi_manager.h"
 #include "dns_server.h"
+#include "app_main.h"
 #include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
@@ -23,7 +25,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdatomic.h>
+#include "esp_ota_ops.h"
+#include "aes/esp_aes.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -53,18 +58,12 @@ extern const uint8_t _binary_ibm_plex_sans_thai_400_latin_woff2_start[] asm("_bi
 extern const uint8_t _binary_ibm_plex_sans_thai_400_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_400_latin_woff2_end");
 extern const uint8_t _binary_ibm_plex_sans_thai_400_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_400_thai_woff2_start");
 extern const uint8_t _binary_ibm_plex_sans_thai_400_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_400_thai_woff2_end");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_600_latin_woff2_start");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_600_latin_woff2_end");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_600_thai_woff2_start");
-extern const uint8_t _binary_ibm_plex_sans_thai_600_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_600_thai_woff2_end");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_latin_woff2_start[] asm("_binary_ibm_plex_sans_thai_700_latin_woff2_start");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_latin_woff2_end[]   asm("_binary_ibm_plex_sans_thai_700_latin_woff2_end");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_thai_woff2_start[] asm("_binary_ibm_plex_sans_thai_700_thai_woff2_start");
 extern const uint8_t _binary_ibm_plex_sans_thai_700_thai_woff2_end[]   asm("_binary_ibm_plex_sans_thai_700_thai_woff2_end");
 extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_start[] asm("_binary_jetbrains_mono_400_latin_woff2_start");
 extern const uint8_t _binary_jetbrains_mono_400_latin_woff2_end[]   asm("_binary_jetbrains_mono_400_latin_woff2_end");
-extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_start[] asm("_binary_jetbrains_mono_700_latin_woff2_start");
-extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_end[]   asm("_binary_jetbrains_mono_700_latin_woff2_end");
 
 
 /*
@@ -80,15 +79,22 @@ extern const uint8_t _binary_jetbrains_mono_700_latin_woff2_end[]   asm("_binary
 #define WIFI_DISCONNECT_TASK_STACK_BYTES 2048
 #define WIFI_DISCONNECT_DELAY_MS 500
 
+#define STATIC_SEND_RETRY_MAX          2
+#define STATIC_SEND_RETRY_DELAY_TICKS  pdMS_TO_TICKS(100)
+
 static bool s_wifi_disconnect_task_pending = false;
 static portMUX_TYPE s_wifi_disconnect_task_lock = portMUX_INITIALIZER_UNLOCKED;
 static portMUX_TYPE s_web_diag_lock = portMUX_INITIALIZER_UNLOCKED;
+static SemaphoreHandle_t s_login_rate_limit_mutex = NULL;
+static SemaphoreHandle_t s_password_state_mutex = NULL;
+static bool s_reboot_scheduled = false;
 static char s_auth_nonce[33] = {0};
 static httpd_handle_t s_server = NULL;
 static uint32_t s_json_send_failures = 0;
 static uint32_t s_static_send_failures = 0;
 static uint32_t s_static_cache_hits = 0;
 static uint32_t s_static_deadline_aborts = 0;
+static volatile uint32_t s_httpd_last_alive_ms = 0;
 
 typedef esp_err_t (*web_route_handler_t)(httpd_req_t *req);
 
@@ -123,6 +129,74 @@ typedef struct {
 static web_server_diag_t s_web_diag = {0};
 
 static bool api_pump_add_status_object(cJSON *root);
+
+
+/* --------------- JSON Generator --------------- */
+typedef struct {
+    char *buf;
+    size_t capacity;
+    size_t len;
+    bool first_item;
+} json_gen_t;
+
+static void json_gen_init(json_gen_t *gen, char *buf, size_t capacity) {
+    if (gen) {
+        gen->buf = buf;
+        gen->capacity = capacity;
+        gen->len = 0;
+        gen->first_item = true;
+        if (capacity > 0 && buf) buf[0] = '\0';
+    }
+}
+
+static void json_gen_append(json_gen_t *gen, const char *fmt, ...) {
+    if (!gen || !gen->buf || gen->len >= gen->capacity) return;
+    va_list args;
+    va_start(args, fmt);
+    int space = gen->capacity - gen->len;
+    int written = vsnprintf(gen->buf + gen->len, space, fmt, args);
+    va_end(args);
+    if (written > 0) {
+        if (written >= space) {
+            gen->len = gen->capacity;
+        } else {
+            gen->len += written;
+        }
+    }
+}
+
+static void json_gen_start_object(json_gen_t *gen) {
+    if (!gen->first_item) json_gen_append(gen, ",");
+    json_gen_append(gen, "{");
+    gen->first_item = true;
+}
+
+static void json_gen_end_object(json_gen_t *gen) {
+    json_gen_append(gen, "}");
+    gen->first_item = false;
+}
+
+static void json_gen_add_key(json_gen_t *gen, const char *key) {
+    if (!gen->first_item) json_gen_append(gen, ",");
+    json_gen_append(gen, "\"%s\":", key);
+    gen->first_item = false;
+}
+
+static void json_gen_add_bool(json_gen_t *gen, const char *key, bool val) {
+    json_gen_add_key(gen, key);
+    json_gen_append(gen, val ? "true" : "false");
+}
+
+static void json_gen_add_string(json_gen_t *gen, const char *key, const char *val) {
+    json_gen_add_key(gen, key);
+    if (val) json_gen_append(gen, "\"%s\"", val);
+    else json_gen_append(gen, "null");
+}
+
+static void json_gen_add_number(json_gen_t *gen, const char *key, double val) {
+    json_gen_add_key(gen, key);
+    json_gen_append(gen, "%g", val);
+}
 
 /* --------------- Helpers --------------- */
 
@@ -252,6 +326,16 @@ static bool is_valid_utf8_printable(const char *s, size_t max_len)
         if (c < 0x20 && c != '\t') return false;
     }
     return true;
+}
+
+static void json_gen_add_string_safe(json_gen_t *gen, const char *key, const char *val) {
+    if (!val || val[0] == '\0') {
+        json_gen_add_string(gen, key, val);
+    } else if (is_valid_utf8_printable(val, 128)) {
+        json_gen_add_string(gen, key, val);
+    } else {
+        json_gen_add_string(gen, key, NULL);
+    }
 }
 
 static void get_client_ip(httpd_req_t *req, char *ipstr, size_t ipstr_len)
@@ -1048,6 +1132,62 @@ static const char *api_cooling_blocked_reason_name(cooling_control_blocked_reaso
     }
 }
 
+static bool api_pump_add_status_fields_gen(json_gen_t *gen)
+{
+    if (!gen) {
+        return false;
+    }
+
+    pump_control_status_t status = {0};
+    if (!pump_control_get_status(&status)) {
+        return false;
+    }
+
+    nvs_store_pump_settings_t settings;
+    nvs_store_pump_settings_load_status_t settings_status = nvs_store_load_pump_settings(&settings);
+    hardware_map_t active_map = hardware_map_defaults();
+    nvs_store_hardware_map_load_status_t map_status = NVS_STORE_HARDWARE_MAP_DEFAULTS_MISSING;
+    api_pump_load_active_hardware_map(&active_map, &map_status);
+    bool hardware_reboot_required = false;
+    bool hardware_reboot_status_ok = nvs_store_hardware_reboot_required(&hardware_reboot_required);
+    nvs_store_cooling_settings_t cooling_settings;
+    nvs_store_cooling_settings_defaults(&cooling_settings);
+    nvs_store_load_cooling_settings(&cooling_settings);
+
+    json_gen_add_bool(gen, "running", status.running);
+    json_gen_add_bool(gen, "initialized", status.initialized);
+    json_gen_add_bool(gen, "config_valid", status.config_valid);
+    json_gen_add_bool(gen, "initial_stabilizing", status.initial_stabilizing);
+    json_gen_add_bool(gen, "fault", status.fault);
+    json_gen_add_string(gen, "float_state", api_pump_float_state_name(status.float_state));
+    json_gen_add_string(gen, "active_timer", api_pump_active_timer_name(status.active_timer));
+    json_gen_add_string(gen, "active_relay", api_pump_active_relay_name(status.active_relay));
+    json_gen_add_string(gen, "phase", api_pump_timer_phase_name(status.phase));
+    json_gen_add_number(gen, "countdown_sec", (double)(status.countdown_sec));
+    json_gen_add_bool(gen, "relay_energized", status.relay_energized);
+    json_gen_add_bool(gen, "relay1_energized", status.relay1_energized);
+    json_gen_add_bool(gen, "relay2_energized", status.relay2_energized);
+    json_gen_add_number(gen, "float_gpio", (double)(status.float_gpio));
+    json_gen_add_number(gen, "relay_gpio", (double)(active_map.pump_relay1_gpio));
+    json_gen_add_number(gen, "active_relay_gpio", (double)(status.relay_gpio));
+    json_gen_add_number(gen, "pump_relay1_gpio", (double)(active_map.pump_relay1_gpio));
+    json_gen_add_number(gen, "pump_relay2_gpio", (double)(active_map.pump_relay2_gpio));
+    json_gen_add_number(gen, "ds18b20_gpio", (double)(active_map.ds18b20_data_gpio));
+    json_gen_add_number(gen, "cooling_relay_gpio", (double)(active_map.cooling_relay_gpio));
+    json_gen_add_string(gen, "relay1_polarity", api_pump_relay_polarity_name(settings.relay1_active_low));
+    json_gen_add_string(gen, "relay2_polarity", api_pump_relay_polarity_name(settings.relay2_active_low));
+    json_gen_add_string(gen, "cooling_relay_polarity", hardware_map_polarity_name(cooling_settings.relay_polarity));
+    json_gen_add_string(gen, "timer1_start_phase", hardware_map_timer_start_phase_name(settings.timer1_start_phase));
+    json_gen_add_string(gen, "timer2_start_phase", hardware_map_timer_start_phase_name(settings.timer2_start_phase));
+    json_gen_add_bool(gen, "hardware_reboot_required", hardware_reboot_status_ok && hardware_reboot_required);
+    json_gen_add_string(gen, "hardware_map_status", api_hardware_map_status_name(map_status));
+    json_gen_add_bool(gen, "auto_start", settings.auto_start);
+    
+
+    json_gen_add_string(gen, "settings_status", api_pump_settings_status_name(settings_status));
+    return true;
+}
+
 static bool api_pump_add_status_fields(cJSON *root)
 {
     if (!root) {
@@ -1104,7 +1244,42 @@ static bool api_pump_add_status_fields(cJSON *root)
                           hardware_reboot_status_ok && hardware_reboot_required);
     cJSON_AddStringToObject(root, "hardware_map_status", api_hardware_map_status_name(map_status));
     cJSON_AddBoolToObject(root, "auto_start", settings.auto_start);
+    
+
     cJSON_AddStringToObject(root, "settings_status", api_pump_settings_status_name(settings_status));
+    return true;
+}
+
+static bool api_cooling_add_status_fields_gen(json_gen_t *gen)
+{
+    if (!gen) {
+        return false;
+    }
+
+    cooling_control_status_t status = {0};
+    if (!cooling_control_get_status(&status)) {
+        return false;
+    }
+
+    json_gen_add_bool(gen, "initialized", status.initialized);
+    json_gen_add_bool(gen, "config_valid", status.config_valid);
+    json_gen_add_string(gen, "mode", api_cooling_mode_name(status.mode));
+    json_gen_add_bool(gen, "auto_enable", status.auto_enable);
+    json_gen_add_number(gen, "temperature_c", (double)(status.temperature_c));
+    json_gen_add_bool(gen, "temperature_valid", status.temperature_valid);
+    json_gen_add_string(gen, "sensor_state", api_cooling_sensor_state_name(status.sensor_state));
+    json_gen_add_bool(gen, "fault", status.fault);
+    json_gen_add_string(gen, "fault_code", api_cooling_fault_code_name(status.fault_code));
+    json_gen_add_bool(gen, "relay_energized", status.relay_energized);
+    json_gen_add_number(gen, "threshold_c", (double)(status.threshold_c_x10) / 10.0);
+    json_gen_add_number(gen, "hysteresis_c", (double)(status.hysteresis_c_x10) / 10.0);
+    json_gen_add_bool(gen, "lockout_active", status.lockout_active);
+    json_gen_add_number(gen, "lockout_remaining_sec", (double)(status.lockout_remaining_sec));
+    json_gen_add_number(gen, "test_remaining_sec", (double)(status.test_remaining_sec));
+    json_gen_add_bool(gen, "cooling_demand", status.cooling_demand);
+    json_gen_add_string(gen, "blocked_reason", api_cooling_blocked_reason_name(status.blocked_reason));
+    json_gen_add_number(gen, "ds18b20_gpio", (double)(status.ds18b20_gpio));
+    json_gen_add_number(gen, "cooling_relay_gpio", (double)(status.cooling_relay_gpio));
     return true;
 }
 
@@ -1182,7 +1357,7 @@ static bool api_cooling_add_limits(cJSON *root)
     cJSON_AddNumberToObject(limits, "hysteresis_c_x10_max", 500);
     cJSON_AddNumberToObject(limits, "test_timeout_sec_min", 1);
     cJSON_AddNumberToObject(limits, "test_timeout_sec_max", 3600);
-    cJSON_AddNumberToObject(limits, "compressor_min_off_sec_min", 0);
+    cJSON_AddNumberToObject(limits, "compressor_min_off_sec_min", 120);
     cJSON_AddNumberToObject(limits, "compressor_min_off_sec_max", 86400);
 
     cJSON *modes = cJSON_AddArrayToObject(root, "modes");
@@ -1542,9 +1717,15 @@ static bool api_cooling_parse_config_payload(const cJSON *root,
         !api_cooling_required_u32_range(root, "test_timeout_sec", 1, 3600,
                                         &settings->test_timeout_sec,
                                         error_code, error_message) ||
-        !api_cooling_required_u32_range(root, "compressor_min_off_sec", 0, 86400,
+        !api_cooling_required_u32_range(root, "compressor_min_off_sec", 120, 86400,
                                         &settings->compressor_min_off_sec,
                                         error_code, error_message)) {
+        return false;
+    }
+
+    if (settings->compressor_min_off_sec < 120) {
+        *error_code = "hardware_safety";
+        *error_message = "min_off_sec must be >= 120 (hardware safety minimum)";
         return false;
     }
 
@@ -1715,13 +1896,48 @@ static bool static_asset_cacheable(const char *mime_type)
            strncmp(mime_type, "application/javascript", strlen("application/javascript")) == 0;
 }
 
+typedef struct {
+    const uint8_t *start;
+    uint32_t hash;
+} asset_hash_cache_t;
+
 static uint32_t static_asset_hash(const uint8_t *start, size_t len)
 {
+    static asset_hash_cache_t cache[16];
+    static int cache_count = 0;
+    static portMUX_TYPE cache_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+    portENTER_CRITICAL(&cache_spinlock);
+    for (int i = 0; i < cache_count; i++) {
+        if (cache[i].start == start) {
+            uint32_t cached_hash = cache[i].hash;
+            portEXIT_CRITICAL(&cache_spinlock);
+            return cached_hash;
+        }
+    }
+    portEXIT_CRITICAL(&cache_spinlock);
+
     uint32_t hash = 2166136261U;
     for (size_t i = 0; i < len; i++) {
         hash ^= start[i];
         hash *= 16777619U;
     }
+
+    portENTER_CRITICAL(&cache_spinlock);
+    bool found = false;
+    for (int i = 0; i < cache_count; i++) {
+        if (cache[i].start == start) {
+            found = true;
+            break;
+        }
+    }
+    if (!found && cache_count < (int)(sizeof(cache) / sizeof(cache[0]))) {
+        cache[cache_count].start = start;
+        cache[cache_count].hash = hash;
+        cache_count++;
+    }
+    portEXIT_CRITICAL(&cache_spinlock);
+
     return hash;
 }
 
@@ -1813,7 +2029,21 @@ static esp_err_t serve_static(httpd_req_t *req,
         size_t chunk_len = remaining > APP_TEMPLATE_HTTP_STATIC_CHUNK_BYTES
             ? APP_TEMPLATE_HTTP_STATIC_CHUNK_BYTES
             : remaining;
-        esp_err_t ret = httpd_resp_send_chunk(req, (const char *)(start + offset), chunk_len);
+
+        esp_err_t ret = ESP_FAIL;
+        for (int attempt = 0; attempt <= STATIC_SEND_RETRY_MAX; attempt++) {
+            ret = httpd_resp_send_chunk(req, (const char *)(start + offset), chunk_len);
+            if (ret == ESP_OK) {
+                break;
+            }
+            if (attempt < STATIC_SEND_RETRY_MAX) {
+                ESP_LOGD(TAG, "Static chunk retry: uri=%s fd=%d offset=%lu/%lu attempt=%d",
+                         req->uri, httpd_req_to_sockfd(req),
+                         (unsigned long)offset, (unsigned long)len, attempt + 1);
+                vTaskDelay(STATIC_SEND_RETRY_DELAY_TICKS);
+            }
+        }
+
         if (ret != ESP_OK) {
             uint32_t failure_count = increment_static_send_failures();
             ESP_LOGW(TAG, "Static response send failed: uri=%s fd=%d offset=%lu/%lu err=%s count=%lu",
@@ -1844,22 +2074,14 @@ static esp_err_t serve_static(httpd_req_t *req,
 
 /* --------------- Route Handlers --------------- */
 
-/* GET / - redirect based on auth status */
+/* GET / */
 static esp_err_t handle_root(httpd_req_t *req)
 {
-    char token[SESSION_TOKEN_LEN] = {0};
-    char client_ip[64] = {0};
-    get_client_ip(req, client_ip, sizeof(client_ip));
-    if (get_session_from_request(req, token, sizeof(token)) && session_validate(token, client_ip)) {
-        set_no_store_response_headers(req);
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/dashboard");
-    } else {
-        set_no_store_response_headers(req);
-        httpd_resp_set_status(req, "302 Found");
-        httpd_resp_set_hdr(req, "Location", "/login");
-    }
-    return httpd_resp_send(req, NULL, 0);
+    /* Serve the SPA index.html directly; app.js handles the client-side routing to /login or /dashboard */
+    return serve_static(req,
+                        _binary_index_html_start, _binary_index_html_end,
+                        _binary_index_html_gz_start, _binary_index_html_gz_end,
+                        "text/html; charset=utf-8");
 }
 
 /* GET /login */
@@ -1882,6 +2104,21 @@ static esp_err_t handle_get_login(httpd_req_t *req)
 
 /* GET /dashboard - protected */
 static esp_err_t handle_get_dashboard(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        set_no_store_response_headers(req);
+        httpd_resp_set_status(req, "302 Found");
+        httpd_resp_set_hdr(req, "Location", "/login");
+        return httpd_resp_send(req, NULL, 0);
+    }
+    return serve_static(req,
+        _binary_index_html_start, _binary_index_html_end,
+        _binary_index_html_gz_start, _binary_index_html_gz_end,
+        "text/html; charset=utf-8");
+}
+
+/* GET /ota - protected */
+static esp_err_t handle_get_ota(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         set_no_store_response_headers(req);
@@ -1950,12 +2187,9 @@ static esp_err_t handle_app_js(httpd_req_t *req)
 
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_400_latin)
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_400_thai)
-DECLARE_FONT_HANDLER(ibm_plex_sans_thai_600_latin)
-DECLARE_FONT_HANDLER(ibm_plex_sans_thai_600_thai)
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_700_latin)
 DECLARE_FONT_HANDLER(ibm_plex_sans_thai_700_thai)
 DECLARE_FONT_HANDLER(jetbrains_mono_400_latin)
-DECLARE_FONT_HANDLER(jetbrains_mono_700_latin)
 
 /* GET /favicon.ico - browsers request this automatically; avoid repeated 404 sockets. */
 static esp_err_t handle_favicon(httpd_req_t *req)
@@ -1965,18 +2199,110 @@ static esp_err_t handle_favicon(httpd_req_t *req)
     return httpd_resp_send(req, NULL, 0);
 }
 
+
 /*
  * Captive-portal connectivity probes. Windows and mobile clients request these
- * automatically after joining the SoftAP; redirect them explicitly instead of
- * letting esp_http_server's default 404 path create noisy socket errors.
+ * automatically after joining the SoftAP.
  */
 static esp_err_t handle_captive_probe(httpd_req_t *req)
 {
     set_no_store_response_headers(req);
     httpd_resp_set_status(req, "302 Found");
-    httpd_resp_set_hdr(req, "Location", "/login");
+    httpd_resp_set_hdr(req, "Location", "http://192.168.4.1/");
     return httpd_resp_send(req, NULL, 0);
 }
+
+/*
+ * Captive portal global catch-all. If a device queries a random domain over
+ * the AP, DNS returns 192.168.4.1. The browser connects and asks for an unknown URI.
+ * This 404 handler catches it and redirects to the local root.
+ */
+static esp_err_t captive_portal_404_handler(httpd_req_t *req, httpd_err_code_t err)
+{
+    if (err != HTTPD_404_NOT_FOUND) {
+        return ESP_FAIL;
+    }
+
+    set_no_store_response_headers(req);
+    httpd_resp_set_status(req, "302 Found");
+    char loc[64];
+    snprintf(loc, sizeof(loc), "http://%s/", wifi_manager_get_ap_ip());
+    httpd_resp_set_hdr(req, "Location", loc);
+    return httpd_resp_send(req, NULL, 0);
+}
+
+static bool s_is_password_default_cached = false;
+static bool s_password_state_initialized = false;
+
+/* POST /api/change-password */
+static esp_err_t handle_api_change_password(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    char body[256] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"payload_too_large\"}", "413 Request Entity Too Large");
+    }
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
+    }
+
+    char current_password[64] = {0};
+    char new_password[64] = {0};
+
+    cJSON *root = cJSON_Parse(body);
+    if (root) {
+        cJSON *curr = cJSON_GetObjectItem(root, "current_password");
+        cJSON *newp = cJSON_GetObjectItem(root, "new_password");
+        if (curr && cJSON_IsString(curr)) {
+            strncpy(current_password, curr->valuestring, sizeof(current_password) - 1);
+        }
+        if (newp && cJSON_IsString(newp)) {
+            strncpy(new_password, newp->valuestring, sizeof(new_password) - 1);
+        }
+        cJSON_Delete(root);
+    }
+
+    if (strlen(current_password) == 0 || strlen(new_password) < 8) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
+    }
+
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass));
+
+    if (strcmp(current_password, stored_pass) != 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
+    }
+
+    if (strcmp(new_password, APP_TEMPLATE_DEFAULT_PASSWORD) == 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"cannot_use_default\"}", "400 Bad Request");
+    }
+
+    if (!nvs_store_set_credentials(stored_user, new_password)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"storage_error\"}", "500 Internal Server Error");
+    }
+
+    if (s_password_state_mutex) {
+        if (xSemaphoreTake(s_password_state_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] password_state timeout in change_password");
+            return send_json(req, "{\"ok\":false,\"error\":\"server_busy\"}", "503 Service Unavailable");
+        }
+    }
+    s_is_password_default_cached = false;
+    s_password_state_initialized = true;
+    if (s_password_state_mutex) {
+        xSemaphoreGive(s_password_state_mutex);
+    }
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
 
 #define LOGIN_LRU_SIZE 16
 
@@ -1987,23 +2313,109 @@ typedef struct {
     int64_t last_seen;
 } login_rate_limit_t;
 
+static bool is_password_default(void) {
+    if (s_password_state_mutex) {
+        if (xSemaphoreTake(s_password_state_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] password_state timeout in is_password_default — assuming not default");
+            return false;   /* fail-safe: assume password is NOT default (more restrictive) */
+        }
+    }
+    if (s_password_state_initialized) {
+        bool result = s_is_password_default_cached;
+        if (s_password_state_mutex) {
+            xSemaphoreGive(s_password_state_mutex);
+        }
+        return result;
+    }
+
+    char stored_user[64] = {0};
+    char stored_pass[64] = {0};
+    if (!nvs_store_get_credentials(stored_user, sizeof(stored_user), stored_pass, sizeof(stored_pass))) {
+        s_is_password_default_cached = false;
+    } else {
+        s_is_password_default_cached = (strcmp(stored_pass, APP_TEMPLATE_DEFAULT_PASSWORD) == 0);
+    }
+    s_password_state_initialized = true;
+    bool result = s_is_password_default_cached;
+    if (s_password_state_mutex) {
+        xSemaphoreGive(s_password_state_mutex);
+    }
+    return result;
+}
+
+static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
+
+static void update_login_rate_limit(const char *ip, int64_t now, bool is_success)
+{
+    if (s_login_rate_limit_mutex) {
+        if (xSemaphoreTake(s_login_rate_limit_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] login_rate_limit timeout in update — skipping update for ip=%s", ip);
+            return;  /* skip rate-limit update; caller sends response normally */
+        }
+    }
+    int current_idx = -1;
+    for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+        if (s_rate_limits[i].ip[0] != '\0' && strcmp(s_rate_limits[i].ip, ip) == 0) {
+            current_idx = i;
+            break;
+        }
+    }
+    if (current_idx == -1 && !is_success) {
+        int oldest_idx = 0;
+        int64_t oldest_time = s_rate_limits[0].last_seen;
+        for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
+            if (s_rate_limits[i].ip[0] == '\0') {
+                oldest_idx = i;
+                break;
+            }
+            if (s_rate_limits[i].last_seen < oldest_time) {
+                oldest_time = s_rate_limits[i].last_seen;
+                oldest_idx = i;
+            }
+        }
+        current_idx = oldest_idx;
+        strncpy(s_rate_limits[current_idx].ip, ip, sizeof(s_rate_limits[current_idx].ip) - 1);
+        s_rate_limits[current_idx].ip[sizeof(s_rate_limits[current_idx].ip) - 1] = '\0';
+        s_rate_limits[current_idx].attempts = 0;
+        s_rate_limits[current_idx].block_until = 0;
+    }
+    if (current_idx != -1) {
+        s_rate_limits[current_idx].last_seen = now;
+        if (is_success) {
+            s_rate_limits[current_idx].attempts = 0;
+            s_rate_limits[current_idx].block_until = 0;
+        } else {
+            s_rate_limits[current_idx].attempts++;
+            if (s_rate_limits[current_idx].attempts >= RATE_LIMIT_MAX) {
+                s_rate_limits[current_idx].block_until = now + RATE_LIMIT_WINDOW;
+            }
+        }
+    }
+    if (s_login_rate_limit_mutex) {
+        xSemaphoreGive(s_login_rate_limit_mutex);
+    }
+}
+
 /* POST /api/login */
 static esp_err_t handle_api_login(httpd_req_t *req)
 {
-    static login_rate_limit_t s_rate_limits[LOGIN_LRU_SIZE] = {0};
-
     char client_ip[64] = {0};
     get_client_ip(req, client_ip, sizeof(client_ip));
 
     int64_t now = esp_timer_get_time() / 1000000;
 
-    taskENTER_CRITICAL(&s_web_diag_lock);
+
+    if (s_login_rate_limit_mutex) {
+        if (xSemaphoreTake(s_login_rate_limit_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "[MUTEX] login_rate_limit timeout in handle_api_login");
+            return send_json(req, "{\"ok\":false,\"error\":\"server_busy\"}", "503 Service Unavailable");
+        }
+    }
+
     login_rate_limit_t *rl = NULL;
-    int target_idx = -1;
     for (int i = 0; i < LOGIN_LRU_SIZE; i++) {
         if (s_rate_limits[i].ip[0] != '\0' && strcmp(s_rate_limits[i].ip, client_ip) == 0) {
             rl = &s_rate_limits[i];
-            target_idx = i;
             break;
         }
     }
@@ -2022,7 +2434,6 @@ static esp_err_t handle_api_login(httpd_req_t *req)
             }
         }
         rl = &s_rate_limits[evict_idx];
-        target_idx = evict_idx;
         strncpy(rl->ip, client_ip, sizeof(rl->ip));
         rl->attempts = 0;
         rl->block_until = 0;
@@ -2031,7 +2442,10 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     rl->last_seen = now;
     
     int64_t block_until = rl->block_until;
-    taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    if (s_login_rate_limit_mutex) {
+        xSemaphoreGive(s_login_rate_limit_mutex);
+    }
 
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
@@ -2045,6 +2459,9 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     char body[256] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"payload_too_large\"}", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "401 Unauthorized");
     }
@@ -2093,12 +2510,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
     }
 
     if (strlen(username) == 0 || strlen(password) == 0) {
-        taskENTER_CRITICAL(&s_web_diag_lock);
-        s_rate_limits[target_idx].attempts++;
-        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
-            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
-        }
-        taskEXIT_CRITICAL(&s_web_diag_lock);
+        update_login_rate_limit(client_ip, now, false);
         return send_json(req, "{\"ok\":false,\"error\":\"missing_fields\"}", "401 Unauthorized");
     }
 
@@ -2113,12 +2525,7 @@ static esp_err_t handle_api_login(httpd_req_t *req)
 
     if (strcmp(username, stored_user) != 0 || strcmp(password, stored_pass) != 0) {
         ESP_LOGW(TAG, "Login failed");
-        taskENTER_CRITICAL(&s_web_diag_lock);
-        s_rate_limits[target_idx].attempts++;
-        if (s_rate_limits[target_idx].attempts >= RATE_LIMIT_MAX) {
-            s_rate_limits[target_idx].block_until = now + RATE_LIMIT_WINDOW;
-        }
-        taskEXIT_CRITICAL(&s_web_diag_lock);
+        update_login_rate_limit(client_ip, now, false);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_credentials\"}", "401 Unauthorized");
     }
 
@@ -2127,24 +2534,35 @@ static esp_err_t handle_api_login(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"session_error\"}", "500 Internal Server Error");
     }
 
-    taskENTER_CRITICAL(&s_web_diag_lock);
-    s_rate_limits[target_idx].attempts = 0;
-    s_rate_limits[target_idx].block_until = 0;
-    taskEXIT_CRITICAL(&s_web_diag_lock);
+    update_login_rate_limit(client_ip, now, true);
 
     cJSON *resp = cJSON_CreateObject();
     cJSON_AddBoolToObject(resp, "ok", true);
     cJSON_AddStringToObject(resp, "username", username);
+    if (is_password_default()) {
+        cJSON_AddBoolToObject(resp, "require_password_change", true);
+    }
     char *json_str = cJSON_PrintUnformatted(resp);
     cJSON_Delete(resp);
 
-    char cookie[384];
+    /* Cookie buffers — one for HttpOnly session token, one for JS-readable marker */
+    char cookie_session[400];
+    char cookie_marker[128];
+
     if (remember) {
-        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax; Max-Age=31536000", token);
+        snprintf(cookie_session, sizeof(cookie_session),
+            "session=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000", token);
+        snprintf(cookie_marker, sizeof(cookie_marker),
+            "logged_in=1; Path=/; SameSite=Lax; Max-Age=31536000");
     } else {
-        snprintf(cookie, sizeof(cookie), "session=%s; Path=/; SameSite=Lax", token);
+        snprintf(cookie_session, sizeof(cookie_session),
+            "session=%s; Path=/; HttpOnly; SameSite=Lax", token);
+        snprintf(cookie_marker, sizeof(cookie_marker),
+            "logged_in=1; Path=/; SameSite=Lax");
     }
-    httpd_resp_set_hdr(req, "Set-Cookie", cookie);
+    httpd_resp_set_hdr(req, "Set-Cookie", cookie_session);
+    /* In ESP-IDF v6, httpd_resp_set_hdr appends headers instead of overwriting, so this works */
+    httpd_resp_set_hdr(req, "Set-Cookie", cookie_marker);
 
     ESP_LOGI(TAG, "Login success");
     esp_err_t result = send_json(req, json_str, "200 OK");
@@ -2166,7 +2584,10 @@ static esp_err_t handle_api_logout(httpd_req_t *req)
 
     /* Clear cookie */
     httpd_resp_set_hdr(req, "Set-Cookie",
-        "session=; Path=/; Max-Age=0; SameSite=Lax");
+        "session=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax");
+    /* Clear marker cookie too — same multi-header concern applies */
+    httpd_resp_set_hdr(req, "Set-Cookie",
+        "logged_in=; Path=/; Max-Age=0; SameSite=Lax");
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
@@ -2193,7 +2614,7 @@ static esp_err_t handle_api_auth_nonce(httpd_req_t *req)
 static void delayed_reboot_task(void *pvParameters)
 {
     (void)pvParameters;
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
     ESP_LOGI(TAG, "Executing scheduled reboot...");
     esp_restart();
     vTaskDelete(NULL);
@@ -2201,6 +2622,14 @@ static void delayed_reboot_task(void *pvParameters)
 
 static void schedule_delayed_reboot(void)
 {
+    taskENTER_CRITICAL(&s_wifi_disconnect_task_lock);
+    if (s_reboot_scheduled) {
+        taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
+        ESP_LOGW(TAG, "Reboot already scheduled — ignoring duplicate request");
+        return;
+    }
+    s_reboot_scheduled = true;
+    taskEXIT_CRITICAL(&s_wifi_disconnect_task_lock);
     xTaskCreate(delayed_reboot_task, "delayed_reboot", 2048, NULL, tskIDLE_PRIORITY + 1, NULL);
 }
 
@@ -2215,6 +2644,9 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     }
 
     char body[512] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"payload_too_large\"}", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_json(req, "{\"ok\":false,\"error\":\"empty_body\"}", "400 Bad Request");
     }
@@ -2264,9 +2696,20 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     }
 
     cJSON_Delete(root);
+    nvs_store_set_restart_detail("CRED_CHANGE");
     schedule_delayed_reboot();
     return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
 }
+
+/* ── Scan result cache ──────────────────────────────────────────────────── */
+/* Serves cached results for SCAN_CACHE_TTL_MS ms to prevent httpd task    */
+/* blocking on back-to-back scan requests.                                  */
+#define SCAN_CACHE_TTL_MS      10000u   /* 10 s — reuse previous results   */
+#define SCAN_CACHE_JSON_MAX    4096u    /* max bytes of cached JSON string  */
+
+static volatile bool s_scan_in_progress = false;
+static uint32_t      s_scan_cache_ts_ms = 0;     /* 0 = cache empty       */
+static char          s_scan_cache_json[SCAN_CACHE_JSON_MAX] = {0};
 
 /* GET /api/wifi/scan - protected, returns JSON scan results */
 static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
@@ -2275,21 +2718,45 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
+    /* ── Cache check: serve previous results if still fresh ── */
+    uint32_t now_cache_ms = (uint32_t)(esp_timer_get_time() / 1000);
+    if (s_scan_cache_ts_ms != 0 &&
+        (now_cache_ms - s_scan_cache_ts_ms) < SCAN_CACHE_TTL_MS &&
+        s_scan_cache_json[0] != '\0') {
+        ESP_LOGI(TAG, "[SCAN] Serving cached results (age=%lums)",
+                 (unsigned long)(now_cache_ms - s_scan_cache_ts_ms));
+        return send_json(req, s_scan_cache_json, "200 OK");
+    }
+
+    /* ── In-progress guard: reject concurrent scan immediately ── */
+    if (s_scan_in_progress) {
+        ESP_LOGW(TAG, "[SCAN] Scan already in progress — returning busy");
+        return send_json(req, "{\"ok\":false,\"error\":\"scan_busy\"}", "503 Service Unavailable");
+    }
+    s_scan_in_progress = true;
+
     wifi_scan_ctx_t ctx;
     ctx.sem = xSemaphoreCreateBinary();
     ctx.count = 0;
     if (!ctx.sem) {
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
 
     if (!wifi_manager_scan(&ctx, scan_complete_cb)) {
         vSemaphoreDelete(ctx.sem);
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"scan_failed\"}", "200 OK");
     }
 
     if (xSemaphoreTake(ctx.sem, pdMS_TO_TICKS(5000)) != pdTRUE) {
         wifi_manager_cancel_scan();
         vSemaphoreDelete(ctx.sem);
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"scan_timeout\"}", "200 OK");
     }
     vSemaphoreDelete(ctx.sem);
@@ -2317,8 +2784,21 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
     char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
     if (!json_str) {
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
+
+    /* ── Store to cache ── */
+    if (strlen(json_str) < SCAN_CACHE_JSON_MAX) {
+        strlcpy(s_scan_cache_json, json_str, SCAN_CACHE_JSON_MAX);
+        s_scan_cache_ts_ms = (uint32_t)(esp_timer_get_time() / 1000);
+        ESP_LOGI(TAG, "[SCAN] Results cached (%zu bytes, TTL=%dms)",
+                 strlen(json_str), SCAN_CACHE_TTL_MS);
+    } else {
+        ESP_LOGW(TAG, "[SCAN] Result too large to cache (%zu bytes)", strlen(json_str));
+    }
+    s_scan_in_progress = false;
+
     esp_err_t result = send_json(req, json_str, "200 OK");
     free(json_str);
 
@@ -2330,6 +2810,10 @@ static esp_err_t handle_api_wifi_connect(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, true)) {
@@ -2499,6 +2983,10 @@ static esp_err_t handle_api_wifi_profiles(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     wifi_profile_t profiles[WIFI_PROFILE_MAX] = {0};
     int count = 0, auto_idx = -1;
     nvs_store_load_wifi_profiles(profiles, &count, &auto_idx);
@@ -2534,6 +3022,10 @@ static esp_err_t handle_api_wifi_profiles_forget(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
@@ -2571,6 +3063,10 @@ static esp_err_t handle_api_wifi_profiles_setauto(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
@@ -2689,6 +3185,10 @@ static esp_err_t handle_api_wifi_disconnect(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     if (!is_same_origin(req, true)) {
         return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
     }
@@ -2741,6 +3241,10 @@ static esp_err_t handle_api_hardware_map_get(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     return api_hardware_map_send(req);
 }
 
@@ -2749,6 +3253,10 @@ static esp_err_t handle_api_hardware_map_post(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, false)) {
@@ -2805,6 +3313,10 @@ static esp_err_t handle_api_pump_config_get(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     nvs_store_pump_settings_t settings;
     nvs_store_pump_settings_load_status_t status = nvs_store_load_pump_settings(&settings);
     if (status == NVS_STORE_PUMP_SETTINGS_DEFAULTS_ERROR) {
@@ -2822,12 +3334,19 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     if (!is_same_origin(req, false)) {
         return send_api_error(req, "forbidden", "Cross-origin pump config save blocked",
                               "403 Forbidden");
     }
 
     char body[512] = {0};
+    if (req->content_len >= sizeof(body)) {
+        return send_api_error(req, "payload_too_large", "Payload Too Large", "413 Request Entity Too Large");
+    }
     if (!read_request_body(req, body, sizeof(body))) {
         return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
     }
@@ -2891,26 +3410,24 @@ static esp_err_t handle_api_pump_status(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    cJSON *root = cJSON_CreateObject();
-    if (!root) {
+    char *json_buf = malloc(2048);
+    if (!json_buf) {
         return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
 
-    cJSON_AddBoolToObject(root, "ok", true);
-    if (!api_pump_add_status_fields(root)) {
-        cJSON_Delete(root);
-        return send_api_error(req, "status_unavailable", "Pump status is unavailable",
-                              "409 Conflict");
+    json_gen_t gen;
+    json_gen_init(&gen, json_buf, 2048);
+    json_gen_start_object(&gen);
+    json_gen_add_bool(&gen, "ok", true);
+    
+    if (!api_pump_add_status_fields_gen(&gen)) {
+        free(json_buf);
+        return send_api_error(req, "status_unavailable", "Pump status is unavailable", "409 Conflict");
     }
+    json_gen_end_object(&gen);
 
-    char *json_str = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
-    if (!json_str) {
-        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
-    }
-
-    esp_err_t result = send_json(req, json_str, "200 OK");
-    free(json_str);
+    esp_err_t result = send_json(req, json_buf, "200 OK");
+    free(json_buf);
     return result;
 }
 
@@ -2921,26 +3438,24 @@ static esp_err_t handle_api_cooling_status(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
-    cJSON *root = cJSON_CreateObject();
-    if (!root) {
+    char *json_buf = malloc(2048);
+    if (!json_buf) {
         return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
 
-    cJSON_AddBoolToObject(root, "ok", true);
-    if (!api_cooling_add_status_fields(root)) {
-        cJSON_Delete(root);
-        return send_api_error(req, "status_unavailable", "Cooling status is unavailable",
-                              "409 Conflict");
+    json_gen_t gen;
+    json_gen_init(&gen, json_buf, 2048);
+    json_gen_start_object(&gen);
+    json_gen_add_bool(&gen, "ok", true);
+    
+    if (!api_cooling_add_status_fields_gen(&gen)) {
+        free(json_buf);
+        return send_api_error(req, "status_unavailable", "Cooling status is unavailable", "409 Conflict");
     }
+    json_gen_end_object(&gen);
 
-    char *json_str = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
-    if (!json_str) {
-        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
-    }
-
-    esp_err_t result = send_json(req, json_str, "200 OK");
-    free(json_str);
+    esp_err_t result = send_json(req, json_buf, "200 OK");
+    free(json_buf);
     return result;
 }
 
@@ -3087,6 +3602,10 @@ static esp_err_t handle_api_pump_start(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     if (!is_same_origin(req, false)) {
         return send_api_error(req, "forbidden", "Cross-origin pump start blocked", "403 Forbidden");
     }
@@ -3134,6 +3653,10 @@ static esp_err_t handle_api_pump_stop(httpd_req_t *req)
 {
     if (!require_auth(req)) {
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
     if (!is_same_origin(req, false)) {
@@ -3194,49 +3717,62 @@ static esp_err_t handle_api_status(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
     }
 
+    if (is_password_default()) {
+        return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
+    }
+
     bool sta_conn = wifi_manager_is_sta_connected();
     bool ap_up = wifi_manager_is_ap_enabled();
 
-    cJSON *root = cJSON_CreateObject();
-    if (!root) {
+    char *json_buf = malloc(2048);
+    if (!json_buf) {
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
-    cJSON_AddBoolToObject(root, "ok", true);
+    json_gen_t gen;
+    json_gen_init(&gen, json_buf, 2048);
+    json_gen_start_object(&gen);
+    
+    json_gen_add_bool(&gen, "ok", true);
 
     /* ---------- System ---------- */
     esp_chip_info_t chip;
     esp_chip_info(&chip);
-    cJSON_AddStringToObject(root, "chip_model", chip_model_to_string(chip.model));
-    cJSON_AddNumberToObject(root, "chip_revision", chip.revision);
-    cJSON_AddNumberToObject(root, "chip_cores", chip.cores);
-    cJSON_AddNumberToObject(root, "cpu_freq_mhz", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
-    cJSON_AddStringToObject(root, "idf_version", esp_get_idf_version());
-    cJSON_AddStringToObject(root, "project_name", APP_TEMPLATE_NAME);
-    cJSON_AddStringToObject(root, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
-    cJSON_AddStringToObject(root, "reset_reason", reset_reason_to_string(esp_reset_reason()));
+    json_gen_add_string_safe(&gen, "chip_model", chip_model_to_string(chip.model));
+    json_gen_add_number(&gen, "chip_revision", (double)(chip.revision));
+    json_gen_add_number(&gen, "chip_cores", (double)(chip.cores));
+    json_gen_add_number(&gen, "cpu_freq_mhz", (double)(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ));
+    json_gen_add_string(&gen, "idf_version", esp_get_idf_version());
+    json_gen_add_string(&gen, "project_name", APP_TEMPLATE_NAME);
+    json_gen_add_string(&gen, "project_version", APP_TEMPLATE_FIRMWARE_VERSION);
+    json_gen_add_string(&gen, "reset_reason", reset_reason_to_string(esp_reset_reason()));
+
+    const char *rst_detail = app_get_last_restart_detail();
+    if (rst_detail && rst_detail[0]) {
+        json_gen_add_string_safe(&gen, "reset_detail", rst_detail);
+    }
 
     /* ---------- MAC addresses ---------- */
     uint8_t mac[6];
     char mac_str[18];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
     format_mac(mac, mac_str);
-    cJSON_AddStringToObject(root, "mac_sta", mac_str);
+    json_gen_add_string(&gen, "mac_sta", mac_str);
     esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP);
     format_mac(mac, mac_str);
-    cJSON_AddStringToObject(root, "mac_ap", mac_str);
+    json_gen_add_string(&gen, "mac_ap", mac_str);
 
     /* ---------- Memory ---------- */
     uint32_t free_heap = wifi_manager_get_free_heap();
     uint32_t min_free_heap = esp_get_minimum_free_heap_size();
     uint32_t total_heap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
     uint32_t largest_free_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
-    cJSON_AddNumberToObject(root, "free_heap", (double)free_heap);
-    cJSON_AddNumberToObject(root, "min_free_heap", (double)min_free_heap);
-    cJSON_AddNumberToObject(root, "total_heap", (double)total_heap);
-    cJSON_AddNumberToObject(root, "largest_free_block", (double)largest_free_block);
+    json_gen_add_number(&gen, "free_heap", (double)(free_heap));
+    json_gen_add_number(&gen, "min_free_heap", (double)(min_free_heap));
+    json_gen_add_number(&gen, "total_heap", (double)(total_heap));
+    json_gen_add_number(&gen, "largest_free_block", (double)(largest_free_block));
 
     /* ---------- Uptime ---------- */
-    cJSON_AddNumberToObject(root, "uptime_ms", (double)wifi_manager_get_uptime_ms());
+    json_gen_add_number(&gen, "uptime_ms", (double)(wifi_manager_get_uptime_ms()));
 
     /* ---------- Wi-Fi ---------- */
     wifi_mode_t wmode;
@@ -3245,16 +3781,16 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     if (wmode == WIFI_MODE_STA)      wmode_str = "STA";
     else if (wmode == WIFI_MODE_AP)  wmode_str = "AP";
     else if (wmode == WIFI_MODE_APSTA) wmode_str = "APSTA";
-    cJSON_AddStringToObject(root, "wifi_mode", wmode_str);
+    json_gen_add_string(&gen, "wifi_mode", wmode_str);
 
     /* AP info */
-    cJSON_AddBoolToObject(root, "ap_enabled", ap_up);
-    cJSON_AddStringToObject(root, "ap_ssid", ap_up ? AP_SSID : "");
-    cJSON_AddStringToObject(root, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
+    json_gen_add_bool(&gen, "ap_enabled", ap_up);
+    json_gen_add_string(&gen, "ap_ssid", ap_up ? AP_SSID : "");
+    json_gen_add_string(&gen, "ap_ip", ap_up ? wifi_manager_get_ap_ip() : "");
 
     wifi_sta_list_t sta_list;
     if (ap_up && esp_wifi_ap_get_sta_list(&sta_list) == ESP_OK) {
-        cJSON_AddNumberToObject(root, "ap_clients", sta_list.num);
+        json_gen_add_number(&gen, "ap_clients", (double)(sta_list.num));
         if (sta_list.num > 0) {
             int8_t weakest_rssi = sta_list.sta[0].rssi;
             for (int i = 1; i < sta_list.num; i++) {
@@ -3262,46 +3798,44 @@ static esp_err_t handle_api_status(httpd_req_t *req)
                     weakest_rssi = sta_list.sta[i].rssi;
                 }
             }
-            cJSON_AddNumberToObject(root, "ap_client_weakest_rssi", weakest_rssi);
+            json_gen_add_number(&gen, "ap_client_weakest_rssi", (double)(weakest_rssi));
         }
     } else {
-        cJSON_AddNumberToObject(root, "ap_clients", 0);
+        json_gen_add_number(&gen, "ap_clients", (double)(0));
     }
 
     /* STA info */
-    cJSON_AddBoolToObject(root, "sta_connected", sta_conn);
-    cJSON_AddBoolToObject(root, "sta_connecting", wifi_manager_is_sta_connecting());
-    cJSON_AddBoolToObject(root, "sta_retry_blocked", wifi_manager_is_sta_retry_blocked());
-    cJSON_AddStringToObject(root, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
-    cJSON_AddStringToObject(root, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
+    json_gen_add_bool(&gen, "sta_connected", sta_conn);
+    json_gen_add_bool(&gen, "sta_connecting", wifi_manager_is_sta_connecting());
+    json_gen_add_bool(&gen, "sta_retry_blocked", wifi_manager_is_sta_retry_blocked());
+    json_gen_add_string(&gen, "sta_ip", sta_conn ? wifi_manager_get_sta_ip() : "");
+    json_gen_add_string_safe(&gen, "sta_ssid", sta_conn ? wifi_manager_get_sta_ssid() : "");
 
     if (sta_conn) {
         wifi_ap_record_t ap_rec;
         if (esp_wifi_sta_get_ap_info(&ap_rec) == ESP_OK) {
-            cJSON_AddNumberToObject(root, "sta_rssi", ap_rec.rssi);
-            cJSON_AddNumberToObject(root, "sta_channel", ap_rec.primary);
-            cJSON_AddStringToObject(root, "sta_auth", wifi_auth_mode_to_string(ap_rec.authmode));
+            json_gen_add_number(&gen, "sta_rssi", (double)(ap_rec.rssi));
+            json_gen_add_number(&gen, "sta_channel", (double)(ap_rec.primary));
+            json_gen_add_string(&gen, "sta_auth", wifi_auth_mode_to_string(ap_rec.authmode));
         }
     }
 
     /* ---------- Services ---------- */
-    cJSON_AddBoolToObject(root, "dns_server", dns_server_is_running());
-    cJSON_AddNumberToObject(root, "http_json_send_failures", s_json_send_failures);
-    cJSON_AddNumberToObject(root, "http_static_send_failures", s_static_send_failures);
-    cJSON_AddNumberToObject(root, "http_static_cache_hits", s_static_cache_hits);
-    cJSON_AddNumberToObject(root, "http_static_deadline_aborts", s_static_deadline_aborts);
+    json_gen_add_bool(&gen, "dns_server", dns_server_is_running());
+    json_gen_add_number(&gen, "http_json_send_failures", (double)(s_json_send_failures));
+    json_gen_add_number(&gen, "http_static_send_failures", (double)(s_static_send_failures));
+    json_gen_add_number(&gen, "http_static_cache_hits", (double)(s_static_cache_hits));
+    json_gen_add_number(&gen, "http_static_deadline_aborts", (double)(s_static_deadline_aborts));
 
     uint8_t stg_type = 0;
     nvs_store_get_staging_type(&stg_type);
-    cJSON_AddNumberToObject(root, "stg_type", stg_type);
+    json_gen_add_number(&gen, "stg_type", (double)(stg_type));
 
-    char *json_str = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
-    if (!json_str) {
-        return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
-    }
-    esp_err_t result = send_json(req, json_str, "200 OK");
-    free(json_str);
+    json_gen_end_object(&gen);
+    
+    
+    esp_err_t result = send_json(req, json_buf, "200 OK");
+    free(json_buf);
     return result;
 }
 
@@ -3325,9 +3859,20 @@ static esp_err_t handle_api_confirm_post(httpd_req_t *req)
         } else {
             session_invalidate_others(NULL);
         }
+        if (s_password_state_mutex) {
+            if (xSemaphoreTake(s_password_state_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
+                ESP_LOGE(TAG, "[MUTEX] password_state timeout in confirm_post — cache may be stale");
+                /* Non-fatal: cache will be invalidated on next read; continue with response */
+            } else {
+                s_password_state_initialized = false;
+                xSemaphoreGive(s_password_state_mutex);
+            }
+        } else {
+            s_password_state_initialized = false;
+        }
     }
 
-    g_cancel_rollback_timer = true;
+    atomic_store(&g_cancel_rollback_timer, true);
 
     return send_json(req, "{\"ok\":true}", "200 OK");
 }
@@ -3349,37 +3894,247 @@ static esp_err_t handle_api_confirm_delete(httpd_req_t *req)
         ESP_LOGI(TAG, "Rolled back staged changes type=%d, rebooting", stg_type);
     }
 
-    g_cancel_rollback_timer = true;
+    atomic_store(&g_cancel_rollback_timer, true);
 
+    nvs_store_set_restart_detail("USER_ROLLBACK");
     schedule_delayed_reboot();
 
     return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
 }
 
+/* POST /api/ota - OTA upload handler */
+static esp_err_t handle_api_ota(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+    if (!is_same_origin(req, true)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"forbidden\"}", "403 Forbidden");
+    }
+
+    if (req->content_len == 0) {
+        return send_json(req, "{\"ok\":false,\"error\":\"empty_file\"}", "400 Bad Request");
+    }
+    if (req->content_len > 0x1E0000) {
+        return send_json(req, "{\"ok\":false,\"error\":\"file_too_large\"}", "413 Payload Too Large");
+    }
+
+    const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
+    if (update_partition == NULL) {
+        ESP_LOGE(TAG, "No OTA partition found");
+        return send_json(req, "{\"ok\":false,\"error\":\"no_ota_partition\"}", "500 Internal Server Error");
+    }
+
+    ESP_LOGI(TAG, "Writing OTA to partition subtype %d at offset 0x%lx",
+             update_partition->subtype, (unsigned long)update_partition->address);
+
+    esp_ota_handle_t ota_handle = 0;
+    esp_err_t err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
+        return send_json(req, "{\"ok\":false,\"error\":\"ota_begin_failed\"}", "500 Internal Server Error");
+    }
+
+    char buf[1024];
+    int remaining = req->content_len;
+    
+    // --- Pre-Encrypted OTA Setup ---
+    unsigned char iv[16];
+    size_t iv_received = 0;
+    unsigned char stream_block[16] = {0};
+    size_t nc_off = 0;
+    
+    esp_aes_context aes;
+    esp_aes_init(&aes);
+    
+    unsigned char key[32];
+    const char* key_hex = APP_CONFIG_OTA_ENCRYPTION_KEY;
+    if (strlen(key_hex) != 64) {
+        return send_json(req, "{\"ok\":false,\"error\":\"invalid_ota_key\"}", "500 Internal Server Error");
+    }
+    for (int i = 0; i < 32; i++) {
+        sscanf(key_hex + 2*i, "%2hhx", &key[i]);
+    }
+    esp_aes_setkey(&aes, key, 256);
+    // -------------------------------
+
+    while (remaining > 0) {
+        int recv_len = httpd_req_recv(req, buf, remaining < sizeof(buf) ? remaining : sizeof(buf));
+        if (recv_len < 0) {
+            if (recv_len == HTTPD_SOCK_ERR_TIMEOUT) {
+                continue;
+            }
+            ESP_LOGE(TAG, "Error receiving OTA data");
+            esp_ota_abort(ota_handle);
+            esp_aes_free(&aes);
+            return send_json(req, "{\"ok\":false,\"error\":\"recv_failed\"}", "500 Internal Server Error");
+        }
+        
+        if (recv_len > 0) {
+            int process_offset = 0;
+            
+            if (iv_received < 16) {
+                int to_copy = 16 - iv_received;
+                if (to_copy > recv_len) to_copy = recv_len;
+                memcpy(iv + iv_received, buf, to_copy);
+                iv_received += to_copy;
+                process_offset += to_copy;
+            }
+            
+            if (iv_received == 16 && process_offset < recv_len) {
+                int data_len = recv_len - process_offset;
+                unsigned char *data_ptr = (unsigned char *)buf + process_offset;
+                
+                esp_aes_crypt_ctr(&aes, data_len, &nc_off, iv, stream_block, data_ptr, data_ptr);
+                
+                err = esp_ota_write(ota_handle, data_ptr, data_len);
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "esp_ota_write failed (%s)", esp_err_to_name(err));
+                    esp_ota_abort(ota_handle);
+                    esp_aes_free(&aes);
+                    return send_json(req, "{\"ok\":false,\"error\":\"ota_write_failed\"}", "500 Internal Server Error");
+                }
+            }
+            
+            remaining -= recv_len;
+            vTaskDelay(1);
+            s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
+        } else if (recv_len == 0) {
+            break;
+        }
+    }
+    
+    esp_aes_free(&aes);
+
+    if (remaining > 0) {
+        ESP_LOGE(TAG, "Incomplete OTA transfer");
+        esp_ota_abort(ota_handle);
+        return send_json(req, "{\"ok\":false,\"error\":\"incomplete\"}", "500 Internal Server Error");
+    }
+
+    err = esp_ota_end(ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end failed (%s)", esp_err_to_name(err));
+        return send_json(req, "{\"ok\":false,\"error\":\"ota_end_failed\"}", "500 Internal Server Error");
+    }
+
+    err = esp_ota_set_boot_partition(update_partition);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)", esp_err_to_name(err));
+        return send_json(req, "{\"ok\":false,\"error\":\"ota_set_boot_failed\"}", "500 Internal Server Error");
+    }
+
+    ESP_LOGI(TAG, "OTA successful, rebooting...");
+    nvs_store_set_restart_detail("OTA_REBOOT");
+    schedule_delayed_reboot();
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
 /* --------------- Server Start --------------- */
+
+/* A9: display wake endpoint — resets backlight idle timer */
+static esp_err_t handle_display_wake(httpd_req_t *req) {
+    tft_display_reset_idle_timer();
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
+
+/* GET /api/display/config - protected, return current display idle dim setting */
+static esp_err_t handle_api_display_config_get(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    uint8_t dim_pct = tft_display_get_idle_dim_percent();
+    uint8_t nvs_dim = dim_pct;
+    nvs_store_load_display_settings(&nvs_dim);
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddNumberToObject(root, "dim_percent", dim_pct);
+    cJSON_AddNumberToObject(root, "nvs_dim_percent", nvs_dim);
+    char *json_str = cJSON_PrintUnformatted(root);
+    esp_err_t ret = send_json(req, json_str, "200 OK");
+    free(json_str);
+    cJSON_Delete(root);
+    return ret;
+}
+
+/* POST /api/display/config - protected, save new display idle dim setting */
+static esp_err_t handle_api_display_config_post(httpd_req_t *req)
+{
+    if (!require_auth(req)) {
+        return send_json(req, "{\"ok\":false,\"error\":\"unauthorized\"}", "401 Unauthorized");
+    }
+
+    if (!is_same_origin(req, false)) {
+        return send_api_error(req, "forbidden", "Cross-origin display config save blocked", "403 Forbidden");
+    }
+
+    char body[128] = {0};
+    if (!read_request_body(req, body, sizeof(body))) {
+        return send_api_error(req, "empty_body", "Request body is required", "400 Bad Request");
+    }
+
+    cJSON *root = cJSON_Parse(body);
+    if (!root || !cJSON_IsObject(root)) {
+        if (root) cJSON_Delete(root);
+        return send_api_error(req, "invalid_json", "Expected a JSON object", "400 Bad Request");
+    }
+
+    cJSON *dim_item = cJSON_GetObjectItemCaseSensitive(root, "dim_percent");
+    if (!cJSON_IsNumber(dim_item) || dim_item->valueint < 0 || dim_item->valueint > 100) {
+        cJSON_Delete(root);
+        return send_api_error(req, "invalid_parameter", "dim_percent must be an integer between 0 and 100", "400 Bad Request");
+    }
+
+    cJSON *save_item = cJSON_GetObjectItemCaseSensitive(root, "save");
+    bool do_save = true;
+    if (cJSON_IsBool(save_item)) {
+        do_save = cJSON_IsTrue(save_item);
+    }
+
+    uint8_t new_dim = (uint8_t)dim_item->valueint;
+    cJSON_Delete(root);
+
+    if (do_save) {
+        if (!nvs_store_save_display_settings(new_dim)) {
+            ESP_LOGE(TAG, "Failed to save display settings to NVS");
+            return send_api_error(req, "save_failed", "Failed to save to NVS", "500 Internal Server Error");
+        }
+    }
+
+    tft_display_set_idle_dim_percent(new_dim);
+    
+    /* A9 UX: Preview the new dim setting immediately instead of waking to 100%. */
+    tft_display_set_brightness(new_dim);
+
+    return send_json(req, "{\"ok\":true}", "200 OK");
+}
 
 static web_route_diag_t s_routes[] = {
     { .uri = "/",              .method = HTTP_GET,  .handler = handle_root },
     { .uri = "/login",         .method = HTTP_GET,  .handler = handle_get_login },
     { .uri = "/dashboard",     .method = HTTP_GET,  .handler = handle_get_dashboard },
+    { .uri = "/ota",           .method = HTTP_GET,  .handler = handle_get_ota },
     { .uri = "/status",        .method = HTTP_GET,  .handler = handle_get_status },
     { .uri = "/wifi",          .method = HTTP_GET,  .handler = handle_get_wifi },
     { .uri = "/hardware",      .method = HTTP_GET,  .handler = handle_get_hardware },
+    { .uri = "/api/ota",       .method = HTTP_POST, .handler = handle_api_ota },
     { .uri = "/style.css",     .method = HTTP_GET,  .handler = handle_style_css },
     { .uri = "/app.js",        .method = HTTP_GET,  .handler = handle_app_js },
     { .uri = "/ibm_plex_sans_thai_400_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_latin_woff2 },
     { .uri = "/ibm_plex_sans_thai_400_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_400_thai_woff2 },
-    { .uri = "/ibm_plex_sans_thai_600_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_600_latin_woff2 },
-    { .uri = "/ibm_plex_sans_thai_600_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_600_thai_woff2 },
     { .uri = "/ibm_plex_sans_thai_700_latin.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_700_latin_woff2 },
     { .uri = "/ibm_plex_sans_thai_700_thai.woff2", .method = HTTP_GET, .handler = handle_ibm_plex_sans_thai_700_thai_woff2 },
     { .uri = "/jetbrains_mono_400_latin.woff2", .method = HTTP_GET, .handler = handle_jetbrains_mono_400_latin_woff2 },
-    { .uri = "/jetbrains_mono_700_latin.woff2", .method = HTTP_GET, .handler = handle_jetbrains_mono_700_latin_woff2 },
     { .uri = "/favicon.ico",   .method = HTTP_GET,  .handler = handle_favicon },
     { .uri = "/connecttest.txt", .method = HTTP_GET, .handler = handle_captive_probe },
     { .uri = "/generate_204",   .method = HTTP_GET,  .handler = handle_captive_probe },
     { .uri = "/hotspot-detect.html", .method = HTTP_GET, .handler = handle_captive_probe },
     { .uri = "/ncsi.txt",       .method = HTTP_GET,  .handler = handle_captive_probe },
+    { .uri = "/api/change-password", .method = HTTP_POST, .handler = handle_api_change_password },
     { .uri = "/api/login",     .method = HTTP_POST, .handler = handle_api_login },
     { .uri = "/api/logout",    .method = HTTP_POST, .handler = handle_api_logout },
     { .uri = "/api/auth/nonce",.method = HTTP_GET,  .handler = handle_api_auth_nonce },
@@ -3406,6 +4161,9 @@ static web_route_diag_t s_routes[] = {
 
     { .uri = "/api/pump/start",  .method = HTTP_POST, .handler = handle_api_pump_start },
     { .uri = "/api/pump/stop",   .method = HTTP_POST, .handler = handle_api_pump_stop },
+    { .uri = "/api/display/wake",.method = HTTP_POST, .handler = handle_display_wake },
+    { .uri = "/api/display/config", .method = HTTP_GET,  .handler = handle_api_display_config_get },
+    { .uri = "/api/display/config", .method = HTTP_POST, .handler = handle_api_display_config_post },
 };
 
 static esp_err_t handle_instrumented_route(httpd_req_t *req)
@@ -3419,6 +4177,11 @@ static esp_err_t handle_instrumented_route(httpd_req_t *req)
     }
 
     int64_t start_ms = esp_timer_get_time() / 1000;
+    /* Touch alive timestamp: prevents false-positive HTTP_HUNG during
+     * legitimate slow handlers. The health-check work is queued-based
+     * and only runs when httpd task is idle; this ensures the clock
+     * resets when a handler starts, not only when the queue drains. */
+    s_httpd_last_alive_ms = (uint32_t)start_ms;
     taskENTER_CRITICAL(&s_web_diag_lock);
     s_web_diag.requests_started++;
     s_web_diag.active_handlers++;
@@ -3426,6 +4189,13 @@ static esp_err_t handle_instrumented_route(httpd_req_t *req)
         s_web_diag.peak_active_handlers = s_web_diag.active_handlers;
     }
     taskEXIT_CRITICAL(&s_web_diag_lock);
+
+    if (route->method == HTTP_POST) {
+        /* Do not wake screen for config/preview adjustments */
+        if (strcmp(route->uri, "/api/display/config") != 0) {
+            tft_display_reset_idle_timer();
+        }
+    }
 
     esp_err_t result = route->handler(req);
     uint32_t duration_ms = (uint32_t)((esp_timer_get_time() / 1000) - start_ms);
@@ -3538,8 +4308,48 @@ void web_server_log_diagnostics(void)
     }
 }
 
+// ============================================================================
+// HEALTH CHECK
+// ============================================================================
+
+static void httpd_health_check_work(void *arg)
+{
+    (void)arg;
+    s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
+}
+
+bool web_server_queue_health_check(void)
+{
+    if (s_server) {
+        return (httpd_queue_work(s_server, httpd_health_check_work, NULL) == ESP_OK);
+    }
+    return true;
+}
+
+bool web_server_check_health(uint32_t timeout_ms)
+{
+    if (!s_server) {
+        return true; // Not started yet, ignore
+    }
+    uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000);
+    if ((now_ms - s_httpd_last_alive_ms) > timeout_ms) {
+        return false;
+    }
+    return true;
+}
+
 bool web_server_start(void)
 {
+    /* --- One-time resource allocation (safe here: task context, no ISR) --- */
+    if (s_login_rate_limit_mutex == NULL) {
+        s_login_rate_limit_mutex = xSemaphoreCreateMutex();
+        configASSERT(s_login_rate_limit_mutex != NULL);
+    }
+    if (s_password_state_mutex == NULL) {
+        s_password_state_mutex = xSemaphoreCreateMutex();
+        configASSERT(s_password_state_mutex != NULL);
+    }
+
     if (s_server) {
         return true;
     }
@@ -3551,9 +4361,11 @@ bool web_server_start(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = APP_TEMPLATE_HTTP_MAX_URI_HANDLERS;
     config.max_open_sockets = APP_TEMPLATE_HTTP_MAX_OPEN_SOCKETS;
+    config.backlog_conn = 5;  /* reduced to match lower max_open_sockets */
     config.recv_wait_timeout = APP_TEMPLATE_HTTP_RECV_TIMEOUT_SEC;
     config.send_wait_timeout = APP_TEMPLATE_HTTP_SEND_TIMEOUT_SEC;
     config.lru_purge_enable = true;
+    config.stack_size = 8192;   /* A7 audit: handlers allocate large on-stack structs; 4096 default insufficient */
     config.keep_alive_enable = true;
     config.keep_alive_idle = APP_TEMPLATE_HTTP_KEEP_ALIVE_IDLE_SEC;
     config.keep_alive_interval = APP_TEMPLATE_HTTP_KEEP_ALIVE_INTERVAL_SEC;
@@ -3570,6 +4382,11 @@ bool web_server_start(void)
         s_server = NULL;
         return false;
     }
+
+    s_httpd_last_alive_ms = (uint32_t)(esp_timer_get_time() / 1000);
+
+    /* Register global 404 handler for captive portal routing of random domains */
+    httpd_register_err_handler(s_server, HTTPD_404_NOT_FOUND, captive_portal_404_handler);
 
     bool route_registration_failed = false;
     for (size_t i = 0; i < sizeof(s_routes) / sizeof(s_routes[0]); i++) {
