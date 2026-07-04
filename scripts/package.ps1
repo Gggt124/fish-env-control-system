@@ -1,10 +1,10 @@
 ﻿<#
 .SYNOPSIS
-    à¹€à¸à¹‡à¸šà¹„à¸Ÿà¸¥à¹Œ .bin à¸ˆà¸²à¸ build/ à¹à¸¥à¸°à¸ªà¸„à¸£à¸´à¸›à¸•à¹Œà¹€à¸ªà¸£à¸´à¸¡ à¹€à¸žà¸·à¹ˆà¸­à¹€à¸•à¸£à¸µà¸¢à¸¡à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œ flash-package/ à¸ªà¸³à¸«à¸£à¸±à¸šà¹à¸ˆà¸à¸¥à¸¹à¸à¸„à¹‰à¸²
+    Ã Â¹â‚¬Ã Â¸ÂÃ Â¹â€¡Ã Â¸Å¡Ã Â¹â€žÃ Â¸Å¸Ã Â¸Â¥Ã Â¹Å’ .bin Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â build/ Ã Â¹ÂÃ Â¸Â¥Ã Â¸Â°Ã Â¸ÂªÃ Â¸â€žÃ Â¸Â£Ã Â¸Â´Ã Â¸â€ºÃ Â¸â€¢Ã Â¹Å’Ã Â¹â‚¬Ã Â¸ÂªÃ Â¸Â£Ã Â¸Â´Ã Â¸Â¡ Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¹â‚¬Ã Â¸â€¢Ã Â¸Â£Ã Â¸ÂµÃ Â¸Â¢Ã Â¸Â¡Ã Â¹â€šÃ Â¸Å¸Ã Â¸Â¥Ã Â¹â‚¬Ã Â¸â€Ã Â¸Â­Ã Â¸Â£Ã Â¹Å’ flash-package/ Ã Â¸ÂªÃ Â¸Â³Ã Â¸Â«Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¹ÂÃ Â¸Ë†Ã Â¸ÂÃ Â¸Â¥Ã Â¸Â¹Ã Â¸ÂÃ Â¸â€žÃ Â¹â€°Ã Â¸Â²
 .PARAMETER OutputDir
-    Path à¸›à¸¥à¸²à¸¢à¸—à¸²à¸‡à¸‚à¸­à¸‡ flash-package/ (default: .\flash-package)
+    Path Ã Â¸â€ºÃ Â¸Â¥Ã Â¸Â²Ã Â¸Â¢Ã Â¸â€”Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ flash-package/ (default: .\flash-package)
 .PARAMETER Zip
-    à¹€à¸›à¸´à¸”à¹€à¸žà¸·à¹ˆà¸­ pass flag à¸™à¸µà¹‰à¹€à¸žà¸·à¹ˆà¸­à¸ªà¸±à¹ˆà¸‡ zip flash-package/ à¹€à¸›à¹‡à¸™ flash-package.zip à¸”à¹‰à¸§à¸¢
+    Ã Â¹â‚¬Ã Â¸â€ºÃ Â¸Â´Ã Â¸â€Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­ pass flag Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡ zip flash-package/ Ã Â¹â‚¬Ã Â¸â€ºÃ Â¹â€¡Ã Â¸â„¢ flash-package.zip Ã Â¸â€Ã Â¹â€°Ã Â¸Â§Ã Â¸Â¢
 .EXAMPLE
     .\scripts\package.ps1
     .\scripts\package.ps1 -Zip
@@ -21,7 +21,7 @@ $ProjectRoot = Split-Path $PSScriptRoot -Parent
 $BuildDir    = Join-Path $ProjectRoot "build"
 $ScriptsDir  = $PSScriptRoot
 
-# --- à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹„à¸Ÿà¸¥à¹Œ binary à¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™à¸•à¹‰à¸­à¸‡à¹ƒà¸Šà¹‰ ---
+# --- Ã Â¸â€¢Ã Â¸Â£Ã Â¸Â§Ã Â¸Ë†Ã Â¸ÂªÃ Â¸Â­Ã Â¸Å¡Ã Â¹â€žÃ Â¸Å¸Ã Â¸Â¥Ã Â¹Å’ binary Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Ë†Ã Â¸Â³Ã Â¹â‚¬Ã Â¸â€ºÃ Â¹â€¡Ã Â¸â„¢Ã Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¹Æ’Ã Â¸Å Ã Â¹â€° ---
 $RequiredBinaries = [ordered]@{
     "bootloader/bootloader.bin"                 = "firmware\bootloader.bin"
     "partition_table/partition-table.bin"       = "firmware\partition-table.bin"
@@ -37,6 +37,9 @@ foreach ($src in $RequiredBinaries.Keys) {
 }
 
 # --- à¹€à¸•à¸£à¸µà¸¢à¸¡à¹‚à¸„à¸£à¸‡à¸ªà¸£à¹‰à¸²à¸‡ output directory ---
+if (Test-Path $OutputDir) {
+    Remove-Item $OutputDir -Recurse -Force
+}
 $FirmwareDir = Join-Path $OutputDir "firmware"
 $ToolsDir    = Join-Path $OutputDir "tools"
 
