@@ -2689,6 +2689,16 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     return send_json(req, "{\"ok\":true,\"reboot_pending\":true}", "200 OK");
 }
 
+/* ── Scan result cache ──────────────────────────────────────────────────── */
+/* Serves cached results for SCAN_CACHE_TTL_MS ms to prevent httpd task    */
+/* blocking on back-to-back scan requests.                                  */
+#define SCAN_CACHE_TTL_MS      10000u   /* 10 s — reuse previous results   */
+#define SCAN_CACHE_JSON_MAX    4096u    /* max bytes of cached JSON string  */
+
+static volatile bool s_scan_in_progress = false;
+static uint32_t      s_scan_cache_ts_ms = 0;     /* 0 = cache empty       */
+static char          s_scan_cache_json[SCAN_CACHE_JSON_MAX] = {0};
+
 /* GET /api/wifi/scan - protected, returns JSON scan results */
 static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
 {
@@ -2700,21 +2710,41 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
         return send_json(req, "{\"ok\":false,\"error\":\"force_password_change\"}", "403 Forbidden");
     }
 
+    /* ── Cache check: serve previous results if still fresh ── */
+    uint32_t now_cache_ms = (uint32_t)(esp_timer_get_time() / 1000);
+    if (s_scan_cache_ts_ms != 0 &&
+        (now_cache_ms - s_scan_cache_ts_ms) < SCAN_CACHE_TTL_MS &&
+        s_scan_cache_json[0] != '\0') {
+        ESP_LOGI(TAG, "[SCAN] Serving cached results (age=%lums)",
+                 (unsigned long)(now_cache_ms - s_scan_cache_ts_ms));
+        return send_json(req, s_scan_cache_json, "200 OK");
+    }
+
+    /* ── In-progress guard: reject concurrent scan immediately ── */
+    if (s_scan_in_progress) {
+        ESP_LOGW(TAG, "[SCAN] Scan already in progress — returning busy");
+        return send_json(req, "{\"ok\":false,\"error\":\"scan_busy\"}", "503 Service Unavailable");
+    }
+    s_scan_in_progress = true;
+
     wifi_scan_ctx_t ctx;
     ctx.sem = xSemaphoreCreateBinary();
     ctx.count = 0;
     if (!ctx.sem) {
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
 
     if (!wifi_manager_scan(&ctx, scan_complete_cb)) {
         vSemaphoreDelete(ctx.sem);
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"scan_failed\"}", "200 OK");
     }
 
     if (xSemaphoreTake(ctx.sem, pdMS_TO_TICKS(5000)) != pdTRUE) {
         wifi_manager_cancel_scan();
         vSemaphoreDelete(ctx.sem);
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"scan_timeout\"}", "200 OK");
     }
     vSemaphoreDelete(ctx.sem);
@@ -2742,8 +2772,21 @@ static esp_err_t handle_api_wifi_scan(httpd_req_t *req)
     char *json_str = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
     if (!json_str) {
+        s_scan_in_progress = false;
         return send_json(req, "{\"ok\":false,\"error\":\"memory\"}", "500 Internal Server Error");
     }
+
+    /* ── Store to cache ── */
+    if (strlen(json_str) < SCAN_CACHE_JSON_MAX) {
+        strlcpy(s_scan_cache_json, json_str, SCAN_CACHE_JSON_MAX);
+        s_scan_cache_ts_ms = (uint32_t)(esp_timer_get_time() / 1000);
+        ESP_LOGI(TAG, "[SCAN] Results cached (%zu bytes, TTL=%dms)",
+                 strlen(json_str), SCAN_CACHE_TTL_MS);
+    } else {
+        ESP_LOGW(TAG, "[SCAN] Result too large to cache (%zu bytes)", strlen(json_str));
+    }
+    s_scan_in_progress = false;
+
     esp_err_t result = send_json(req, json_str, "200 OK");
     free(json_str);
 
