@@ -57,7 +57,7 @@ Write-Host ""
 Write-Host "กำลังอ่าน MAC address ผ่าน $Port ..." -ForegroundColor Cyan
 
 # --- อ่าน MAC ---
-$macOutput = python -m esptool --chip esp32 --port $Port read_mac 2>&1
+$macOutput = python -m esptool --chip esp32 --baud 230400 --port $Port read_mac 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: อ่าน MAC ไม่ได้ โปรดตรวจสอบการเชื่อมต่อ" -ForegroundColor Red
     Read-Host "กด Enter เพื่อปิด"; exit 1
