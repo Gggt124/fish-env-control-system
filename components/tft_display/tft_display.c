@@ -21,6 +21,14 @@
 #include <stdio.h>
 #include <string.h>
 
+/* SPI host selection: S3-WROOM-1 Octal PSRAM occupies SPI3_HOST pins internally.
+ * Use SPI2_HOST (FSPI) on S3; keep SPI3_HOST (VSPI) on classic ESP32. */
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+#define TFT_SPI_HOST  SPI2_HOST
+#else
+#define TFT_SPI_HOST  SPI3_HOST
+#endif
+
 static const char *TAG = "TFT_DISPLAY";
 
 static esp_lcd_panel_handle_t s_panel_handle = NULL;
@@ -40,7 +48,7 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
 }
 
 esp_err_t tft_display_init(void) {
-    ESP_LOGI(TAG, "Initializing TFT display on VSPI (SPI3_HOST)");
+    ESP_LOGI(TAG, "Initializing TFT display on SPI host %d", (int)TFT_SPI_HOST);
     esp_err_t ret = ESP_OK;
     esp_lcd_panel_io_handle_t io_handle = NULL;
     bool spi_initialized = false;
@@ -90,7 +98,7 @@ esp_err_t tft_display_init(void) {
     ESP_LOGI(TAG, "Backlight PWM configured at 100%%");
     atomic_store(&s_last_activity_sec, (uint32_t)(esp_timer_get_time() / 1000000ULL));  /* start idle timer from boot */
 
-    // 3. Initialize SPI Bus on SPI3_HOST (VSPI)
+    // 3. Initialize SPI Bus (SPI2_HOST/FSPI on S3, SPI3_HOST/VSPI on classic ESP32)
     spi_bus_config_t buscfg = {
         .sclk_io_num = APP_TEMPLATE_TFT_SCK_GPIO,
         .mosi_io_num = APP_TEMPLATE_TFT_MOSI_GPIO,
@@ -99,7 +107,7 @@ esp_err_t tft_display_init(void) {
         .quadhd_io_num = -1,
         .max_transfer_sz = TFT_WIDTH * 32 * sizeof(uint16_t),
     };
-    ret = spi_bus_initialize(SPI3_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    ret = spi_bus_initialize(TFT_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
         goto err;
@@ -117,7 +125,7 @@ esp_err_t tft_display_init(void) {
         .trans_queue_depth = 10,
         .on_color_trans_done = on_color_trans_done,
     };
-    ret = esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)SPI3_HOST, &io_config, &io_handle);
+    ret = esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TFT_SPI_HOST, &io_config, &io_handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create panel IO: %s", esp_err_to_name(ret));
         goto err;
