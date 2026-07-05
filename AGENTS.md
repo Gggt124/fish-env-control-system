@@ -281,6 +281,8 @@ Session cookie is **non-HttpOnly** by design — JavaScript needs to read `docum
 
 Namespace `wifi_cfg`: `sta_ssid` (string), `sta_pass` (string)
 
+> **Note:** The partition table filename (`CONFIG_PARTITION_TABLE_CUSTOM_FILENAME`) is now defined per-target in `sdkconfig.defaults.esp32` and `sdkconfig.defaults.esp32s3`, rather than in the shared file.
+
 ## Validation
 
 ```powershell

@@ -30,6 +30,21 @@ We use PowerShell scripts to manage the dual-target builds.
 3. Connect your device to the Wi-Fi AP named `FishPump-Setup` (IP: `192.168.4.1`).
 4. Access the web dashboard at `http://192.168.4.1` with default credentials `admin` / `admin123`.
 
+## Building for ESP32-S3
+
+This project includes a dedicated hardware profile for the **ESP32-S3-DevKitC-1 WROOM-1-N16R8** (16 MB Flash, 8 MB Octal PSRAM).
+
+- **Build command**: `.\scripts\build.ps1 -Target esp32s3`
+- **Output directory**: `build-esp32s3\`
+- **Flash-package**: run `FLASH.bat` and select option `2` for ESP32-S3
+
+> **Warning:** **S3 USB Console**: The S3 profile routes monitor output to the native USB Serial/JTAG port. **Connect your cable to the "USB" port** on the DevKitC-1, not the "UART" port. If you use the UART port, you will see no monitor output!
+
+When monitoring the boot log, you should see PSRAM detection:
+```text
+esp_psram: Found 8MB PSRAM device
+```
+
 ## Usage Examples
 
 ### Web Dashboard
