@@ -1,6 +1,8 @@
-CONFIG_IDF_TARGET="esp32"
+# Shared sdkconfig.defaults -- chip-agnostic settings only.
+# DO NOT add CONFIG_IDF_TARGET, flash size, flash mode, brownout level, or
+# partition filename here -- those live in sdkconfig.defaults.esp32 / sdkconfig.defaults.esp32s3.
+
 CONFIG_PARTITION_TABLE_CUSTOM=y
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 CONFIG_PARTITION_TABLE_OFFSET=0x10000
 
 # Development workflow: plain idf.py flash. Re-enable encryption only for production hardening.
@@ -8,14 +10,10 @@ CONFIG_PARTITION_TABLE_OFFSET=0x10000
 CONFIG_NVS_ENCRYPTION=y
 CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME_FLASH_ENC_BASED=y
 # Note: NVS remains plaintext until Flash Encryption is fully enabled in Release mode.
-# When Flash Encryption is enabled, NVS will automatically be encrypted.
 
 # Bootloader defaults
 CONFIG_BOOTLOADER_COMPILE_TIME_DATE=n
 CONFIG_BOOTLOADER_LOG_LEVEL_ERROR=y
-
-# Flash size: actual hardware is 4MB
-CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
 # Disable ESP-IDF auto TWDT init (we init it ourselves in app_main with 10s timeout + panic)
 # CONFIG_ESP_TASK_WDT_INIT is not set
@@ -27,14 +25,13 @@ CONFIG_LWIP_MAX_SOCKETS=32
 CONFIG_LWIP_MAX_ACTIVE_TCP=32
 
 # Runtime stats: enables CPU load measurement via idle task counters.
-# Adds ~1µs overhead per context switch (negligible at 160MHz).
 CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y
 CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
 
-# Main task stack: default 3584 too tight (HWM=932). Increase for safety margin.
+# Main task stack: default 3584 too tight. Increase for safety margin.
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=4608
 
-# Stack overflow detection: method 2 (stack pointer canary check) panics on overflow instead of silently corrupting memory.
+# Stack overflow detection: panics on overflow instead of silently corrupting memory.
 CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY=y
 
 # Task list formatting for debugging
@@ -44,24 +41,19 @@ CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 # Coredump configuration for crash analysis
 CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
 
-# Brownout detector: lowered threshold to level 2 (~2.53V) 
-# to be more tolerant of relay-induced voltage sags while preventing logic instability.
+# Brownout detector enabled (level set per-target in sdkconfig.defaults.<target>)
 CONFIG_ESP_BROWNOUT_DET=y
-CONFIG_ESP_BROWNOUT_DET_LVL_SEL_2=y
 
 # OTA: Rollback if firmware never calls esp_ota_mark_app_valid_cancel_rollback()
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
 
-# ─── Logging: Production profile ────────────────────────────────────────────
-# Compile-time maximum = INFO  (LOGD/LOGV stripped from binary)
+# Logging: Production profile
+# Compile-time maximum = INFO (LOGD/LOGV stripped from binary)
 # Default runtime level = WARN (noisy 3rd-party libs stay quiet)
-# App modules are raised to INFO at runtime inside app_main (see below).
-# To debug a live device without reflashing, use esp_log_level_set() via
-# the web console terminal or serial monitor.
 CONFIG_LOG_DEFAULT_LEVEL_WARN=y
 CONFIG_LOG_DEFAULT_LEVEL=2
 CONFIG_LOG_MAXIMUM_EQUALS_DEFAULT=n
 CONFIG_LOG_MAXIMUM_LEVEL_INFO=y
 CONFIG_LOG_MAXIMUM_LEVEL=3
-# Disable IRAM log path — saves ~1.5KB IRAM, acceptable for production.
+# Disable IRAM log path -- saves ~1.5KB IRAM, acceptable for production.
 CONFIG_LOG_IN_IRAM=n

@@ -1,0 +1,12 @@
+# ESP32 classic (DevKit V1 30-pin) -- 4 MB Flash, DIO mode, 40 MHz
+# Loaded automatically by ESP-IDF v5+ after sdkconfig.defaults when target=esp32.
+
+CONFIG_IDF_TARGET="esp32"
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_esp32.csv"
+
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+
+# Brownout level 2 (~2.53V) -- tolerant of relay-induced voltage sags
+CONFIG_ESP_BROWNOUT_DET_LVL_SEL_2=y
