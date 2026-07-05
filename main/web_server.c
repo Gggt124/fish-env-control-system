@@ -2685,6 +2685,11 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     const char *new_user_str = (nu && cJSON_IsString(nu) && strlen(nu->valuestring) > 0) ? nu->valuestring : stored_user;
     const char *new_pass_str = np->valuestring;
 
+    if (strcmp(new_pass_str, APP_TEMPLATE_DEFAULT_PASSWORD) == 0) {
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"cannot_use_default\"}", "400 Bad Request");
+    }
+
     if (!is_valid_utf8_printable(new_user_str, 64) || !is_valid_utf8_printable(new_pass_str, 64)) {
         cJSON_Delete(root);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
