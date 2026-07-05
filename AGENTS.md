@@ -10,15 +10,15 @@ The control logic is intentionally simple and hardware-real: the float switch is
 
 **Core Value:** The pump must switch reliably between Timer 1 and Timer 2 based on the float switch and drive the relay safely according to the selected timer's ON/OFF cycle.
 
-- **Target**: ESP32 DevKit V1 (classic ESP32), ESP-IDF framework only (not Arduino/PlatformIO)
+- **Target**: Dual profiles: ESP32 classic and ESP32-S3. ESP-IDF framework only (not Arduino/PlatformIO).
 - **Framework**: ESP-IDF only — the repository is not Arduino or PlatformIO.
-- **Board**: ESP32 DevKit V1 30-pin / classic ESP32 — pin recommendations and build target assume this board.
+- **Board**: Supports both **ESP32 DevKit V1 30-pin** (4MB flash) and **ESP32-S3-DevKitC-1 WROOM-1-N16R8** (16MB flash, 8MB PSRAM).
 - **Float input**: Binary switch only — do not model real hardware as continuous water level.
 - **GPIO safety**: Use conservative default pins and configurable polarity — relay modules vary and wrong polarity can energize the pump unexpectedly.
 - **Boot behavior**: Auto-start is disabled by default and must be user-configurable and persisted.
 - **Local operation**: UI must work without internet because SoftAP setup mode has no external connectivity.
 - **Existing foundation**: Preserve Wi-Fi setup, SoftAP fallback, login/session, captive DNS, and status routes while adding pump control.
-- **Validation**: `idf.py build` remains the main automated validation gate; hardware behavior needs manual flash/device testing.
+- **Validation**: `.\scripts\build.ps1 -Target <profile>` is the main validation gate. `package.ps1` bundles firmware for deployment.
 
 ## Environment
 
@@ -46,19 +46,21 @@ python -m pip install -r "$env:IDF_PATH\tools\requirements\requirements.core.txt
 
 ## Build / Flash / Monitor
 
+Use the provided PowerShell scripts to handle the dual-target structure.
+
 ```powershell
-# One-time target setup
-idf.py set-target esp32
+# Build a specific profile (esp32 or esp32s3)
+.\scripts\build.ps1 -Target esp32
+.\scripts\build.ps1 -Target esp32s3
 
-# Build
-idf.py build
+# Clean build (deletes sdkconfig and build dir)
+.\scripts\build.ps1 -Target esp32 -FullClean
 
-# Flash + monitor (replace COMx)
-idf.py -p COMx flash monitor
+# Package for release
+.\scripts\package.ps1 -Target all -Zip
 
-# Clean build
-idf.py fullclean
-idf.py build
+# Flash and Monitor via Interactive Menu
+.\scripts\flash_and_show.ps1
 ```
 
 Run sequentially: `chcp → export → idf.py`. Build output is in `build/` (gitignored).
@@ -71,8 +73,10 @@ If a board was previously flashed with flash encryption enabled, disable it once
 
 ```
 fish_pump_relay_timer_control/
-├── CMakeLists.txt              # Root ESP-IDF build, EXTRA_COMPONENT_DIRS → components/
-├── sdkconfig.defaults           # CONFIG_IDF_TARGET="esp32", custom partition table, dev flash workflow
+├── CMakeLists.txt              # Root ESP-IDF build, unconditional SDKCONFIG_DEFAULTS loading
+├── sdkconfig.defaults           # Shared base config (NVS encryption, partition table override)
+├── sdkconfig.defaults.esp32     # ESP32 specific overrides (4MB flash)
+├── sdkconfig.defaults.esp32s3   # ESP32-S3 specific overrides (16MB flash, Octal PSRAM)
 ├── components/
 │   ├── app_config/             # Template constants: names, AP SSID, mDNS, credentials
 │   ├── nvs_store/              # Reusable: NVS Wi-Fi credential I/O
@@ -147,8 +151,9 @@ main (app_main + web_server + dns_server + static)
 - `espressif/mdns` at `^1.7.0` — `fishpump.local` service discovery
 
 ### Build Configuration
-- `sdkconfig.defaults`: custom partition table, development flash workflow, 4 MB flash, manual task watchdog init
-- `partitions.csv`: `nvs`, `otadata`, `phy_init`, two OTA app slots (`0x1F0000` each)
+- `sdkconfig.defaults` family: Split into shared base and target-specific overrides (`esp32`, `esp32s3`).
+- `partitions_esp32.csv`: Classic 4MB layout (two 1.9MB OTA slots).
+- `partitions_esp32s3.csv`: S3 16MB layout (two 3.5MB OTA slots).
 - `main/CMakeLists.txt` embeds static frontend with `EMBED_FILES` for all HTML/CSS/JS files
 - Flash and NVS encryption disabled for local development
 
@@ -279,7 +284,8 @@ Namespace `wifi_cfg`: `sta_ssid` (string), `sta_pass` (string)
 ## Validation
 
 ```powershell
-idf.py build
+.\scripts\build.ps1 -Target esp32
+.\scripts\build.ps1 -Target esp32s3
 ```
 
 If build succeeds and `fish_pump_relay_timer_control.bin` is generated, the project is valid. Manual testing:
