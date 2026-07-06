@@ -118,7 +118,7 @@ esp_err_t tft_display_init(void) {
     esp_lcd_panel_io_spi_config_t io_config = {
         .dc_gpio_num = APP_TEMPLATE_TFT_DC_GPIO,
         .cs_gpio_num = APP_TEMPLATE_TFT_CS_GPIO,
-        .pclk_hz = 40 * 1000 * 1000, // 40MHz
+        .pclk_hz = APP_TEMPLATE_TFT_SPI_CLK_HZ,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
         .spi_mode = 0,
@@ -134,7 +134,7 @@ esp_err_t tft_display_init(void) {
     // 5. Install panel driver
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = APP_TEMPLATE_TFT_RESET_GPIO,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .rgb_ele_order = APP_TEMPLATE_TFT_RGB_ELE_ORDER,
         .bits_per_pixel = 16,
     };
     ret = esp_lcd_new_panel_st7789(io_handle, &panel_config, &s_panel_handle);
@@ -155,7 +155,7 @@ esp_err_t tft_display_init(void) {
         ESP_LOGE(TAG, "Failed to init panel: %s", esp_err_to_name(ret));
         goto err;
     }
-    ret = esp_lcd_panel_invert_color(s_panel_handle, false);
+    ret = esp_lcd_panel_invert_color(s_panel_handle, APP_TEMPLATE_TFT_INVERT_COLOR);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to invert color: %s", esp_err_to_name(ret));
         goto err;
@@ -182,7 +182,10 @@ esp_err_t tft_display_init(void) {
         ESP_LOGE(TAG, "Failed to set panel gap: %s", esp_err_to_name(ret));
         goto err;
     }
-    ESP_LOGI(TAG, "Panel driver: ST7789; layout: swap_xy=true, mirror=(true,false), gap=(0,0)");
+    ESP_LOGI(TAG, "Panel driver: ST7789 | rgb_order=%d invert=%d clk=%ldHz | swap_xy=true mirror=(true,false)",
+             (int)APP_TEMPLATE_TFT_RGB_ELE_ORDER,
+             (int)APP_TEMPLATE_TFT_INVERT_COLOR,
+             (long)APP_TEMPLATE_TFT_SPI_CLK_HZ);
 
 
     ESP_LOGI(TAG, "TFT display successfully initialized");
@@ -198,7 +201,7 @@ err:
         io_handle = NULL;
     }
     if (spi_initialized) {
-        spi_bus_free(SPI3_HOST);
+        spi_bus_free(TFT_SPI_HOST);
     }
     if (s_tft_mutex) {
         vSemaphoreDelete(s_tft_mutex);
@@ -215,22 +218,11 @@ void tft_clear(uint16_t color) {
     tft_fill_rect(0, 0, TFT_WIDTH, TFT_HEIGHT, color);
 }
 
-void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
-    if (!s_panel_handle || !s_tft_mutex || x + 8 > TFT_WIDTH || y + 16 > TFT_HEIGHT) {
-        return;
-    }
-
-    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
-        return;
-    }
-
-    // 8x16 font has 128 pixels (256 bytes buffer, well under the 1024-byte limit)
+static void tft_draw_char_locked(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
     uint16_t pixel_buf[128];
     uint16_t color_be = SWAP_BYTES(color);
     uint16_t bg_color_be = SWAP_BYTES(bg_color);
-
     const uint8_t *bitmap = font8x16[(uint8_t)c];
-
     for (int row = 0; row < 16; row++) {
         uint8_t bits = bitmap[row];
         for (int col = 0; col < 8; col++) {
@@ -238,83 +230,78 @@ void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_c
             pixel_buf[row * 8 + col] = pixel_on ? color_be : bg_color_be;
         }
     }
-
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + 8, y + 16, pixel_buf);
     if (err == ESP_OK) {
         xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500));
     }
-    
-    xSemaphoreGive(s_tft_mutex);
 }
 
-void tft_draw_char_x2(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
-    if (!s_panel_handle || !s_tft_mutex || x + 16 > TFT_WIDTH || y + 32 > TFT_HEIGHT) {
-        return;
-    }
-
-    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) != pdTRUE) {
-        return;
-    }
-
-    // 16x32 scaled character has 512 pixels (1024 bytes buffer, exactly matching the limit)
+static void tft_draw_char_x2_locked(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
     uint16_t pixel_buf[512];
     uint16_t color_be = SWAP_BYTES(color);
     uint16_t bg_color_be = SWAP_BYTES(bg_color);
-
     const uint8_t *bitmap = font8x16[(uint8_t)c];
-
     for (int row = 0; row < 16; row++) {
         uint8_t bits = bitmap[row];
         for (int col = 0; col < 8; col++) {
             bool pixel_on = (bits & (0x80 >> col)) != 0;
             uint16_t p_color = pixel_on ? color_be : bg_color_be;
-
             int base_row1 = (row * 2) * 16;
             int base_row2 = (row * 2 + 1) * 16;
             int col2 = col * 2;
-
             pixel_buf[base_row1 + col2] = p_color;
             pixel_buf[base_row1 + col2 + 1] = p_color;
             pixel_buf[base_row2 + col2] = p_color;
             pixel_buf[base_row2 + col2 + 1] = p_color;
         }
     }
-
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + 16, y + 32, pixel_buf);
     if (err == ESP_OK) {
         xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500));
     }
-    
-    xSemaphoreGive(s_tft_mutex);
+}
+
+void tft_draw_char(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
+    if (!s_panel_handle || !s_tft_mutex || x + 8 > TFT_WIDTH || y + 16 > TFT_HEIGHT) return;
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+        tft_draw_char_locked(x, y, c, color, bg_color);
+        xSemaphoreGive(s_tft_mutex);
+    }
+}
+
+void tft_draw_char_x2(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
+    if (!s_panel_handle || !s_tft_mutex || x + 16 > TFT_WIDTH || y + 32 > TFT_HEIGHT) return;
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+        tft_draw_char_x2_locked(x, y, c, color, bg_color);
+        xSemaphoreGive(s_tft_mutex);
+    }
 }
 
 void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg_color) {
-    if (!s_panel_handle || !str || y >= TFT_HEIGHT) {
-        return;
-    }
-    uint16_t cur_x = x;
-    while (*str) {
-        if (cur_x + 8 > TFT_WIDTH) {
-            break; // bounds check: truncate line if it goes out of screen dimensions
+    if (!s_panel_handle || !s_tft_mutex || !str || y >= TFT_HEIGHT) return;
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+        uint16_t cur_x = x;
+        while (*str) {
+            if (cur_x + 8 > TFT_WIDTH) break;
+            tft_draw_char_locked(cur_x, y, *str, color, bg_color);
+            cur_x += 8;
+            str++;
         }
-        tft_draw_char(cur_x, y, *str, color, bg_color);
-        cur_x += 8;
-        str++;
+        xSemaphoreGive(s_tft_mutex);
     }
 }
 
 void tft_draw_string_x2(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg_color) {
-    if (!s_panel_handle || !str || y >= TFT_HEIGHT) {
-        return;
-    }
-    uint16_t cur_x = x;
-    while (*str) {
-        if (cur_x + 16 > TFT_WIDTH) {
-            break; // bounds check: truncate line if it goes out of screen dimensions
+    if (!s_panel_handle || !s_tft_mutex || !str || y >= TFT_HEIGHT) return;
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+        uint16_t cur_x = x;
+        while (*str) {
+            if (cur_x + 16 > TFT_WIDTH) break;
+            tft_draw_char_x2_locked(cur_x, y, *str, color, bg_color);
+            cur_x += 16;
+            str++;
         }
-        tft_draw_char_x2(cur_x, y, *str, color, bg_color);
-        cur_x += 16;
-        str++;
+        xSemaphoreGive(s_tft_mutex);
     }
 }
 
@@ -333,12 +320,11 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
         return;
     }
 
-    uint16_t big_endian_color = SWAP_BYTES(color);
-
     // Static (file-scope) buffer — safely protected by s_tft_mutex
     static uint16_t chunk_buf[320];
+    uint16_t color_be = SWAP_BYTES(color);
     for (int i = 0; i < w; i++) {
-        chunk_buf[i] = big_endian_color;
+        chunk_buf[i] = color_be;
     }
 
     for (uint16_t cy = y; cy < y + h; cy++) {
@@ -365,7 +351,7 @@ void tft_display_draw_dashboard_skeleton(void) {
     // 1. Initial State: วาดพื้นหลัง UI ทั้งจอเพียงครั้งเดียว
     tft_fill_rect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_COLOR_BLACK);
     // วาด Top Bar พื้นหลัง
-    tft_fill_rect(0, 0, 320, 25, TFT_COLOR_DARK_PANEL);
+    tft_fill_rect(0, 0, TFT_WIDTH, 25, TFT_COLOR_DARK_PANEL);
     // วาดพื้นหลัง Card ทั้งสอง
     tft_fill_rect(5, 30, 150, 205, TFT_COLOR_DARK_NAVY);
     tft_fill_rect(165, 30, 150, 205, TFT_COLOR_DARK_NAVY);
@@ -392,7 +378,7 @@ void tft_display_draw_dashboard_skeleton(void) {
     tft_draw_string(175, 170, "LOCK  :", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
 }
 
-static volatile uint8_t s_current_brightness = 100;
+static atomic_uchar s_current_brightness = ATOMIC_VAR_INIT(100);
 static uint8_t s_idle_dim_percent = APP_TEMPLATE_TFT_DIM_PERCENT;
 
 void tft_display_set_idle_dim_percent(uint8_t percent) {
@@ -406,9 +392,9 @@ uint8_t tft_display_get_idle_dim_percent(void) {
 void tft_display_set_brightness(uint8_t percent)
 {
     if (percent > 100) percent = 100;
-    if (s_current_brightness == percent) return;
+    if (atomic_load(&s_current_brightness) == percent) return;
     
-    s_current_brightness = percent;
+    atomic_store(&s_current_brightness, percent);
     uint32_t duty = (255 * percent) / 100;
     ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
     ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
@@ -518,9 +504,10 @@ static void tft_display_task(void *pvParameters) {
             tft_draw_string(75, 170, countdown_formatted, pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             
             if (pump_running && pump.total_duration_sec > 0) {
-                float progress = (float)(pump.total_duration_sec - countdown_sec) / pump.total_duration_sec;
-                if (progress < 0) progress = 0;
-                if (progress > 1) progress = 1;
+                int32_t elapsed_sec = (int32_t)pump.total_duration_sec - (int32_t)countdown_sec;
+                float progress = (elapsed_sec <= 0) ? 0.0f
+                               : (elapsed_sec >= (int32_t)pump.total_duration_sec) ? 1.0f
+                               : (float)elapsed_sec / (float)pump.total_duration_sec;
                 uint16_t bar_width = (uint16_t)(126 * progress);
                 if (bar_width > 0) {
                     tft_fill_rect(17, 202, bar_width, 11, TFT_COLOR_CYAN);
@@ -607,7 +594,7 @@ static void tft_display_task(void *pvParameters) {
          * No touch screen — activity is signaled via web API calls or buttons. */
         uint32_t now_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
         uint32_t idle_ms = (now_sec - (uint32_t)atomic_load(&s_last_activity_sec)) * 1000;
-        if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS && s_current_brightness != s_idle_dim_percent) {
+        if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS && atomic_load(&s_current_brightness) != s_idle_dim_percent) {
             tft_display_set_brightness(s_idle_dim_percent);
         }
 

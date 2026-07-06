@@ -11,8 +11,9 @@ extern "C" {
 #define TFT_WIDTH  320
 #define TFT_HEIGHT 240
 
-// Predefined 16-bit RGB565 color constants (big-endian for SPI transfer)
-// ILI9341 driver expects color high byte first in big-endian over SPI
+// Predefined 16-bit RGB565 color constants (native host byte order)
+// Byte swapping for SPI transmission is handled manually via SWAP_BYTES in draw routines
+// ST7789 driver: see APP_TEMPLATE_TFT_RGB_ELE_ORDER and APP_TEMPLATE_TFT_INVERT_COLOR in app_config.h
 #define TFT_COLOR_BLACK   0x0000
 #define TFT_COLOR_WHITE   0xFFFF
 #define TFT_COLOR_RED     0xF800

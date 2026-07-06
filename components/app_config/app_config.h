@@ -123,6 +123,19 @@ extern "C" {
 // Enable ST7789 panel driver instead of ILI9341 driver
 #define APP_TEMPLATE_TFT_PANEL_ST7789
 
+// ST7789 color order: LCD_RGB_ELEMENT_ORDER_RGB (0) or LCD_RGB_ELEMENT_ORDER_BGR (1)
+// Confirmed for current module: RGB is correct (red shows as red)
+// Change to LCD_RGB_ELEMENT_ORDER_BGR only if swapping to a different panel module
+#define APP_TEMPLATE_TFT_RGB_ELE_ORDER  LCD_RGB_ELEMENT_ORDER_RGB
+
+// ST7789 color inversion: false = normal, true = invert all colors
+// Confirmed for current module: false is correct (background shows as black)
+// Change to true only if swapping to a different panel module that requires inversion
+#define APP_TEMPLATE_TFT_INVERT_COLOR   false
+
+// ST7789 SPI clock: reduce to 20000000 (20MHz) if display shows noise/corruption
+#define APP_TEMPLATE_TFT_SPI_CLK_HZ     (40 * 1000 * 1000)
+
 // SoftAP recovery and rollback timing constants
 #define APP_CONFIG_AP_RECOVERY_TIMEOUT_MS         300000
 #define APP_CONFIG_AP_IDLE_TIMEOUT_MS             600000
