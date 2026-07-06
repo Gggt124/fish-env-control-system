@@ -1069,14 +1069,23 @@ void app_main(void)
         }
 
         if (atomic_load(&s_trigger_factory_reset)) {
-            ESP_LOGW(TAG, "Factory reset requested by button hold. Resetting credentials...");
-            if (nvs_store_factory_reset_credentials()) {
-                ESP_LOGI(TAG, "Credentials reset to defaults successful");
-            } else {
-                ESP_LOGE(TAG, "Credentials reset to defaults failed");
-            }
+            ESP_LOGW(TAG, "Factory reset requested — erasing all NVS and restarting...");
             session_invalidate_all();
-            atomic_store(&s_trigger_factory_reset, false);
+            
+            /* Stop Wi-Fi to release its internal NVS handles; otherwise nvs_flash_erase fails */
+            esp_wifi_stop();
+            esp_wifi_deinit();
+
+            if (nvs_store_factory_reset()) {
+                nvs_store_set_restart_detail("factory_reset");
+                ESP_LOGI(TAG, "NVS erased. Restarting in 500ms...");
+                esp_task_wdt_reset();           /* defensive: erase can take ~300ms */
+                vTaskDelay(pdMS_TO_TICKS(500));
+                esp_restart();
+            } else {
+                ESP_LOGE(TAG, "Factory reset NVS erase FAILED — device continues running");
+                atomic_store(&s_trigger_factory_reset, false);
+            }
         }
 
         if (s_http_server_retry) {
