@@ -161,7 +161,21 @@ extern "C" {
 
 #define APP_CONFIG_OOM_CONSECUTIVE_FAILURES_RESTART 3     // 15 seconds (3 * 5s loop)
 
+/* Wi-Fi STA long-term retry hardening constants.
+ * After APP_CONFIG_STA_COOLDOWN_THRESHOLD consecutive failures the retry
+ * interval jumps to APP_CONFIG_STA_COOLDOWN_PERIOD_SEC instead of the
+ * normal 60-second cap, giving the chip a rest period.
+ * After APP_CONFIG_STA_REBOOT_THRESHOLD total lifetime attempts the firmware
+ * performs a clean esp_restart() to flush accumulated LwIP/driver state.
+ *
+ * Rough timeline at 60s-cap backoff:
+ *   Cooldown kicks in at attempt 10  → ~9.5 min after no-Wi-Fi start
+ *   With 30-min cooldown, reboot gate (720 total) fires in ~15 days worst-case.
+ */
+#define APP_CONFIG_STA_COOLDOWN_THRESHOLD   10   /* consecutive failures before long cooldown */
+#define APP_CONFIG_STA_COOLDOWN_PERIOD_SEC  1800 /* 30-minute cooldown retry interval */
+#define APP_CONFIG_STA_REBOOT_THRESHOLD     720  /* total lifetime attempts before esp_restart() */
+
 #ifdef __cplusplus
 }
 #endif
-

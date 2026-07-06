@@ -39,6 +39,7 @@ static char s_ap_ip[16] = "192.168.4.1";
 static char s_sta_ip[16] = {0};
 static int64_t s_boot_time_ms = 0;
 static int s_sta_retry_count = 0;
+static uint32_t s_sta_total_attempts = 0; /* lifetime count; cleared only by esp_restart() or manual connect */
 
 static uint32_t s_ap_stop_timeout_ms = AP_STOP_TMO_DEFAULT_MS;
 static bool s_ap_auto_stop = AP_AUTO_STOP_DEFAULT;
@@ -206,7 +207,32 @@ static void sta_connect_timer_cb(void *arg)
     }
 
     uint32_t attempt = diag_increment(&s_wifi_diag.sta_connect_attempts);
-    ESP_LOGI(TAG, "[WIFI_EVENT] sta_connect_attempt=%lu", (unsigned long)attempt);
+
+    /* Increment lifetime counter and check reboot gate.
+     * This counter is never reset on successful connect — only by esp_restart()
+     * (which clears all RAM) or by a manual connect from the dashboard. */
+    taskENTER_CRITICAL(&s_wifi_diag_lock);
+    s_sta_total_attempts++;
+    uint32_t total = s_sta_total_attempts;
+    taskEXIT_CRITICAL(&s_wifi_diag_lock);
+
+    if (total >= APP_CONFIG_STA_REBOOT_THRESHOLD) {
+        /* Clear connecting flag before restart — defensive cleanup in case
+         * esp_restart() is ever delayed or removed by a future refactor.
+         * ESP_LOGW uses blocking UART output; no vTaskDelay needed to flush. */
+        if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+            s_sta_connecting = false;
+            xSemaphoreGive(s_wifi_mutex);
+        }
+        ESP_LOGW(TAG,
+                 "[WIFI_STA] reboot gate: total_attempts=%lu >= threshold=%d. "
+                 "Rebooting to flush LwIP/driver state.",
+                 (unsigned long)total, APP_CONFIG_STA_REBOOT_THRESHOLD);
+        esp_restart();
+    }
+
+    ESP_LOGI(TAG, "[WIFI_EVENT] sta_connect_attempt=%lu total=%lu",
+             (unsigned long)attempt, (unsigned long)total);
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_OK) {
         return;
@@ -248,9 +274,19 @@ static void schedule_sta_connect(void)
 
     uint32_t delay_ms = STA_CONNECT_DELAY_MS;
     if (retry_count > 0) {
-        uint32_t backoff_seconds = (1 << (retry_count - 1));
-        if (backoff_seconds > 60 || retry_count > 7) {
-            backoff_seconds = 60;
+        uint32_t backoff_seconds;
+        if (retry_count >= APP_CONFIG_STA_COOLDOWN_THRESHOLD) {
+            /* Long cooldown: chip rests 30 min, reducing heat accumulation and
+             * the probability of LwIP/driver state leaks on repeated failures. */
+            backoff_seconds = APP_CONFIG_STA_COOLDOWN_PERIOD_SEC;
+            ESP_LOGI(TAG,
+                     "[WIFI_STA] cooldown active retry=%d next_attempt_in=%lus",
+                     retry_count, (unsigned long)backoff_seconds);
+        } else {
+            backoff_seconds = (1u << (retry_count - 1)); /* 1,2,4,8,16,32,64→cap */
+            if (backoff_seconds > 60 || retry_count > 7) {
+                backoff_seconds = 60;
+            }
         }
         delay_ms = backoff_seconds * 1000;
     }
@@ -1050,6 +1086,11 @@ bool wifi_manager_connect_sta(const char *ssid, const char *password, const wifi
         return false;
     }
     s_sta_retry_count = 0;
+    /* Reset lifetime counter — user is deliberately initiating a new connection.
+     * Prevents the reboot gate from firing immediately after credential change. */
+    taskENTER_CRITICAL(&s_wifi_diag_lock);
+    s_sta_total_attempts = 0;
+    taskEXIT_CRITICAL(&s_wifi_diag_lock);
     s_sta_connected = false;
     s_sta_configured = false;
     s_sta_connecting = false;
@@ -1154,6 +1195,11 @@ bool wifi_manager_forget_sta(void)
     s_sta_target_ssid[0] = '\0';
     s_sta_retry_count = 0;
     xSemaphoreGive(s_wifi_mutex);
+    /* Reset lifetime attempt counter — forgetting credentials is a definitive
+     * user action that voids all previous retry history. */
+    taskENTER_CRITICAL(&s_wifi_diag_lock);
+    s_sta_total_attempts = 0;
+    taskEXIT_CRITICAL(&s_wifi_diag_lock);
 
     esp_err_t disconnect_err = esp_wifi_disconnect();
     if (disconnect_err != ESP_OK) {
@@ -1363,8 +1409,10 @@ void wifi_manager_log_diagnostics(void)
     }
 
     wifi_manager_diag_t diag;
+    uint32_t total_attempts;
     taskENTER_CRITICAL(&s_wifi_diag_lock);
     diag = s_wifi_diag;
+    total_attempts = s_sta_total_attempts;
     taskEXIT_CRITICAL(&s_wifi_diag_lock);
 
     bool ap_enabled;
@@ -1424,7 +1472,7 @@ void wifi_manager_log_diagnostics(void)
     int country_last_channel = country.nchan > 0 ? country.schan + country.nchan - 1 : 0;
 
     ESP_LOGI(TAG,
-             "[WIFI_DIAG] mode=%d mode_err=%s ap=%s ap_clients=%u ap_weakest_rssi=%d sta_connected=%s sta_configured=%s sta_connecting=%s manual_pending=%s retry_blocked=%s sta_target=%s sta_ssid=%s sta_ip=%s sta_rssi=%d tx_power_qdbm=%d tx_power_err=%s country=%c%c country_err=%s country_max_tx_power_dbm=%d country_channels=%u-%u country_policy=%d retry=%d scan=%s scan_cancel_pending=%s connect_req=%lu scheduled=%lu attempts=%lu start_fail=%lu disconnect_req=%lu forget_req=%lu disconnected=%lu got_ip=%lu last_reason=%d ap_restore=%lu ap_restore_fail=%lu ap_client_join=%lu ap_client_leave=%lu ap_ip=%lu scan_started=%lu scan_done=%lu scan_cancel=%lu scan_fail=%lu scan_cleanup=%lu heap=%lu heap_min=%lu largest=%lu",
+             "[WIFI_DIAG] mode=%d mode_err=%s ap=%s ap_clients=%u ap_weakest_rssi=%d sta_connected=%s sta_configured=%s sta_connecting=%s manual_pending=%s retry_blocked=%s sta_target=%s sta_ssid=%s sta_ip=%s sta_rssi=%d tx_power_qdbm=%d tx_power_err=%s country=%c%c country_err=%s country_max_tx_power_dbm=%d country_channels=%u-%u country_policy=%d retry=%d total_attempts=%lu scan=%s scan_cancel_pending=%s connect_req=%lu scheduled=%lu attempts=%lu start_fail=%lu disconnect_req=%lu forget_req=%lu disconnected=%lu got_ip=%lu last_reason=%d ap_restore=%lu ap_restore_fail=%lu ap_client_join=%lu ap_client_leave=%lu ap_ip=%lu scan_started=%lu scan_done=%lu scan_cancel=%lu scan_fail=%lu scan_cleanup=%lu heap=%lu heap_min=%lu largest=%lu",
              mode,
              esp_err_to_name(mode_err),
              ap_enabled ? "true" : "false",
@@ -1449,6 +1497,7 @@ void wifi_manager_log_diagnostics(void)
              country_last_channel,
              country.policy,
              retry_count,
+             (unsigned long)total_attempts,
              scan_in_progress ? "true" : "false",
              scan_cancel_pending ? "true" : "false",
              (unsigned long)diag.sta_connect_requests,
