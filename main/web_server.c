@@ -2685,6 +2685,11 @@ static esp_err_t handle_api_auth_credentials(httpd_req_t *req)
     const char *new_user_str = (nu && cJSON_IsString(nu) && strlen(nu->valuestring) > 0) ? nu->valuestring : stored_user;
     const char *new_pass_str = np->valuestring;
 
+    if (strcmp(new_pass_str, APP_TEMPLATE_DEFAULT_PASSWORD) == 0) {
+        cJSON_Delete(root);
+        return send_json(req, "{\"ok\":false,\"error\":\"cannot_use_default\"}", "400 Bad Request");
+    }
+
     if (!is_valid_utf8_printable(new_user_str, 64) || !is_valid_utf8_printable(new_pass_str, 64)) {
         cJSON_Delete(root);
         return send_json(req, "{\"ok\":false,\"error\":\"invalid_input\"}", "400 Bad Request");
@@ -3327,6 +3332,30 @@ static esp_err_t handle_api_pump_config_get(httpd_req_t *req)
     return api_pump_send_config(req, &settings, status, false);
 }
 
+/**
+ * Returns true if the new config requires full GPIO re-init (hard change).
+ * Hard change = relay GPIO pins or float GPIO differ from what is currently
+ * initialized. Timer durations, polarity, and start_phase are soft changes.
+ *
+ * Note: POST /api/pump/config marks GPIO fields as read-only, so in practice
+ * this returns false for all normal config saves. Kept as a defensive guard.
+ */
+static bool pump_config_is_hard_change(const pump_control_config_t *new_cfg)
+{
+    pump_control_status_t status = {0};
+    if (!pump_control_get_status(&status)) {
+        /* Cannot read current state — treat as hard change to be safe */
+        return true;
+    }
+    if (!status.initialized || !status.config_valid) {
+        /* Not initialized yet — must do full init */
+        return true;
+    }
+    return (new_cfg->relay1_gpio != status.relay1_gpio ||
+            new_cfg->relay2_gpio != status.relay2_gpio ||
+            new_cfg->float_gpio  != status.float_gpio);
+}
+
 /* POST /api/pump/config - protected, full replacement for editable pump settings */
 static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
 {
@@ -3382,22 +3411,31 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
     pump_control_config_t config;
     api_pump_settings_to_runtime_config(&settings, &config);
 
-    if (was_running) {
-        pump_control_stop();
-    }
+    bool hard_change = pump_config_is_hard_change(&config);
 
-    if (!pump_control_init(&config)) {
-        pump_control_stop();
-        return send_api_error(req, "runtime_apply_failed",
-                              "Saved settings but could not apply pump runtime config",
-                              "500 Internal Server Error");
-    }
-
-    if (was_running && !pump_control_start()) {
-        pump_control_stop();
-        return send_api_error(req, "restart_failed",
-                              "Saved settings but could not restart pump control",
-                              "500 Internal Server Error");
+    if (!hard_change) {
+        /* Soft change: update timer/polarity in-place without touching GPIO.
+         * Relay stays in its current state — no glitch, no phase reset. */
+        pump_control_timer_update_t update = {
+            .timer1             = config.timer1,
+            .timer2             = config.timer2,
+            .timer1_start_phase = config.timer1_start_phase,
+            .timer2_start_phase = config.timer2_start_phase,
+            .relay1_polarity    = config.relay1_polarity,
+            .relay2_polarity    = config.relay2_polarity,
+        };
+        if (!pump_control_update_timers(&update)) {
+            ESP_LOGW(TAG, "Soft timer update failed — changes will apply on next restart/reboot");
+        }
+    } else {
+        ESP_LOGI(TAG, "Hard config change saved. Applying new configuration...");
+        if (was_running) {
+            pump_control_stop();
+        }
+        pump_control_init(&config);
+        if (was_running) {
+            pump_control_start();
+        }
     }
 
     return api_pump_send_config(req, &settings, NVS_STORE_PUMP_SETTINGS_LOADED, true);

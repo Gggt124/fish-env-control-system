@@ -1347,19 +1347,25 @@ uint8_t nvs_store_commit_staging(void)
     return type;
 }
 
-bool nvs_store_factory_reset_credentials(void)
+bool nvs_store_factory_reset(void)
 {
-    nvs_handle_t handle;
-    if (nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK) {
+    /* Wipes ALL namespaces: wifi_cfg, wifi_prof, session, pump_cfg,
+     * hw_cfg, cool_cfg, disp_cfg. OTA/app partitions are NOT affected.
+     * Caller must call esp_restart() after this returns true. */
+    ESP_LOGW(TAG, "Factory reset: erasing entire NVS partition...");
+    esp_err_t ret = nvs_flash_erase();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Factory reset NVS erase failed: %s", esp_err_to_name(ret));
         return false;
     }
-    bool ok = true;
-    if (nvs_set_str(handle, "admin_user", APP_TEMPLATE_DEFAULT_USERNAME) != ESP_OK) ok = false;
-    if (nvs_set_str(handle, "admin_pass", APP_TEMPLATE_DEFAULT_PASSWORD) != ESP_OK) ok = false;
-    if (nvs_set_u8(handle, NVS_KEY_STG_TYPE, 0) != ESP_OK) ok = false;
-    if (ok && nvs_commit(handle) != ESP_OK) ok = false;
-    nvs_close(handle);
-    return ok;
+    /* Re-init so NVS subsystem is in a defined state before caller restarts.
+     * This allows nvs_store_set_restart_detail() to write normally after return. */
+    if (!nvs_store_init()) {
+        ESP_LOGE(TAG, "Factory reset NVS re-init failed");
+        return false;
+    }
+    ESP_LOGI(TAG, "Factory reset NVS erase complete.");
+    return true;
 }
 
 bool nvs_store_load_display_settings(uint8_t *dim_percent_out)

@@ -1429,6 +1429,7 @@
                         <strong><svg class="label-icon"><use href="#icon-alert-triangle"></use></svg> GPIO 0 — Strapping Pin:</strong>
                         ปุ่ม Factory Reset ใช้ GPIO 0 ซึ่งเป็น strapping pin ของ ESP32
                         <strong>ห้ามกดค้างขณะเปิดเครื่อง</strong> เพราะจะทำให้บอร์ดเข้า Download Mode แทนที่จะ boot ปกติ
+                        <strong>การกด Factory Reset จะลบข้อมูลทั้งหมด</strong> ได้แก่ Wi-Fi, รหัสผ่าน, การตั้งค่า Timer และ Hardware — เครื่องจะ Restart อัตโนมัติ
                         หากต้องการความปลอดภัยมากขึ้น ให้ย้ายสาย Factory Reset ไปใช้ <span class="mono">GPIO 14</span> แทน
                     </div>
                 </div>
@@ -1879,12 +1880,12 @@
     <!-- Force Password Change Modal -->
     <dialog id="force-pwd-modal" class="modal-dialog">
         <div class="modal-card">
-            <h2 class="modal-title">
+            <h3 class="modal-title">
                 <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <use href="#icon-shield"></use>
                 </svg>
                 ต้องเปลี่ยนรหัสผ่าน
-            </h2>
+            </h3>
             <p class="modal-desc">เพื่อความปลอดภัย กรุณาเปลี่ยนรหัสผ่านก่อนเข้าใช้งานระบบ</p>
             <form id="force-pwd-form" onsubmit="event.preventDefault(); submitForcePasswordChange();">
                 <div class="form-group">

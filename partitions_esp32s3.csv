@@ -1,0 +1,11 @@
+# ESP32-S3-DevKitC-1 WROOM-1-N16R8 -- 16 MB Flash OTA layout
+# Bootloader: 0x0000. Partition table: 0x10000.
+# Each OTA slot = 3.5 MB (0x380000). Total used: ~7.4 MB. ~8.6 MB free.
+# Name,    Type, SubType,  Offset,    Size,      Flags
+nvs,       data, nvs,      0x11000,   0x6000,
+otadata,   data, ota,      0x17000,   0x2000,
+phy_init,  data, phy,      0x19000,   0x1000,
+ota_0,     app,  ota_0,    0x20000,   0x380000,
+ota_1,     app,  ota_1,    0x3A0000,  0x380000,
+nvs_keys,  data, nvs_keys, 0x720000,  0x1000,
+coredump,  data, coredump, 0x721000,  0x40000,

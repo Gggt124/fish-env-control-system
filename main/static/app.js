@@ -4,7 +4,8 @@
  */
 
 
-/* ======== SPA State Management ======== */
+/* ======== Constants & State ======== */
+var DEFAULT_PASSWORD = 'admin123';
 var dashboardInterval = null;
 var statusInterval = null;
 
@@ -3288,6 +3289,14 @@ function doChangePassword(e) {
         }
     }
 
+    if (newPassword === DEFAULT_PASSWORD) {
+        if (errEl) {
+            errEl.classList.remove('hidden');
+            errEl.textContent = 'ไม่สามารถตั้งรหัสผ่านเริ่มต้นได้ หากต้องการรีเซ็ตให้ใช้ปุ่ม Boot กดค้างไว้ 5+ วินาที';
+        }
+        return;
+    }
+
     if (errEl) errEl.classList.add('hidden');
     setLoading(btn, true);
     setModalInputsDisabled(true);
@@ -3320,6 +3329,8 @@ function doChangePassword(e) {
                     errEl.classList.remove('hidden');
                     if (data2 && data2.error === 'invalid_credentials') {
                         errEl.textContent = 'รหัสผ่านเดิมไม่ถูกต้อง';
+                    } else if (data2 && data2.error === 'cannot_use_default') {
+                        errEl.textContent = 'ไม่สามารถตั้งรหัสผ่านเริ่มต้นได้ หากต้องการรีเซ็ตให้ใช้ปุ่ม Boot กดค้างไว้ 5+ วินาที';
                     } else {
                         errEl.textContent = 'เปลี่ยนรหัสผ่านไม่สำเร็จ กรุณาลองใหม่';
                     }
@@ -3614,6 +3625,11 @@ function submitForcePasswordChange() {
         errEl.classList.remove('hidden');
         return;
     }
+    if (newp === DEFAULT_PASSWORD) {
+        errEl.textContent = "ไม่สามารถตั้งรหัสผ่านเริ่มต้นได้ หากต้องการรีเซ็ตให้ใช้ปุ่ม Boot กดค้างไว้ 5+ วินาที";
+        errEl.classList.remove('hidden');
+        return;
+    }
 
     errEl.classList.add('hidden');
     var origText = btn.textContent;
@@ -3624,7 +3640,12 @@ function submitForcePasswordChange() {
         btn.disabled = false;
         btn.textContent = origText;
         if (err || !data.ok) {
-            errEl.textContent = (data && data.error === 'invalid_credentials') ? "รหัสผ่านปัจจุบันไม่ถูกต้อง" : "เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน";
+            var msg = 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน';
+            if (data) {
+                if (data.error === 'invalid_credentials') msg = 'รหัสผ่านปัจจุบันไม่ถูกต้อง';
+                else if (data.error === 'cannot_use_default') msg = 'ไม่สามารถตั้งรหัสผ่านเริ่มต้นได้ หากต้องการรีเซ็ตให้ใช้ปุ่ม Boot กดค้างไว้ 5+ วินาที';
+            }
+            errEl.textContent = msg;
             errEl.classList.remove('hidden');
         } else {
             var modal = document.getElementById('force-pwd-modal');

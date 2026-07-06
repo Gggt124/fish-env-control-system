@@ -35,6 +35,7 @@ static pump_control_active_relay_t s_active_relay = PUMP_CONTROL_RELAY_NONE;
 static pump_control_timer_phase_t s_phase = PUMP_CONTROL_PHASE_IDLE;
 static uint32_t s_countdown_sec;
 static int64_t s_phase_deadline_ms;
+static uint32_t s_current_phase_duration_sec;
 
 
 
@@ -123,6 +124,7 @@ static void reset_runtime_state_locked(void)
     s_phase = PUMP_CONTROL_PHASE_IDLE;
     s_countdown_sec = 0;
     s_phase_deadline_ms = 0;
+    s_current_phase_duration_sec = 0;
 }
 
 static gpio_num_t relay_gpio_for_config(const pump_control_config_t *config,
@@ -343,6 +345,7 @@ static void set_phase_locked(pump_control_timer_phase_t phase, int64_t now_ms)
     if (!timer) {
         s_phase = PUMP_CONTROL_PHASE_IDLE;
         s_countdown_sec = 0;
+        s_current_phase_duration_sec = 0;
         force_both_relays_inactive_locked();
         return;
     }
@@ -350,6 +353,7 @@ static void set_phase_locked(pump_control_timer_phase_t phase, int64_t now_ms)
     uint32_t duration_sec = (phase == PUMP_CONTROL_PHASE_ON) ? timer->on_sec : timer->off_sec;
     s_phase = phase;
     s_phase_deadline_ms = now_ms + ((int64_t)duration_sec * MS_PER_SEC);
+    s_current_phase_duration_sec = duration_sec;
     s_countdown_sec = duration_sec;
     set_active_relay_energized_locked(phase == PUMP_CONTROL_PHASE_ON);
 }
@@ -662,6 +666,59 @@ bool pump_control_stop(void)
     return true;
 }
 
+bool pump_control_update_timers(const pump_control_timer_update_t *update)
+{
+    if (!update) {
+        return false;
+    }
+    if (!s_pump_mutex) {
+        ESP_LOGE(TAG, "pump_control not initialized");
+        return false;
+    }
+
+    /* Validate all fields before taking the lock */
+    if (!timer_config_valid(&update->timer1) ||
+        !timer_config_valid(&update->timer2) ||
+        !polarity_valid(update->relay1_polarity) ||
+        !polarity_valid(update->relay2_polarity) ||
+        !start_phase_valid(update->timer1_start_phase) ||
+        !start_phase_valid(update->timer2_start_phase)) {
+        ESP_LOGE(TAG, "pump_control_update_timers: invalid update fields");
+        return false;
+    }
+
+    if (xSemaphoreTake(s_pump_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+        return false;
+    }
+
+    if (!s_initialized || !s_config_valid || s_fault) {
+        xSemaphoreGive(s_pump_mutex);
+        return false;
+    }
+
+    /* Apply soft config in-place — GPIO, relay state, and phase are untouched */
+    s_config.timer1             = update->timer1;
+    s_config.timer2             = update->timer2;
+    s_config.timer1_start_phase = update->timer1_start_phase;
+    s_config.timer2_start_phase = update->timer2_start_phase;
+    s_config.relay1_polarity    = update->relay1_polarity;
+    s_config.relay2_polarity    = update->relay2_polarity;
+    s_config.relay_polarity     = update->relay1_polarity; /* legacy alias */
+
+    if (s_running && s_phase != PUMP_CONTROL_PHASE_IDLE) {
+        set_active_relay_energized_locked(s_phase == PUMP_CONTROL_PHASE_ON);
+    }
+
+    ESP_LOGI(TAG, "Timer config updated live: t1=%lus/%lus t2=%lus/%lus",
+             (unsigned long)update->timer1.on_sec,
+             (unsigned long)update->timer1.off_sec,
+             (unsigned long)update->timer2.on_sec,
+             (unsigned long)update->timer2.off_sec);
+
+    xSemaphoreGive(s_pump_mutex);
+    return true;
+}
+
 bool pump_control_get_status(pump_control_status_t *out)
 {
     if (!s_pump_mutex) {
@@ -699,11 +756,8 @@ bool pump_control_get_status(pump_control_status_t *out)
     out->active_relay = s_active_relay;
     out->phase = s_phase;
     out->countdown_sec = s_countdown_sec;
-    out->total_duration_sec = 0;
-    const pump_control_timer_config_t *timer = active_timer_config_locked();
-    if (timer && (s_phase == PUMP_CONTROL_PHASE_ON || s_phase == PUMP_CONTROL_PHASE_OFF)) {
-        out->total_duration_sec = s_phase == PUMP_CONTROL_PHASE_ON ? timer->on_sec : timer->off_sec;
-    }
+    out->total_duration_sec = (s_phase == PUMP_CONTROL_PHASE_ON || s_phase == PUMP_CONTROL_PHASE_OFF) 
+                              ? s_current_phase_duration_sec : 0;
 
     xSemaphoreGive(s_pump_mutex);
     return true;

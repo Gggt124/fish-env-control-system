@@ -4,35 +4,100 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-/* === RESERVED GPIO PINS — must NOT appear in any option array ===
+/* === RESERVED GPIO PINS -- must NOT appear in any option array ===
  *
- * TFT SPI display (APP_TEMPLATE_TFT_PIN_*):
- *   GPIO  5 (CS)   18 (CLK)   21 (DC)   22 (RST)   23 (MOSI)
+ * -- ESP32 Classic DevKit V1 30-pin --
+ * TFT SPI (SPI3_HOST/VSPI): GPIO 5(CS) 18(CLK) 21(DC) 22(RST) 23(MOSI) 4(BL)
+ * Factory Reset/Status:      GPIO 0(BOOT_BTN) 2(LED) 13(EXT_LED) 14(EXT_BTN)
  *
- * Factory Reset / Status UI (APP_CONFIG_*_GPIO in app_config.h):
- *   GPIO  0  — Boot/Factory-Reset button  (strapping pin; BOOT_BTN)
- *   GPIO  2  — Status LED                 (strapping pin; LED)
- *   GPIO 13  — External status LED        (EXT_LED)
- *   GPIO 14  — External Factory-Reset btn (EXT_BTN)
+ * -- ESP32-S3-DevKitC-1 WROOM-1-N16R8 --
+ * TFT SPI (SPI2_HOST/FSPI): GPIO 9(BL) 10(CS) 11(MOSI) 12(SCK) 13(DC) 14(RST)
+ * Factory Reset/Status:      GPIO 0(BOOT_BTN) 2(LED) 38(EXT_BTN) 39(EXT_LED)
+ * Octal Flash internal (WROOM-1): GPIO 27 28 29 30 31 32
+ * Octal PSRAM internal (N16R8):   GPIO 33 34 35 36 37
+ * Strapping pins:                 GPIO 0 3 45 46
  *
- * None of the above may be offered to the user as selectable GPIO.
- * If APP_CONFIG_* values change in app_config.h, update this list too.
+ * S3 usable pool: 1,4,5,6,7,8,15,16,17,18,19,20,21,40,41,42,43,44,47,48
  * =================================================================== */
 
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+
+/* ---- ESP32-S3 GPIO option arrays ----
+ * {role, gpio_num, can_input, has_pullup, has_pulldown, is_default, label} */
+
 static const hardware_gpio_option_t s_float_options[] = {
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_32, true, true, true, true, "GPIO32"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_33, true, true, true, false, "GPIO33"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_25, true, true, true, false, "GPIO25"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_26, true, true, true, false, "GPIO26"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_27, true, true, true, false, "GPIO27"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_34, true, false, false, false, "GPIO34 external pull required"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_35, true, false, false, false, "GPIO35 external pull required"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_36, true, false, false, false, "GPIO36 external pull required"},
-    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_39, true, false, false, false, "GPIO39 external pull required"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_19, true, true, true, true,  "GPIO19"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_20, true, true, true, false, "GPIO20"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_21, true, true, true, false, "GPIO21"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_40, true, true, true, false, "GPIO40"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_41, true, true, true, false, "GPIO41"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_42, true, true, true, false, "GPIO42"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_15, true, true, true, false, "GPIO15"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_16, true, true, true, false, "GPIO16"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_17, true, true, true, false, "GPIO17"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_18, true, true, true, false, "GPIO18"},
 };
 
 static const hardware_gpio_option_t s_pump_relay1_options[] = {
-    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_26, true, true, true, true, "GPIO26"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_20, true, true, true, true,  "GPIO20"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_19, true, true, true, false, "GPIO19"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_21, true, true, true, false, "GPIO21"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_40, true, true, true, false, "GPIO40"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_41, true, true, true, false, "GPIO41"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_42, true, true, true, false, "GPIO42"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_43, true, true, true, false, "GPIO43"},
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_44, true, true, true, false, "GPIO44"},
+};
+
+static const hardware_gpio_option_t s_pump_relay2_options[] = {
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_21, true, true, true, true,  "GPIO21"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_19, true, true, true, false, "GPIO19"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_20, true, true, true, false, "GPIO20"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_40, true, true, true, false, "GPIO40"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_41, true, true, true, false, "GPIO41"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_42, true, true, true, false, "GPIO42"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_43, true, true, true, false, "GPIO43"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_44, true, true, true, false, "GPIO44"},
+};
+
+static const hardware_gpio_option_t s_ds18b20_options[] = {
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_41, true, true, true, true,  "GPIO41"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_40, true, true, true, false, "GPIO40"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_42, true, true, true, false, "GPIO42"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_15, true, true, true, false, "GPIO15"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_16, true, true, true, false, "GPIO16"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_17, true, true, true, false, "GPIO17"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_18, true, true, true, false, "GPIO18"},
+};
+
+static const hardware_gpio_option_t s_cooling_relay_options[] = {
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_42, true, true, true, true,  "GPIO42"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_40, true, true, true, false, "GPIO40"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_41, true, true, true, false, "GPIO41"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_43, true, true, true, false, "GPIO43"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_44, true, true, true, false, "GPIO44"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_47, true, true, true, false, "GPIO47"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_48, true, true, true, false, "GPIO48"},
+};
+
+#else /* Classic ESP32 */
+
+/* ---- ESP32 Classic GPIO option arrays ---- */
+
+static const hardware_gpio_option_t s_float_options[] = {
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_32, true, true,  true,  true,  "GPIO32"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_33, true, true,  true,  false, "GPIO33"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_25, true, true,  true,  false, "GPIO25"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_26, true, true,  true,  false, "GPIO26"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_27, true, true,  true,  false, "GPIO27"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_34, true, false, false, false, "GPIO34 (ext pull req)"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_35, true, false, false, false, "GPIO35 (ext pull req)"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_36, true, false, false, false, "GPIO36 (ext pull req)"},
+    {HARDWARE_ROLE_FLOAT_INPUT, GPIO_NUM_39, true, false, false, false, "GPIO39 (ext pull req)"},
+};
+
+static const hardware_gpio_option_t s_pump_relay1_options[] = {
+    {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_26, true, true, true, true,  "GPIO26"},
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_27, true, true, true, false, "GPIO27"},
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_25, true, true, true, false, "GPIO25"},
     {HARDWARE_ROLE_PUMP_RELAY_1, GPIO_NUM_32, true, true, true, false, "GPIO32"},
@@ -41,7 +106,7 @@ static const hardware_gpio_option_t s_pump_relay1_options[] = {
 };
 
 static const hardware_gpio_option_t s_pump_relay2_options[] = {
-    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_27, true, true, true, true, "GPIO27"},
+    {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_27, true, true, true, true,  "GPIO27"},
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_26, true, true, true, false, "GPIO26"},
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_25, true, true, true, false, "GPIO25"},
     {HARDWARE_ROLE_PUMP_RELAY_2, GPIO_NUM_32, true, true, true, false, "GPIO32"},
@@ -50,7 +115,7 @@ static const hardware_gpio_option_t s_pump_relay2_options[] = {
 };
 
 static const hardware_gpio_option_t s_ds18b20_options[] = {
-    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_33, true, true, true, true, "GPIO33"},
+    {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_33, true, true, true, true,  "GPIO33"},
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_32, true, true, true, false, "GPIO32"},
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_25, true, true, true, false, "GPIO25"},
     {HARDWARE_ROLE_DS18B20_DATA, GPIO_NUM_26, true, true, true, false, "GPIO26"},
@@ -59,13 +124,15 @@ static const hardware_gpio_option_t s_ds18b20_options[] = {
 };
 
 static const hardware_gpio_option_t s_cooling_relay_options[] = {
-    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_25, true, true, true, true, "GPIO25"},
+    {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_25, true, true, true, true,  "GPIO25"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_26, true, true, true, false, "GPIO26"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_27, true, true, true, false, "GPIO27"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_32, true, true, true, false, "GPIO32"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_33, true, true, true, false, "GPIO33"},
     {HARDWARE_ROLE_COOLING_RELAY, GPIO_NUM_19, true, true, true, false, "GPIO19"},
 };
+
+#endif /* CONFIG_IDF_TARGET_ESP32S3 */
 
 hardware_map_t hardware_map_defaults(void)
 {
