@@ -3428,9 +3428,14 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
             ESP_LOGW(TAG, "Soft timer update failed — changes will apply on next restart/reboot");
         }
     } else {
-        /* Hard change (GPIO changed): Do not restart the pump. 
-         * It will continue running with the old hardware settings until the next reboot or Stop->Start. */
-        ESP_LOGI(TAG, "Hard config change saved. Will take effect on next reboot or pump restart.");
+        ESP_LOGI(TAG, "Hard config change saved. Applying new configuration...");
+        if (was_running) {
+            pump_control_stop();
+        }
+        pump_control_init(&config);
+        if (was_running) {
+            pump_control_start();
+        }
     }
 
     return api_pump_send_config(req, &settings, NVS_STORE_PUMP_SETTINGS_LOADED, true);

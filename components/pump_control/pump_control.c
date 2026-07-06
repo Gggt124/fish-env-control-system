@@ -705,6 +705,10 @@ bool pump_control_update_timers(const pump_control_timer_update_t *update)
     s_config.relay2_polarity    = update->relay2_polarity;
     s_config.relay_polarity     = update->relay1_polarity; /* legacy alias */
 
+    if (s_running && s_phase != PUMP_CONTROL_PHASE_IDLE) {
+        set_active_relay_energized_locked(s_phase == PUMP_CONTROL_PHASE_ON);
+    }
+
     ESP_LOGI(TAG, "Timer config updated live: t1=%lus/%lus t2=%lus/%lus",
              (unsigned long)update->timer1.on_sec,
              (unsigned long)update->timer1.off_sec,
@@ -752,7 +756,8 @@ bool pump_control_get_status(pump_control_status_t *out)
     out->active_relay = s_active_relay;
     out->phase = s_phase;
     out->countdown_sec = s_countdown_sec;
-    out->total_duration_sec = s_current_phase_duration_sec;
+    out->total_duration_sec = (s_phase == PUMP_CONTROL_PHASE_ON || s_phase == PUMP_CONTROL_PHASE_OFF) 
+                              ? s_current_phase_duration_sec : 0;
 
     xSemaphoreGive(s_pump_mutex);
     return true;
