@@ -21,7 +21,6 @@ We use PowerShell scripts to manage the dual-target builds.
 .\scripts\flash_and_show.ps1
 ```
 
-> **Warning:** The partition table has been updated (the `nvs` partition was expanded). If you are flashing an existing device, you **must** run `idf.py -p COMx erase-flash` before flashing to prevent NVS and OTA state corruption.
 
 ## Quick Start
 
@@ -55,10 +54,7 @@ The device runs a local web dashboard accessible via AP (`192.168.4.1`) or conne
 - **Float ON**: Selects Timer 2.
 - The relay follows the active timer's ON/OFF cycle to energize the pump accordingly.
 
-## Contributing
+## Notes
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- To build a customer flash package: `.\scripts\package.ps1 -Target all -Zip`
+- Source repository for development only. `CONTRIBUTING.md` and `LICENSE` not included at this time.

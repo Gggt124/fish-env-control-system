@@ -144,5 +144,6 @@ Write-Host "[build] Merged binary : $MergedPath" -ForegroundColor Green
 Write-Host ""
 Write-Host "=== Build complete: $Target ===" -ForegroundColor Green
 Write-Host "After flashing, get AP password with:" -ForegroundColor White
-Write-Host "  .\scripts\show_ap_password.ps1 -Port COMx" -ForegroundColor Yellow
+Write-Host "  [DEV]      .\scripts\show_ap_password.ps1 -Port COMx" -ForegroundColor Yellow
+Write-Host "  [CUSTOMER] Run SHOW_PASSWORD.bat from the flash-package folder" -ForegroundColor Gray
 Write-Host ""

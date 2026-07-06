@@ -5,15 +5,15 @@ This folder contains the firmware and updater tools for your Fish Pump control b
 ## Prerequisites
 1. **Windows 10 or Windows 11** PC.
 2. A USB cable to connect the ESP32 board.
-3. **Python 3** installed (Download from https://www.python.org/downloads/ if you don't have it).
 
 ## How to Flash (Update)
 1. Plug the USB cable into your computer and the ESP32 board.
 2. Double-click the **`FLASH.bat`** file.
 3. A black command window will open.
+   - Select your board type when prompted: **[1]** ESP32 Classic or **[2]** ESP32-S3.
    - If prompted for a **COM port**, type the corresponding port (e.g., `COM5`) and press Enter.
-   - The script will automatically install necessary tools (esptool) and flash the firmware.
-4. Wait for the success message: **"[OK] Flash สำเร็จ!"** (Flash Successful).
+   - All required tools are included — no additional installation needed.
+4. Wait for the success message: **"[OK] Flash Successful!"**
 5. The script will display your unique **Wi-Fi Password**. Please save it!
 
 ## Forgot Wi-Fi Password?

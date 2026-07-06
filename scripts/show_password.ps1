@@ -1,17 +1,42 @@
 <#
 .SYNOPSIS
-    Read MAC address from ESP32 to calculate and display AP Password
+    Read MAC address from a Fish Pump board and display the AP Wi-Fi password.
 .PARAMETER Port
-    COM port e.g. COM5. If not specified, it will auto-detect or ask.
+    COM port e.g. COM5. If not specified, auto-detects or prompts.
+.PARAMETER Board
+    Board profile: 'esp32' or 'esp32s3'. If not specified, shows a selection menu.
 #>
 param(
-    [string]$Port = ""
+    [string]$Port  = "",
+    [ValidateSet("", "esp32", "esp32s3")]
+    [string]$Board = ""
 )
 
 $ErrorActionPreference = "Stop"
 chcp 65001 > $null
 
 $ScriptDir = $PSScriptRoot
+
+$BoardProfiles = @{
+    esp32   = @{ Chip="esp32";   Baud="230400"; DisplayName="ESP32 Classic DevKit V1 (4 MB)" }
+    esp32s3 = @{ Chip="esp32s3"; Baud="460800"; DisplayName="ESP32-S3 DevKitC-1 WROOM-1-N16R8 (16 MB)" }
+}
+
+# Board selector menu
+if (-not $Board) {
+    Write-Host "Select target board:" -ForegroundColor Yellow
+    Write-Host "  [1] $($BoardProfiles['esp32'].DisplayName)"   -ForegroundColor White
+    Write-Host "  [2] $($BoardProfiles['esp32s3'].DisplayName)" -ForegroundColor White
+    Write-Host ""
+    $choice = Read-Host "Enter 1 or 2"
+    switch ($choice.Trim()) {
+        "1"     { $Board = "esp32" }
+        "2"     { $Board = "esp32s3" }
+        default { Write-Host "Invalid choice." -ForegroundColor Red; Read-Host "Press Enter to exit"; exit 1 }
+    }
+}
+
+$Profile = $BoardProfiles[$Board]
 
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
@@ -56,7 +81,7 @@ Write-Host ""
 Write-Host "Reading MAC address via $Port ..." -ForegroundColor Cyan
 
 # --- Read MAC ---
-$macOutput = & $esptoolExe --chip esp32 --baud 230400 --port $Port read_mac 2>&1
+$macOutput = & $esptoolExe --chip $Profile.Chip --baud $Profile.Baud --port $Port read_mac 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Could not read MAC. Please check connection." -ForegroundColor Red
     Read-Host "Press Enter to exit"; exit 1
