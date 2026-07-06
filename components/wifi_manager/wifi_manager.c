@@ -603,6 +603,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 
             if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
                 ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
+                free(ap_info);
                 return;
             }
             if (s_scan_cancel_pending) {
