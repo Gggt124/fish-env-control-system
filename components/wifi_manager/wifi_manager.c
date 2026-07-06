@@ -596,6 +596,11 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
             }
             break;
         }
+        case WIFI_EVENT_AP_START: {
+            ESP_LOGI(TAG, "[WIFI_EVENT] ap_start");
+            wifi_manager_reset_ap_timeout();
+            break;
+        }
         case WIFI_EVENT_AP_STACONNECTED: {
             uint32_t events = diag_increment(&s_wifi_diag.ap_client_connected_events);
             ESP_LOGI(TAG, "[WIFI_EVENT] ap_client_connected events=%lu", (unsigned long)events);
