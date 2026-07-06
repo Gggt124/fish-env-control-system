@@ -87,6 +87,9 @@ if (-not (Test-Path $SecretsFile)) {
     & "$PSScriptRoot\generate_secrets.ps1"
 }
 
+# Use isolated sdkconfig per target so switching targets doesn't wipe cache
+$env:SDKCONFIG = Join-Path $ProjectRoot "sdkconfig.$Target"
+
 idf.py --version
 
 if ($FullClean) {
