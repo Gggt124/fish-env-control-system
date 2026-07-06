@@ -35,6 +35,7 @@ static pump_control_active_relay_t s_active_relay = PUMP_CONTROL_RELAY_NONE;
 static pump_control_timer_phase_t s_phase = PUMP_CONTROL_PHASE_IDLE;
 static uint32_t s_countdown_sec;
 static int64_t s_phase_deadline_ms;
+static uint32_t s_current_phase_duration_sec;
 
 
 
@@ -123,6 +124,7 @@ static void reset_runtime_state_locked(void)
     s_phase = PUMP_CONTROL_PHASE_IDLE;
     s_countdown_sec = 0;
     s_phase_deadline_ms = 0;
+    s_current_phase_duration_sec = 0;
 }
 
 static gpio_num_t relay_gpio_for_config(const pump_control_config_t *config,
@@ -343,6 +345,7 @@ static void set_phase_locked(pump_control_timer_phase_t phase, int64_t now_ms)
     if (!timer) {
         s_phase = PUMP_CONTROL_PHASE_IDLE;
         s_countdown_sec = 0;
+        s_current_phase_duration_sec = 0;
         force_both_relays_inactive_locked();
         return;
     }
@@ -350,6 +353,7 @@ static void set_phase_locked(pump_control_timer_phase_t phase, int64_t now_ms)
     uint32_t duration_sec = (phase == PUMP_CONTROL_PHASE_ON) ? timer->on_sec : timer->off_sec;
     s_phase = phase;
     s_phase_deadline_ms = now_ms + ((int64_t)duration_sec * MS_PER_SEC);
+    s_current_phase_duration_sec = duration_sec;
     s_countdown_sec = duration_sec;
     set_active_relay_energized_locked(phase == PUMP_CONTROL_PHASE_ON);
 }
@@ -748,11 +752,7 @@ bool pump_control_get_status(pump_control_status_t *out)
     out->active_relay = s_active_relay;
     out->phase = s_phase;
     out->countdown_sec = s_countdown_sec;
-    out->total_duration_sec = 0;
-    const pump_control_timer_config_t *timer = active_timer_config_locked();
-    if (timer && (s_phase == PUMP_CONTROL_PHASE_ON || s_phase == PUMP_CONTROL_PHASE_OFF)) {
-        out->total_duration_sec = s_phase == PUMP_CONTROL_PHASE_ON ? timer->on_sec : timer->off_sec;
-    }
+    out->total_duration_sec = s_current_phase_duration_sec;
 
     xSemaphoreGive(s_pump_mutex);
     return true;
