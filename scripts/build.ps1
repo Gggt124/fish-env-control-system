@@ -97,9 +97,14 @@ if ($FullClean) {
     if (Test-Path $BuildDir) { idf.py -B "$BuildDir" fullclean }
 }
 
-Write-Host "[build] idf.py set-target $Target ..." -ForegroundColor Cyan
-idf.py -B "$BuildDir" set-target $Target
-if ($LASTEXITCODE -ne 0) { throw "[build] set-target $Target failed (exit $LASTEXITCODE)" }
+$CacheFile = Join-Path $BuildDir "CMakeCache.txt"
+if (-not (Test-Path $CacheFile)) {
+    Write-Host "[build] idf.py set-target $Target ..." -ForegroundColor Cyan
+    idf.py -B "$BuildDir" set-target $Target
+    if ($LASTEXITCODE -ne 0) { throw "[build] set-target $Target failed (exit $LASTEXITCODE)" }
+} else {
+    Write-Host "[build] Target already set to $Target (skipping set-target for incremental build)..." -ForegroundColor Cyan
+}
 
 Write-Host "[build] idf.py build ..." -ForegroundColor Cyan
 idf.py -B "$BuildDir" build
