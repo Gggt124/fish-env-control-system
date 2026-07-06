@@ -407,38 +407,32 @@ static void ap_timeout_timer_cb(void *arg)
         return;
     }
 
+    /* Check if any client is connected to the SoftAP before shutting down.
+     * We intentionally do NOT guard on s_sta_connected here — the AP can
+     * close when idle even if STA has no uplink. Recovery: hold EXT_BTN
+     * (APP_CONFIG_EXT_BTN_GPIO) for 2-5 s to restore AP for 5 minutes. */
+    wifi_sta_list_t clients = {0};
+    esp_err_t err = esp_wifi_ap_get_sta_list(&clients);
+    if (err == ESP_OK && clients.num > 0) {
+        ESP_LOGI(TAG, "AP timeout expired but %d client(s) still connected, resetting timeout", clients.num);
+        wifi_manager_reset_ap_timeout();
+        return;
+    }
+
     if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
         ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
         return;
     }
     bool sta_connected = s_sta_connected;
-    xSemaphoreGive(s_wifi_mutex);
-
-    if (!sta_connected) {
-        ESP_LOGI(TAG, "AP timeout expired but STA is disconnected. Keeping AP active to prevent blackout.");
-        wifi_manager_reset_ap_timeout();
-        return;
-    }
-
-    wifi_sta_list_t clients = {0};
-    esp_err_t err = esp_wifi_ap_get_sta_list(&clients);
-    if (err == ESP_OK && clients.num > 0) {
-        ESP_LOGI(TAG, "AP timeout expired but %d clients connected, resetting timeout", clients.num);
-        wifi_manager_reset_ap_timeout();
+    ESP_LOGI(TAG, "AP idle timeout expired with 0 clients, shutting down SoftAP (sta_connected=%s)",
+             sta_connected ? "true" : "false");
+    esp_err_t ret = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (ret == ESP_OK) {
+        s_ap_enabled = false;
     } else {
-        ESP_LOGI(TAG, "AP timeout expired with 0 clients, shutting down AP");
-        if (xSemaphoreTake(s_wifi_mutex, pdMS_TO_TICKS(5000)) != pdTRUE) {
-            ESP_LOGE(TAG, "Wi-Fi mutex timeout at %s:%d", __FUNCTION__, __LINE__);
-            return;
-        }
-        esp_err_t ret = esp_wifi_set_mode(WIFI_MODE_STA);
-        if (ret == ESP_OK) {
-            s_ap_enabled = false;
-        } else {
-            ESP_LOGE(TAG, "Failed to stop AP after timeout: %s", esp_err_to_name(ret));
-        }
-        xSemaphoreGive(s_wifi_mutex);
+        ESP_LOGE(TAG, "Failed to stop AP after idle timeout: %s", esp_err_to_name(ret));
     }
+    xSemaphoreGive(s_wifi_mutex);
 }
 
 void wifi_manager_reset_ap_timeout(void)
