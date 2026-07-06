@@ -2,7 +2,7 @@
 .SYNOPSIS
     Flash firmware to ESP32 or ESP32-S3 and show AP password.
 .PARAMETER Port
-    COM port (e.g. COM5). If omitted, auto-detects or prompts.
+    COM port (e.g. 5). If omitted, auto-detects or prompts.
 .PARAMETER Board
     Board profile: 'esp32' or 'esp32s3'. If omitted, shows selection menu.
 #>
@@ -80,7 +80,7 @@ if (-not $Port) {
     } elseif ($ports.Count -gt 1) {
         Write-Host "Multiple COM ports:" -ForegroundColor Yellow
         $ports | ForEach-Object { Write-Host "  - $_" }
-        $Port = Read-Host "Enter COM port (e.g. COM5)"
+        $Port = Read-Host "Enter COM port number (e.g. 5)"
     } else {
         Write-Host "No COM port found. Plug in the board via USB then press Enter."
         Read-Host "..."

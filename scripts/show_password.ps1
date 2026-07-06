@@ -2,7 +2,7 @@
 .SYNOPSIS
     Read MAC address from a Fish Pump board and display the AP Wi-Fi password.
 .PARAMETER Port
-    COM port e.g. COM5. If not specified, auto-detects or prompts.
+    COM port e.g. 5. If not specified, auto-detects or prompts.
 .PARAMETER Board
     Board profile: 'esp32' or 'esp32s3'. If not specified, shows a selection menu.
 #>
@@ -60,7 +60,7 @@ if (-not $Port) {
     } elseif ($ports.Count -gt 1) {
         Write-Host "Multiple COM ports found:" -ForegroundColor Yellow
         $ports | ForEach-Object { Write-Host "  - $_" }
-        $Port = Read-Host "Enter COM port (e.g. COM5)"
+        $Port = Read-Host "Enter COM port number (e.g. 5)"
     } else {
         Write-Host "No COM port found. Please plug in the ESP32 via USB and press Enter."
         Read-Host "..."

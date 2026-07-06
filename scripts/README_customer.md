@@ -11,7 +11,7 @@ This folder contains the firmware and updater tools for your Fish Pump control b
 2. Double-click the **`FLASH.bat`** file.
 3. A black command window will open.
    - Select your board type when prompted: **[1]** ESP32 Classic or **[2]** ESP32-S3.
-   - If prompted for a **COM port**, type the corresponding port (e.g., `COM5`) and press Enter.
+   - If prompted for a **COM port**, type only the port number (e.g., `5`) and press Enter.
    - All required tools are included — no additional installation needed.
 4. Wait for the success message: **"[OK] Flash Successful!"**
 5. The script will display your unique **Wi-Fi Password**. Please save it!
