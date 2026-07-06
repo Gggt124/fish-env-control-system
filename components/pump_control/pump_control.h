@@ -48,6 +48,15 @@ typedef struct {
 } pump_control_timer_config_t;
 
 typedef struct {
+    pump_control_timer_config_t   timer1;
+    pump_control_timer_config_t   timer2;
+    pump_control_start_phase_t    timer1_start_phase;
+    pump_control_start_phase_t    timer2_start_phase;
+    pump_control_relay_polarity_t relay1_polarity;
+    pump_control_relay_polarity_t relay2_polarity;
+} pump_control_timer_update_t;
+
+typedef struct {
     gpio_num_t float_gpio;
     bool float_active_low;
     gpio_num_t relay_gpio;
@@ -89,6 +98,7 @@ bool pump_control_init(const pump_control_config_t *config);
 bool pump_control_start(void);
 bool pump_control_stop(void);
 bool pump_control_get_status(pump_control_status_t *out);
+bool pump_control_update_timers(const pump_control_timer_update_t *update);
 
 #ifdef __cplusplus
 }
