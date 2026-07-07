@@ -22,6 +22,13 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         COMMENT "Minifying and compressing static web assets..."
         VERBATIM
     )
+    
+    add_custom_target(generate_static_assets
+        DEPENDS
+            "${STATIC_OUT_DIR}/index.html.gz"
+            "${STATIC_OUT_DIR}/style.css.gz"
+            "${STATIC_OUT_DIR}/app.js.gz"
+    )
 endif()
 
 idf_component_register(
@@ -60,3 +67,6 @@ idf_component_register(
         mbedtls
 )
 
+if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    add_dependencies(${COMPONENT_LIB} generate_static_assets)
+endif()
