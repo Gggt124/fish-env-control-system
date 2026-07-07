@@ -412,7 +412,7 @@
             
             <section id="section-specs">
                 <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">2. ข้อมูลจำเพาะฮาร์ดแวร์ (<span lang="en">Hardware Specifications</span>)</h1>
-                <p>ระบบรองรับโปรไฟล์ฮาร์ดแวร์แบบสองคอร์ ทั้งบอร์ด <span lang="en">ESP32 DevKit V1</span> (รุ่นคลาสสิก 30 พิน แฟลช <code class="mono">4MB</code>) และบอร์ด <span lang="en">ESP32-S3-DevKitC-1</span> (<span lang="en">WROOM-1-N16R8</span> แฟลช <code class="mono">16MB</code> และ <span lang="en">PSRAM</span> <code class="mono">8MB</code>)</p>
+                <p>ระบบรองรับโปรไฟล์ฮาร์ดแวร์แบบสองคอร์ ทั้งบอร์ด <span lang="en">ESP32 DevKit V1</span> (รุ่นคลาสสิก 30 พิน แฟลช <code class="mono">4MB</code>) และบอร์ด <span lang="en">ESP32-S3-DevKitC-1</span> (<span lang="en">WROOM-1-N16R8</span> แฟลช <code class="mono">16MB</code> และ <code class="mono" lang="en">PSRAM</code> <code class="mono">8MB</code>)</p>
                 <p>แผนผังขาต่อใช้งาน (<span lang="en">Pinout</span>) สำหรับโปรไฟล์ค่าเริ่มต้นในแต่ละบอร์ด:</p>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px;">
                     <thead>
@@ -501,11 +501,11 @@
                 <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">3. การติดตั้งและเดินสายไฟ (<span lang="en">Wiring & Safety</span>)</h1>
                 <div class="alert alert-danger">
                     <strong>คำเตือนวิกฤตทางไฟฟ้า:</strong><br>
-                    - <strong>ห้ามต่อเซนเซอร์ <span lang="en">DS18B20</span> เข้ากับไฟ <code class="mono">5V</code> เด็ดขาด!</strong> พิน <span lang="en">GPIO</span> ของ <span lang="en">ESP32</span> รับแรงดันไฟได้สูงสุด <code class="mono">3.3V</code> การป้อนแรงดันไฟ <code class="mono">5V</code> เข้าช่องส่งสัญญาณข้อมูล (<span lang="en">DQ Pin</span>) จะทำให้พินเสียหายทันทีและอาจทำให้ชิปพังทั้งตัว<br>
-                    - ตรวจสอบให้แน่ใจว่าได้ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> คร่อมระหว่างสายสัญญาณ <strong><span lang="en">DQ</span> (สีเหลือง)</strong> และ <strong><code class="mono">3.3V</code> (สีแดง)</strong> เสมอ และห้ามเชื่อมต่อในโหมดปรสิต (<span lang="en">Parasitic Power Mode</span>)
+                    - <strong>ห้ามต่อเซนเซอร์ <span lang="en">DS18B20</span> เข้ากับไฟ <code class="mono">5V</code> เด็ดขาด!</strong> พิน <span lang="en">GPIO</span> ของ <span lang="en">ESP32</span> รับแรงดันไฟได้สูงสุด <code class="mono">3.3V</code> การป้อนแรงดันไฟ <code class="mono">5V</code> เข้าช่องส่งสัญญาณข้อมูล (<code class="mono" lang="en">DQ Pin</code>) จะทำให้พินเสียหายทันทีและอาจทำให้ชิปพังทั้งตัว<br>
+                    - ตรวจสอบให้แน่ใจว่าได้ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> คร่อมระหว่างสายสัญญาณ <strong><code class="mono" lang="en">DQ</code> (สีเหลือง)</strong> และ <strong><code class="mono">3.3V</code> (สีแดง)</strong> เสมอ และห้ามเชื่อมต่อในโหมดปรสิต (<span lang="en">Parasitic Power Mode</span>)
                 </div>
                 <h3>1. การต่อเซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></h3>
-                <p>เชื่อมต่อขา <code class="mono">VDD</code> เข้ากับแหล่งจ่ายไฟ <code class="mono">3.3V</code>, ขา <code class="mono">GND</code> เข้ากับกราวด์ <code class="mono">GND</code>, และขาข้อมูล <span lang="en">DQ</span> เข้ากับพินส่งสัญญาณที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO33</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO41</code> บน <span lang="en">ESP32-S3</span>) โดยต่อตัวต้านทาน <code class="mono">4.7 kOhm</code> ระหว่างขา <span lang="en">DQ</span> และ <code class="mono">3.3V</code>:</p>
+                <p>เชื่อมต่อขา <code class="mono">VDD</code> เข้ากับแหล่งจ่ายไฟ <code class="mono">3.3V</code>, ขา <code class="mono">GND</code> เข้ากับกราวด์ <code class="mono">GND</code>, และขาข้อมูล <code class="mono" lang="en">DQ</code> เข้ากับพินส่งสัญญาณที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO33</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO41</code> บน <span lang="en">ESP32-S3</span>) โดยต่อตัวต้านทาน <code class="mono">4.7 kOhm</code> ระหว่างขา <code class="mono" lang="en">DQ</code> และ <code class="mono">3.3V</code>:</p>
                 <!-- SVG แผนภาพการต่อสายเซนเซอร์วัดอุณหภูมิ DS18B20 และ Pull-up Resistor -->
                 <svg viewBox="0 0 500 240" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
                     <!-- ESP32 Side -->
@@ -636,7 +636,7 @@
                         </label>
                         <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
                             <input type="checkbox" class="chk-item" style="margin-top: 4px;">
-                            <span>ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> ระหว่างขา <span lang="en">DQ</span> และ <code class="mono">3.3V</code> แล้ว</span>
+                            <span>ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> ระหว่างขา <code class="mono" lang="en">DQ</code> และ <code class="mono">3.3V</code> แล้ว</span>
                         </label>
                         <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
                             <input type="checkbox" class="chk-item" style="margin-top: 4px;">
@@ -697,13 +697,13 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
                 
                 <div class="alert alert-warning">
-                    <strong>คำแนะนำกรณีอัปโหลดไม่สำเร็จ:</strong> หากบอร์ดแสดงข้อผิดพลาดเกี่ยวกับการเข้ารหัสหน่วยความจำแฟลชที่ค้างมาจากระบบก่อนหน้า ให้ทำการรีเซ็ตค่าสถานะการเข้ารหัสโดยการแฟลชโปรแกรมแบบเปิดเผยและตั้งค่า <span lang="en">FLASH_CRYPT_CNT</span> ให้อยู่ในสถานะเลขคู่ เพื่อปิดการทำงานระบบความปลอดภัยระดับชิปในโหมดพัฒนา
+                    <strong>คำแนะนำกรณีอัปโหลดไม่สำเร็จ:</strong> หากบอร์ดแสดงข้อผิดพลาดเกี่ยวกับการเข้ารหัสหน่วยความจำแฟลชที่ค้างมาจากระบบก่อนหน้า ให้ทำการรีเซ็ตค่าสถานะการเข้ารหัสโดยการแฟลชโปรแกรมแบบเปิดเผยและตั้งค่า <code class="mono" lang="en">FLASH_CRYPT_CNT</code> ให้อยู่ในสถานะเลขคู่ เพื่อปิดการทำงานระบบความปลอดภัยระดับชิปในโหมดพัฒนา
                 </div>
             </section>
             
             <section id="section-first-run" style="margin-top: 40px;">
                 <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">5. การเริ่มต้นระบบครั้งแรก (<span lang="en">First-Time Connection</span>)</h1>
-                <p>เมื่ออุปกรณ์บูตระบบขึ้นมาเป็นครั้งแรกและตรวจไม่พบการตั้งค่าใดๆ ในหน่วยความจำถาวร (<span lang="en">NVS</span>) ระบบจะเริ่มต้นโหมดเครือข่ายไร้สายแบบตั้งค่าร่วม (<span lang="en">SoftAP</span>) ในทันที โดยเครือข่ายจะมีคุณสมบัติดังนี้:</p>
+                <p>เมื่ออุปกรณ์บูตระบบขึ้นมาเป็นครั้งแรกและตรวจไม่พบการตั้งค่าใดๆ ในหน่วยความจำถาวร (<code class="mono" lang="en">NVS</code>) ระบบจะเริ่มต้นโหมดเครือข่ายไร้สายแบบตั้งค่าร่วม (<span lang="en">SoftAP</span>) ในทันที โดยเครือข่ายจะมีคุณสมบัติดังนี้:</p>
                 
                 <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
                     <li><strong>ชื่อสัญญาณ <span lang="en">Wi-Fi</span> (<span lang="en">SSID</span>):</strong> <code class="mono">FishPump-Setup</code></li>
@@ -713,7 +713,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 
                 <div class="alert alert-warning">
                     <strong>การยืนยันตัวตนและความปลอดภัยเริ่มต้น:</strong><br>
-                    - บัญชีเข้าสู่ระบบเริ่มต้นคือ Username: <code class="mono">admin</code>, Password: <code class="mono">admin123</code><br>
+                    - บัญชีเข้าสู่ระบบเริ่มต้นคือ <span lang="en">Username:</span> <code class="mono">admin</code>, <span lang="en">Password:</span> <code class="mono">admin123</code><br>
                     - <strong>ข้อบังคับสำคัญ:</strong> ระบบการจัดการความปลอดภัยจะบังคับให้ผู้ใช้งานเปลี่ยนรหัสผ่านเริ่มต้นเป็นรหัสส่วนตัวทันทีเมื่อล็อกอินเข้าระบบสำเร็จเป็นครั้งแรก เพื่อความปลอดภัยของเครื่องควบคุมและปั๊มน้ำในระยะยาว
                 </div>
             </section>
@@ -754,7 +754,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 
                 <div class="alert alert-danger">
                     <strong>เงื่อนไขการแจ้งเตือนความผิดปกติของอุณหภูมิ (<span lang="en">Sensor Fault & Safe-Off Logic</span>):</strong><br>
-                    - หากระบบพยายามเชื่อมโยงค่าและเกิดความล้มเหลวในการอ่านสัญญาณพิน <span lang="en">One-Wire</span> ติดต่อกันเป็นจำนวน <strong><code class="mono">3</code> ครั้ง</strong> ระบบจะปรับสถานะเซนเซอร์ให้เป็นบกพร่องทันที และสั่ง <strong>บังคับปิดระบบทำความเย็นให้หยุดทำงานทันที (Safe-Off)</strong> เพื่อความปลอดภัยป้องกันฮาร์ดแวร์ทำงานเกินพิกัดควบคุม<br>
+                    - หากระบบพยายามเชื่อมโยงค่าและเกิดความล้มเหลวในการอ่านสัญญาณพิน <span lang="en">One-Wire</span> ติดต่อกันเป็นจำนวน <strong><code class="mono">3</code> ครั้ง</strong> ระบบจะปรับสถานะเซนเซอร์ให้เป็นบกพร่องทันที และสั่ง <strong>บังคับปิดระบบทำความเย็นให้หยุดทำงานทันที (<span lang="en">Safe-Off</span>)</strong> เพื่อความปลอดภัยป้องกันฮาร์ดแวร์ทำงานเกินพิกัดควบคุม<br>
                     - ระบบจะสแกนช่องทางเดินสายสื่อสารอย่างต่อเนื่องเพื่อกู้คืนการทำงาน หากพบว่าสามารถอ่านค่าได้สมบูรณ์และมีความเสถียรติดต่อกันจำนวน <strong><code class="mono">2</code> ครั้ง</strong> ระบบจะยกเลิกการรายงานข้อผิดพลาดและอนุญาตให้ระบบทำความเย็นกลับมาเข้าสู่โหมดควบคุมอัตโนมัติดังเดิม
                 </div>
 
@@ -776,7 +776,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                         <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 8px;">ไม่พบอุปกรณ์เซนเซอร์วัดอุณหภูมิ</td>
                             <td style="padding: 8px;">ไม่มีการติดตั้งตัวต้านทานสัญญาณ หรือใช้สายยาวเกินไป</td>
-                            <td style="padding: 8px;">ตรวจสอบสายสัญญาณ <span lang="en">DQ</span> และตัวต้านทานดึงกระแสภายนอก <code class="mono">4.7 kOhm</code> หรือตรวจสอบหน้าสัมผัสของจุดต่อ</td>
+                            <td style="padding: 8px;">ตรวจสอบสายสัญญาณ <code class="mono" lang="en">DQ</code> และตัวต้านทานดึงกระแสภายนอก <code class="mono">4.7 kOhm</code> หรือตรวจสอบหน้าสัมผัสของจุดต่อ</td>
                         </tr>
                         <tr style="border-bottom: 1px solid var(--border-color);">
                             <td style="padding: 8px;">เชื่อมต่อสัญญานอินเทอร์เน็ตกับบอร์ดไม่ได้</td>
@@ -791,7 +791,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 <ol style="margin-left: 20px; line-height: 1.8;">
                     <li>กดปุ่มแฟลชบนตัวเครื่องบอร์ด (<code class="mono">Boot/Flash Button</code>) ค้างไว้เป็นเวลาอย่างน้อย <code class="mono">5</code> วินาทีระหว่างที่บอร์ดกำลังทำงานปกติ</li>
                     <li>ไฟกระพริบสถานะภายนอกจะแจ้งเป็นสัญญาณเตือนจังหวะเร็ว</li>
-                    <li>เฟิร์มแวร์จะดำเนินการล้างการตั้งค่าเครือข่าย <span lang="en">STA</span> ข้อมูลพินฮาร์ดแวร์ที่แก้ไข และลบประวัติรหัสผ่านทั้งหมดที่มีการบันทึกในหน่วยความจำถาวร (<span lang="en">NVS</span>) พร้อมสั่งรีสตาร์ทเครื่องใหม่เข้าสู่สถานะโหมดตั้งค่าเริ่มต้นจากโรงงาน (<code class="mono">FishPump-Setup</code>)</li>
+                    <li>เฟิร์มแวร์จะดำเนินการล้างการตั้งค่าเครือข่าย <code class="mono" lang="en">STA</code> ข้อมูลพินฮาร์ดแวร์ที่แก้ไข และลบประวัติรหัสผ่านทั้งหมดที่มีการบันทึกในหน่วยความจำถาวร (<code class="mono" lang="en">NVS</code>) พร้อมสั่งรีสตาร์ทเครื่องใหม่เข้าสู่สถานะโหมดตั้งค่าเริ่มต้นจากโรงงาน (<code class="mono">FishPump-Setup</code>)</li>
                 </ol>
             </section>
         </main>
@@ -816,31 +816,51 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
 
         // Active Navigation State Switcher
         const navLinks = document.querySelectorAll('.nav-link');
+        let isScrollingTo = false;
+        let scrollTimeout = null;
+
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
+                isScrollingTo = true;
                 navLinks.forEach(item => item.classList.remove('active'));
                 link.classList.add('active');
+                
+                if (scrollTimeout) {
+                    clearTimeout(scrollTimeout);
+                }
+                scrollTimeout = setTimeout(() => {
+                    isScrollingTo = false;
+                }, 800);
             });
         });
 
         // ScrollSpy mechanism to highlight active nav link on scroll
         const sections = document.querySelectorAll('section');
+        let scrollTick = false;
+
         window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (window.pageYOffset >= sectionTop - 150) {
-                    current = section.getAttribute('id');
-                }
-            });
-            
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === `#${current}`) {
-                    link.classList.add('active');
-                }
-            });
+            if (isScrollingTo) return;
+
+            if (!scrollTick) {
+                window.requestAnimationFrame(() => {
+                    let current = '';
+                    sections.forEach(section => {
+                        const sectionTop = section.offsetTop;
+                        if (window.scrollY >= sectionTop - 150) {
+                            current = section.getAttribute('id');
+                        }
+                    });
+                    
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${current}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                    scrollTick = false;
+                });
+                scrollTick = true;
+            }
         });
 
         // Pre-Power Checklist progress calculator
@@ -882,7 +902,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
             const code = pre.querySelector('code');
             const text = code.textContent;
             
-            navigator.clipboard.writeText(text).then(() => {
+            function showSuccess() {
                 const originalText = button.textContent;
                 button.textContent = 'คัดลอกแล้ว!';
                 button.style.backgroundColor = 'var(--success-container)';
@@ -895,9 +915,39 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                     button.style.borderColor = 'var(--primary)';
                     button.style.color = 'var(--primary)';
                 }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
+            }
+
+            function fallbackCopy(textVal) {
+                try {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = textVal;
+                    textArea.style.top = '0';
+                    textArea.style.left = '0';
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    if (successful) {
+                        showSuccess();
+                    } else {
+                        console.error('Fallback copy command was unsuccessful');
+                    }
+                } catch (err) {
+                    console.error('Fallback copy failed: ', err);
+                }
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(showSuccess).catch(err => {
+                    console.warn('Navigator clipboard copy failed, trying fallback: ', err);
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
         }
     </script>
 </body>
