@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
+set(SDKCONFIG "${CMAKE_SOURCE_DIR}/sdkconfig.${IDF_TARGET}")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 set(EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/components")
-
-# Use separate sdkconfig file for each target to avoid race conditions
-set(SDKCONFIG "${CMAKE_SOURCE_DIR}/sdkconfig.${IDF_TARGET}")
 
 project(fish_pump_relay_timer_control VERSION 0.2.4)
 add_compile_definitions(APP_TEMPLATE_FIRMWARE_VERSION="v${PROJECT_VERSION}")
