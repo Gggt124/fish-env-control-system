@@ -1,7 +1,6 @@
 build/
 build-*/
-sdkconfig
-sdkconfig.old
+sdkconfig*
 *.bin
 *.elf
 *.map
