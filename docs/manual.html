@@ -593,6 +593,20 @@
             margin-bottom: var(--space-lg);
         }
 
+        .content-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        @media (min-width: 768px) {
+            .content-card {
+                padding: var(--space-xl);
+            }
+        }
+
         .feature-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -687,6 +701,7 @@
             height: 32px;
             margin-bottom: var(--space-sm);
             color: var(--primary);
+            fill: currentColor;
         }
 
         /* --- Responsive Styles --- */
@@ -815,7 +830,7 @@
     <div class="content-wrapper">
         <main class="main-content" id="manual-root">
             <h1 class="page-title">คู่มือติดตั้งและใช้งานระบบควบคุมปั๊มน้ำรีเลย์</h1>
-            <section id="section-overview">
+            <section id="section-overview" class="content-card">
                 <h2 class="section-title">1. ภาพรวมระบบ (<span lang="en">System Overview</span>)</h2>
                 <p>เครื่องควบคุมปั๊มน้ำรีเลย์และสวิตช์ลูกลอยนี้ ทำงานบนเฟิร์มแวร์ <span lang="en">ESP-IDF</span> ระดับอุตสาหกรรม โดยใช้เงื่อนไขจากระดับน้ำของสวิตช์ลูกลอย (<span lang="en">Float Switch</span>) ในการขับเคลื่อนปั๊มผ่านโปรไฟล์สองรูปแบบ (<span lang="en">Timer 1</span> และ <span lang="en">Timer 2</span>) แบบวนลูป <span lang="en">ON</span>/<span lang="en">OFF</span> ไร้รอยต่อ โดยไม่ต้องพึ่งพาระบบคลาวด์</p>
                 <div class="alert alert-success">
@@ -826,7 +841,7 @@
                 <p>ระบบถูกออกแบบมาเพื่อควบคุมสถานะการทำงานของปั๊มน้ำและระบบทำความเย็นแยกกันโดยสิ้นเชิง เพื่อเพิ่มความทนทานและความปลอดภัยสูงสุด โดยมีระบบการกรองสัญญาณรบกวนของลูกลอยผ่านการหน่วงเวลาระดับซอฟต์แวร์ เพื่อป้องกันปั๊มสลับการทำงานไปมาอย่างรวดเร็วเมื่อเกิดคลื่นน้ำกระเพื่อม</p>
             </section>
             
-            <section id="section-specs">
+            <section id="section-specs" class="content-card">
                 <h2 class="section-title">2. ข้อมูลจำเพาะฮาร์ดแวร์ (<span lang="en">Hardware Specifications</span>)</h2>
                 <p>ระบบรองรับโปรไฟล์ฮาร์ดแวร์แบบสองคอร์ ทั้งบอร์ด <span lang="en">ESP32 DevKit V1</span> (รุ่นคลาสสิก 30 พิน แฟลช <code class="mono">4MB</code>) และบอร์ด <span lang="en">ESP32-S3-DevKitC-1</span> (<span lang="en">WROOM-1-N16R8</span> แฟลช <code class="mono">16MB</code> และ <code class="mono" lang="en">PSRAM</code> <code class="mono">8MB</code>)</p>
                 <p>แผนผังขาต่อใช้งาน (<span lang="en">Pinout</span>) สำหรับโปรไฟล์ค่าเริ่มต้นในแต่ละบอร์ด:</p>
@@ -919,7 +934,7 @@
                 </svg>
             </section>
             
-            <section id="section-wiring">
+            <section id="section-wiring" class="content-card">
                 <h2 class="section-title">3. การติดตั้งและเดินสายไฟ (<span lang="en">Wiring & Safety</span>)</h2>
                 <div class="alert alert-danger">
                     <strong>คำเตือนวิกฤตทางไฟฟ้า:</strong><br>
@@ -1114,7 +1129,7 @@
                 </div>
             </section>
             
-            <section id="section-flashing">
+            <section id="section-flashing" class="content-card">
                 <h2 class="section-title">4. คอมไพล์และอัปโหลดเฟิร์มแวร์ (<span lang="en">Compilation & Flashing</span>)</h2>
                 <p>ระบบพัฒนาขึ้นโดยใช้ชุดพัฒนาอย่างเป็นทางการของ <span lang="en">ESP-IDF</span> (แนะนำเวอร์ชัน <code class="mono">v6.0.1</code>) เท่านั้น โดยระบบไม่ได้พัฒนาบนโครงสร้างของ <span lang="en">Arduino</span> หรือ <span lang="en">PlatformIO</span></p>
                 
@@ -1161,7 +1176,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
             </section>
             
-            <section id="section-first-run">
+            <section id="section-first-time" class="content-card">
                 <h2 class="section-title">5. การเริ่มต้นระบบครั้งแรก (<span lang="en">First-Time Connection</span>)</h2>
                 <p>เมื่ออุปกรณ์บูตระบบขึ้นมาเป็นครั้งแรกและตรวจไม่พบการตั้งค่าใดๆ ในหน่วยความจำถาวร (<code class="mono" lang="en">NVS</code>) ระบบจะเริ่มต้นโหมดเครือข่ายไร้สายแบบตั้งค่าร่วม (<span lang="en">SoftAP</span>) ในทันที โดยเครือข่ายจะมีคุณสมบัติดังนี้:</p>
                 
@@ -1178,7 +1193,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
             </section>
             
-                        <section id="section-dashboard">
+                        <section id="section-dashboard" class="content-card">
                 <h2 class="section-title">6. การใช้งานแดชบอร์ดควบคุมระบบเว็บ (<span lang="en">Web Dashboard Usage Guide</span>)</h2>
                 <p>ระบบเว็บอินเทอร์เฟซ (<span lang="en">Web Interface</span>) นี้ได้รับการออกแบบมาเพื่อใช้ควบคุม กำหนดค่า และแสดงสถานะแบบเรียลไทม์ของระบบปั๊มน้ำและระบบทำความเย็นทั้งหมดได้โดยตรงจากเบราว์เซอร์ โดยไม่ต้องพึ่งพาการเชื่อมต่ออินเทอร์เน็ตภายนอก</p>
 
@@ -1260,7 +1275,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
             </section>
             
-            <section id="section-trouble">
+            <section id="section-trouble" class="content-card">
                 <h2 class="section-title">7. การแก้ไขปัญหาและการกู้คืนระบบ (<span lang="en">Troubleshooting & Diagnostics</span>)</h2>
                 
                 <h3>1. การแจ้งเตือนและการจัดการข้อผิดพลาดเซนเซอร์อุณหภูมิ</h3>
