@@ -1344,7 +1344,7 @@ button.nav-item {
 
 .status-kv-value {
     font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     font-weight: 400;
     line-height: 1.4rem;
     color: var(--on-surface-variant);
@@ -1468,6 +1468,26 @@ button.nav-item {
 
 .settings-collapsible>.settings-body {
     padding: 0 var(--space-6) var(--space-6);
+}
+
+/* Wiring Guide List Utilities */
+.wiring-guide-list {
+    padding-left: var(--space-6);
+    list-style-type: decimal;
+}
+
+.wiring-guide-list ul {
+    padding-left: var(--space-5);
+    margin-top: var(--space-1);
+    margin-bottom: var(--space-1);
+}
+
+.wiring-guide-list > li > ul {
+    list-style-type: disc;
+}
+
+.wiring-guide-list > li > ul > li > ul {
+    list-style-type: circle;
 }
 
 .settings-title {
@@ -3443,6 +3463,10 @@ select:disabled {
     font-size: var(--text-lg);
 }
 
+.text-xl {
+    font-size: var(--text-xl);
+}
+
 .text-normal {
     font-weight: 400 !important;
 }
@@ -3652,9 +3676,9 @@ select:disabled {
 
 .modal-warning-block {
     background-color: rgba(196, 125, 0, 0.05);
-    border-left: 4px solid var(--tertiary);
+    border: 1px solid var(--alert-warn-border, #f59e0b);
     padding: var(--space-3) var(--space-4);
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    border-radius: var(--radius-md);
     color: var(--on-surface-variant);
     font-size: var(--text-sm);
     margin: var(--space-4) 0;
