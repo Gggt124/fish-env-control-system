@@ -48,15 +48,13 @@ python -m pip install -r "$env:IDF_PATH\tools\requirements\requirements.core.txt
 
 Use the provided PowerShell scripts to handle the dual-target structure.
 
-**Important:** Before building, if you are switching targets (e.g. from esp32 to esp32s3), you MUST delete the `sdkconfig` file first to prevent getting stuck with the config from the previous target. Do NOT use `-FullClean` unless you actually want to recompile all ESP-IDF components from scratch, as deleting just `sdkconfig` is much faster.
+**Important:** The target configurations (`sdkconfig.esp32` and `sdkconfig.esp32s3`) are fully isolated and automatically managed by CMake. You do **not** need to manually delete any configuration file when switching targets (e.g. from esp32 to esp32s3). Clean incremental compilation works automatically.
 
 ```powershell
-# Delete old config when switching targets
-Remove-Item sdkconfig -ErrorAction SilentlyContinue
-
 # Build a specific profile (esp32 or esp32s3)
 .\scripts\build.ps1 -Target esp32
 .\scripts\build.ps1 -Target esp32s3
+
 
 # Package for release
 .\scripts\package.ps1 -Target all -Zip
