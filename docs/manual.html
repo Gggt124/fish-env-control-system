@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คู่มือ Fish Pump Relay Timer Control</title>
+    <style>
+        :root {
+            /* Palette & Typography Tokens conforming to DESIGN.md */
+            --primary: #00c8a0;
+            --primary-hover: #00ad8a;
+            --primary-container: rgba(0, 200, 160, 0.12);
+            --success: #22d47a;
+            --success-container: rgba(34, 212, 122, 0.10);
+            --warning: #f0a830;
+            --warning-container: rgba(240, 168, 48, 0.10);
+            --danger: #f06060;
+            --danger-container: rgba(240, 96, 96, 0.10);
+            
+            --font-ui: 'IBM Plex Sans Thai', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier New', Consolas, monospace;
+            
+            /* Dark Theme (Default) Variables */
+            --bg-body: #08090d;
+            --bg-card: #0f1117;
+            --bg-sidebar: #0f1117;
+            --text-main: #f5f5f5;
+            --text-muted: #8fa0b4;
+            --border-color: #1e2333;
+            --card-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+            
+            /* Spacing Tokens */
+            --space-xs: 4px;
+            --space-base: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-full: 9999px;
+            
+            /* Elevation flat-by-default overrides */
+            --shadow-card: none;
+        }
+
+        [data-theme="light"] {
+            /* Palette & Typography Tokens for Light Mode */
+            --primary: #0097a7;
+            --primary-hover: #007b85;
+            --primary-container: rgba(0, 151, 167, 0.10);
+            --success: #0e9a5c;
+            --success-container: rgba(14, 154, 92, 0.08);
+            --warning: #c47d00;
+            --warning-container: rgba(196, 125, 0, 0.08);
+            --danger: #c53030;
+            --danger-container: rgba(197, 48, 48, 0.08);
+            
+            --bg-body: #f0f2f7;
+            --bg-card: #ffffff;
+            --bg-sidebar: #ffffff;
+            --text-main: #0d1320;
+            --text-muted: #4a5568;
+            --border-color: #d1d8e4;
+            --card-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- Global Resets & Base Styles --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Sidebar Navigation --- */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            padding: var(--space-lg);
+            overflow-y: auto;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            margin-bottom: var(--space-lg);
+        }
+
+        .sidebar-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: var(--space-xs);
+        }
+
+        .sidebar-version {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Theme Toggle (Pill Switch) --- */
+        .theme-toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-sm) 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: var(--space-md);
+        }
+
+        .theme-toggle-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            width: 48px;
+            height: 24px;
+            border-radius: 12px;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--border-color);
+        }
+
+        .theme-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+        }
+
+        html[data-theme="dark"] .theme-toggle-thumb {
+            transform: translateX(24px);
+            background: var(--primary);
+        }
+
+        /* --- Navigation Menu --- */
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+
+        .nav-item {
+            width: 100%;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background-color: var(--primary-container);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-container);
+            font-weight: 600;
+        }
+
+        /* --- Main Content Layout --- */
+        .content-wrapper {
+            margin-left: 280px;
+            flex: 1;
+            padding: var(--space-xl) var(--space-lg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-content {
+            max-width: 75ch;
+            width: 100%;
+        }
+
+        /* --- Typography Styles --- */
+        h1, h2, h3, h4 {
+            font-family: var(--font-ui);
+            color: var(--text-main);
+            font-weight: 700;
+            margin-bottom: var(--space-md);
+        }
+
+        h1 {
+            font-size: 1.953rem;
+            line-height: 2.5rem;
+            margin-bottom: var(--space-lg);
+        }
+
+        h2 {
+            font-size: 1.563rem;
+            line-height: 2rem;
+            margin-top: var(--space-xl);
+            padding-bottom: var(--space-xs);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+            margin-top: var(--space-lg);
+        }
+
+        p {
+            margin-bottom: var(--space-md);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* --- Custom Helper Classes --- */
+        .mono {
+            font-family: var(--font-mono);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+        }
+
+        pre {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            margin-bottom: var(--space-md);
+        }
+
+        pre code {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--text-main);
+        }
+
+        /* --- Alert Banners (Flat-by-Default, No side-stripes as decoration) --- */
+        .alert {
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            margin: var(--space-lg) 0;
+            border: 1px solid var(--primary);
+            background-color: var(--primary-container);
+            color: var(--text-main);
+        }
+
+        .alert-danger {
+            border-color: var(--danger);
+            background-color: var(--danger-container);
+        }
+
+        .alert-warning {
+            border-color: var(--warning);
+            background-color: var(--warning-container);
+        }
+
+        .alert-success {
+            border-color: var(--success);
+            background-color: var(--success-container);
+        }
+
+        /* --- Accessibility --- */
+        :focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
+        /* --- Responsive Styles --- */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding: var(--space-md);
+            }
+
+            .content-wrapper {
+                margin-left: 0;
+                padding: var(--space-lg) var(--space-md);
+            }
+        }
+
+        /* --- Print Layout Support --- */
+        @media print {
+            .sidebar {
+                display: none !important;
+            }
+
+            .content-wrapper {
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+
+            .main-content {
+                max-width: 100% !important;
+            }
+
+            .alert {
+                background-color: transparent !important;
+                color: #000000 !important;
+                border: 1px solid #000000 !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1 class="sidebar-title"><span lang="en">Fish Pump Control</span></h1>
+            <p class="sidebar-version">คู่มือติดตั้งและใช้งาน <span lang="en">v1.2</span></p>
+        </div>
+        
+        <div class="theme-toggle-container">
+            <span class="theme-toggle-label">โหมดมืด</span>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Theme" type="button">
+                <span class="theme-toggle-thumb"></span>
+            </button>
+        </div>
+        
+        <ul class="nav-list" id="toc-nav">
+            <li class="nav-item"><a href="#section-overview" class="nav-link active">1. ภาพรวมระบบ</a></li>
+            <li class="nav-item"><a href="#section-specs" class="nav-link">2. ข้อมูลจำเพาะ</a></li>
+            <li class="nav-item"><a href="#section-wiring" class="nav-link">3. การติดตั้งและเดินสายไฟ</a></li>
+            <li class="nav-item"><a href="#section-flashing" class="nav-link">4. คอมไพล์และอัปโหลด</a></li>
+            <li class="nav-item"><a href="#section-first-run" class="nav-link">5. การเริ่มต้นระบบครั้งแรก</a></li>
+            <li class="nav-item"><a href="#section-dashboard" class="nav-link">6. การใช้งาน <span lang="en">Dashboard</span></a></li>
+            <li class="nav-item"><a href="#section-trouble" class="nav-link">7. การแก้ไขปัญหา</a></li>
+        </ul>
+    </aside>
+    
+    <div class="content-wrapper">
+        <main class="main-content" id="manual-root">
+            <section id="section-overview">
+                <h1>ภาพรวมระบบ</h1>
+                <p>นี่คือหน้าตัวอย่างสำหรับระบบโครงร่างคู่มือติดตั้งและใช้งานแบบออฟไลน์ สำหรับ <span lang="en">Fish Pump Relay Timer Control</span></p>
+                <div class="alert">
+                    นี่คือตัวอย่างกล่องข้อมูลแบบปกติ
+                </div>
+            </section>
+            
+            <section id="section-specs">
+                <h2>ข้อมูลจำเพาะ</h2>
+                <p>รายละเอียดทางเทคนิคของอุปกรณ์</p>
+                <div class="alert alert-success">
+                    นี่คือตัวอย่างข้อความแจ้งเตือนสถานะสำเร็จ (Success)
+                </div>
+            </section>
+            
+            <section id="section-wiring">
+                <h2>การติดตั้งและเดินสายไฟ</h2>
+                <p>ขั้นตอนการเชื่อมต่อบอร์ดกับอุปกรณ์ต่าง ๆ</p>
+                <div class="alert alert-warning">
+                    นี่คือตัวอย่างข้อความเตือนภัยระดับกลาง (Warning)
+                </div>
+            </section>
+            
+            <section id="section-flashing">
+                <h2>คอมไพล์และอัปโหลด</h2>
+                <p>ขั้นตอนการใช้งาน <span lang="en">ESP-IDF</span> ในการบิลด์เฟิร์มแวร์</p>
+            </section>
+            
+            <section id="section-first-run">
+                <h2>การเริ่มต้นระบบครั้งแรก</h2>
+                <p>การเชื่อมต่อ Wi-Fi และเข้าใช้งานระบบ</p>
+            </section>
+            
+            <section id="section-dashboard">
+                <h2>การใช้งาน <span lang="en">Dashboard</span></h2>
+                <p>การควบคุมและตรวจสอบสถานะผ่านทางหน้าเว็บ</p>
+            </section>
+            
+            <section id="section-trouble">
+                <h2>การแก้ไขปัญหา</h2>
+                <p>ตารางปัญหาและแนวทางการแก้ไข</p>
+                <div class="alert alert-danger">
+                    นี่คือตัวอย่างข้อความแจ้งเตือนวิกฤต (Danger)
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Switch Theme Mechanism
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeLabel = document.querySelector('.theme-toggle-label');
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            
+            if (nextTheme === 'dark') {
+                themeLabel.textContent = 'โหมดมืด';
+            } else {
+                themeLabel.textContent = 'โหมดสว่าง';
+            }
+        });
+    </script>
+</body>
+</html>
