@@ -584,6 +584,111 @@
             }
         }
 
+        /* --- Modern Docs Additions --- */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-md);
+            margin-top: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .feature-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feature-card h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-full);
+            background-color: var(--primary-container);
+            color: var(--primary);
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-right: var(--space-sm);
+            flex-shrink: 0;
+        }
+
+        .step-heading {
+            display: flex;
+            align-items: center;
+            margin-top: var(--space-md);
+            margin-bottom: var(--space-sm);
+        }
+
+        .step-heading h3 {
+            margin: 0;
+        }
+
+        details.trouble-accordion {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-sm);
+            overflow: hidden;
+        }
+
+        details.trouble-accordion summary {
+            padding: var(--space-md);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            list-style: none; /* Hide default arrow */
+        }
+        
+        details.trouble-accordion summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.trouble-accordion summary::before {
+            content: "▶";
+            color: var(--primary);
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+        }
+
+        details.trouble-accordion[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        .accordion-content {
+            padding: 0 var(--space-md) var(--space-md) var(--space-md);
+            border-top: 1px solid var(--border-color);
+            margin-top: var(--space-sm);
+            padding-top: var(--space-sm);
+        }
+
+        .svg-icon {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+        
+        .svg-icon-lg {
+            width: 32px;
+            height: 32px;
+            margin-bottom: var(--space-sm);
+            color: var(--primary);
+        }
+
         /* --- Responsive Styles --- */
         @media (max-width: 768px) {
             body {
@@ -651,6 +756,31 @@
     </style>
 </head>
 <body>
+    <svg style="display: none;">
+        <defs>
+            <symbol id="icon-pump" viewBox="0 0 24 24">
+                <path d="M12,2C12,2 5,10.08 5,14.5C5,18.64 8.13,22 12,22C15.87,22 19,18.64 19,14.5C19,10.08 12,2 12,2M12,20C9.24,20 7,17.76 7,15A5,5 0 0,1 12,10A5,5 0 0,1 17,15C17,17.76 14.76,20 12,20Z" />
+            </symbol>
+            <symbol id="icon-temp" viewBox="0 0 24 24">
+                <path d="M15,13V5A3,3 0 0,0 9,5V13A5,5 0 1,0 15,13M12,4A1,1 0 0,1 13,5V8H11V5A1,1 0 0,1 12,4Z" />
+            </symbol>
+            <symbol id="icon-wifi" viewBox="0 0 24 24">
+                <path d="M12,21L15.6,16.2C14.6,15.45 13.35,15 12,15C10.65,15 9.4,15.45 8.4,16.2L12,21M12,3C7.95,3 4.21,4.34 1.2,6.6L3,9C5.5,7.12 8.62,6 12,6C15.38,6 18.5,7.12 21,9L22.8,6.6C19.79,4.34 16.05,3 12,3M12,9C9.3,9 6.81,9.89 4.8,11.4L6.6,13.8C8.1,12.67 9.97,12 12,12C14.03,12 15.9,12.67 17.4,13.8L19.2,11.4C17.19,9.89 14.7,9 12,9Z" />
+            </symbol>
+            <symbol id="icon-hardware" viewBox="0 0 24 24">
+                <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+            </symbol>
+            <symbol id="icon-security" viewBox="0 0 24 24">
+                <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,11.99H19C18.47,16.11 15.72,19.78 12,20.92V11.99H5V6.3L12,3.19V11.99Z" />
+            </symbol>
+            <symbol id="icon-flash" viewBox="0 0 24 24">
+                <path d="M7,2V13H10V22L17,10H13L17,2H7Z" />
+            </symbol>
+            <symbol id="icon-warning" viewBox="0 0 24 24">
+                <path d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z" />
+            </symbol>
+        </defs>
+    </svg>
     <div class="mobile-header">
         <div class="mobile-title">Fish Pump Control</div>
         <button class="menu-toggle" id="menu-toggle" aria-label="เปิดเมนู" aria-expanded="false" type="button">
