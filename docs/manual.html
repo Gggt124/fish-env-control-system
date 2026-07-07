@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>คู่มือ Fish Pump Relay Timer Control</title>
-    <style>
+        <style>
         :root {
             /* Palette & Typography Tokens conforming to DESIGN.md */
             --primary: #00c8a0;
@@ -86,6 +86,68 @@
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Mobile Header and Toggle Button --- */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 150;
+            padding: 0 var(--space-md);
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mobile-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-md);
+            transition: background-color 0.2s;
+        }
+
+        .menu-toggle:hover, .menu-toggle:focus-visible {
+            background-color: var(--primary-container);
+            color: var(--primary);
+        }
+
+        /* Overlay backdrop for mobile drawer */
+        .sidebar-overlay {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
 
         /* --- Sidebar Navigation --- */
@@ -230,18 +292,22 @@
             margin-bottom: var(--space-md);
         }
 
-        h1 {
-            font-size: 1.953rem;
+        h1.page-title {
+            font-size: 2rem;
             line-height: 2.5rem;
-            margin-bottom: var(--space-lg);
+            margin-bottom: var(--space-xl);
+            color: var(--text-main);
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: var(--space-sm);
         }
 
-        h2 {
-            font-size: 1.563rem;
-            line-height: 2rem;
+        h2.section-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: var(--space-base);
+            margin-bottom: var(--space-md);
             margin-top: var(--space-xl);
-            padding-bottom: var(--space-xs);
-            border-bottom: 1px solid var(--border-color);
         }
 
         h3 {
@@ -281,6 +347,182 @@
             color: var(--text-main);
         }
 
+        /* --- Copy Button & Code Container --- */
+        .code-container {
+            position: relative;
+            margin-bottom: var(--space-md);
+        }
+
+        .code-container pre {
+            margin-bottom: 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 4px var(--space-base);
+            font-size: 0.6875rem; /* 11px */
+            background-color: var(--primary-container);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--primary);
+            color: var(--bg-body);
+        }
+
+        /* --- Spec Table Styles --- */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .spec-table th {
+            border-bottom: 2px solid var(--border-color);
+            text-align: left;
+            padding: var(--space-base);
+            font-size: 0.875rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .spec-table tr {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .spec-table td {
+            padding: var(--space-base);
+            font-size: 0.875rem;
+        }
+
+        /* --- Responsive Table Container --- */
+        .table-responsive {
+            display: block;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- Checklist Card Styles --- */
+        .checklist-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            margin-top: var(--space-xl);
+        }
+
+        .checklist-card h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .checklist-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+        }
+
+        .checklist-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+            cursor: pointer;
+            font-size: 0.875rem;
+            min-height: 44px;
+            padding: var(--space-base) 0;
+            user-select: none;
+        }
+
+        .chk-item {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            background-color: var(--bg-body);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            margin-top: 2px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .chk-item:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .chk-item:checked::after {
+            content: "✓";
+            color: var(--bg-body);
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .chk-item:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .checklist-progress-container {
+            margin-top: var(--space-lg);
+        }
+
+        .checklist-progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: var(--space-xs);
+        }
+
+        .checklist-progress-bar-bg {
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            height: 12px;
+            border-radius: var(--radius-full);
+            overflow: hidden;
+        }
+
+        .checklist-progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--danger);
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        /* --- Schematic SVG Style --- */
+        .schematic-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-base);
+            margin-top: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
         /* --- Alert Banners (Flat-by-Default, No side-stripes as decoration) --- */
         .alert {
             padding: var(--space-md);
@@ -306,6 +548,26 @@
             background-color: var(--success-container);
         }
 
+        /* --- List Styles --- */
+        .main-content ul, .main-content ol {
+            margin-left: var(--space-lg);
+            margin-top: var(--space-base);
+            margin-bottom: var(--space-md);
+        }
+
+        .main-content li {
+            margin-bottom: var(--space-xs);
+        }
+
+        /* --- Section spacing --- */
+        section {
+            margin-top: var(--space-xl);
+        }
+
+        section:first-of-type {
+            margin-top: 0;
+        }
+
         /* --- Accessibility --- */
         :focus-visible {
             outline: 2px solid var(--primary);
@@ -328,24 +590,40 @@
                 flex-direction: column;
             }
 
+            .mobile-header {
+                display: flex;
+            }
+
             .sidebar {
-                position: relative;
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                padding: var(--space-md);
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                border-right: 1px solid var(--border-color);
+                border-bottom: none;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 160;
+                padding: var(--space-lg);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
             }
 
             .content-wrapper {
                 margin-left: 0;
-                padding: var(--space-lg) var(--space-md);
+                padding-top: 80px;
+                padding-left: var(--space-md);
+                padding-right: var(--space-md);
             }
         }
 
         /* --- Print Layout Support --- */
         @media print {
-            .sidebar {
+            .sidebar, .mobile-header, .sidebar-overlay {
                 display: none !important;
             }
 
@@ -373,6 +651,13 @@
     </style>
 </head>
 <body>
+    <div class="mobile-header">
+        <div class="mobile-title">Fish Pump Control</div>
+        <button class="menu-toggle" id="menu-toggle" aria-label="เปิดเมนู" aria-expanded="false" type="button">
+            <span>☰</span>
+        </button>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title"><span lang="en">Fish Pump Control</span></div>
@@ -399,8 +684,9 @@
     
     <div class="content-wrapper">
         <main class="main-content" id="manual-root">
+            <h1 class="page-title">คู่มือติดตั้งและใช้งานระบบควบคุมปั๊มน้ำรีเลย์</h1>
             <section id="section-overview">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">1. ภาพรวมระบบ (<span lang="en">System Overview</span>)</h1>
+                <h2 class="section-title">1. ภาพรวมระบบ (<span lang="en">System Overview</span>)</h2>
                 <p>เครื่องควบคุมปั๊มน้ำรีเลย์และสวิตช์ลูกลอยนี้ ทำงานบนเฟิร์มแวร์ <span lang="en">ESP-IDF</span> ระดับอุตสาหกรรม โดยใช้เงื่อนไขจากระดับน้ำของสวิตช์ลูกลอย (<span lang="en">Float Switch</span>) ในการขับเคลื่อนปั๊มผ่านโปรไฟล์สองรูปแบบ (<span lang="en">Timer 1</span> และ <span lang="en">Timer 2</span>) แบบวนลูป <span lang="en">ON</span>/<span lang="en">OFF</span> ไร้รอยต่อ โดยไม่ต้องพึ่งพาระบบคลาวด์</p>
                 <div class="alert alert-success">
                     <strong>หลักการทำงานของลอจิกการควบคุม (<span lang="en">Control Logic</span>):</strong><br>
@@ -411,61 +697,63 @@
             </section>
             
             <section id="section-specs">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">2. ข้อมูลจำเพาะฮาร์ดแวร์ (<span lang="en">Hardware Specifications</span>)</h1>
+                <h2 class="section-title">2. ข้อมูลจำเพาะฮาร์ดแวร์ (<span lang="en">Hardware Specifications</span>)</h2>
                 <p>ระบบรองรับโปรไฟล์ฮาร์ดแวร์แบบสองคอร์ ทั้งบอร์ด <span lang="en">ESP32 DevKit V1</span> (รุ่นคลาสสิก 30 พิน แฟลช <code class="mono">4MB</code>) และบอร์ด <span lang="en">ESP32-S3-DevKitC-1</span> (<span lang="en">WROOM-1-N16R8</span> แฟลช <code class="mono">16MB</code> และ <code class="mono" lang="en">PSRAM</code> <code class="mono">8MB</code>)</p>
                 <p>แผนผังขาต่อใช้งาน (<span lang="en">Pinout</span>) สำหรับโปรไฟล์ค่าเริ่มต้นในแต่ละบอร์ด:</p>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
-                            <th style="padding: 8px; font-size: 14px;">บทบาทอุปกรณ์ (<span lang="en">Role</span>)</th>
-                            <th style="padding: 8px; font-size: 14px;"><span lang="en">ESP32 Classic GPIO</span></th>
-                            <th style="padding: 8px; font-size: 14px;"><span lang="en">ESP32-S3 GPIO</span></th>
-                            <th style="padding: 8px; font-size: 14px;">รายละเอียดเพิ่มเติม</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">สวิตช์ลูกลอย (<span lang="en">Float Input</span>)</td>
-                            <td style="padding: 8px;"><code class="mono">GPIO32</code></td>
-                            <td style="padding: 8px;"><code class="mono">GPIO19</code></td>
-                            <td style="padding: 8px;">ขั้วต่อแบบสัมผัสแห้ง (<span lang="en">Active-Low</span>) ดึงขึ้นภายใน</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">รีเลย์ปั๊มน้ำ 1 (<span lang="en">Pump Relay 1</span>)</td>
-                            <td style="padding: 8px;"><code class="mono">GPIO26</code></td>
-                            <td style="padding: 8px;"><code class="mono">GPIO20</code></td>
-                            <td style="padding: 8px;">ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">OFF</span></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">รีเลย์ปั๊มน้ำ 2 (<span lang="en">Pump Relay 2</span>)</td>
-                            <td style="padding: 8px;"><code class="mono">GPIO27</code></td>
-                            <td style="padding: 8px;"><code class="mono">GPIO21</code></td>
-                            <td style="padding: 8px;">ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">ON</span></td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">เซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></td>
-                            <td style="padding: 8px;"><code class="mono">GPIO33</code></td>
-                            <td style="padding: 8px;"><code class="mono">GPIO41</code></td>
-                            <td style="padding: 8px;">ใช้การสื่อสารแบบสายเส้นเดียว (<span lang="en">One-Wire</span>)</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">รีเลย์ทำความเย็น (<span lang="en">Cooling Relay</span>)</td>
-                            <td style="padding: 8px;"><code class="mono">GPIO25</code></td>
-                            <td style="padding: 8px;"><code class="mono">GPIO42</code></td>
-                            <td style="padding: 8px;">ควบคุมพัดลมหรือคอมเพรสเซอร์ระบายความร้อน</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="spec-table">
+                        <thead>
+                            <tr>
+                                <th>บทบาทอุปกรณ์ (<span lang="en">Role</span>)</th>
+                                <th><span lang="en">ESP32 Classic GPIO</span></th>
+                                <th><span lang="en">ESP32-S3 GPIO</span></th>
+                                <th>รายละเอียดเพิ่มเติม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>สวิตช์ลูกลอย (<span lang="en">Float Input</span>)</td>
+                                <td><code class="mono">GPIO32</code></td>
+                                <td><code class="mono">GPIO19</code></td>
+                                <td>ขั้วต่อแบบสัมผัสแห้ง (<span lang="en">Active-Low</span>) ดึงขึ้นภายใน</td>
+                            </tr>
+                            <tr>
+                                <td>รีเลย์ปั๊มน้ำ 1 (<span lang="en">Pump Relay 1</span>)</td>
+                                <td><code class="mono">GPIO26</code></td>
+                                <td><code class="mono">GPIO20</code></td>
+                                <td>ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">OFF</span></td>
+                            </tr>
+                            <tr>
+                                <td>รีเลย์ปั๊มน้ำ 2 (<span lang="en">Pump Relay 2</span>)</td>
+                                <td><code class="mono">GPIO27</code></td>
+                                <td><code class="mono">GPIO21</code></td>
+                                <td>ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">ON</span></td>
+                            </tr>
+                            <tr>
+                                <td>เซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></td>
+                                <td><code class="mono">GPIO33</code></td>
+                                <td><code class="mono">GPIO41</code></td>
+                                <td>ใช้การสื่อสารแบบสายเส้นเดียว (<span lang="en">One-Wire</span>)</td>
+                            </tr>
+                            <tr>
+                                <td>รีเลย์ทำความเย็น (<span lang="en">Cooling Relay</span>)</td>
+                                <td><code class="mono">GPIO25</code></td>
+                                <td><code class="mono">GPIO42</code></td>
+                                <td>ควบคุมพัดลมหรือคอมเพรสเซอร์ระบายความร้อน</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
                 <p>แผนผังขาต่อใช้งาน (<span lang="en">Pinout</span>) ของบอร์ด <span lang="en">ESP32 DevKit V1 30-Pin</span> สำหรับควบคุมระบบ:</p>
                 <!-- SVG แผนผังพิน ESP32 DevKit V1 (30-Pin) -->
-                <svg viewBox="0 0 500 350" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
+                <svg viewBox="0 0 500 350" class="schematic-svg">
                     <!-- Board body -->
-                    <rect x="150" y="30" width="200" height="290" rx="10" fill="#1b1c1e" stroke="#333" stroke-width="3"/>
-                    <rect x="180" y="40" width="140" height="60" rx="3" fill="#2d3748" stroke="#4a5568"/>
-                    <text x="250" y="75" fill="#fff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">ESP32 DevKit V1</text>
+                    <rect x="150" y="30" width="200" height="290" rx="10" fill="var(--bg-body)" stroke="var(--border-color)" stroke-width="3"/>
+                    <rect x="180" y="40" width="140" height="60" rx="3" fill="var(--bg-card)" stroke="var(--border-color)"/>
+                    <text x="250" y="75" fill="var(--text-main)" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">ESP32 DevKit V1</text>
                     
                     <!-- Pins Left -->
-                    <g fill="#a0aec0">
+                    <g fill="var(--text-muted)">
                         <rect x="135" y="110" width="15" height="8" rx="1" />
                         <text x="125" y="117" fill="var(--text-muted)" font-size="10" font-family="monospace" text-anchor="end">3P3</text>
                         <rect x="135" y="130" width="15" height="8" rx="1" />
@@ -479,7 +767,7 @@
                     </g>
                     
                     <!-- Pins Right -->
-                    <g fill="#a0aec0">
+                    <g fill="var(--text-muted)">
                         <rect x="350" y="110" width="15" height="8" rx="1" />
                         <text x="375" y="117" fill="var(--text-muted)" font-size="10" font-family="monospace">5V</text>
                         <rect x="350" y="130" width="15" height="8" rx="1" />
@@ -497,8 +785,8 @@
                 </svg>
             </section>
             
-            <section id="section-wiring" style="margin-top: 40px;">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">3. การติดตั้งและเดินสายไฟ (<span lang="en">Wiring & Safety</span>)</h1>
+            <section id="section-wiring">
+                <h2 class="section-title">3. การติดตั้งและเดินสายไฟ (<span lang="en">Wiring & Safety</span>)</h2>
                 <div class="alert alert-danger">
                     <strong>คำเตือนวิกฤตทางไฟฟ้า:</strong><br>
                     - <strong>ห้ามต่อเซนเซอร์ <span lang="en">DS18B20</span> เข้ากับไฟ <code class="mono">5V</code> เด็ดขาด!</strong> พิน <span lang="en">GPIO</span> ของ <span lang="en">ESP32</span> รับแรงดันไฟได้สูงสุด <code class="mono">3.3V</code> การป้อนแรงดันไฟ <code class="mono">5V</code> เข้าช่องส่งสัญญาณข้อมูล (<code class="mono" lang="en">DQ Pin</code>) จะทำให้พินเสียหายทันทีและอาจทำให้ชิปพังทั้งตัว<br>
@@ -507,29 +795,29 @@
                 <h3>1. การต่อเซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></h3>
                 <p>เชื่อมต่อขา <code class="mono">VDD</code> เข้ากับแหล่งจ่ายไฟ <code class="mono">3.3V</code>, ขา <code class="mono">GND</code> เข้ากับกราวด์ <code class="mono">GND</code>, และขาข้อมูล <code class="mono" lang="en">DQ</code> เข้ากับพินส่งสัญญาณที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO33</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO41</code> บน <span lang="en">ESP32-S3</span>) โดยต่อตัวต้านทาน <code class="mono">4.7 kOhm</code> ระหว่างขา <code class="mono" lang="en">DQ</code> และ <code class="mono">3.3V</code>:</p>
                 <!-- SVG แผนภาพการต่อสายเซนเซอร์วัดอุณหภูมิ DS18B20 และ Pull-up Resistor -->
-                <svg viewBox="0 0 500 240" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
+                <svg viewBox="0 0 500 240" class="schematic-svg">
                     <!-- ESP32 Side -->
-                    <rect x="20" y="30" width="100" height="180" rx="5" fill="#2d3748" stroke="#4a5568"/>
-                    <text x="70" y="60" fill="#fff" font-size="12" font-family="monospace" text-anchor="middle">ESP32 Board</text>
+                    <rect x="20" y="30" width="100" height="180" rx="5" fill="var(--bg-body)" stroke="var(--border-color)"/>
+                    <text x="70" y="60" fill="var(--text-main)" font-size="12" font-family="monospace" text-anchor="middle">ESP32 Board</text>
                     
                     <!-- Connections on ESP32 -->
-                    <text x="100" y="100" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">3.3V</text>
-                    <text x="100" y="140" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">GPIO33 (DQ)</text>
-                    <text x="100" y="180" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">GND</text>
+                    <text x="100" y="100" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">3.3V</text>
+                    <text x="100" y="140" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">GPIO33 (DQ)</text>
+                    <text x="100" y="180" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">GND</text>
                     
                     <!-- DS18B20 TO92 -->
-                    <path d="M 380 70 L 440 70 L 440 130 Q 410 160 380 130 Z" fill="#1a202c" stroke="#4a5568" stroke-width="2"/>
-                    <text x="410" y="110" fill="#fff" font-size="12" font-family="sans-serif" text-anchor="middle">DS18B20</text>
+                    <path d="M 380 70 L 440 70 L 440 130 Q 410 160 380 130 Z" fill="var(--bg-card)" stroke="var(--border-color)" stroke-width="2"/>
+                    <text x="410" y="110" fill="var(--text-main)" font-size="12" font-family="sans-serif" text-anchor="middle">DS18B20</text>
                     
                     <!-- DS18B20 Legs -->
-                    <line x1="390" y1="140" x2="390" y2="200" stroke="#718096" stroke-width="2"/>
-                    <line x1="410" y1="145" x2="410" y2="200" stroke="#718096" stroke-width="2"/>
-                    <line x1="430" y1="140" x2="430" y2="200" stroke="#718096" stroke-width="2"/>
+                    <line x1="390" y1="140" x2="390" y2="200" stroke="var(--border-color)" stroke-width="2"/>
+                    <line x1="410" y1="145" x2="410" y2="200" stroke="var(--border-color)" stroke-width="2"/>
+                    <line x1="430" y1="140" x2="430" y2="200" stroke="var(--border-color)" stroke-width="2"/>
 
                     <!-- DQ/VDD/GND Lines of DS18B20 -->
-                    <text x="390" y="180" fill="#a0aec0" font-size="9" font-family="monospace" text-anchor="middle">VDD</text>
-                    <text x="410" y="180" fill="#a0aec0" font-size="9" font-family="monospace" text-anchor="middle">DQ</text>
-                    <text x="430" y="180" fill="#a0aec0" font-size="9" font-family="monospace" text-anchor="middle">GND</text>
+                    <text x="390" y="180" fill="var(--text-muted)" font-size="9" font-family="monospace" text-anchor="middle">VDD</text>
+                    <text x="410" y="180" fill="var(--text-muted)" font-size="9" font-family="monospace" text-anchor="middle">DQ</text>
+                    <text x="430" y="180" fill="var(--text-muted)" font-size="9" font-family="monospace" text-anchor="middle">GND</text>
                     
                     <!-- Wiring Lines -->
                     <!-- 3.3V Line (Red) -->
@@ -540,9 +828,9 @@
                     <path d="M 100 175 L 340 175 L 340 200 L 430 200" fill="none" stroke="#3182ce" stroke-width="2"/>
                     
                     <!-- Pull-Up Resistor (4.7k Ohm) -->
-                    <rect x="270" y="115" width="10" height="30" fill="#718096" stroke="#4a5568" stroke-width="1"/>
-                    <line x1="275" y1="95" x2="275" y2="115" stroke="#718096" stroke-width="2"/>
-                    <line x1="275" y1="135" x2="275" y2="145" stroke="#718096" stroke-width="2"/>
+                    <rect x="270" y="115" width="10" height="30" fill="var(--text-muted)" stroke="var(--border-color)" stroke-width="1"/>
+                    <line x1="275" y1="95" x2="275" y2="115" stroke="var(--border-color)" stroke-width="2"/>
+                    <line x1="275" y1="135" x2="275" y2="145" stroke="var(--border-color)" stroke-width="2"/>
                     <text x="290" y="130" fill="var(--text-muted)" font-size="10" font-family="monospace">4.7kΩ Pull-Up</text>
                     
                     <!-- Connection Dots -->
@@ -553,27 +841,27 @@
                 <h3>2. การต่อสวิตช์ลูกลอย (<span lang="en">Float Switch</span>)</h3>
                 <p>เชื่อมต่อหน้าสัมผัสแห้ง (<span lang="en">Dry Contact</span>) ของสวิตช์ลูกลอยคร่อมระหว่างขากราวด์ <code class="mono">GND</code> และพินระดับน้ำที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO32</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO19</code> บน <span lang="en">ESP32-S3</span>) ระบบจะเปิดใช้ตัวต้านทานดึงขึ้นภายในตัวชิป (<span lang="en">Internal Pull-Up</span>) อัตโนมัติ อย่างไรก็ตาม เพื่อลดสัญญาณรบกวนเหนี่ยวนำจากมอเตอร์ปั๊ม แนะนำให้ต่อตัวต้านทานดึงขึ้นภายนอกขนาด <code class="mono">4.7 kOhm</code> คร่อมขาไฟ <code class="mono">3.3V</code> เพิ่มเติมหากเดินสายไฟยาว:</p>
                 <!-- SVG แผนภาพการเชื่อมต่อสวิตช์ลูกลอยแบบแห้ง (Float Switch) -->
-                <svg viewBox="0 0 500 240" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
+                <svg viewBox="0 0 500 240" class="schematic-svg">
                     <!-- ESP32 Side -->
-                    <rect x="20" y="30" width="100" height="180" rx="5" fill="#2d3748" stroke="#4a5568"/>
-                    <text x="70" y="60" fill="#fff" font-size="12" font-family="monospace" text-anchor="middle">ESP32 Board</text>
+                    <rect x="20" y="30" width="100" height="180" rx="5" fill="var(--bg-body)" stroke="var(--border-color)"/>
+                    <text x="70" y="60" fill="var(--text-main)" font-size="12" font-family="monospace" text-anchor="middle">ESP32 Board</text>
                     
                     <!-- Connections on ESP32 -->
-                    <text x="100" y="100" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">GND</text>
-                    <text x="100" y="140" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">GPIO32</text>
+                    <text x="100" y="100" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">GND</text>
+                    <text x="100" y="140" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">GPIO32</text>
                     
                     <!-- Float Switch body on the right -->
-                    <rect x="360" y="45" width="100" height="150" rx="10" fill="#1b202c" stroke="var(--border-color)" stroke-width="2"/>
-                    <text x="410" y="70" fill="#fff" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">Float Switch</text>
+                    <rect x="360" y="45" width="100" height="150" rx="10" fill="var(--bg-card)" stroke="var(--border-color)" stroke-width="2"/>
+                    <text x="410" y="70" fill="var(--text-main)" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">Float Switch</text>
                     
                     <!-- Liquid Level -->
                     <path d="M 365 140 Q 387.5 135 410 140 Q 432.5 145 455 140 L 455 185 L 365 185 Z" fill="rgba(0, 200, 160, 0.15)"/>
                     <line x1="365" y1="140" x2="455" y2="140" stroke="var(--primary)" stroke-dasharray="3 3"/>
                     
                     <!-- Float Bulb -->
-                    <rect x="390" y="110" width="40" height="25" rx="5" fill="#718096" stroke="#4a5568" stroke-width="1.5"/>
+                    <rect x="390" y="110" width="40" height="25" rx="5" fill="var(--text-muted)" stroke="var(--border-color)" stroke-width="1.5"/>
                     <!-- Arm/Rod -->
-                    <line x1="390" y1="122.5" x2="350" y2="122.5" stroke="#cbd5e0" stroke-width="2"/>
+                    <line x1="390" y1="122.5" x2="350" y2="122.5" stroke="var(--text-main)" stroke-width="2"/>
                     
                     <!-- Wiring Lines -->
                     <!-- GND Line (Blue) -->
@@ -595,20 +883,20 @@
                 <h3>3. การต่อรีเลย์และปั๊มน้ำ (<span lang="en">Relay & Pump Control</span>)</h3>
                 <p>ต่อพินสัญญาณควบคุมจากบอร์ดไปยังโมดูลรีเลย์ (<span lang="en">Relay Module</span>) ตัวที่ 1 (<code class="mono">GPIO26</code>) และตัวที่ 2 (<code class="mono">GPIO27</code>) แนะนำให้ใช้โมดูลรีเลย์แบบมีออปโตคัปเปลอร์แยกกราวด์ (<span lang="en">Optocoupler Isolation</span>) เพื่อป้องกันสัญญาณรบกวนแม่เหล็กไฟฟ้า (<span lang="en">EMI</span>) จากขดลวดปั๊มย้อนกลับเข้าชิป และตรวจสอบขั้วสัญญาณควบคุมระหว่าง <span lang="en">Active-Low</span> และ <span lang="en">Active-High</span> ให้ถูกต้องในระบบทุกครั้งก่อนต่อไฟโหลดปั๊ม:</p>
                 <!-- SVG แผนภาพการเชื่อมต่อรีเลย์ควบคุมและหน้าสัมผัสปั๊มน้ำ -->
-                <svg viewBox="0 0 500 220" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
+                <svg viewBox="0 0 500 220" class="schematic-svg">
                     <!-- Control board output -->
-                    <rect x="20" y="30" width="100" height="150" rx="5" fill="#2d3748" stroke="#4a5568"/>
-                    <text x="70" y="60" fill="#fff" font-size="12" font-family="monospace" text-anchor="middle">ESP32 GPIO</text>
-                    <text x="100" y="100" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">GPIO26 (R1)</text>
-                    <text x="100" y="140" fill="#cbd5e0" font-size="10" font-family="monospace" text-anchor="end">GPIO27 (R2)</text>
+                    <rect x="20" y="30" width="100" height="150" rx="5" fill="var(--bg-body)" stroke="var(--border-color)"/>
+                    <text x="70" y="60" fill="var(--text-main)" font-size="12" font-family="monospace" text-anchor="middle">ESP32 GPIO</text>
+                    <text x="100" y="100" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">GPIO26 (R1)</text>
+                    <text x="100" y="140" fill="var(--text-main)" font-size="10" font-family="monospace" text-anchor="end">GPIO27 (R2)</text>
                     
                     <!-- Relay Module (Optocoupler Isolated) -->
-                    <rect x="200" y="40" width="100" height="130" rx="5" fill="#1b202c" stroke="var(--primary)" stroke-width="2"/>
-                    <text x="250" y="65" fill="#fff" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">Relay Module</text>
+                    <rect x="200" y="40" width="100" height="130" rx="5" fill="var(--bg-card)" stroke="var(--primary)" stroke-width="2"/>
+                    <text x="250" y="65" fill="var(--text-main)" font-size="11" font-family="sans-serif" text-anchor="middle" font-weight="bold">Relay Module</text>
                     <rect x="220" y="80" width="20" height="15" fill="#2f855a"/>
                     <rect x="260" y="80" width="20" height="15" fill="#2f855a"/>
-                    <text x="230" y="110" fill="#a0aec0" font-size="8" font-family="monospace" text-anchor="middle">RLY1</text>
-                    <text x="270" y="110" fill="#a0aec0" font-size="8" font-family="monospace" text-anchor="middle">RLY2</text>
+                    <text x="230" y="110" fill="var(--text-muted)" font-size="8" font-family="monospace" text-anchor="middle">RLY1</text>
+                    <text x="270" y="110" fill="var(--text-muted)" font-size="8" font-family="monospace" text-anchor="middle">RLY2</text>
                     
                     <!-- Dry Contacts Output to Pump Load -->
                     <circle cx="360" cy="90" r="15" fill="none" stroke="#e53e3e" stroke-width="2"/>
@@ -617,68 +905,68 @@
                     <text x="360" y="144" fill="#e53e3e" font-size="10" font-family="sans-serif" font-weight="bold" text-anchor="middle">Pump 2</text>
                     
                     <!-- Lines -->
-                    <path d="M 100 95 L 220 95" fill="none" stroke="#cbd5e0" stroke-width="2"/>
-                    <path d="M 100 135 L 220 135" fill="none" stroke="#cbd5e0" stroke-width="2"/>
+                    <path d="M 100 95 L 220 95" fill="none" stroke="var(--text-main)" stroke-width="2"/>
+                    <path d="M 100 135 L 220 135" fill="none" stroke="var(--text-main)" stroke-width="2"/>
                     <path d="M 230 80 L 230 70 L 345 70" fill="none" stroke="#48bb78" stroke-width="2"/>
                     <path d="M 270 80 L 270 70 L 300 70 L 300 120 L 345 120" fill="none" stroke="#48bb78" stroke-width="2"/>
-                    <line x1="375" y1="90" x2="450" y2="90" stroke="#cbd5e0" stroke-width="2"/>
-                    <line x1="375" y1="140" x2="450" y2="140" stroke="#cbd5e0" stroke-width="2"/>
+                    <line x1="375" y1="90" x2="450" y2="90" stroke="var(--text-main)" stroke-width="2"/>
+                    <line x1="375" y1="140" x2="450" y2="140" stroke="var(--text-main)" stroke-width="2"/>
                     <text x="450" y="80" fill="var(--text-muted)" font-size="9" font-family="monospace">AC 220V Line</text>
                 </svg>
                 <!-- Interactive Pre-Power Checklist Enhancement -->
-                <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-top: 30px;">
-                    <h3 style="margin-top: 0; color: var(--primary);">รายการตรวจสอบความปลอดภัยก่อนปล่อยกระแสไฟ (<span lang="en">Pre-Power Checklist</span>)</h3>
-                    <p style="font-size: 14px; color: var(--text-muted);">กรุณาตรวจสอบและทำเครื่องหมายในรายการด้านล่าง เพื่อยืนยันความถูกต้องของวงจรก่อนปล่อยกระแสไฟเลี้ยงเข้าระบบ:</p>
-                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;" id="checklist-container">
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
-                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                <div class="checklist-card">
+                    <h3>รายการตรวจสอบความปลอดภัยก่อนปล่อยกระแสไฟ (<span lang="en">Pre-Power Checklist</span>)</h3>
+                    <p class="checklist-desc">กรุณาตรวจสอบและทำเครื่องหมายในรายการด้านล่าง เพื่อยืนยันความถูกต้องของวงจรก่อนปล่อยกระแสไฟเลี้ยงเข้าระบบ:</p>
+                    <div class="checklist-container" id="checklist-container">
+                        <label class="checklist-item">
+                            <input type="checkbox" class="chk-item">
                             <span>สายไฟเลี้ยงเซนเซอร์ <span lang="en">DS18B20</span> ต่อเข้ากับขา <code class="mono">3.3V</code> เท่านั้น (ห้ามต่อเข้ากับ <code class="mono">5V</code>)</span>
                         </label>
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
-                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                        <label class="checklist-item">
+                            <input type="checkbox" class="chk-item">
                             <span>ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> ระหว่างขา <code class="mono" lang="en">DQ</code> และ <code class="mono">3.3V</code> แล้ว</span>
                         </label>
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
-                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                        <label class="checklist-item">
+                            <input type="checkbox" class="chk-item">
                             <span>สายสวิตช์ลูกลอยต่อเข้าพินระดับน้ำและขากราวด์ <code class="mono">GND</code> ไม่มีกระแสไฟเลี้ยงจากภายนอกปนเปื้อน (สัมผัสแห้ง)</span>
                         </label>
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
-                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                        <label class="checklist-item">
+                            <input type="checkbox" class="chk-item">
                             <span>หลีกเลี่ยงการใช้งานขา <span lang="en">Strapping Pins</span> เช่น <code class="mono">GPIO0</code> หรือ <code class="mono">GPIO2</code> ในการดึงไฟต่ำตอนบูต เพื่อไม่ให้บอร์ดบูตลูป</span>
                         </label>
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
-                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                        <label class="checklist-item">
+                            <input type="checkbox" class="chk-item">
                             <span>ตั้งค่าความต่างศักย์สัญญาณรีเลย์ในเฟิร์มแวร์ (<span lang="en">Relay Polarity</span>) สอดคล้องกับประเภทโมดูลรีเลย์จริงเพื่อป้องกันปั๊มน้ำเริ่มทำงานเองทันทีเมื่อจ่ายกระแสไฟเข้าเครื่อง</span>
                         </label>
                     </div>
-                    <div style="margin-top: 20px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 5px;">
+                    <div class="checklist-progress-container">
+                        <div class="checklist-progress-header">
                             <span>ระดับความพร้อมในการปล่อยไฟ:</span>
                             <span id="ready-percent">0%</span>
                         </div>
-                        <div style="background: var(--bg-body); border: 1px solid var(--border-color); height: 12px; border-radius: 6px; overflow: hidden;">
-                            <div id="ready-progress" style="width: 0%; height: 100%; background: var(--danger); transition: width 0.3s ease, background-color 0.3s ease;"></div>
+                        <div class="checklist-progress-bar-bg">
+                            <div id="ready-progress" class="checklist-progress-bar-fill"></div>
                         </div>
                     </div>
                 </div>
             </section>
             
-            <section id="section-flashing" style="margin-top: 40px;">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">4. คอมไพล์และอัปโหลดเฟิร์มแวร์ (<span lang="en">Compilation & Flashing</span>)</h1>
+            <section id="section-flashing">
+                <h2 class="section-title">4. คอมไพล์และอัปโหลดเฟิร์มแวร์ (<span lang="en">Compilation & Flashing</span>)</h2>
                 <p>ระบบพัฒนาขึ้นโดยใช้ชุดพัฒนาอย่างเป็นทางการของ <span lang="en">ESP-IDF</span> (แนะนำเวอร์ชัน <code class="mono">v6.0.1</code>) เท่านั้น โดยระบบไม่ได้พัฒนาบนโครงสร้างของ <span lang="en">Arduino</span> หรือ <span lang="en">PlatformIO</span></p>
                 
                 <h3>ขั้นตอนการบิลด์ระบบผ่าน <span lang="en">PowerShell</span> บนระบบปฏิบัติการ <span lang="en">Windows</span>:</h3>
                 
                 <p>1. เปิดใช้งานตัวแปรสภาพแวดล้อมของระบบและข้ามข้อจำกัดคำเตือนรหัสอักขระในภาษา <span lang="en">Python</span>:</p>
-                <div style="position: relative;">
+                <div class="code-container">
                     <pre><code class="language-powershell">chcp 65001 > $null
 $env:IDF_PATH = "C:\esp\v6.0.1\esp-idf"  # เปลี่ยนเส้นทางตามการติดตั้งจริง
 & "$env:IDF_PATH\export.ps1"</code></pre>
-                    <button class="copy-btn" onclick="copyCode(this)" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; background: var(--primary-container); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; cursor: pointer; border-color: var(--primary);">คัดลอก</button>
+                    <button class="copy-btn" onclick="copyCode(this)" >คัดลอก</button>
                 </div>
                 
                 <p>2. บิลด์เฟิร์มแวร์โดยระบุตัวบอร์ดเป้าหมาย (ทำความสะอาดค่ากำหนดก่อนหากต้องการสลับประเภทบอร์ด):</p>
-                <div style="position: relative;">
+                <div class="code-container">
                     <pre><code class="language-powershell"># ลบค่าตั้งค่าเก่าก่อนเมื่อเปลี่ยนเป้าหมายบอร์ด
 Remove-Item sdkconfig -ErrorAction SilentlyContinue
 
@@ -687,13 +975,13 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
 
 # หรือ บิลด์สำหรับ ESP32-S3
 .\scripts\build.ps1 -Target esp32s3</code></pre>
-                    <button class="copy-btn" onclick="copyCode(this)" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; background: var(--primary-container); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; cursor: pointer; border-color: var(--primary);">คัดลอก</button>
+                    <button class="copy-btn" onclick="copyCode(this)" >คัดลอก</button>
                 </div>
                 
                 <p>3. แฟลชโปรแกรมและเปิดหน้าจอรายงานผลคอมพิวเตอร์ผ่านทางหน้าจอแบบโต้ตอบ:</p>
-                <div style="position: relative;">
+                <div class="code-container">
                     <pre><code class="language-powershell">.\scripts\flash_and_show.ps1</code></pre>
-                    <button class="copy-btn" onclick="copyCode(this)" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; background: var(--primary-container); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; cursor: pointer; border-color: var(--primary);">คัดลอก</button>
+                    <button class="copy-btn" onclick="copyCode(this)" >คัดลอก</button>
                 </div>
                 
                 <div class="alert alert-warning">
@@ -701,14 +989,14 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
             </section>
             
-            <section id="section-first-run" style="margin-top: 40px;">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">5. การเริ่มต้นระบบครั้งแรก (<span lang="en">First-Time Connection</span>)</h1>
+            <section id="section-first-run">
+                <h2 class="section-title">5. การเริ่มต้นระบบครั้งแรก (<span lang="en">First-Time Connection</span>)</h2>
                 <p>เมื่ออุปกรณ์บูตระบบขึ้นมาเป็นครั้งแรกและตรวจไม่พบการตั้งค่าใดๆ ในหน่วยความจำถาวร (<code class="mono" lang="en">NVS</code>) ระบบจะเริ่มต้นโหมดเครือข่ายไร้สายแบบตั้งค่าร่วม (<span lang="en">SoftAP</span>) ในทันที โดยเครือข่ายจะมีคุณสมบัติดังนี้:</p>
                 
-                <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
+                <ul>
                     <li><strong>ชื่อสัญญาณ <span lang="en">Wi-Fi</span> (<span lang="en">SSID</span>):</strong> <code class="mono">FishPump-Setup</code></li>
                     <li><strong>รหัสผ่านความปลอดภัย:</strong> สร้างขึ้นมาแบบสุ่มตามชุดที่อยู่ของตัวประมวลผล (<span lang="en">MAC Address</span>) ร่วมกับวิธีบวกค่าเกลือ (<span lang="en">XOR Salt</span>) ซึ่งจะแสดงในทางพอร์ตสื่อสารระดับอนุกรม (<span lang="en">Serial Terminal</span>) ตอนเริ่มเครื่อง หรือหน้าจอ <span lang="en">TFT</span> ที่ติดตั้งอยู่หน้าระบบ (เช่น รหัสผ่านในรูปแบบ <code class="mono">AABBCCDD</code>)</li>
-                    <li><strong>ที่อยู่เชื่อมต่อเว็บหลัก (<span lang="en">IP Address</span>):</strong> เข้าใช้งานได้ทางตรงที่ <code class="mono">http://192.168.4.1</code> หรือผ่านชื่อบริการค้นหาทางตรงที่ <code class="mono">http://fishpump.local</span> ด้วยระเบียบวิธี <span lang="en">mDNS</span></li>
+                    <li><strong>ที่อยู่เชื่อมต่อเว็บหลัก (<span lang="en">IP Address</span>):</strong> เข้าใช้งานได้ทางตรงที่ <code class="mono">http://192.168.4.1</code> หรือผ่านชื่อบริการค้นหาทางตรงที่ <code class="mono">http://fishpump.local</code> ด้วยระเบียบวิธี <span lang="en">mDNS</span></li>
                 </ul>
                 
                 <div class="alert alert-warning">
@@ -718,20 +1006,20 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
             </section>
             
-            <section id="section-dashboard" style="margin-top: 40px;">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">6. การใช้งาน <span lang="en">Dashboard</span></h1>
+            <section id="section-dashboard">
+                <h2 class="section-title">6. การใช้งาน <span lang="en">Dashboard</span></h2>
                 <p>หน้าเว็บหลัก (<span lang="en">Dashboard</span>) ของอุปกรณ์ทำหน้าที่เป็นหน้าจอควบคุมและตรวจสอบสถานะการทำงานของอุปกรณ์ทั้งหมดในแบบเรียลไทม์ โดยไม่มีความจำเป็นต้องต่ออินเทอร์เน็ตภายนอกแต่อย่างใด:</p>
                 
                 <h3>1. การควบคุมรอบเวลาทำงานและสวิตช์ลูกลอย</h3>
                 <p>บนคอนโซลหลัก ผู้ใช้งานสามารถเปิด/ปิดระบบการทำงานของปั๊มน้ำได้ การทำงานของปั๊มน้ำจะเป็นดังนี้:</p>
-                <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
+                <ul>
                     <li>ผู้ใช้สามารถกู้คืนหรือตั้งค่าเริ่มต้นการทำงานของอุปกรณ์ยามสูญเสียพลังงาน (<span lang="en">Auto-Start on Boot</span>) ซึ่งค่าเริ่มต้นจะปิดเอาไว้ด้วยความปลอดภัย เพื่อเลี่ยงปั๊มทำงานเองโดยไม่ตั้งใจหลังไฟดับ</li>
                     <li><strong>การสลับการตั้งค่าพินควบคุมแบบลอยตัว:</strong> หากต้องการเปลี่ยนพินฮาร์ดแวร์จริงผ่านหน้าจัดการระบบ พารามิเตอร์ใหม่จะอยู่ในสถานะกำลังดำเนินการ (<span lang="en">Pending Settings</span>) และยังไม่มีผลบังคับใช้จริงในทันที จนกว่าจะกดรีบูตตัวเครื่องอย่างเป็นทางการผ่านคำสั่งในเว็บ เพื่อรักษาความสมบูรณ์และเสถียรภาพของบอร์ด</li>
                 </ul>
 
                 <h3>2. การตั้งค่าระบบควบคุมความเย็น (<span lang="en">Cooling Control Mode</span>)</h3>
                 <p>ระบบควบคุมความเย็นที่ต่อคร่อมร่วมกับเซนเซอร์อุณหภูมิ <span lang="en">DS18B20</span> สามารถตั้งรูปแบบการทำงานได้ 3 สถานะดังนี้:</p>
-                <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
+                <ul>
                     <li><strong>โหมดอัตโนมัติ (<span lang="en">Auto</span>):</strong> ระบบจะอ่านอุณหภูมิจากเซนเซอร์ หากอุณหภูมิขึ้นสูงกว่าค่าเกณฑ์จำกัด (<span lang="en">Threshold</span> - ค่าเริ่มต้นคือ <code class="mono">30.0 C</code>) จะสั่งจ่ายรีเลย์เปิดระบบทำความเย็น และจะสั่งปิดอุปกรณ์เมื่ออุณหภูมิลดลงต่ำกว่าเกณฑ์ลบค่าความต่างระดับการปรับกลับ (<span lang="en">Hysteresis</span> - ค่าเริ่มต้นคือ <code class="mono">1.0 C</code> หรือจุดปิดคือ <code class="mono">29.0 C</code>)</li>
                     <li><strong>โหมดบังคับปิด (<span lang="en">Force Off</span>):</strong> สั่งปิดการจ่ายกระแสไฟชุดอุปกรณ์ทำความเย็นถาวรทันที ไม่คำนึงถึงระดับอุณหภูมิปัจจุบัน</li>
                     <li><strong>โหมดทดสอบเปิด (<span lang="en">Test On</span>):</strong> จ่ายไฟฟ้าระบบทำความเย็นเป็นเวลาสั้นชั่วคราวตามกำหนด (ค่าเริ่มต้นคือ <code class="mono">10</code> วินาที) แล้วสลับกลับสู่โหมดก่อนหน้านี้อัตโนมัติ</li>
@@ -746,8 +1034,8 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 <p>ระบบรองรับความสว่างหน้าจอแสดงผลและการสไลด์เพื่อประหยัดไฟผ่านตัวกำหนดอายุการแสดงผลหน้าจอ (<span lang="en">TFT Auto-Dim Timer</span>) ซึ่งหากไม่มีสัญญาณปุ่มกดภายนอกหรือกิจกรรมทำงานใดๆ ในเวลา <code class="mono">5</code> นาที ระบบไฟแสงหลังฉากจะค่อยๆ หรี่ลงตามลำดับ เพื่อปกป้องสารอินทรีย์แสดงผลจากรอยไหม้และความเสื่อมสภาพก่อนเวลาอันควร</p>
             </section>
             
-            <section id="section-trouble" style="margin-top: 40px; margin-bottom: 60px;">
-                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">7. การแก้ไขปัญหาและการกู้คืนระบบ (<span lang="en">Troubleshooting & Diagnostics</span>)</h1>
+            <section id="section-trouble">
+                <h2 class="section-title">7. การแก้ไขปัญหาและการกู้คืนระบบ (<span lang="en">Troubleshooting & Diagnostics</span>)</h2>
                 
                 <h3>1. การแจ้งเตือนและการจัดการข้อผิดพลาดเซนเซอร์อุณหภูมิ</h3>
                 <p>ระบบเฟิร์มแวร์มีการเฝ้าติดตามตัวชี้วัดสุขภาพของอุปกรณ์ทำความเย็นอย่างต่อเนื่อง โดยเฉพาะสัญญาณที่ส่งมาจากเซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span>:</p>
@@ -759,36 +1047,38 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 </div>
 
                 <h3>2. รหัสและสัญลักษณ์ข้อผิดพลาดของการแก้ไขปัญหา</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
-                            <th style="padding: 8px; font-size: 14px;">อาการผิดปกติ</th>
-                            <th style="padding: 8px; font-size: 14px;">สาเหตุที่เป็นไปได้</th>
-                            <th style="padding: 8px; font-size: 14px;">แนวทางการวิเคราะห์และแก้ไขปัญหา</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">ปั๊มน้ำไม่เริ่มทำงานเมื่อบูต</td>
-                            <td style="padding: 8px;">คุณลักษณะการบูตตั้งค่าถูกสั่งปิดไว้</td>
-                            <td style="padding: 8px;">ตรวจสอบการเปิดโหมดเริ่มงานอัตโนมัติ (<span lang="en">Auto-Start</span>) บนหน้าเว็บการตั้งค่า</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">ไม่พบอุปกรณ์เซนเซอร์วัดอุณหภูมิ</td>
-                            <td style="padding: 8px;">ไม่มีการติดตั้งตัวต้านทานสัญญาณ หรือใช้สายยาวเกินไป</td>
-                            <td style="padding: 8px;">ตรวจสอบสายสัญญาณ <code class="mono" lang="en">DQ</code> และตัวต้านทานดึงกระแสภายนอก <code class="mono">4.7 kOhm</code> หรือตรวจสอบหน้าสัมผัสของจุดต่อ</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 8px;">เชื่อมต่อสัญญานอินเทอร์เน็ตกับบอร์ดไม่ได้</td>
-                            <td style="padding: 8px;">ระบบเข้ารหัสตัวตนผิดพลาด หรือไม่มีสัญญานคลื่นสัญญาณเพียงพอ</td>
-                            <td style="padding: 8px;">ใช้บริการกู้คืนระบบเพื่อทำการล้างประวัติเชื่อมต่อ และสร้างระบบโหมดจุดเชื่อมต่อนำทางขึ้นมาใหม่</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="spec-table">
+                        <thead>
+                            <tr>
+                                <th>อาการผิดปกติ</th>
+                                <th>สาเหตุที่เป็นไปได้</th>
+                                <th>แนวทางการวิเคราะห์และแก้ไขปัญหา</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ปั๊มน้ำไม่เริ่มทำงานเมื่อบูต</td>
+                                <td>คุณลักษณะการบูตตั้งค่าถูกสั่งปิดไว้</td>
+                                <td>ตรวจสอบการเปิดโหมดเริ่มงานอัตโนมัติ (<span lang="en">Auto-Start</span>) บนหน้าเว็บการตั้งค่า</td>
+                            </tr>
+                            <tr>
+                                <td>ไม่พบอุปกรณ์เซนเซอร์วัดอุณหภูมิ</td>
+                                <td>ไม่มีการติดตั้งตัวต้านทานสัญญาณ หรือใช้สายยาวเกินไป</td>
+                                <td>ตรวจสอบสายสัญญาณ <code class="mono" lang="en">DQ</code> และตัวต้านทานดึงกระแสภายนอก <code class="mono">4.7 kOhm</code> หรือตรวจสอบหน้าสัมผัสของจุดต่อ</td>
+                            </tr>
+                            <tr>
+                                <td>เชื่อมต่อสัญญานอินเทอร์เน็ตกับบอร์ดไม่ได้</td>
+                                <td>ระบบเข้ารหัสตัวตนผิดพลาด หรือไม่มีสัญญานคลื่นสัญญาณเพียงพอ</td>
+                                <td>ใช้บริการกู้คืนระบบเพื่อทำการล้างประวัติเชื่อมต่อ และสร้างระบบโหมดจุดเชื่อมต่อนำทางขึ้นมาใหม่</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <h3>3. การกู้คืนระบบกลับคืนค่าติดตั้งจากโรงงาน (<span lang="en">Wi-Fi AP Recovery Mode</span>)</h3>
                 <p>หากลืมรหัสผ่านตั้งค่าส่วนตัว หรืออุปกรณ์ต่อสัญญานเครือข่ายท้องถิ่นล้มเหลวจนส่งผลให้เข้าควบคุมอุปกรณ์ไม่ได้ ให้ทำการกู้คืนผ่านทางปุ่มกดฮาร์ดแวร์ภายนอก:</p>
-                <ol style="margin-left: 20px; line-height: 1.8;">
+                <ol>
                     <li>กดปุ่มแฟลชบนตัวเครื่องบอร์ด (<code class="mono">Boot/Flash Button</code>) ค้างไว้เป็นเวลาอย่างน้อย <code class="mono">5</code> วินาทีระหว่างที่บอร์ดกำลังทำงานปกติ</li>
                     <li>ไฟกระพริบสถานะภายนอกจะแจ้งเป็นสัญญาณเตือนจังหวะเร็ว</li>
                     <li>เฟิร์มแวร์จะดำเนินการล้างการตั้งค่าเครือข่าย <code class="mono" lang="en">STA</code> ข้อมูลพินฮาร์ดแวร์ที่แก้ไข และลบประวัติรหัสผ่านทั้งหมดที่มีการบันทึกในหน่วยความจำถาวร (<code class="mono" lang="en">NVS</code>) พร้อมสั่งรีสตาร์ทเครื่องใหม่เข้าสู่สถานะโหมดตั้งค่าเริ่มต้นจากโรงงาน (<code class="mono">FishPump-Setup</code>)</li>
@@ -798,6 +1088,25 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
     </div>
 
     <script>
+        // Mobile Navigation Toggle
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const sidebar = document.querySelector('.sidebar');
+
+        function toggleMobileMenu() {
+            const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+            menuToggle.setAttribute('aria-expanded', !isExpanded);
+            menuToggle.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            menuToggle.innerHTML = !isExpanded ? '✕' : '☰';
+        }
+
+        if (menuToggle && sidebarOverlay) {
+            menuToggle.addEventListener('click', toggleMobileMenu);
+            sidebarOverlay.addEventListener('click', toggleMobileMenu);
+        }
+
         // Switch Theme Mechanism
         const themeToggle = document.getElementById('theme-toggle');
         const themeLabel = document.querySelector('.theme-toggle-label');
@@ -831,6 +1140,11 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
                 scrollTimeout = setTimeout(() => {
                     isScrollingTo = false;
                 }, 800);
+
+                // Close mobile drawer on navigation
+                if (sidebar && sidebar.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
             });
         });
 
@@ -869,6 +1183,7 @@ Remove-Item sdkconfig -ErrorAction SilentlyContinue
         const readyProgress = document.getElementById('ready-progress');
         
         function updateProgress() {
+            if (!checkboxes.length || !readyPercent || !readyProgress) return;
             let checkedCount = 0;
             checkboxes.forEach(chk => {
                 if (chk.checked) {
