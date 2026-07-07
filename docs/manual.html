@@ -400,16 +400,63 @@
     <div class="content-wrapper">
         <main class="main-content" id="manual-root">
             <section id="section-overview">
-                <h1>ภาพรวมระบบ</h1>
-                <p>นี่คือหน้าตัวอย่างสำหรับระบบโครงร่างคู่มือติดตั้งและใช้งานแบบออฟไลน์ สำหรับ <span lang="en">Fish Pump Relay Timer Control</span></p>
-                <div class="alert">
-                    นี่คือตัวอย่างกล่องข้อมูลแบบปกติ
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">1. ภาพรวมระบบ (<span lang="en">System Overview</span>)</h1>
+                <p>เครื่องควบคุมปั๊มน้ำรีเลย์และสวิตช์ลูกลอยนี้ ทำงานบนเฟิร์มแวร์ <span lang="en">ESP-IDF</span> ระดับอุตสาหกรรม โดยใช้เงื่อนไขจากระดับน้ำของสวิตช์ลูกลอย (<span lang="en">Float Switch</span>) ในการขับเคลื่อนปั๊มผ่านโปรไฟล์สองรูปแบบ (<span lang="en">Timer 1</span> และ <span lang="en">Timer 2</span>) แบบวนลูป <span lang="en">ON</span>/<span lang="en">OFF</span> ไร้รอยต่อ โดยไม่ต้องพึ่งพาระบบคลาวด์</p>
+                <div class="alert alert-success">
+                    <strong>หลักการทำงานของลอจิกการควบคุม (<span lang="en">Control Logic</span>):</strong><br>
+                    - <strong>ระดับน้ำลด (ลูกลอยเป็น <span lang="en">OFF</span>):</strong> ระบบใช้งาน <span lang="en">Timer 1</span> ปั๊มน้ำตัวที่ 1 (<span lang="en">Relay 1</span>) จะทำงานตามระยะเวลา <span lang="en">ON</span>/<span lang="en">OFF</span> ที่ตั้งไว้<br>
+                    - <strong>ระดับน้ำเต็ม (ลูกลอยเป็น <span lang="en">ON</span>):</strong> ระบบใช้งาน <span lang="en">Timer 2</span> ปั๊มน้ำตัวที่ 2 (<span lang="en">Relay 2</span>) จะทำงานตามระยะเวลา <span lang="en">ON</span>/<span lang="en">OFF</span> ที่ตั้งไว้
                 </div>
+                <p>ระบบถูกออกแบบมาเพื่อควบคุมสถานะการทำงานของปั๊มน้ำและระบบทำความเย็นแยกกันโดยสิ้นเชิง เพื่อเพิ่มความทนทานและความปลอดภัยสูงสุด โดยมีระบบการกรองสัญญาณรบกวนของลูกลอยผ่านการหน่วงเวลาระดับซอฟต์แวร์ เพื่อป้องกันปั๊มสลับการทำงานไปมาอย่างรวดเร็วเมื่อเกิดคลื่นน้ำกระเพื่อม</p>
             </section>
             
             <section id="section-specs">
-                <h2>ข้อมูลจำเพาะ</h2>
-                <p>แผนผังขาต่อใช้งาน (Pinout) ของบอร์ด ESP32 DevKit V1 30-Pin สำหรับควบคุมระบบ:</p>
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">2. ข้อมูลจำเพาะฮาร์ดแวร์ (<span lang="en">Hardware Specifications</span>)</h1>
+                <p>ระบบรองรับโปรไฟล์ฮาร์ดแวร์แบบสองคอร์ ทั้งบอร์ด <span lang="en">ESP32 DevKit V1</span> (รุ่นคลาสสิก 30 พิน แฟลช <code class="mono">4MB</code>) และบอร์ด <span lang="en">ESP32-S3-DevKitC-1</span> (<span lang="en">WROOM-1-N16R8</span> แฟลช <code class="mono">16MB</code> และ <span lang="en">PSRAM</span> <code class="mono">8MB</code>)</p>
+                <p>แผนผังขาต่อใช้งาน (<span lang="en">Pinout</span>) สำหรับโปรไฟล์ค่าเริ่มต้นในแต่ละบอร์ด:</p>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                            <th style="padding: 8px; font-size: 14px;">บทบาทอุปกรณ์ (<span lang="en">Role</span>)</th>
+                            <th style="padding: 8px; font-size: 14px;"><span lang="en">ESP32 Classic GPIO</span></th>
+                            <th style="padding: 8px; font-size: 14px;"><span lang="en">ESP32-S3 GPIO</span></th>
+                            <th style="padding: 8px; font-size: 14px;">รายละเอียดเพิ่มเติม</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">สวิตช์ลูกลอย (<span lang="en">Float Input</span>)</td>
+                            <td style="padding: 8px;"><code class="mono">GPIO32</code></td>
+                            <td style="padding: 8px;"><code class="mono">GPIO19</code></td>
+                            <td style="padding: 8px;">ขั้วต่อแบบสัมผัสแห้ง (<span lang="en">Active-Low</span>) ดึงขึ้นภายใน</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">รีเลย์ปั๊มน้ำ 1 (<span lang="en">Pump Relay 1</span>)</td>
+                            <td style="padding: 8px;"><code class="mono">GPIO26</code></td>
+                            <td style="padding: 8px;"><code class="mono">GPIO20</code></td>
+                            <td style="padding: 8px;">ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">OFF</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">รีเลย์ปั๊มน้ำ 2 (<span lang="en">Pump Relay 2</span>)</td>
+                            <td style="padding: 8px;"><code class="mono">GPIO27</code></td>
+                            <td style="padding: 8px;"><code class="mono">GPIO21</code></td>
+                            <td style="padding: 8px;">ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">ON</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">เซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></td>
+                            <td style="padding: 8px;"><code class="mono">GPIO33</code></td>
+                            <td style="padding: 8px;"><code class="mono">GPIO41</code></td>
+                            <td style="padding: 8px;">ใช้การสื่อสารแบบสายเส้นเดียว (<span lang="en">One-Wire</span>)</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">รีเลย์ทำความเย็น (<span lang="en">Cooling Relay</span>)</td>
+                            <td style="padding: 8px;"><code class="mono">GPIO25</code></td>
+                            <td style="padding: 8px;"><code class="mono">GPIO42</code></td>
+                            <td style="padding: 8px;">ควบคุมพัดลมหรือคอมเพรสเซอร์ระบายความร้อน</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>แผนผังขาต่อใช้งาน (<span lang="en">Pinout</span>) ของบอร์ด <span lang="en">ESP32 DevKit V1 30-Pin</span> สำหรับควบคุมระบบ:</p>
                 <!-- SVG แผนผังพิน ESP32 DevKit V1 (30-Pin) -->
                 <svg viewBox="0 0 500 350" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
                     <!-- Board body -->
@@ -450,12 +497,15 @@
                 </svg>
             </section>
             
-            <section id="section-wiring">
-                <h2>การติดตั้งและเดินสายไฟ</h2>
-                <p>ขั้นตอนและแผนภาพการเชื่อมต่ออุปกรณ์ภายนอกเข้ากับบอร์ด ESP32:</p>
-                
-                <h3>1. การต่อเซนเซอร์วัดอุณหภูมิ DS18B20</h3>
-                <p>ต้องต่อตัวต้านทานดึงกระแสขึ้น (Pull-up Resistor) ขนาด 4.7kΩ ระหว่างสายสัญญาณข้อมูล (DQ) และแหล่งจ่ายไฟ 3.3V:</p>
+            <section id="section-wiring" style="margin-top: 40px;">
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">3. การติดตั้งและเดินสายไฟ (<span lang="en">Wiring & Safety</span>)</h1>
+                <div class="alert alert-danger">
+                    <strong>คำเตือนวิกฤตทางไฟฟ้า:</strong><br>
+                    - <strong>ห้ามต่อเซนเซอร์ <span lang="en">DS18B20</span> เข้ากับไฟ <code class="mono">5V</code> เด็ดขาด!</strong> พิน <span lang="en">GPIO</span> ของ <span lang="en">ESP32</span> รับแรงดันไฟได้สูงสุด <code class="mono">3.3V</code> การป้อนแรงดันไฟ <code class="mono">5V</code> เข้าช่องส่งสัญญาณข้อมูล (<span lang="en">DQ Pin</span>) จะทำให้พินเสียหายทันทีและอาจทำให้ชิปพังทั้งตัว<br>
+                    - ตรวจสอบให้แน่ใจว่าได้ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> คร่อมระหว่างสายสัญญาณ <strong><span lang="en">DQ</span> (สีเหลือง)</strong> และ <strong><code class="mono">3.3V</code> (สีแดง)</strong> เสมอ และห้ามเชื่อมต่อในโหมดปรสิต (<span lang="en">Parasitic Power Mode</span>)
+                </div>
+                <h3>1. การต่อเซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></h3>
+                <p>เชื่อมต่อขา <code class="mono">VDD</code> เข้ากับแหล่งจ่ายไฟ <code class="mono">3.3V</code>, ขา <code class="mono">GND</code> เข้ากับกราวด์ <code class="mono">GND</code>, และขาข้อมูล <span lang="en">DQ</span> เข้ากับพินส่งสัญญาณที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO33</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO41</code> บน <span lang="en">ESP32-S3</span>) โดยต่อตัวต้านทาน <code class="mono">4.7 kOhm</code> ระหว่างขา <span lang="en">DQ</span> และ <code class="mono">3.3V</code>:</p>
                 <!-- SVG แผนภาพการต่อสายเซนเซอร์วัดอุณหภูมิ DS18B20 และ Pull-up Resistor -->
                 <svg viewBox="0 0 500 240" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
                     <!-- ESP32 Side -->
@@ -500,8 +550,8 @@
                     <circle cx="300" cy="135" r="4" fill="#ecc94b"/>
                 </svg>
                 
-                <h3>2. การต่อสวิตช์ลูกลอย (Float Switch)</h3>
-                <p>ต่อสัมผัสแห้ง (Dry Contact) ของสวิตช์ลูกลอยระหว่างขา GND และ GPIO32 โดยระบบเปิดใช้งานตัวต้านทานดึงขึ้นภายในชิป (Internal Pull-Up):</p>
+                <h3>2. การต่อสวิตช์ลูกลอย (<span lang="en">Float Switch</span>)</h3>
+                <p>เชื่อมต่อหน้าสัมผัสแห้ง (<span lang="en">Dry Contact</span>) ของสวิตช์ลูกลอยคร่อมระหว่างขากราวด์ <code class="mono">GND</code> และพินระดับน้ำที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO32</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO19</code> บน <span lang="en">ESP32-S3</span>) ระบบจะเปิดใช้ตัวต้านทานดึงขึ้นภายในตัวชิป (<span lang="en">Internal Pull-Up</span>) อัตโนมัติ อย่างไรก็ตาม เพื่อลดสัญญาณรบกวนเหนี่ยวนำจากมอเตอร์ปั๊ม แนะนำให้ต่อตัวต้านทานดึงขึ้นภายนอกขนาด <code class="mono">4.7 kOhm</code> คร่อมขาไฟ <code class="mono">3.3V</code> เพิ่มเติมหากเดินสายไฟยาว:</p>
                 <!-- SVG แผนภาพการเชื่อมต่อสวิตช์ลูกลอยแบบแห้ง (Float Switch) -->
                 <svg viewBox="0 0 500 240" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
                     <!-- ESP32 Side -->
@@ -542,8 +592,8 @@
                     <text x="215" y="190" fill="var(--text-muted)" font-size="9" font-family="sans-serif" text-anchor="middle">(ไม่ต้องต่อตัวต้านทานภายนอก)</text>
                 </svg>
                 
-                <h3>3. การต่อรีเลย์และปั๊มน้ำ (Relay & Pump Control)</h3>
-                <p>ต่อสัญญาณควบคุมจากพิน GPIO ไปยังบอร์ดโมดูลรีเลย์ เพื่อควบคุมหน้าสัมผัสของปั๊มน้ำ 1 และปั๊มน้ำ 2:</p>
+                <h3>3. การต่อรีเลย์และปั๊มน้ำ (<span lang="en">Relay & Pump Control</span>)</h3>
+                <p>ต่อพินสัญญาณควบคุมจากบอร์ดไปยังโมดูลรีเลย์ (<span lang="en">Relay Module</span>) ตัวที่ 1 (<code class="mono">GPIO26</code>) และตัวที่ 2 (<code class="mono">GPIO27</code>) แนะนำให้ใช้โมดูลรีเลย์แบบมีออปโตคัปเปลอร์แยกกราวด์ (<span lang="en">Optocoupler Isolation</span>) เพื่อป้องกันสัญญาณรบกวนแม่เหล็กไฟฟ้า (<span lang="en">EMI</span>) จากขดลวดปั๊มย้อนกลับเข้าชิป และตรวจสอบขั้วสัญญาณควบคุมระหว่าง <span lang="en">Active-Low</span> และ <span lang="en">Active-High</span> ให้ถูกต้องในระบบทุกครั้งก่อนต่อไฟโหลดปั๊ม:</p>
                 <!-- SVG แผนภาพการเชื่อมต่อรีเลย์ควบคุมและหน้าสัมผัสปั๊มน้ำ -->
                 <svg viewBox="0 0 500 220" width="100%" height="auto" style="background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); padding: 10px; margin-top: 15px;">
                     <!-- Control board output -->
@@ -575,29 +625,174 @@
                     <line x1="375" y1="140" x2="450" y2="140" stroke="#cbd5e0" stroke-width="2"/>
                     <text x="450" y="80" fill="var(--text-muted)" font-size="9" font-family="monospace">AC 220V Line</text>
                 </svg>
-            </section>
-            
-            <section id="section-flashing">
-                <h2>คอมไพล์และอัปโหลด</h2>
-                <p>ขั้นตอนการใช้งาน <span lang="en">ESP-IDF</span> ในการบิลด์เฟิร์มแวร์</p>
-            </section>
-            
-            <section id="section-first-run">
-                <h2>การเริ่มต้นระบบครั้งแรก</h2>
-                <p>การเชื่อมต่อ Wi-Fi และเข้าใช้งานระบบ</p>
-            </section>
-            
-            <section id="section-dashboard">
-                <h2>การใช้งาน <span lang="en">Dashboard</span></h2>
-                <p>การควบคุมและตรวจสอบสถานะผ่านทางหน้าเว็บ</p>
-            </section>
-            
-            <section id="section-trouble">
-                <h2>การแก้ไขปัญหา</h2>
-                <p>ตารางปัญหาและแนวทางการแก้ไข</p>
-                <div class="alert alert-danger">
-                    นี่คือตัวอย่างข้อความแจ้งเตือนวิกฤต (Danger)
+                <!-- Interactive Pre-Power Checklist Enhancement -->
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-top: 30px;">
+                    <h3 style="margin-top: 0; color: var(--primary);">รายการตรวจสอบความปลอดภัยก่อนปล่อยกระแสไฟ (<span lang="en">Pre-Power Checklist</span>)</h3>
+                    <p style="font-size: 14px; color: var(--text-muted);">กรุณาตรวจสอบและทำเครื่องหมายในรายการด้านล่าง เพื่อยืนยันความถูกต้องของวงจรก่อนปล่อยกระแสไฟเลี้ยงเข้าระบบ:</p>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;" id="checklist-container">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                            <span>สายไฟเลี้ยงเซนเซอร์ <span lang="en">DS18B20</span> ต่อเข้ากับขา <code class="mono">3.3V</code> เท่านั้น (ห้ามต่อเข้ากับ <code class="mono">5V</code>)</span>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                            <span>ต่อตัวต้านทานดึงกระแสขึ้น (<span lang="en">Pull-up Resistor</span>) ขนาด <code class="mono">4.7 kOhm</code> ระหว่างขา <span lang="en">DQ</span> และ <code class="mono">3.3V</code> แล้ว</span>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                            <span>สายสวิตช์ลูกลอยต่อเข้าพินระดับน้ำและขากราวด์ <code class="mono">GND</code> ไม่มีกระแสไฟเลี้ยงจากภายนอกปนเปื้อน (สัมผัสแห้ง)</span>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                            <span>หลีกเลี่ยงการใช้งานขา <span lang="en">Strapping Pins</span> เช่น <code class="mono">GPIO0</code> หรือ <code class="mono">GPIO2</code> ในการดึงไฟต่ำตอนบูต เพื่อไม่ให้บอร์ดบูตลูป</span>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" class="chk-item" style="margin-top: 4px;">
+                            <span>ตั้งค่าความต่างศักย์สัญญาณรีเลย์ในเฟิร์มแวร์ (<span lang="en">Relay Polarity</span>) สอดคล้องกับประเภทโมดูลรีเลย์จริงเพื่อป้องกันปั๊มน้ำเริ่มทำงานเองทันทีเมื่อจ่ายกระแสไฟเข้าเครื่อง</span>
+                        </label>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 5px;">
+                            <span>ระดับความพร้อมในการปล่อยไฟ:</span>
+                            <span id="ready-percent">0%</span>
+                        </div>
+                        <div style="background: var(--bg-body); border: 1px solid var(--border-color); height: 12px; border-radius: 6px; overflow: hidden;">
+                            <div id="ready-progress" style="width: 0%; height: 100%; background: var(--danger); transition: width 0.3s ease, background-color 0.3s ease;"></div>
+                        </div>
+                    </div>
                 </div>
+            </section>
+            
+            <section id="section-flashing" style="margin-top: 40px;">
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">4. คอมไพล์และอัปโหลดเฟิร์มแวร์ (<span lang="en">Compilation & Flashing</span>)</h1>
+                <p>ระบบพัฒนาขึ้นโดยใช้ชุดพัฒนาอย่างเป็นทางการของ <span lang="en">ESP-IDF</span> (แนะนำเวอร์ชัน <code class="mono">v6.0.1</code>) เท่านั้น โดยระบบไม่ได้พัฒนาบนโครงสร้างของ <span lang="en">Arduino</span> หรือ <span lang="en">PlatformIO</span></p>
+                
+                <h3>ขั้นตอนการบิลด์ระบบผ่าน <span lang="en">PowerShell</span> บนระบบปฏิบัติการ <span lang="en">Windows</span>:</h3>
+                
+                <p>1. เปิดใช้งานตัวแปรสภาพแวดล้อมของระบบและข้ามข้อจำกัดคำเตือนรหัสอักขระในภาษา <span lang="en">Python</span>:</p>
+                <div style="position: relative;">
+                    <pre><code class="language-powershell">chcp 65001 > $null
+$env:IDF_PATH = "C:\esp\v6.0.1\esp-idf"  # เปลี่ยนเส้นทางตามการติดตั้งจริง
+& "$env:IDF_PATH\export.ps1"</code></pre>
+                    <button class="copy-btn" onclick="copyCode(this)" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; background: var(--primary-container); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; cursor: pointer; border-color: var(--primary);">คัดลอก</button>
+                </div>
+                
+                <p>2. บิลด์เฟิร์มแวร์โดยระบุตัวบอร์ดเป้าหมาย (ทำความสะอาดค่ากำหนดก่อนหากต้องการสลับประเภทบอร์ด):</p>
+                <div style="position: relative;">
+                    <pre><code class="language-powershell"># ลบค่าตั้งค่าเก่าก่อนเมื่อเปลี่ยนเป้าหมายบอร์ด
+Remove-Item sdkconfig -ErrorAction SilentlyContinue
+
+# บิลด์สำหรับ ESP32 รุ่นคลาสสิก
+.\scripts\build.ps1 -Target esp32
+
+# หรือ บิลด์สำหรับ ESP32-S3
+.\scripts\build.ps1 -Target esp32s3</code></pre>
+                    <button class="copy-btn" onclick="copyCode(this)" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; background: var(--primary-container); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; cursor: pointer; border-color: var(--primary);">คัดลอก</button>
+                </div>
+                
+                <p>3. แฟลชโปรแกรมและเปิดหน้าจอรายงานผลคอมพิวเตอร์ผ่านทางหน้าจอแบบโต้ตอบ:</p>
+                <div style="position: relative;">
+                    <pre><code class="language-powershell">.\scripts\flash_and_show.ps1</code></pre>
+                    <button class="copy-btn" onclick="copyCode(this)" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px; font-size: 11px; background: var(--primary-container); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; cursor: pointer; border-color: var(--primary);">คัดลอก</button>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <strong>คำแนะนำกรณีอัปโหลดไม่สำเร็จ:</strong> หากบอร์ดแสดงข้อผิดพลาดเกี่ยวกับการเข้ารหัสหน่วยความจำแฟลชที่ค้างมาจากระบบก่อนหน้า ให้ทำการรีเซ็ตค่าสถานะการเข้ารหัสโดยการแฟลชโปรแกรมแบบเปิดเผยและตั้งค่า <span lang="en">FLASH_CRYPT_CNT</span> ให้อยู่ในสถานะเลขคู่ เพื่อปิดการทำงานระบบความปลอดภัยระดับชิปในโหมดพัฒนา
+                </div>
+            </section>
+            
+            <section id="section-first-run" style="margin-top: 40px;">
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">5. การเริ่มต้นระบบครั้งแรก (<span lang="en">First-Time Connection</span>)</h1>
+                <p>เมื่ออุปกรณ์บูตระบบขึ้นมาเป็นครั้งแรกและตรวจไม่พบการตั้งค่าใดๆ ในหน่วยความจำถาวร (<span lang="en">NVS</span>) ระบบจะเริ่มต้นโหมดเครือข่ายไร้สายแบบตั้งค่าร่วม (<span lang="en">SoftAP</span>) ในทันที โดยเครือข่ายจะมีคุณสมบัติดังนี้:</p>
+                
+                <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
+                    <li><strong>ชื่อสัญญาณ <span lang="en">Wi-Fi</span> (<span lang="en">SSID</span>):</strong> <code class="mono">FishPump-Setup</code></li>
+                    <li><strong>รหัสผ่านความปลอดภัย:</strong> สร้างขึ้นมาแบบสุ่มตามชุดที่อยู่ของตัวประมวลผล (<span lang="en">MAC Address</span>) ร่วมกับวิธีบวกค่าเกลือ (<span lang="en">XOR Salt</span>) ซึ่งจะแสดงในทางพอร์ตสื่อสารระดับอนุกรม (<span lang="en">Serial Terminal</span>) ตอนเริ่มเครื่อง หรือหน้าจอ <span lang="en">TFT</span> ที่ติดตั้งอยู่หน้าระบบ (เช่น รหัสผ่านในรูปแบบ <code class="mono">AABBCCDD</code>)</li>
+                    <li><strong>ที่อยู่เชื่อมต่อเว็บหลัก (<span lang="en">IP Address</span>):</strong> เข้าใช้งานได้ทางตรงที่ <code class="mono">http://192.168.4.1</code> หรือผ่านชื่อบริการค้นหาทางตรงที่ <code class="mono">http://fishpump.local</span> ด้วยระเบียบวิธี <span lang="en">mDNS</span></li>
+                </ul>
+                
+                <div class="alert alert-warning">
+                    <strong>การยืนยันตัวตนและความปลอดภัยเริ่มต้น:</strong><br>
+                    - บัญชีเข้าสู่ระบบเริ่มต้นคือ Username: <code class="mono">admin</code>, Password: <code class="mono">admin123</code><br>
+                    - <strong>ข้อบังคับสำคัญ:</strong> ระบบการจัดการความปลอดภัยจะบังคับให้ผู้ใช้งานเปลี่ยนรหัสผ่านเริ่มต้นเป็นรหัสส่วนตัวทันทีเมื่อล็อกอินเข้าระบบสำเร็จเป็นครั้งแรก เพื่อความปลอดภัยของเครื่องควบคุมและปั๊มน้ำในระยะยาว
+                </div>
+            </section>
+            
+            <section id="section-dashboard" style="margin-top: 40px;">
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">6. การใช้งาน <span lang="en">Dashboard</span></h1>
+                <p>หน้าเว็บหลัก (<span lang="en">Dashboard</span>) ของอุปกรณ์ทำหน้าที่เป็นหน้าจอควบคุมและตรวจสอบสถานะการทำงานของอุปกรณ์ทั้งหมดในแบบเรียลไทม์ โดยไม่มีความจำเป็นต้องต่ออินเทอร์เน็ตภายนอกแต่อย่างใด:</p>
+                
+                <h3>1. การควบคุมรอบเวลาทำงานและสวิตช์ลูกลอย</h3>
+                <p>บนคอนโซลหลัก ผู้ใช้งานสามารถเปิด/ปิดระบบการทำงานของปั๊มน้ำได้ การทำงานของปั๊มน้ำจะเป็นดังนี้:</p>
+                <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
+                    <li>ผู้ใช้สามารถกู้คืนหรือตั้งค่าเริ่มต้นการทำงานของอุปกรณ์ยามสูญเสียพลังงาน (<span lang="en">Auto-Start on Boot</span>) ซึ่งค่าเริ่มต้นจะปิดเอาไว้ด้วยความปลอดภัย เพื่อเลี่ยงปั๊มทำงานเองโดยไม่ตั้งใจหลังไฟดับ</li>
+                    <li><strong>การสลับการตั้งค่าพินควบคุมแบบลอยตัว:</strong> หากต้องการเปลี่ยนพินฮาร์ดแวร์จริงผ่านหน้าจัดการระบบ พารามิเตอร์ใหม่จะอยู่ในสถานะกำลังดำเนินการ (<span lang="en">Pending Settings</span>) และยังไม่มีผลบังคับใช้จริงในทันที จนกว่าจะกดรีบูตตัวเครื่องอย่างเป็นทางการผ่านคำสั่งในเว็บ เพื่อรักษาความสมบูรณ์และเสถียรภาพของบอร์ด</li>
+                </ul>
+
+                <h3>2. การตั้งค่าระบบควบคุมความเย็น (<span lang="en">Cooling Control Mode</span>)</h3>
+                <p>ระบบควบคุมความเย็นที่ต่อคร่อมร่วมกับเซนเซอร์อุณหภูมิ <span lang="en">DS18B20</span> สามารถตั้งรูปแบบการทำงานได้ 3 สถานะดังนี้:</p>
+                <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 16px;">
+                    <li><strong>โหมดอัตโนมัติ (<span lang="en">Auto</span>):</strong> ระบบจะอ่านอุณหภูมิจากเซนเซอร์ หากอุณหภูมิขึ้นสูงกว่าค่าเกณฑ์จำกัด (<span lang="en">Threshold</span> - ค่าเริ่มต้นคือ <code class="mono">30.0 C</code>) จะสั่งจ่ายรีเลย์เปิดระบบทำความเย็น และจะสั่งปิดอุปกรณ์เมื่ออุณหภูมิลดลงต่ำกว่าเกณฑ์ลบค่าความต่างระดับการปรับกลับ (<span lang="en">Hysteresis</span> - ค่าเริ่มต้นคือ <code class="mono">1.0 C</code> หรือจุดปิดคือ <code class="mono">29.0 C</code>)</li>
+                    <li><strong>โหมดบังคับปิด (<span lang="en">Force Off</span>):</strong> สั่งปิดการจ่ายกระแสไฟชุดอุปกรณ์ทำความเย็นถาวรทันที ไม่คำนึงถึงระดับอุณหภูมิปัจจุบัน</li>
+                    <li><strong>โหมดทดสอบเปิด (<span lang="en">Test On</span>):</strong> จ่ายไฟฟ้าระบบทำความเย็นเป็นเวลาสั้นชั่วคราวตามกำหนด (ค่าเริ่มต้นคือ <code class="mono">10</code> วินาที) แล้วสลับกลับสู่โหมดก่อนหน้านี้อัตโนมัติ</li>
+                </ul>
+                
+                <div class="alert alert-success">
+                    <strong>ระบบปกป้องคอมเพรสเซอร์ (<span lang="en">Compressor Lockout Protection</span>):</strong><br>
+                    เพื่อยืดอายุและถนอมระบบกลไกทำความเย็นจากการเปิดปิดกระชั้นชิดเกินไป ทุกครั้งที่รีเลย์คูลลิ่งปิดตัวลง ระบบจะบังคับใช้ตัวเลขนับถอยหลังล็อกจังหวะเริ่มทำงานใหม่ (<span lang="en">Lockout Timeout</span> - อย่างน้อย <code class="mono">180</code> วินาที) โดยระหว่างช่วงเวลานี้ ไม่ว่าเงื่อนไขใดในโหมด <span lang="en">Auto</span> หรือการสั่ง <span lang="en">Test On</span> ก็ไม่สามารถส่งสัญญาณเปิดระบบทำความเย็นขึ้นมาได้เด็ดขาด
+                </div>
+
+                <h3>3. การจัดการหน้าจอและโหมดพักแสดงผล</h3>
+                <p>ระบบรองรับความสว่างหน้าจอแสดงผลและการสไลด์เพื่อประหยัดไฟผ่านตัวกำหนดอายุการแสดงผลหน้าจอ (<span lang="en">TFT Auto-Dim Timer</span>) ซึ่งหากไม่มีสัญญาณปุ่มกดภายนอกหรือกิจกรรมทำงานใดๆ ในเวลา <code class="mono">5</code> นาที ระบบไฟแสงหลังฉากจะค่อยๆ หรี่ลงตามลำดับ เพื่อปกป้องสารอินทรีย์แสดงผลจากรอยไหม้และความเสื่อมสภาพก่อนเวลาอันควร</p>
+            </section>
+            
+            <section id="section-trouble" style="margin-top: 40px; margin-bottom: 60px;">
+                <h1 style="font-size: 24px; color: var(--primary); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">7. การแก้ไขปัญหาและการกู้คืนระบบ (<span lang="en">Troubleshooting & Diagnostics</span>)</h1>
+                
+                <h3>1. การแจ้งเตือนและการจัดการข้อผิดพลาดเซนเซอร์อุณหภูมิ</h3>
+                <p>ระบบเฟิร์มแวร์มีการเฝ้าติดตามตัวชี้วัดสุขภาพของอุปกรณ์ทำความเย็นอย่างต่อเนื่อง โดยเฉพาะสัญญาณที่ส่งมาจากเซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span>:</p>
+                
+                <div class="alert alert-danger">
+                    <strong>เงื่อนไขการแจ้งเตือนความผิดปกติของอุณหภูมิ (<span lang="en">Sensor Fault & Safe-Off Logic</span>):</strong><br>
+                    - หากระบบพยายามเชื่อมโยงค่าและเกิดความล้มเหลวในการอ่านสัญญาณพิน <span lang="en">One-Wire</span> ติดต่อกันเป็นจำนวน <strong><code class="mono">3</code> ครั้ง</strong> ระบบจะปรับสถานะเซนเซอร์ให้เป็นบกพร่องทันที และสั่ง <strong>บังคับปิดระบบทำความเย็นให้หยุดทำงานทันที (Safe-Off)</strong> เพื่อความปลอดภัยป้องกันฮาร์ดแวร์ทำงานเกินพิกัดควบคุม<br>
+                    - ระบบจะสแกนช่องทางเดินสายสื่อสารอย่างต่อเนื่องเพื่อกู้คืนการทำงาน หากพบว่าสามารถอ่านค่าได้สมบูรณ์และมีความเสถียรติดต่อกันจำนวน <strong><code class="mono">2</code> ครั้ง</strong> ระบบจะยกเลิกการรายงานข้อผิดพลาดและอนุญาตให้ระบบทำความเย็นกลับมาเข้าสู่โหมดควบคุมอัตโนมัติดังเดิม
+                </div>
+
+                <h3>2. รหัสและสัญลักษณ์ข้อผิดพลาดของการแก้ไขปัญหา</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 12px; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                            <th style="padding: 8px; font-size: 14px;">อาการผิดปกติ</th>
+                            <th style="padding: 8px; font-size: 14px;">สาเหตุที่เป็นไปได้</th>
+                            <th style="padding: 8px; font-size: 14px;">แนวทางการวิเคราะห์และแก้ไขปัญหา</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">ปั๊มน้ำไม่เริ่มทำงานเมื่อบูต</td>
+                            <td style="padding: 8px;">คุณลักษณะการบูตตั้งค่าถูกสั่งปิดไว้</td>
+                            <td style="padding: 8px;">ตรวจสอบการเปิดโหมดเริ่มงานอัตโนมัติ (<span lang="en">Auto-Start</span>) บนหน้าเว็บการตั้งค่า</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">ไม่พบอุปกรณ์เซนเซอร์วัดอุณหภูมิ</td>
+                            <td style="padding: 8px;">ไม่มีการติดตั้งตัวต้านทานสัญญาณ หรือใช้สายยาวเกินไป</td>
+                            <td style="padding: 8px;">ตรวจสอบสายสัญญาณ <span lang="en">DQ</span> และตัวต้านทานดึงกระแสภายนอก <code class="mono">4.7 kOhm</code> หรือตรวจสอบหน้าสัมผัสของจุดต่อ</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 8px;">เชื่อมต่อสัญญานอินเทอร์เน็ตกับบอร์ดไม่ได้</td>
+                            <td style="padding: 8px;">ระบบเข้ารหัสตัวตนผิดพลาด หรือไม่มีสัญญานคลื่นสัญญาณเพียงพอ</td>
+                            <td style="padding: 8px;">ใช้บริการกู้คืนระบบเพื่อทำการล้างประวัติเชื่อมต่อ และสร้างระบบโหมดจุดเชื่อมต่อนำทางขึ้นมาใหม่</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>3. การกู้คืนระบบกลับคืนค่าติดตั้งจากโรงงาน (<span lang="en">Wi-Fi AP Recovery Mode</span>)</h3>
+                <p>หากลืมรหัสผ่านตั้งค่าส่วนตัว หรืออุปกรณ์ต่อสัญญานเครือข่ายท้องถิ่นล้มเหลวจนส่งผลให้เข้าควบคุมอุปกรณ์ไม่ได้ ให้ทำการกู้คืนผ่านทางปุ่มกดฮาร์ดแวร์ภายนอก:</p>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>กดปุ่มแฟลชบนตัวเครื่องบอร์ด (<code class="mono">Boot/Flash Button</code>) ค้างไว้เป็นเวลาอย่างน้อย <code class="mono">5</code> วินาทีระหว่างที่บอร์ดกำลังทำงานปกติ</li>
+                    <li>ไฟกระพริบสถานะภายนอกจะแจ้งเป็นสัญญาณเตือนจังหวะเร็ว</li>
+                    <li>เฟิร์มแวร์จะดำเนินการล้างการตั้งค่าเครือข่าย <span lang="en">STA</span> ข้อมูลพินฮาร์ดแวร์ที่แก้ไข และลบประวัติรหัสผ่านทั้งหมดที่มีการบันทึกในหน่วยความจำถาวร (<span lang="en">NVS</span>) พร้อมสั่งรีสตาร์ทเครื่องใหม่เข้าสู่สถานะโหมดตั้งค่าเริ่มต้นจากโรงงาน (<code class="mono">FishPump-Setup</code>)</li>
+                </ol>
             </section>
         </main>
     </div>
@@ -627,6 +822,83 @@
                 link.classList.add('active');
             });
         });
+
+        // ScrollSpy mechanism to highlight active nav link on scroll
+        const sections = document.querySelectorAll('section');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Pre-Power Checklist progress calculator
+        const checkboxes = document.querySelectorAll('.chk-item');
+        const readyPercent = document.getElementById('ready-percent');
+        const readyProgress = document.getElementById('ready-progress');
+        
+        function updateProgress() {
+            let checkedCount = 0;
+            checkboxes.forEach(chk => {
+                if (chk.checked) {
+                    checkedCount++;
+                }
+            });
+            const percent = Math.round((checkedCount / checkboxes.length) * 100);
+            readyPercent.textContent = percent + '%';
+            readyProgress.style.width = percent + '%';
+            
+            // Color changing based on percent
+            if (percent < 50) {
+                readyProgress.style.backgroundColor = 'var(--danger)';
+            } else if (percent < 100) {
+                readyProgress.style.backgroundColor = 'var(--warning)';
+            } else {
+                readyProgress.style.backgroundColor = 'var(--success)';
+            }
+        }
+        
+        checkboxes.forEach(chk => {
+            chk.addEventListener('change', updateProgress);
+        });
+        
+        // Initial call
+        updateProgress();
+
+        // Code Copy Helper
+        function copyCode(button) {
+            const pre = button.previousElementSibling;
+            const code = pre.querySelector('code');
+            const text = code.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'คัดลอกแล้ว!';
+                button.style.backgroundColor = 'var(--success-container)';
+                button.style.borderColor = 'var(--success)';
+                button.style.color = 'var(--success)';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = 'var(--primary-container)';
+                    button.style.borderColor = 'var(--primary)';
+                    button.style.color = 'var(--primary)';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
     </script>
 </body>
 </html>
