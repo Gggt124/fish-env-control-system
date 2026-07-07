@@ -15,7 +15,9 @@ extern "C" {
 #endif
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.3"
+#ifndef APP_TEMPLATE_FIRMWARE_VERSION
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.4"
+#endif
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
 #define APP_TEMPLATE_AP_SSID               "FishPump-Setup"

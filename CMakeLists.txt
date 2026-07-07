@@ -6,7 +6,8 @@ set(EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/components")
 # Use separate sdkconfig file for each target to avoid race conditions
 set(SDKCONFIG "${CMAKE_SOURCE_DIR}/sdkconfig.${IDF_TARGET}")
 
-project(fish_pump_relay_timer_control VERSION 0.2.3)
+project(fish_pump_relay_timer_control VERSION 0.2.4)
+add_compile_definitions(APP_TEMPLATE_FIRMWARE_VERSION="v${PROJECT_VERSION}")
 
 # ESP-IDF v5+ auto-loads sdkconfig.defaults.<IDF_TARGET> after sdkconfig.defaults.
 # The unconditional set (no if/EXISTS guard) ensures SDKCONFIG_DEFAULTS is always set.
