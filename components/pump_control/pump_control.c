@@ -103,6 +103,7 @@ static bool config_valid(const pump_control_config_t *config)
         !start_phase_valid(config->timer1_start_phase) ||
         !start_phase_valid(config->timer2_start_phase) ||
         config->debounce_ms == 0 ||
+        config->debounce_ms > 60000 ||
         config->min_dwell_sec > APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC) {
         return false;
     }
@@ -412,7 +413,7 @@ static void start_channel_for_float_locked(pump_control_float_state_t float_stat
         return;
     }
 
-    if (s_active_timer != prev_timer) {
+    if (s_active_timer != prev_timer && prev_timer != PUMP_CONTROL_TIMER_NONE) {
         s_last_switch_ms = now_ms;
     }
 
@@ -468,7 +469,7 @@ static void pump_tick_cb(void *arg)
 
     int64_t now_ms = esp_timer_get_time() / 1000;
     pump_control_float_state_t raw_state = read_float_state_locked();
-    bool float_changed = update_debounce_locked(raw_state, now_ms);
+    update_debounce_locked(raw_state, now_ms);
 
     if (!s_running) {
         preview_channel_for_float_locked(s_confirmed_float_state);
@@ -486,14 +487,21 @@ static void pump_tick_cb(void *arg)
         return;
     }
 
-    if (float_changed) {
+    pump_control_active_timer_t required_timer = PUMP_CONTROL_TIMER_NONE;
+    if (s_confirmed_float_state == PUMP_CONTROL_FLOAT_ON) {
+        required_timer = PUMP_CONTROL_TIMER_2;
+    } else if (s_confirmed_float_state == PUMP_CONTROL_FLOAT_OFF) {
+        required_timer = PUMP_CONTROL_TIMER_1;
+    }
+
+    bool timer_switch_needed = (required_timer != s_active_timer && required_timer != PUMP_CONTROL_TIMER_NONE);
+
+    if (timer_switch_needed) {
         bool cooldown_active =
             s_config.min_dwell_sec > 0 &&
             (now_ms - s_last_switch_ms) < ((int64_t)s_config.min_dwell_sec * 1000);
         if (cooldown_active) {
-            ESP_LOGD(TAG, "float changed but cooldown active (%us), ignoring",
-                     (unsigned)s_config.min_dwell_sec);
-            s_countdown_sec = seconds_remaining(now_ms);
+            advance_phase_if_needed_locked(now_ms);
         } else {
             start_channel_for_float_locked(s_confirmed_float_state, now_ms);
         }
@@ -644,7 +652,6 @@ bool pump_control_start(void)
     }
 
     s_running = true;
-    s_last_switch_ms = esp_timer_get_time() / 1000;
     s_initial_stabilizing = s_confirmed_float_state == PUMP_CONTROL_FLOAT_UNKNOWN;
     s_phase_deadline_ms = 0;
     force_both_relays_inactive_locked();
@@ -704,6 +711,7 @@ bool pump_control_update_timers(const pump_control_timer_update_t *update)
         !start_phase_valid(update->timer1_start_phase) ||
         !start_phase_valid(update->timer2_start_phase) ||
         update->debounce_ms == 0 ||
+        update->debounce_ms > 60000 ||
         update->min_dwell_sec > APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC) {
         ESP_LOGE(TAG, "pump_control_update_timers: invalid update fields");
         return false;
@@ -788,7 +796,7 @@ bool pump_control_get_status(pump_control_status_t *out)
         int64_t elapsed_ms = now_ms_local - s_last_switch_ms;
         int64_t cooldown_ms = (int64_t)s_config.min_dwell_sec * 1000;
         int64_t remaining_ms = cooldown_ms - elapsed_ms;
-        out->cooldown_remaining_sec = remaining_ms > 0 ? (uint32_t)(remaining_ms / 1000) + 1 : 0;
+        out->cooldown_remaining_sec = remaining_ms > 0 ? (uint32_t)((remaining_ms + 999) / 1000) : 0;
     } else {
         out->cooldown_remaining_sec = 0;
     }
