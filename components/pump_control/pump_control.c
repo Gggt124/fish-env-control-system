@@ -498,6 +498,7 @@ static void pump_tick_cb(void *arg)
 
     if (timer_switch_needed) {
         bool cooldown_active =
+            s_active_timer != PUMP_CONTROL_TIMER_NONE &&
             s_config.min_dwell_sec > 0 &&
             (now_ms - s_last_switch_ms) < ((int64_t)s_config.min_dwell_sec * 1000);
         if (cooldown_active) {
