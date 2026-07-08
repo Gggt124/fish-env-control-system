@@ -30,6 +30,7 @@ typedef struct {
     hardware_timer_start_phase_t timer1_start_phase;
     hardware_timer_start_phase_t timer2_start_phase;
     bool auto_start;
+    uint32_t min_dwell_sec;
 } nvs_store_pump_settings_t;
 
 typedef struct {

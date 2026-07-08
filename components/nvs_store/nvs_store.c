@@ -39,7 +39,7 @@ static const char *TAG = "nvs_store";
 
 /* A6 audit: atomic blob key — replaces 10 individual pump keys */
 #define NVS_PUMP_KEY_SETTINGS_BLOB  "pump_blob"
-#define NVS_PUMP_BLOB_VERSION       1   /* increment if struct layout changes */
+#define NVS_PUMP_BLOB_VERSION       2   /* v2: added min_dwell_sec (append-only) */
 
 #define NVS_HW_NAMESPACE         "hw_cfg"
 #define NVS_HW_KEY_ACT_FLOAT     "act_float"
@@ -85,7 +85,8 @@ static bool pump_settings_valid(const nvs_store_pump_settings_t *settings)
            pump_duration_valid(settings->timer2_on_sec) &&
            pump_duration_valid(settings->timer2_off_sec) &&
            hardware_map_timer_start_phase_valid(settings->timer1_start_phase) &&
-           hardware_map_timer_start_phase_valid(settings->timer2_start_phase);
+           hardware_map_timer_start_phase_valid(settings->timer2_start_phase) &&
+           settings->min_dwell_sec <= APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC;
 }
 
 static bool cooling_settings_valid(const nvs_store_cooling_settings_t *settings)
@@ -708,6 +709,7 @@ void nvs_store_pump_settings_defaults(nvs_store_pump_settings_t *out)
         ? HARDWARE_TIMER_START_PHASE_ON
         : HARDWARE_TIMER_START_PHASE_OFF;
     out->auto_start = APP_TEMPLATE_PUMP_AUTO_START_DEFAULT;
+    out->min_dwell_sec = APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_SEC;
 }
 
 nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pump_settings_t *out)
@@ -738,7 +740,7 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
     esp_err_t blob_err = nvs_get_blob(handle, NVS_PUMP_KEY_SETTINGS_BLOB, blob, &blob_len);
 
     if (blob_err == ESP_OK) {
-        if (blob_len > 0 && blob[0] == NVS_PUMP_BLOB_VERSION) {
+        if (blob_len > 0 && (blob[0] == NVS_PUMP_BLOB_VERSION || blob[0] == 1)) {
             size_t copy_len = blob_len - 1;
             if (copy_len > sizeof(nvs_store_pump_settings_t)) {
                 copy_len = sizeof(nvs_store_pump_settings_t);
