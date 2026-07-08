@@ -54,6 +54,8 @@ typedef struct {
     pump_control_start_phase_t    timer2_start_phase;
     pump_control_relay_polarity_t relay1_polarity;
     pump_control_relay_polarity_t relay2_polarity;
+    uint32_t debounce_ms;
+    uint32_t min_dwell_sec;
 } pump_control_timer_update_t;
 
 typedef struct {
@@ -66,6 +68,7 @@ typedef struct {
     pump_control_relay_polarity_t relay1_polarity;
     pump_control_relay_polarity_t relay2_polarity;
     uint32_t debounce_ms;
+    uint32_t min_dwell_sec;
     pump_control_timer_config_t timer1;
     pump_control_timer_config_t timer2;
     pump_control_start_phase_t timer1_start_phase;
@@ -91,6 +94,8 @@ typedef struct {
     pump_control_timer_phase_t phase;
     uint32_t countdown_sec;
     uint32_t total_duration_sec;
+    uint32_t min_dwell_sec;
+    uint32_t cooldown_remaining_sec;
 } pump_control_status_t;
 
 pump_control_config_t pump_control_default_config(void);
