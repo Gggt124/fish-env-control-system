@@ -36,6 +36,7 @@ static pump_control_timer_phase_t s_phase = PUMP_CONTROL_PHASE_IDLE;
 static uint32_t s_countdown_sec;
 static int64_t s_phase_deadline_ms;
 static uint32_t s_current_phase_duration_sec;
+static int64_t s_last_switch_ms;   /* timestamp of the most recent Timer1<->Timer2 switch */
 
 
 
@@ -101,7 +102,8 @@ static bool config_valid(const pump_control_config_t *config)
         !polarity_valid(config->relay2_polarity) ||
         !start_phase_valid(config->timer1_start_phase) ||
         !start_phase_valid(config->timer2_start_phase) ||
-        config->debounce_ms == 0) {
+        config->debounce_ms == 0 ||
+        config->min_dwell_sec > APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC) {
         return false;
     }
     return timer_config_valid(&config->timer1) &&
@@ -125,6 +127,7 @@ static void reset_runtime_state_locked(void)
     s_countdown_sec = 0;
     s_phase_deadline_ms = 0;
     s_current_phase_duration_sec = 0;
+    s_last_switch_ms = 0;
 }
 
 static gpio_num_t relay_gpio_for_config(const pump_control_config_t *config,
@@ -196,6 +199,7 @@ static void mark_fault_locked(void)
     s_phase = PUMP_CONTROL_PHASE_IDLE;
     s_countdown_sec = 0;
     s_phase_deadline_ms = 0;
+    s_last_switch_ms = 0;
     force_both_relays_inactive_for_config(&s_config);
 }
 
@@ -398,6 +402,7 @@ static void start_channel_for_float_locked(pump_control_float_state_t float_stat
         return;
     }
 
+    pump_control_active_timer_t prev_timer = s_active_timer;
     set_selected_channel_for_float_locked(float_state);
     if (s_active_timer == PUMP_CONTROL_TIMER_NONE) {
         s_phase = PUMP_CONTROL_PHASE_IDLE;
@@ -405,6 +410,10 @@ static void start_channel_for_float_locked(pump_control_float_state_t float_stat
         s_phase_deadline_ms = 0;
         force_both_relays_inactive_locked();
         return;
+    }
+
+    if (s_active_timer != prev_timer) {
+        s_last_switch_ms = now_ms;
     }
 
     set_phase_locked(start_phase_to_timer_phase(active_timer_start_phase_locked()), now_ms);
@@ -478,7 +487,16 @@ static void pump_tick_cb(void *arg)
     }
 
     if (float_changed) {
-        start_channel_for_float_locked(s_confirmed_float_state, now_ms);
+        bool cooldown_active =
+            s_config.min_dwell_sec > 0 &&
+            (now_ms - s_last_switch_ms) < ((int64_t)s_config.min_dwell_sec * 1000);
+        if (cooldown_active) {
+            ESP_LOGD(TAG, "float changed but cooldown active (%us), ignoring",
+                     (unsigned)s_config.min_dwell_sec);
+            s_countdown_sec = seconds_remaining(now_ms);
+        } else {
+            start_channel_for_float_locked(s_confirmed_float_state, now_ms);
+        }
     } else {
         advance_phase_if_needed_locked(now_ms);
     }
@@ -518,6 +536,7 @@ pump_control_config_t pump_control_default_config(void)
             ? PUMP_CONTROL_RELAY_ACTIVE_LOW
             : PUMP_CONTROL_RELAY_ACTIVE_HIGH,
         .debounce_ms = APP_TEMPLATE_PUMP_FLOAT_DEBOUNCE_MS,
+        .min_dwell_sec = APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_SEC,
         .timer1 = {
             .on_sec = APP_TEMPLATE_PUMP_TIMER1_ON_SEC,
             .off_sec = APP_TEMPLATE_PUMP_TIMER1_OFF_SEC,
@@ -625,6 +644,7 @@ bool pump_control_start(void)
     }
 
     s_running = true;
+    s_last_switch_ms = esp_timer_get_time() / 1000;
     s_initial_stabilizing = s_confirmed_float_state == PUMP_CONTROL_FLOAT_UNKNOWN;
     s_phase_deadline_ms = 0;
     force_both_relays_inactive_locked();
@@ -682,7 +702,9 @@ bool pump_control_update_timers(const pump_control_timer_update_t *update)
         !polarity_valid(update->relay1_polarity) ||
         !polarity_valid(update->relay2_polarity) ||
         !start_phase_valid(update->timer1_start_phase) ||
-        !start_phase_valid(update->timer2_start_phase)) {
+        !start_phase_valid(update->timer2_start_phase) ||
+        update->debounce_ms == 0 ||
+        update->min_dwell_sec > APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC) {
         ESP_LOGE(TAG, "pump_control_update_timers: invalid update fields");
         return false;
     }
@@ -704,6 +726,8 @@ bool pump_control_update_timers(const pump_control_timer_update_t *update)
     s_config.relay1_polarity    = update->relay1_polarity;
     s_config.relay2_polarity    = update->relay2_polarity;
     s_config.relay_polarity     = update->relay1_polarity; /* legacy alias */
+    s_config.debounce_ms        = update->debounce_ms;
+    s_config.min_dwell_sec      = update->min_dwell_sec;
 
     if (s_running && s_phase != PUMP_CONTROL_PHASE_IDLE) {
         set_active_relay_energized_locked(s_phase == PUMP_CONTROL_PHASE_ON);
@@ -758,6 +782,16 @@ bool pump_control_get_status(pump_control_status_t *out)
     out->countdown_sec = s_countdown_sec;
     out->total_duration_sec = (s_phase == PUMP_CONTROL_PHASE_ON || s_phase == PUMP_CONTROL_PHASE_OFF) 
                               ? s_current_phase_duration_sec : 0;
+    out->min_dwell_sec = s_config.min_dwell_sec;
+    if (s_running && s_config.min_dwell_sec > 0 && s_last_switch_ms > 0) {
+        int64_t now_ms_local = esp_timer_get_time() / 1000;
+        int64_t elapsed_ms = now_ms_local - s_last_switch_ms;
+        int64_t cooldown_ms = (int64_t)s_config.min_dwell_sec * 1000;
+        int64_t remaining_ms = cooldown_ms - elapsed_ms;
+        out->cooldown_remaining_sec = remaining_ms > 0 ? (uint32_t)(remaining_ms / 1000) + 1 : 0;
+    } else {
+        out->cooldown_remaining_sec = 0;
+    }
 
     xSemaphoreGive(s_pump_mutex);
     return true;
