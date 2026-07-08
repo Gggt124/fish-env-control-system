@@ -736,6 +736,8 @@ function loadPumpConfig() {
         setDurationFields('timer2-off', data.timer2_off_sec);
         setStartPhaseField('timer1-start-phase', data.timer1_start_phase);
         setStartPhaseField('timer2-start-phase', data.timer2_start_phase);
+        var minDwell = pumpEl('pump-min-dwell');
+        if (minDwell) minDwell.value = (data.min_dwell_sec != null) ? data.min_dwell_sec : 30;
         var autoStart = pumpEl('pump-auto-start');
         if (autoStart) autoStart.checked = !!data.auto_start;
         clearPumpValidation();
@@ -839,6 +841,20 @@ function validatePumpConfig() {
         !timer1Start.ok || !timer2Start.ok) {
         return null;
     }
+
+    var minDwellEl = pumpEl('pump-min-dwell');
+    var minDwellErr = pumpEl('pump-min-dwell-error');
+    var minDwellRaw = minDwellEl ? minDwellEl.value.trim() : '';
+    var minDwellVal = parseInt(minDwellRaw, 10);
+    if (isNaN(minDwellVal) || minDwellVal < 0 || minDwellVal > 3600 ||
+        String(minDwellVal) !== String(minDwellRaw)) {
+        if (minDwellErr) minDwellErr.textContent = 'ค่าระยะหน่วงต้องเป็นตัวเลข 0-3600';
+        if (minDwellEl) minDwellEl.classList.add('invalid');
+        return null;
+    }
+    if (minDwellErr) minDwellErr.textContent = '';
+    if (minDwellEl) minDwellEl.classList.remove('invalid');
+
     return {
         timer1_on_sec: timer1On.value,
         timer1_off_sec: timer1Off.value,
@@ -847,7 +863,8 @@ function validatePumpConfig() {
         timer1_start_phase: timer1Start.value,
         timer2_start_phase: timer2Start.value,
         auto_start: !!(pumpEl('pump-auto-start') && pumpEl('pump-auto-start').checked),
-        relay_polarity: pumpRelayPolarity
+        relay_polarity: pumpRelayPolarity,
+        min_dwell_sec: minDwellVal
     };
 }
 
@@ -959,6 +976,18 @@ function applyPumpStatus(status, authoritative) {
     setHtml('pump-relay-state', renderActiveRelayState(status));
     setHtml('pump-relay-1-state', renderRelayChannelState('relay1', status));
     setHtml('pump-relay-2-state', renderRelayChannelState('relay2', status));
+    
+    var cooldown = Number(status.cooldown_remaining_sec || 0);
+    var cooldownEl = pumpEl('pump-cooldown-badge');
+    if (cooldownEl) {
+        if (cooldown > 0) {
+            cooldownEl.textContent = 'หน่วงสลับอีก ' + cooldown + ' วิ';
+            cooldownEl.classList.remove('hidden');
+        } else {
+            cooldownEl.classList.add('hidden');
+            cooldownEl.textContent = '';
+        }
+    }
 
     // Update dynamic card styles
     updateBadgeCardState('pump-float-card', status.float_state === 'on');
