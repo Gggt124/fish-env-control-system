@@ -57,7 +57,9 @@ state = {
     "relay1_active_low": True,
     "relay2_active_low": True,
     "auto_start": False,
-    "debounce_ms": 100,
+    "debounce_ms": 2000,
+    "min_dwell_sec": 30,
+    "cooldown_remaining_sec": 0,
     
     "cooling_threshold_c_x10": 300,   # 30.0 C
     "cooling_hysteresis_c_x10": 10,   # 1.0 C
@@ -297,6 +299,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "active_relay": state["active_relay"],
                     "phase": state["phase"],
                     "countdown_sec": state["countdown_sec"],
+                    "cooldown_remaining_sec": state["cooldown_remaining_sec"],
                     "relay_energized": state["relay1_energized"] or state["relay2_energized"],
                     "relay1_energized": state["relay1_energized"],
                     "relay2_energized": state["relay2_energized"],
@@ -333,6 +336,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "float_gpio": active_map["float_input_gpio"],
                     "relay_gpio": active_map["pump_relay1_gpio"],
                     "debounce_ms": state["debounce_ms"],
+                    "min_dwell_sec": state["min_dwell_sec"],
                     "pump_relay1_gpio": active_map["pump_relay1_gpio"],
                     "pump_relay2_gpio": active_map["pump_relay2_gpio"],
                     "ds18b20_gpio": active_map["ds18b20_gpio"],
@@ -554,6 +558,12 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                 state["timer1_start_phase"] = payload.get("timer1_start_phase", state["timer1_start_phase"])
                 state["timer2_start_phase"] = payload.get("timer2_start_phase", state["timer2_start_phase"])
                 
+                if "min_dwell_sec" in payload:
+                    val = int(payload["min_dwell_sec"])
+                    if val < 0: val = 0
+                    if val > 3600: val = 3600
+                    state["min_dwell_sec"] = val
+                
                 pol1 = payload.get("relay1_polarity", payload.get("relay_polarity", "active_low"))
                 pol2 = payload.get("relay2_polarity", "active_low")
                 state["relay1_active_low"] = (pol1 == "active_low")
@@ -581,6 +591,7 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "float_gpio": active_map["float_input_gpio"],
                     "relay_gpio": active_map["pump_relay1_gpio"],
                     "debounce_ms": state["debounce_ms"],
+                    "min_dwell_sec": state["min_dwell_sec"],
                     "pump_relay1_gpio": active_map["pump_relay1_gpio"],
                     "pump_relay2_gpio": active_map["pump_relay2_gpio"],
                     "ds18b20_gpio": active_map["ds18b20_gpio"],
