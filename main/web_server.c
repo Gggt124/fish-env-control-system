@@ -1166,6 +1166,8 @@ static bool api_pump_add_status_fields_gen(json_gen_t *gen)
     json_gen_add_string(gen, "active_relay", api_pump_active_relay_name(status.active_relay));
     json_gen_add_string(gen, "phase", api_pump_timer_phase_name(status.phase));
     json_gen_add_number(gen, "countdown_sec", (double)(status.countdown_sec));
+    json_gen_add_number(gen, "min_dwell_sec", (double)(status.min_dwell_sec));
+    json_gen_add_number(gen, "cooldown_remaining_sec", (double)(status.cooldown_remaining_sec));
     json_gen_add_bool(gen, "relay_energized", status.relay_energized);
     json_gen_add_bool(gen, "relay1_energized", status.relay1_energized);
     json_gen_add_bool(gen, "relay2_energized", status.relay2_energized);
@@ -1222,6 +1224,8 @@ static bool api_pump_add_status_fields(cJSON *root)
     cJSON_AddStringToObject(root, "active_relay", api_pump_active_relay_name(status.active_relay));
     cJSON_AddStringToObject(root, "phase", api_pump_timer_phase_name(status.phase));
     cJSON_AddNumberToObject(root, "countdown_sec", status.countdown_sec);
+    cJSON_AddNumberToObject(root, "min_dwell_sec", status.min_dwell_sec);
+    cJSON_AddNumberToObject(root, "cooldown_remaining_sec", status.cooldown_remaining_sec);
     cJSON_AddBoolToObject(root, "relay_energized", status.relay_energized);
     cJSON_AddBoolToObject(root, "relay1_energized", status.relay1_energized);
     cJSON_AddBoolToObject(root, "relay2_energized", status.relay2_energized);
