@@ -900,6 +900,7 @@ static void api_pump_settings_to_runtime_config(const nvs_store_pump_settings_t 
         api_pump_start_phase_from_hardware(settings->timer1_start_phase);
     config->timer2_start_phase =
         api_pump_start_phase_from_hardware(settings->timer2_start_phase);
+    config->min_dwell_sec = settings->min_dwell_sec;
 }
 
 static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_settings_t *settings,
@@ -928,6 +929,7 @@ static bool api_pump_add_config_fields(cJSON *root, const nvs_store_pump_setting
     cJSON_AddNumberToObject(root, "float_gpio", active_map.float_input_gpio);
     cJSON_AddNumberToObject(root, "relay_gpio", active_map.pump_relay1_gpio);
     cJSON_AddNumberToObject(root, "debounce_ms", defaults.debounce_ms);
+    cJSON_AddNumberToObject(root, "min_dwell_sec", settings->min_dwell_sec);
     cJSON_AddNumberToObject(root, "pump_relay1_gpio", active_map.pump_relay1_gpio);
     cJSON_AddNumberToObject(root, "pump_relay2_gpio", active_map.pump_relay2_gpio);
     cJSON_AddNumberToObject(root, "ds18b20_gpio", active_map.ds18b20_data_gpio);
@@ -1792,6 +1794,23 @@ static bool api_pump_parse_settings_payload(const cJSON *root,
         !api_pump_required_bool(root, "auto_start", &settings->auto_start,
                                 error_code, error_message)) {
         return false;
+    }
+
+    const cJSON *min_dwell = cJSON_GetObjectItem(root, "min_dwell_sec");
+    if (min_dwell) {
+        if (!cJSON_IsNumber(min_dwell) || min_dwell->valuedouble < 0.0) {
+            *error_code = "invalid_type";
+            *error_message = "min_dwell_sec";
+            return false;
+        }
+        uint32_t md = (uint32_t)min_dwell->valuedouble;
+        if ((double)md != min_dwell->valuedouble ||
+            md > APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC) {
+            *error_code = "min_dwell_out_of_range";
+            *error_message = "min_dwell_sec";
+            return false;
+        }
+        settings->min_dwell_sec = md;
     }
 
     const cJSON *relay1_polarity = cJSON_GetObjectItem(root, "relay1_polarity");
@@ -3423,6 +3442,8 @@ static esp_err_t handle_api_pump_config_post(httpd_req_t *req)
             .timer2_start_phase = config.timer2_start_phase,
             .relay1_polarity    = config.relay1_polarity,
             .relay2_polarity    = config.relay2_polarity,
+            .debounce_ms        = config.debounce_ms,
+            .min_dwell_sec      = config.min_dwell_sec,
         };
         if (!pump_control_update_timers(&update)) {
             ESP_LOGW(TAG, "Soft timer update failed — changes will apply on next restart/reboot");
