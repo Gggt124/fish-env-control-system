@@ -4205,6 +4205,10 @@ body.login-active .app-footer {
     width: 100%;
 }
 
+.duration-picker-container.single {
+    max-width: 200px;
+}
+
 .duration-picker {
     display: flex;
     align-items: center;

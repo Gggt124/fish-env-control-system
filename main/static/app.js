@@ -831,6 +831,10 @@ function clearPumpValidation() {
         if (startErr) startErr.textContent = '';
         if (startEl) startEl.classList.remove('invalid');
     }
+    var minDwellEl = pumpEl('pump-min-dwell');
+    var minDwellErr = pumpEl('pump-min-dwell-error');
+    if (minDwellErr) minDwellErr.textContent = '';
+    if (minDwellEl) minDwellEl.classList.remove('invalid');
 }
 
 function validatePumpConfig() {
@@ -850,8 +854,7 @@ function validatePumpConfig() {
     var minDwellErr = pumpEl('pump-min-dwell-error');
     var minDwellRaw = minDwellEl ? minDwellEl.value.trim() : '';
     var minDwellVal = parseInt(minDwellRaw, 10);
-    if (isNaN(minDwellVal) || minDwellVal < 0 || minDwellVal > 3600 ||
-        String(minDwellVal) !== String(minDwellRaw)) {
+    if (!/^\d+$/.test(minDwellRaw) || minDwellVal < 0 || minDwellVal > 3600) {
         if (minDwellErr) minDwellErr.textContent = 'ค่าระยะหน่วงต้องเป็นตัวเลข 0-3600';
         if (minDwellEl) minDwellEl.classList.add('invalid');
         return null;
