@@ -617,7 +617,7 @@ function wirePumpForm() {
         'timer1-on-min', 'timer1-on-sec', 'timer1-off-min', 'timer1-off-sec',
         'timer2-on-min', 'timer2-on-sec', 'timer2-off-min', 'timer2-off-sec',
         'timer1-start-phase', 'timer2-start-phase',
-        'pump-auto-start'
+        'pump-auto-start', 'pump-min-dwell'
     ];
     for (var i = 0; i < ids.length; i++) {
         var input = pumpEl(ids[i]);
@@ -655,6 +655,9 @@ function checkPumpDirty() {
     var t1Start = pumpEl('timer1-start-phase').value;
     var t2Start = pumpEl('timer2-start-phase').value;
     var autoStart = !!pumpEl('pump-auto-start').checked;
+    
+    var minDwellEl = pumpEl('pump-min-dwell');
+    var minDwellVal = minDwellEl ? (parseInt(minDwellEl.value, 10) || 0) : 30;
 
     if (t1OnTotal !== Number(pumpConfig.timer1_on_sec)) return true;
     if (t1OffTotal !== Number(pumpConfig.timer1_off_sec)) return true;
@@ -663,6 +666,7 @@ function checkPumpDirty() {
     if (t1Start !== pumpConfig.timer1_start_phase) return true;
     if (t2Start !== pumpConfig.timer2_start_phase) return true;
     if (autoStart !== !!pumpConfig.auto_start) return true;
+    if (minDwellVal !== Number(pumpConfig.min_dwell_sec != null ? pumpConfig.min_dwell_sec : 30)) return true;
 
     return false;
 }
