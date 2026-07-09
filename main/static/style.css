@@ -1845,6 +1845,7 @@ button.nav-item {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    gap: var(--space-2);
 }
 
 .hero-state-badge {
