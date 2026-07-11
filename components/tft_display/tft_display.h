@@ -24,8 +24,34 @@ extern "C" {
 #define TFT_COLOR_MAGENTA 0xF81F
 #define TFT_COLOR_ORANGE  0xFD20
 #define TFT_COLOR_GRAY    0x7BEF
-#define TFT_COLOR_DARK_NAVY 0x0821
+#define TFT_COLOR_DARK_NAVY 0x0823   /* was 0x0821: low byte 0x21 == ST7789 INVON, caused EMI-triggered color inversion */
 #define TFT_COLOR_DARK_PANEL 0x18E3
+
+/* ── Compile-time EMI guard ─────────────────────────────────────
+ * A color value's two on-wire bytes must NOT collide with any high-impact
+ * ST7789 command. If the DC line glitches LOW during a RAMWR data phase
+ * (EMI from pump relay / Wi-Fi TX / S3 Octal PSRAM), a data byte that
+ * matches a command byte is misinterpreted as that command — causing
+ * spontaneous color inversion (0x21 INVON), gamma corruption (0xE0/0xE1),
+ * sleep entry (0x10-0x13), display off (0x28), etc. The fix is two-layer:
+ *   (1) keep all palette colors off command bytes (this guard), and
+ *   (2) bias the DC line HIGH between transactions (internal pull-up) —
+ *       see tft_display_init() in tft_display.c.
+ * See: docs/superpowers/plans/2026-07-12-tft-color-invert-fix.md
+ */
+#define TFT_BYTE_IS_PANEL_CMD(b) ( \
+    (b)==0x10 || (b)==0x11 || (b)==0x12 || (b)==0x13 || \
+    (b)==0x20 || (b)==0x21 || (b)==0x22 || \
+    (b)==0x28 || (b)==0x29 || (b)==0x2A || (b)==0x2B || (b)==0x2C || \
+    (b)==0x36 || \
+    (b)==0xE0 || (b)==0xE1 )
+
+#define TFT_COLOR_IS_SAFE(c) ( \
+    !TFT_BYTE_IS_PANEL_CMD(((c) >> 8) & 0xFF) && \
+    !TFT_BYTE_IS_PANEL_CMD((c) & 0xFF) )
+
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_DARK_NAVY),
+    "TFT_COLOR_DARK_NAVY bytes collide with an ST7789 command (EMI inversion hazard)");
 
 /**
  * @brief Initialize the SPI bus and ILI9341 TFT display using esp_lcd.
