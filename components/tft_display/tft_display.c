@@ -636,12 +636,20 @@ static void tft_display_task(void *pvParameters) {
         if (relay_changed || ext_request || periodic) {
             if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                 resync_counter = 0;
-                esp_lcd_panel_invert_color(s_panel_handle, APP_TEMPLATE_TFT_INVERT_COLOR);
-                esp_lcd_panel_swap_xy(s_panel_handle, true);
-                esp_lcd_panel_mirror(s_panel_handle, true, false);
+                esp_err_t r_inv = esp_lcd_panel_invert_color(s_panel_handle, APP_TEMPLATE_TFT_INVERT_COLOR);
+                esp_err_t r_sxy = esp_lcd_panel_swap_xy(s_panel_handle, true);
+                esp_err_t r_mir = esp_lcd_panel_mirror(s_panel_handle, true, false);
+                if (r_inv != ESP_OK || r_sxy != ESP_OK || r_mir != ESP_OK) {
+                    ESP_LOGE(TAG, "panel re-sync FAILED: invert=%s swap_xy=%s mirror=%s — re-arming",
+                             esp_err_to_name(r_inv), esp_err_to_name(r_sxy), esp_err_to_name(r_mir));
+                    tft_display_request_resync();   /* retry on next 200ms tick */
+                } else if (relay_changed || ext_request) {
+                    ESP_LOGD(TAG, "panel re-sync ok (trigger: relay=%d ext=%d periodic=%d)",
+                             (int)relay_changed, (int)ext_request, (int)periodic);
+                }
                 xSemaphoreGive(s_tft_mutex);
             } else {
-                // If mutex is busy, preserve the trigger for the next tick
+                /* Mutex busy: preserve the trigger for the next tick. */
                 if (relay_changed || ext_request) {
                     tft_display_request_resync();
                 }
