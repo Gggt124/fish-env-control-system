@@ -25,6 +25,14 @@
 #include <inttypes.h>
 #include "esp_ota_ops.h"
 
+#define STATUS_RGB_BRIGHTNESS_DEFAULT   32
+#define STATUS_RGB_BRIGHTNESS_DIM       16
+
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+#include "led_strip.h"
+static led_strip_handle_t s_rgb_led = NULL;
+#endif
+
 static const char *TAG = "app_main";
 
 static void log_ota_partition_state(void)
@@ -557,10 +565,52 @@ static void apply_cooling_settings_to_config(cooling_control_config_t *config,
     config->compressor_min_off_sec = settings->compressor_min_off_sec;
 }
 
-static void set_leds(int level)
+static void update_status_leds(app_led_state_t state, int blink_phase, int ext_level)
 {
-    gpio_set_level(APP_CONFIG_LED_GPIO, level);
-    gpio_set_level(APP_CONFIG_EXT_LED_GPIO, level);
+    // Define colors for each state
+    uint8_t r = 0, g = 0, b = 0;
+
+    switch (state) {
+        case LED_STATE_OFF:
+            r = 0; g = 0; b = 0;
+            break;
+        case LED_STATE_ON:
+            r = 0; g = STATUS_RGB_BRIGHTNESS_DEFAULT; b = 0; // Green
+            break;
+        case LED_STATE_STAGING_PENDING:
+            r = STATUS_RGB_BRIGHTNESS_DEFAULT; g = STATUS_RGB_BRIGHTNESS_DIM; b = 0; // Orange/Amber
+            break;
+        case LED_STATE_BTN_HOLD_SHORT:
+            r = STATUS_RGB_BRIGHTNESS_DIM; g = STATUS_RGB_BRIGHTNESS_DIM; b = STATUS_RGB_BRIGHTNESS_DIM; // White
+            break;
+        case LED_STATE_RECOVERY_AP:
+            r = 0; g = 0; b = STATUS_RGB_BRIGHTNESS_DEFAULT; // Blue
+            break;
+        case LED_STATE_FACTORY_RESET:
+            r = STATUS_RGB_BRIGHTNESS_DEFAULT; g = 0; b = 0; // Red
+            break;
+    }
+
+    // Apply blink phase to RGB LED if state calls for blinking
+    if (state == LED_STATE_RECOVERY_AP || state == LED_STATE_FACTORY_RESET || state == LED_STATE_STAGING_PENDING) {
+        if (blink_phase == 0) {
+            r = 0; g = 0; b = 0;
+        }
+    }
+
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    if (s_rgb_led) {
+        led_strip_set_pixel(s_rgb_led, 0, r, g, b);
+        led_strip_refresh(s_rgb_led);
+    }
+#else
+    // Classic ESP32: simple ON/OFF indicator LED on GPIO 2
+    int classic_level = (r || g || b) ? 1 : 0;
+    gpio_set_level(APP_CONFIG_LED_GPIO, classic_level);
+#endif
+
+    // External LED behaves exactly as before
+    gpio_set_level(APP_CONFIG_EXT_LED_GPIO, ext_level);
 }
 
 static void hardware_ui_task(void *pvParameters)
@@ -577,7 +627,44 @@ static void hardware_ui_task(void *pvParameters)
     };
     gpio_config(&btn_cfg);
 
-    // Initialize LED GPIOs as outputs
+    // Initialize LED GPIOs/RMT
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    // Initialize EXT LED as output
+    gpio_config_t ext_led_cfg = {
+        .pin_bit_mask = (1ULL << APP_CONFIG_EXT_LED_GPIO),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&ext_led_cfg);
+    gpio_set_level(APP_CONFIG_EXT_LED_GPIO, 0);
+
+    // Initialize RGB LED via RMT
+    led_strip_config_t strip_cfg = {
+        .strip_gpio_num = APP_CONFIG_RGB_LED_GPIO,
+        .max_leds = 1,
+        .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
+        .led_model = LED_MODEL_WS2812,
+        .flags.invert_out = false,
+    };
+    led_strip_rmt_config_t rmt_cfg = {
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 10 * 1000 * 1000, // 10MHz
+        .flags.with_dma = false,
+    };
+    esp_err_t ret = led_strip_new_rmt_device(&strip_cfg, &rmt_cfg, &s_rgb_led);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "RGB LED init FAILED (GPIO %d): %s — s_rgb_led will be NULL, no RGB output",
+                 APP_CONFIG_RGB_LED_GPIO, esp_err_to_name(ret));
+        s_rgb_led = NULL; // explicit — already NULL from calloc fail, but be defensive
+    } else {
+        ESP_LOGI(TAG, "RGB LED init OK (GPIO %d, WS2812, RMT)", APP_CONFIG_RGB_LED_GPIO);
+        led_strip_clear(s_rgb_led);
+        ESP_LOGI(TAG, "RGB LED cleared (all pixels off)");
+    }
+#else
+    // Initialize both LEDs as outputs for Classic
     gpio_config_t led_cfg = {
         .pin_bit_mask = (1ULL << APP_CONFIG_LED_GPIO) | (1ULL << APP_CONFIG_EXT_LED_GPIO),
         .mode = GPIO_MODE_OUTPUT,
@@ -585,7 +672,10 @@ static void hardware_ui_task(void *pvParameters)
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
+    gpio_set_level(APP_CONFIG_LED_GPIO, 0);
+    gpio_set_level(APP_CONFIG_EXT_LED_GPIO, 0);
     gpio_config(&led_cfg);
+#endif
 
     // Initial read to set up bootloader veto
     bool boot_btn_veto = (gpio_get_level(APP_CONFIG_BOOT_BTN_GPIO) == 0);
@@ -635,7 +725,7 @@ static void hardware_ui_task(void *pvParameters)
 
             if (press_duration_ms < 2000) {
                 s_led_state = LED_STATE_BTN_HOLD_SHORT;
-                set_leds(1);
+                update_status_leds(s_led_state, 1, 1);
             } else if (press_duration_ms < 5000) {
                 if (!recovery_ap_triggered) {
                     wifi_manager_start_recovery_ap();
@@ -643,7 +733,8 @@ static void hardware_ui_task(void *pvParameters)
                     ESP_LOGI(TAG, "Recovery AP triggered by button hold");
                 }
                 s_led_state = LED_STATE_RECOVERY_AP;
-                set_leds(((press_duration_ms / 500) % 2) == 0 ? 1 : 0);
+                int blink = (((press_duration_ms / 500) % 2) == 0);
+                update_status_leds(s_led_state, blink, blink);
             } else {
                 if (!factory_reset_triggered) {
                     atomic_store(&s_trigger_factory_reset, true);
@@ -651,7 +742,8 @@ static void hardware_ui_task(void *pvParameters)
                     ESP_LOGI(TAG, "Factory reset triggered by button hold");
                 }
                 s_led_state = LED_STATE_FACTORY_RESET;
-                set_leds(((press_duration_ms / 100) % 2) == 0 ? 1 : 0);
+                int blink = (((press_duration_ms / 100) % 2) == 0);
+                update_status_leds(s_led_state, blink, blink);
             }
         } else {
             press_duration_ms = 0;
@@ -671,22 +763,24 @@ static void hardware_ui_task(void *pvParameters)
             if (cached_stg_type > 0) {
                 s_led_state = LED_STATE_STAGING_PENDING;
                 uint32_t phase = release_ticks % 20;
+                int blink = 0;
                 if (phase < 2) {
-                    set_leds(1);
+                    blink = 1;
                 } else if (phase < 4) {
-                    set_leds(0);
+                    blink = 0;
                 } else if (phase < 6) {
-                    set_leds(1);
+                    blink = 1;
                 } else {
-                    set_leds(0);
+                    blink = 0;
                 }
+                update_status_leds(s_led_state, blink, blink);
             } else {
                 if (wifi_manager_is_ap_active()) {
                     s_led_state = LED_STATE_ON;
-                    set_leds(1);
+                    update_status_leds(s_led_state, 1, 1);
                 } else {
                     s_led_state = LED_STATE_OFF;
-                    set_leds(0);
+                    update_status_leds(s_led_state, 0, 0);
                 }
             }
         }
