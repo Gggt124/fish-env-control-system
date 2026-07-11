@@ -61,23 +61,44 @@ if (-not (Test-Path $esptoolExe)) {
 
 # --- Auto-detect / Ask COM port ---
 if (-not $Port) {
-    $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
-    if ($ports.Count -eq 1) {
-        $Port = $ports[0]
-        Write-Host "[AUTO] Detected COM port: $Port" -ForegroundColor Green
-    } elseif ($ports.Count -gt 1) {
-        Write-Host "Multiple COM ports found:" -ForegroundColor Yellow
-        $ports | ForEach-Object { Write-Host "  - $_" }
-        $Port = Read-Host "Enter COM port number (e.g. 5)"
-    } else {
-        Write-Host "No COM port found. Please plug in the ESP32 via USB and press Enter."
-        Read-Host "..."
+    while ($true) {
         $ports = [System.IO.Ports.SerialPort]::GetPortNames() | Sort-Object
-        $Port  = $ports | Select-Object -First 1
-        if (-not $Port) {
-            Write-Host "ERROR: Still no COM port detected." -ForegroundColor Red
-            Read-Host "Press Enter to exit"; exit 1
+        
+        Write-Host ""
+        if ($ports.Count -eq 0) {
+            Write-Host "No COM port found. Plug in the board and press Enter to scan again..." -ForegroundColor Yellow
+            Read-Host "..."
+            continue
         }
+
+        Write-Host "Available COM ports:" -ForegroundColor Cyan
+        $ports | ForEach-Object { Write-Host "  - $_" }
+        Write-Host ""
+        Write-Host "Type the port number (e.g. 5), or press Enter to AUTO-SELECT if only 1 exists."
+        $choice = Read-Host "Type 'R' to Rescan"
+
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            if ($ports.Count -eq 1) {
+                $Port = $ports[0]
+                Write-Host "[AUTO] Selected: $Port" -ForegroundColor Green
+                break
+            } else {
+                Write-Host "Multiple ports available. Please specify one." -ForegroundColor Red
+                continue
+            }
+        }
+
+        if ($choice.Trim() -match '^[rR]$') {
+            continue
+        }
+
+        if ($choice.Trim() -match '^\d+$') {
+            $Port = "COM" + $choice.Trim()
+            break
+        }
+        
+        $Port = $choice.Trim()
+        break
     }
 }
 

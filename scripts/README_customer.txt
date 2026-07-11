@@ -29,8 +29,10 @@ automatically — no button presses required.
 3. A black command window will open.
    - Select your board type when prompted: 
      [1] ESP32 Classic or [2] ESP32-S3.
-   - If prompted for a COM port, type only the port 
-     number (e.g., 5) and press Enter.
+   - If your COM port doesn't appear, plug in the board, 
+     type 'R', and press Enter to rescan.
+   - Type only the port number (e.g., 5) and press Enter.
+     (If only 1 port is listed, you can just press Enter)
 4. Wait for the success message: "[OK] Flash Successful!"
 5. The script will display your Wi-Fi Password. 
    Please save it!
