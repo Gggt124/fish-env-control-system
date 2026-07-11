@@ -17,9 +17,9 @@ extern "C" {
 #define TFT_COLOR_BLACK   0x0000
 #define TFT_COLOR_WHITE   0xFFFF
 #define TFT_COLOR_RED     0xF800
-#define TFT_COLOR_GREEN   0x07E0
+#define TFT_COLOR_GREEN   0x07E2   /* was 0x07E0: low byte 0xE0 == ST7789 GAMCTRP1, EMI gamma-corruption hazard */
 #define TFT_COLOR_BLUE    0x001F
-#define TFT_COLOR_YELLOW  0xFFE0
+#define TFT_COLOR_YELLOW  0xFFE2   /* was 0xFFE0: low byte 0xE0 == ST7789 GAMCTRP1, EMI gamma-corruption hazard */
 #define TFT_COLOR_CYAN    0x07FF
 #define TFT_COLOR_MAGENTA 0xF81F
 #define TFT_COLOR_ORANGE  0xFD20
@@ -40,7 +40,7 @@ extern "C" {
  * See: docs/superpowers/plans/2026-07-12-tft-color-invert-fix.md
  */
 #define TFT_BYTE_IS_PANEL_CMD(b) ( \
-    (b)==0x10 || (b)==0x11 || (b)==0x12 || (b)==0x13 || \
+    (b)==0x01 || (b)==0x10 || (b)==0x11 || (b)==0x12 || (b)==0x13 || \
     (b)==0x20 || (b)==0x21 || (b)==0x22 || \
     (b)==0x28 || (b)==0x29 || (b)==0x2A || (b)==0x2B || (b)==0x2C || \
     (b)==0x36 || \
@@ -52,6 +52,10 @@ extern "C" {
 
 _Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_DARK_NAVY),
     "TFT_COLOR_DARK_NAVY bytes collide with an ST7789 command (EMI inversion hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_GREEN),
+    "TFT_COLOR_GREEN bytes collide with an ST7789 command (EMI gamma-corruption hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_YELLOW),
+    "TFT_COLOR_YELLOW bytes collide with an ST7789 command (EMI gamma-corruption hazard)");
 
 /**
  * @brief Initialize the SPI bus and ILI9341 TFT display using esp_lcd.
