@@ -79,14 +79,14 @@ foreach ($t in $Targets) {
 }
 
 Write-Host "[package] Copying tools..." -ForegroundColor Cyan
-foreach ($tool in @("flash_and_show.ps1", "show_password.ps1", "esptool.exe")) {
+foreach ($tool in @("flash_and_show.ps1", "show_password.ps1", "erase_flash.ps1", "esptool.exe")) {
     $src = Join-Path $ScriptsDir $tool; $dest = Join-Path $ToolsDir $tool
     if (Test-Path $src) { Copy-Item -LiteralPath $src -Destination $dest -Force; Write-Host "  OK  tools\$tool" -ForegroundColor Green }
     else { Write-Warning "  MISSING  scripts\$tool -- skipping" }
 }
 
 Write-Host "[package] Copying launchers and README..." -ForegroundColor Cyan
-$extras = @("FLASH.bat", "SHOW_PASSWORD.bat", "README_customer.txt")
+$extras = @("FLASH.bat", "SHOW_PASSWORD.bat", "ERASE_FLASH.bat", "README_customer.txt")
 $extras += (Get-ChildItem -Path $ScriptsDir -Filter "README_*.txt" -ErrorAction SilentlyContinue |
     Select-Object -ExpandProperty Name | Where-Object { $_ -ne "README_customer.txt" })
 foreach ($f in $extras) {
