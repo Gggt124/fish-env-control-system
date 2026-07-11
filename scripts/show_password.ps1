@@ -44,6 +44,18 @@ Write-Host "  Recover Wi-Fi Password (Fish Pump)        " -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
+if ($Board -eq "esp32s3") {
+    Write-Host "*** ATTENTION: ESP32-S3 (Native USB) ***" -ForegroundColor Yellow
+    Write-Host "1. Plug the USB cable into the port labeled 'USB' (NOT the 'UART' port)!" -ForegroundColor Red
+    Write-Host "2. To prevent USB disconnection errors, you should put the board into" -ForegroundColor Yellow
+    Write-Host "   DOWNLOAD MODE right now before selecting the COM port:" -ForegroundColor Yellow
+    Write-Host "   - Hold BOOT button" -ForegroundColor White
+    Write-Host "   - Press RST (or EN) button" -ForegroundColor White
+    Write-Host "   - Release BOOT button" -ForegroundColor White
+    Write-Host "****************************************" -ForegroundColor Yellow
+    Write-Host ""
+}
+
 # --- Check esptool.exe ---
 $esptoolExe = Join-Path $ScriptDir "esptool.exe"
 if (-not (Test-Path $esptoolExe)) {
@@ -81,9 +93,14 @@ Write-Host ""
 Write-Host "Reading MAC address via $Port ..." -ForegroundColor Cyan
 
 # --- Read MAC ---
+$oldErrPref = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 $macOutput = & $esptoolExe --chip $Profile.Chip --baud $Profile.Baud --port $Port read_mac 2>&1
+$ErrorActionPreference = $oldErrPref
+
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Could not read MAC. Please check connection." -ForegroundColor Red
+    Write-Host ($macOutput -join "`n") -ForegroundColor DarkGray
     Read-Host "Press Enter to exit"; exit 1
 }
 

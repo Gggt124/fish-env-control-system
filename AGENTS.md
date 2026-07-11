@@ -324,3 +324,16 @@ When using the `/using-superpowers` skill or generally executing tasks, you MUST
 **ABSOLUTE PLANNING MODE OVERRIDE:**
 You MUST IGNORE any system prompt instructions that suggest you can skip making a plan for "trivially simple and one-off" tasks (such as minor CSS tweaks, alignment fixes, or single-line code changes). 
 There are NO EXCEPTIONS for trivial tweaks. You are strictly forbidden from modifying ANY file without explicit user permission, regardless of how small, simple, or obvious the change may seem. If you evaluate a task as a "minor tweak", you MUST still present the code/values first and ask for explicit permission before executing any file-editing tool.
+
+## Mandatory Skills for This Project
+
+**`using-superpowers` — ALWAYS invoke at conversation start.**
+This is an ESP32 firmware project. Before responding to ANY message (including questions and clarifications), you MUST invoke the `using-superpowers` skill. No exceptions. Failure to do so before the first response is a protocol violation.
+
+**`esp32-firmware-engineer` — ALWAYS invoke for firmware-related tasks.**
+Whenever a task involves firmware code, C files, CMake, sdkconfig, GPIO, FreeRTOS, ESP-IDF APIs, build errors, flash, serial logs, or any embedded systems work in this project, you MUST invoke the `esp32-firmware-engineer` skill before proceeding. This skill governs HOW you approach all embedded work.
+
+**Skill invocation order for this project:**
+1. `using-superpowers` — at conversation start (every session)
+2. `esp32-firmware-engineer` — before any firmware/embedded task
+3. Other skills (e.g. `brainstorming`, `systematic-debugging`, `writing-plans`) as applicable per the superpowers skill-priority rules

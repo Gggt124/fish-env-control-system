@@ -19,7 +19,9 @@
 #>
 param(
     [Parameter(Mandatory=$true)]
-    [string]$Port
+    [string]$Port,
+    [ValidateSet("esp32", "esp32s3")]
+    [string]$Target = "esp32"
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,12 +30,16 @@ Write-Host ""
 Write-Host "=== SoftAP Password (Board-Specific) ===" -ForegroundColor Cyan
 Write-Host "Reading MAC address from board on $Port ..." -ForegroundColor Yellow
 
+$oldErrPref = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
 try {
-    $output = python -m esptool --port $Port read_mac 2>&1
+    $output = python -m esptool --chip $Target --port $Port read_mac 2>&1
 } catch {
     Write-Host "ERROR: Failed to run esptool. Make sure Python and esptool are installed." -ForegroundColor Red
     Write-Host "       pip install esptool" -ForegroundColor Gray
     exit 1
+} finally {
+    $ErrorActionPreference = $oldErrPref
 }
 
 # Parse line like: "MAC: aa:bb:cc:dd:ee:ff"

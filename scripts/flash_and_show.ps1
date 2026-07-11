@@ -20,7 +20,7 @@ $PackageRoot = Split-Path $ScriptDir -Parent
 
 $BoardProfiles = @{
     esp32   = @{ Chip="esp32";   FlashMode="dio"; FlashFreq="40m"; FlashSize="4MB";  BootOffset="0x1000"; Baud="230400"; DisplayName="ESP32 Classic DevKit V1 (4 MB)" }
-    esp32s3 = @{ Chip="esp32s3"; FlashMode="qio"; FlashFreq="80m"; FlashSize="16MB"; BootOffset="0x0000"; Baud="460800"; DisplayName="ESP32-S3 DevKitC-1 WROOM-1-N16R8 (16 MB)" }
+    esp32s3 = @{ Chip="esp32s3"; FlashMode="dio"; FlashFreq="40m"; FlashSize="16MB"; BootOffset="0x0000"; Baud="460800"; DisplayName="ESP32-S3 DevKitC-1 WROOM-1-N16R8 (16 MB)" }
 }
 
 Write-Host ""
@@ -55,6 +55,19 @@ $Profile     = $BoardProfiles[$Board]
 $FirmwareDir = Join-Path $PackageRoot "firmware\$Board"
 $BinName     = "fish_pump_relay_timer_control"
 Write-Host "[OK] Board: $($Profile.DisplayName)" -ForegroundColor Green
+
+if ($Board -eq "esp32s3") {
+    Write-Host ""
+    Write-Host "*** ATTENTION: ESP32-S3 (Native USB) ***" -ForegroundColor Yellow
+    Write-Host "1. Plug the USB cable into the port labeled 'USB' (NOT the 'UART' port)!" -ForegroundColor Red
+    Write-Host "2. To prevent USB disconnection errors, you should put the board into" -ForegroundColor Yellow
+    Write-Host "   DOWNLOAD MODE right now before selecting the COM port:" -ForegroundColor Yellow
+    Write-Host "   - Hold BOOT button" -ForegroundColor White
+    Write-Host "   - Press RST (or EN) button" -ForegroundColor White
+    Write-Host "   - Release BOOT button" -ForegroundColor White
+    Write-Host "****************************************" -ForegroundColor Yellow
+    Write-Host ""
+}
 
 # Locate binaries -- boot offset is board-specific
 $Bins = [ordered]@{

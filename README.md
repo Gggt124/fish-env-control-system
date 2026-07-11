@@ -220,3 +220,9 @@ To build and bundle a flash deployment zip package containing offline binaries a
 ```powershell
 .\scripts\package.ps1 -Target all -Zip
 ```
+
+### 5. Troubleshooting (ESP32-S3 Native USB)
+When flashing or reading the MAC address from an **ESP32-S3** board, you must plug the USB cable into the **USB (Native)** port, not the UART port. Additionally, the Native USB connection may occasionally drop or fail to connect (e.g., `Could not open COM...` or `port is busy`) when the `esptool` script resets the chip. To bypass this, manually place the board into **Download Mode** before running the flash or password scripts:
+1. Press and hold the **BOOT** button.
+2. Press and release the **RST** (or EN) button.
+3. Release the **BOOT** button.

@@ -29,7 +29,7 @@ $env:PYTHONUTF8 = "1"
 
 $Profiles = @{
     esp32   = @{ Chip="esp32";   FlashMode="dio"; FlashFreq="40m"; FlashSize="4MB";  BootOffset="0x1000"; Baud="230400" }
-    esp32s3 = @{ Chip="esp32s3"; FlashMode="qio"; FlashFreq="80m"; FlashSize="16MB"; BootOffset="0x0000"; Baud="460800" }
+    esp32s3 = @{ Chip="esp32s3"; FlashMode="dio"; FlashFreq="40m"; FlashSize="16MB"; BootOffset="0x0000"; Baud="460800" }
 }
 $Profile     = $Profiles[$Target]
 $ProjectRoot = Split-Path $PSScriptRoot -Parent

@@ -86,9 +86,9 @@ foreach ($tool in @("flash_and_show.ps1", "show_password.ps1", "esptool.exe")) {
 }
 
 Write-Host "[package] Copying launchers and README..." -ForegroundColor Cyan
-$extras = @("FLASH.bat", "SHOW_PASSWORD.bat", "README_customer.md")
-$extras += (Get-ChildItem -Path $ScriptsDir -Filter "README_*.md" -ErrorAction SilentlyContinue |
-    Select-Object -ExpandProperty Name | Where-Object { $_ -ne "README_customer.md" })
+$extras = @("FLASH.bat", "SHOW_PASSWORD.bat", "README_customer.txt")
+$extras += (Get-ChildItem -Path $ScriptsDir -Filter "README_*.txt" -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty Name | Where-Object { $_ -ne "README_customer.txt" })
 foreach ($f in $extras) {
     if ([string]::IsNullOrWhiteSpace($f)) { continue }
     $src = Join-Path $ScriptsDir $f; $dest = Join-Path $OutputDir $f
