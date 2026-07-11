@@ -16,8 +16,9 @@ CONFIG_SPIRAM_SIZE=-1
 # CRITICAL: Do NOT enable SPIRAM_USE_MALLOC -- HTTP/FreeRTOS stacks must stay in internal RAM
 CONFIG_SPIRAM_USE_MALLOC=n
 
-# Use USB Serial/JTAG for monitor (S3 native USB -- connect the "USB" port, not "UART" port)
-CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+# Use UART for monitor so logs don't freeze on panic
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+# CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
 
 # Brownout level 3 (~2.80V) -- S3 hardware default
 CONFIG_ESP_BROWNOUT_DET_LVL_SEL_3=y
