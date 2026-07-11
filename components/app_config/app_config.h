@@ -106,7 +106,13 @@ extern "C" {
 #define APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MIN_SEC   0
 #define APP_TEMPLATE_PUMP_FLOAT_MIN_DWELL_MAX_SEC  3600
 
-/* TFT Display GPIO -- chip-specific SPI pin assignments */
+/* TFT Display GPIO -- chip-specific SPI pin assignments.
+ * EMI NOTE: the IDF esp_lcd SPI driver tri-states the DC line between
+ * transactions. tft_display_init() enables the internal pull-up on DC as
+ * a partial mitigation, but for production (pump relay EMI environment)
+ * add an EXTERNAL 10k pull-up from APP_TEMPLATE_TFT_DC_GPIO to 3V3.
+ * Without it, relay/Wi-Fi/PSRAM glitches can flip panel registers (e.g.
+ * the 0x21 INVON bug fixed by the palette guard). */
 #ifdef CONFIG_IDF_TARGET_ESP32S3
 /* ESP32-S3-DevKitC-1 WROOM-1-N16R8: SPI2_HOST (FSPI) on safe pins */
 /* Octal Flash: GPIO 27-32 internal; Octal PSRAM: GPIO 33-37 internal (DO NOT USE) */

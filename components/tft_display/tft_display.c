@@ -135,6 +135,16 @@ esp_err_t tft_display_init(void) {
         ESP_LOGE(TAG, "Failed to create panel IO: %s", esp_err_to_name(ret));
         goto err;
     }
+    /* Bias the DC line HIGH between transactions. The esp_lcd SPI driver
+     * tri-states DC (gpio_ll_output_disable) after each transfer, leaving
+     * it floating and EMI-vulnerable (no external pull-up on this board).
+     * Enabling the internal pull-up keeps DC at data-mode level during the
+     * gaps, so a glitch must overcome the pull-up to be read as a command.
+     * NOTE: internal ~45k pull-up is a partial mitigation; for production
+     * add an external 10k pull-up to 3V3 on APP_TEMPLATE_TFT_DC_GPIO. */
+    gpio_set_pull_mode(APP_TEMPLATE_TFT_DC_GPIO, GPIO_PULLUP_ONLY);
+    ESP_LOGI(TAG, "DC GPIO %d internal pull-up enabled (data-mode bias between transactions)",
+             (int)APP_TEMPLATE_TFT_DC_GPIO);
 
     // 5. Install panel driver
     esp_lcd_panel_dev_config_t panel_config = {
