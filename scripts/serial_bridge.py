@@ -4,13 +4,20 @@ import os
 import sys
 
 def main():
-    port = 'COM5'
+    # Ask for port every time
+    if len(sys.argv) > 1:
+        port = sys.argv[1]
+    else:
+        port = input("Enter COM port (e.g., COM5) [Default: COM5]: ").strip()
+        if not port:
+            port = 'COM5'
+            
     baud = 115200
-    log_file = 'build/serial.log'
-    cmd_file = 'build/serial_cmd.txt'
+    log_file = f'logs/{port}_serial.log'
+    cmd_file = f'logs/{port}_cmd.txt'
 
-    # Ensure build dir exists
-    os.makedirs('build', exist_ok=True)
+    # Ensure logs dir exists
+    os.makedirs('logs', exist_ok=True)
 
     try:
         ser = serial.Serial(port, baud, timeout=0.1)
@@ -19,31 +26,39 @@ def main():
         sys.exit(1)
 
     print(f"Connected to {port}. Logging to {log_file}")
+    print("Press Ctrl+C to stop the script and release the port.")
 
-    while True:
-        try:
-            # Read from serial
-            if ser.in_waiting > 0:
-                data = ser.read(ser.in_waiting)
-                with open(log_file, 'ab') as f:
-                    f.write(data)
-            
-            # Check for commands
-            if os.path.exists(cmd_file):
-                with open(cmd_file, 'r', encoding='utf-8') as f:
-                    cmd = f.read()
+    try:
+        while True:
+            try:
+                # Read from serial
+                if ser.in_waiting > 0:
+                    data = ser.read(ser.in_waiting)
+                    with open(log_file, 'ab') as f:
+                        f.write(data)
                 
-                if cmd:
-                    # Clear the file immediately to avoid resending
-                    open(cmd_file, 'w').close()
-                    # Send command
-                    ser.write(cmd.encode('utf-8'))
-                    print(f"Sent: {cmd.strip()}")
+                # Check for commands
+                if os.path.exists(cmd_file):
+                    with open(cmd_file, 'r', encoding='utf-8') as f:
+                        cmd = f.read()
+                    
+                    if cmd:
+                        # Clear the file immediately to avoid resending
+                        open(cmd_file, 'w').close()
+                        # Send command
+                        ser.write(cmd.encode('utf-8'))
+                        print(f"Sent: {cmd.strip()}")
 
-            time.sleep(0.05)
-        except Exception as e:
-            print(f"Error: {e}")
-            time.sleep(1)
+                time.sleep(0.05)
+            except Exception as e:
+                print(f"Error: {e}")
+                time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nStopping script...")
+    finally:
+        print(f"Closing port {port}...")
+        ser.close()
+        print("Port closed. Process stopped.")
 
 if __name__ == "__main__":
     main()
