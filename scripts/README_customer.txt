@@ -48,6 +48,17 @@ on your board's hardware MAC address. If you forget it:
    your Wi-Fi password without reflashing.
 
 -------------------------------------------------------
+ HOW TO ERASE FLASH MEMORY
+-------------------------------------------------------
+If your board is malfunctioning or you want to completely 
+wipe all Wi-Fi settings and saved data:
+1. Connect the board via USB.
+2. Double-click ERASE_FLASH.bat.
+3. Select your board type and COM Port.
+4. Once erased, the board will be completely empty. 
+   (You must run FLASH.bat afterward to install the firmware).
+
+-------------------------------------------------------
  DEFAULT CREDENTIALS
 -------------------------------------------------------
 - Wi-Fi SSID: FishPump-Setup
