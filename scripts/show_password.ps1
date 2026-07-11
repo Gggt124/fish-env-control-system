@@ -45,14 +45,10 @@ Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
 if ($Board -eq "esp32s3") {
-    Write-Host "*** ATTENTION: ESP32-S3 (Native USB) ***" -ForegroundColor Yellow
-    Write-Host "1. Plug the USB cable into the port labeled 'USB' (NOT the 'UART' port)!" -ForegroundColor Red
-    Write-Host "2. To prevent USB disconnection errors, you should put the board into" -ForegroundColor Yellow
-    Write-Host "   DOWNLOAD MODE right now before selecting the COM port:" -ForegroundColor Yellow
-    Write-Host "   - Hold BOOT button" -ForegroundColor White
-    Write-Host "   - Press RST (or EN) button" -ForegroundColor White
-    Write-Host "   - Release BOOT button" -ForegroundColor White
-    Write-Host "****************************************" -ForegroundColor Yellow
+    Write-Host "*** ATTENTION: ESP32-S3 ***" -ForegroundColor Yellow
+    Write-Host "Plug the USB cable into the port labeled 'COM' (or 'UART') on the board." -ForegroundColor Cyan
+    Write-Host "Do NOT use the port labeled 'USB'." -ForegroundColor Red
+    Write-Host "***************************" -ForegroundColor Yellow
     Write-Host ""
 }
 

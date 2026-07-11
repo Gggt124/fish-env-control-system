@@ -6,22 +6,13 @@ This folder contains the firmware and updater tools
 for your Fish Pump control board.
 
 -------------------------------------------------------
- ATTENTION: ESP32-S3 (NATIVE USB) USERS
+ ATTENTION: ESP32-S3 USERS
 -------------------------------------------------------
-1. Plug the USB cable into the port labeled "USB"
-   (NOT the "UART" or "COM" port).
-2. The Native USB port may occasionally disconnect when 
-   the script attempts to read the password or flash. 
+Plug the USB cable into the port labeled "COM" (or "UART")
+on the board. Do NOT use the port labeled "USB".
 
-If you encounter a red error message (e.g., "Could not 
-open COM..." or "port is busy"), you must manually put 
-the board into Download Mode BEFORE running the script:
-
-  1. Press and hold the BOOT button on the board.
-  2. Press and release the RST (or EN) button.
-  3. Release the BOOT button.
-
-The script should now be able to run successfully.
+The COM/UART port resets the board into download mode
+automatically — no button presses required.
 
 -------------------------------------------------------
  PREREQUISITES
@@ -32,7 +23,8 @@ The script should now be able to run successfully.
 -------------------------------------------------------
  HOW TO FLASH (UPDATE)
 -------------------------------------------------------
-1. Plug the USB cable into your computer and the board.
+1. Plug the USB cable into the "COM" (or "UART") port on
+   the ESP32-S3 board. (For ESP32 Classic, use the only port available.)
 2. Double-click the FLASH.bat file.
 3. A black command window will open.
    - Select your board type when prompted: 

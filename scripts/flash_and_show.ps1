@@ -58,14 +58,11 @@ Write-Host "[OK] Board: $($Profile.DisplayName)" -ForegroundColor Green
 
 if ($Board -eq "esp32s3") {
     Write-Host ""
-    Write-Host "*** ATTENTION: ESP32-S3 (Native USB) ***" -ForegroundColor Yellow
-    Write-Host "1. Plug the USB cable into the port labeled 'USB' (NOT the 'UART' port)!" -ForegroundColor Red
-    Write-Host "2. To prevent USB disconnection errors, you should put the board into" -ForegroundColor Yellow
-    Write-Host "   DOWNLOAD MODE right now before selecting the COM port:" -ForegroundColor Yellow
-    Write-Host "   - Hold BOOT button" -ForegroundColor White
-    Write-Host "   - Press RST (or EN) button" -ForegroundColor White
-    Write-Host "   - Release BOOT button" -ForegroundColor White
-    Write-Host "****************************************" -ForegroundColor Yellow
+    Write-Host "*** ATTENTION: ESP32-S3 ***" -ForegroundColor Yellow
+    Write-Host "Plug the USB cable into the port labeled 'COM' (or 'UART') on the board." -ForegroundColor Cyan
+    Write-Host "Do NOT use the port labeled 'USB'." -ForegroundColor Red
+    Write-Host "The COM/UART port resets the board into download mode automatically." -ForegroundColor Green
+    Write-Host "***************************" -ForegroundColor Yellow
     Write-Host ""
 }
 
@@ -120,7 +117,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "ERROR: Flash failed!" -ForegroundColor Red
     Write-Host "  - Check USB cable and COM port ($Port)" -ForegroundColor Yellow
-    Write-Host "  - Hold BOOT button, press RESET, release BOOT to enter download mode" -ForegroundColor Yellow
+    Write-Host "  - Make sure the cable is in the 'COM' (or 'UART') port, not the 'USB' port" -ForegroundColor Yellow
     Read-Host "Press Enter to exit"; exit 1
 }
 
