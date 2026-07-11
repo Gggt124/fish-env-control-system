@@ -35,6 +35,11 @@ static esp_lcd_panel_handle_t s_panel_handle = NULL;
 static SemaphoreHandle_t s_trans_done_sem = NULL;
 static SemaphoreHandle_t s_tft_mutex = NULL;
 static atomic_uint_fast32_t s_last_activity_sec = ATOMIC_VAR_INIT(0);   /* set at init */
+static atomic_bool s_resync_requested = ATOMIC_VAR_INIT(false);
+
+void tft_display_request_resync(void) {
+    atomic_store(&s_resync_requested, true);
+}
 
 // Helper to swap bytes for 16-bit RGB565 to match big-endian SPI transmission
 #define SWAP_BYTES(val) ((((val) & 0xff) << 8) | (((val) & 0xff00) >> 8))
@@ -420,6 +425,7 @@ static void tft_display_task(void *pvParameters) {
         pump_control_active_timer_t pump_active_timer;
         pump_control_timer_phase_t pump_phase;
         uint32_t pump_countdown_sec;
+        bool pump_relay_energized;
         
         bool cooling_temp_valid;
         float cooling_temp;
@@ -569,6 +575,7 @@ static void tft_display_task(void *pvParameters) {
         
         // 9. Cooling Relay
         bool cooling_relay = cooling.relay_energized;
+        bool cooling_relay_edge = (s_cache_valid && s_tft_cache.cooling_relay_energized != cooling_relay);
         
         if (!s_cache_valid || s_tft_cache.cooling_relay_energized != cooling_relay) {
             s_tft_cache.cooling_relay_energized = cooling_relay;
@@ -597,6 +604,41 @@ static void tft_display_task(void *pvParameters) {
         if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS && atomic_load(&s_current_brightness) != s_idle_dim_percent) {
             tft_display_set_brightness(s_idle_dim_percent);
         }
+
+        /* ── Panel register re-sync ──────────────────────────────
+         * Trigger: (1) relay state change detected (EMI source)
+         *          (2) external request via tft_display_request_resync()
+         *          (3) periodic safety net every ~30 s
+         * Sends 3 cheap SPI commands to force-correct inversion,
+         * orientation, and mirroring registers.  Self-heals any
+         * glitch-induced corruption within one task period (200ms). */
+        bool pump_relay_now = pump.running &&
+                              (pump.phase == PUMP_CONTROL_PHASE_ON);
+
+        bool pump_relay_edge = (s_cache_valid && s_tft_cache.pump_relay_energized != pump_relay_now);
+        bool relay_changed = pump_relay_edge || cooling_relay_edge;
+
+        bool ext_request = atomic_exchange(&s_resync_requested, false);
+
+        static uint32_t resync_counter = 0;
+        bool periodic = (++resync_counter >= 150);   /* 150 × 200ms = 30 s */
+
+        if (relay_changed || ext_request || periodic) {
+            if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                resync_counter = 0;
+                esp_lcd_panel_invert_color(s_panel_handle, APP_TEMPLATE_TFT_INVERT_COLOR);
+                esp_lcd_panel_swap_xy(s_panel_handle, true);
+                esp_lcd_panel_mirror(s_panel_handle, true, false);
+                xSemaphoreGive(s_tft_mutex);
+            } else {
+                // If mutex is busy, preserve the trigger for the next tick
+                if (relay_changed || ext_request) {
+                    tft_display_request_resync();
+                }
+            }
+        }
+
+        s_tft_cache.pump_relay_energized = pump_relay_now;
 
         s_cache_valid = true;
         

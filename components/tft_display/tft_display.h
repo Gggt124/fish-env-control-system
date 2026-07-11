@@ -138,6 +138,13 @@ uint8_t tft_display_get_idle_dim_percent(void);
 #define APP_TEMPLATE_TFT_DIM_PERCENT     70
 #define APP_TEMPLATE_TFT_DIM_TIMEOUT_MS  (5 * 60 * 1000)
 
+/**
+ * @brief Request immediate panel register re-sync on the next display task cycle.
+ *        Safe to call from any task/ISR context (lock-free atomic flag).
+ *        Use after events that may cause EMI (relay switching, external triggers).
+ */
+void tft_display_request_resync(void);
+
 #ifdef __cplusplus
 }
 #endif

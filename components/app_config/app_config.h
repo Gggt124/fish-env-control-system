@@ -16,7 +16,7 @@ extern "C" {
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
 #ifndef APP_TEMPLATE_FIRMWARE_VERSION
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.4"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.5"
 #endif
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
@@ -139,7 +139,8 @@ extern "C" {
 // Change to true only if swapping to a different panel module that requires inversion
 #define APP_TEMPLATE_TFT_INVERT_COLOR   false
 
-// ST7789 SPI clock: reduce to 20000000 (20MHz) if display shows noise/corruption
+// ST7789 SPI clock: 40MHz minimizes EMI exposure window per frame.
+// Lower clocks (e.g. 20MHz) increase exposure time and worsen glitch rate.
 #define APP_TEMPLATE_TFT_SPI_CLK_HZ     (40 * 1000 * 1000)
 
 // SoftAP recovery and rollback timing constants
