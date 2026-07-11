@@ -65,6 +65,7 @@ idf_component_register(
         cjson
         mdns
         mbedtls
+        led_strip
 )
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)

@@ -158,6 +158,7 @@ extern "C" {
 #define APP_CONFIG_EXT_BTN_GPIO                   38
 #define APP_CONFIG_LED_GPIO                       2   /* Strapping pin on S3 */
 #define APP_CONFIG_EXT_LED_GPIO                   39
+#define APP_CONFIG_RGB_LED_GPIO                   48
 #else
 /* ESP32 Classic DevKit V1 30-pin */
 #define APP_CONFIG_BOOT_BTN_GPIO                  0
@@ -194,6 +195,9 @@ extern "C" {
 #define APP_CONFIG_STA_COOLDOWN_THRESHOLD   10   /* consecutive failures before long cooldown */
 #define APP_CONFIG_STA_COOLDOWN_PERIOD_SEC  1800 /* 30-minute cooldown retry interval */
 #define APP_CONFIG_STA_REBOOT_THRESHOLD     720  /* total lifetime attempts before esp_restart() */
+#ifndef APP_CONFIG_RGB_LED_GPIO
+#define APP_CONFIG_RGB_LED_GPIO 48
+#endif
 
 #ifdef __cplusplus
 }
