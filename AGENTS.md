@@ -337,3 +337,17 @@ Whenever a task involves firmware code, C files, CMake, sdkconfig, GPIO, FreeRTO
 1. `using-superpowers` — at conversation start (every session)
 2. `esp32-firmware-engineer` — before any firmware/embedded task
 3. Other skills (e.g. `brainstorming`, `systematic-debugging`, `writing-plans`) as applicable per the superpowers skill-priority rules
+
+## Serial Log & Commands (Python Bridge)
+
+To test serial output and input without locking the COM port, we use a Python script as a bridge.
+
+**1. Start the Bridge:**
+Ask the agent to run python scripts/serial_bridge.py in a background task. The bridge connects to COM5 (115200) and routes data.
+
+**2. Read the Logs:**
+Ask the agent to read uild/serial.log (e.g. cat build/serial.log or read the tail of it).
+
+**3. Send a Command:**
+Ask the agent to write a command to uild/serial_cmd.txt. For example: echo "PRESS" > build/serial_cmd.txt. The bridge will pick it up, send it to the board, and clear the text file.
+
