@@ -163,8 +163,8 @@ extern "C" {
 /* S3: GPIO 38/39 for EXT BTN/LED (safely away from PSRAM range GPIO 33-37) */
 #define APP_CONFIG_BOOT_BTN_GPIO                  0
 #define APP_CONFIG_EXT_BTN_GPIO                   38
-#define APP_CONFIG_LED_GPIO                       2   /* Strapping pin on S3 */
 #define APP_CONFIG_EXT_LED_GPIO                   39
+/* Board status LED: WS2812 RGB on GPIO 48 — no simple GPIO LED on S3 DevKitC-1 */
 #define APP_CONFIG_RGB_LED_GPIO                   48
 #else
 /* ESP32 Classic DevKit V1 30-pin */
