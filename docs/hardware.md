@@ -32,6 +32,16 @@ Output roles exclude GPIO34-GPIO39 because those ESP32 pins are input-only.
 Normal output options also avoid GPIO0, GPIO2, GPIO5, GPIO6-GPIO12, GPIO15, and
 GPIO16-GPIO17 to avoid boot-strapping, flash, PSRAM, and common module hazards.
 
+## Locked System Pins
+
+The firmware reserves certain pins for system UI (LEDs, buttons). These pins are exposed as `locked_pins` in the `/api/hardware/map` payload and cannot be remapped. Their assignments depend on the target profile:
+
+| Role | ESP32 Classic | ESP32-S3 | Notes |
+|------|---------------|----------|-------|
+| Status LED | GPIO2 (ON/OFF) | GPIO48 (RGB) | S3 uses WS2812. Classic uses simple ON/OFF. |
+| EXT BTN | GPIO14 | GPIO38 | External menu navigation button. |
+| EXT LED | GPIO13 | GPIO39 | External status indicator. |
+
 ## DS18B20 Powered-Mode Wiring
 
 Phase 6 assumes powered mode for the DS18B20:
