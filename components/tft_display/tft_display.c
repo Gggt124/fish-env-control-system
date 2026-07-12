@@ -77,7 +77,7 @@ esp_err_t tft_display_init(void) {
         .speed_mode       = LEDC_LOW_SPEED_MODE,
         .timer_num        = LEDC_TIMER_0,
         .duty_resolution  = LEDC_TIMER_8_BIT,
-        .freq_hz          = 1000,
+        .freq_hz          = 20000,
         .clk_cfg          = LEDC_AUTO_CLK
     };
     ret = ledc_timer_config(&ledc_timer);
@@ -395,6 +395,7 @@ void tft_display_draw_dashboard_skeleton(void) {
 
 static atomic_uchar s_current_brightness = ATOMIC_VAR_INIT(100);
 static uint8_t s_idle_dim_percent = APP_TEMPLATE_TFT_DIM_PERCENT;
+static bool s_bl_in_gpio_mode = false;
 
 void tft_display_set_idle_dim_percent(uint8_t percent) {
     s_idle_dim_percent = (percent <= 100) ? percent : APP_TEMPLATE_TFT_DIM_PERCENT;
@@ -404,15 +405,50 @@ uint8_t tft_display_get_idle_dim_percent(void) {
     return s_idle_dim_percent;
 }
 
+/* Re-bind BL GPIO back to the LEDC peripheral after push-pull GPIO mode. */
+static esp_err_t tft_bl_rebind_to_ledc(void) {
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_LOW_SPEED_MODE,
+        .channel        = LEDC_CHANNEL_0,
+        .timer_sel      = LEDC_TIMER_0,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = APP_TEMPLATE_TFT_LED_GPIO,
+        .duty           = 0,
+        .hpoint         = 0
+    };
+    return ledc_channel_config(&ledc_channel);
+}
+
 void tft_display_set_brightness(uint8_t percent)
 {
     if (percent > 100) percent = 100;
     if (atomic_load(&s_current_brightness) == percent) return;
-    
     atomic_store(&s_current_brightness, percent);
-    uint32_t duty = (255 * percent) / 100;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+
+    if (percent == 0) {
+        /* dim=0: switch BL to push-pull LOW. LEDC's PWM-LOW state is
+         * high-impedance and vulnerable to noise from external DC-DC
+         * supplies (visible flash on noisy PSU). A driven GPIO LOW
+         * output sinks the noise instead of letting it light the panel. */
+        if (!s_bl_in_gpio_mode) {
+            ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+            gpio_reset_pin(APP_TEMPLATE_TFT_LED_GPIO);
+            gpio_set_direction(APP_TEMPLATE_TFT_LED_GPIO, GPIO_MODE_OUTPUT);
+            gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, 0);
+            s_bl_in_gpio_mode = true;
+        }
+    } else {
+        if (s_bl_in_gpio_mode) {
+            gpio_reset_pin(APP_TEMPLATE_TFT_LED_GPIO);
+            if (tft_bl_rebind_to_ledc() != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to re-bind BL GPIO to LEDC");
+            }
+            s_bl_in_gpio_mode = false;
+        }
+        uint32_t duty = (255 * percent) / 100;
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    }
     ESP_LOGI(TAG, "Backlight set to %d%%", percent);
 }
 
@@ -448,6 +484,9 @@ static void tft_display_task(void *pvParameters) {
     
     TickType_t last_wakeup_time = xTaskGetTickCount();
     while (1) {
+        bool screen_off = (atomic_load(&s_current_brightness) == 0);
+
+        if (!screen_off) {
         pump_control_status_t pump = {0};
         pump_control_get_status(&pump);
         
@@ -659,6 +698,15 @@ static void tft_display_task(void *pvParameters) {
         s_tft_cache.pump_relay_energized = pump_relay_now;
 
         s_cache_valid = true;
+        } else {
+            /* Backlight is OFF (dim=0). Issuing SPI transactions here would
+             * couple 40MHz edges from CS(GPIO10)/CLK into BL(GPIO9) on the
+             * S3 (and CS(GPIO5)/CLK into BL(GPIO4) on classic), causing a
+             * faint glow + ghost image + flicker. Skip all SPI work; the
+             * panel retains its last frame. Invalidate the cache so the
+             * next wake (brightness 0->100) does a full redraw. */
+            s_cache_valid = false;
+        }
         
         vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(200));
     }
