@@ -51,7 +51,7 @@ The project natively supports two hardware profiles. The active profile is deter
 | **TFT MOSI** | GPIO23 | GPIO11 | SPI MOSI data line. |
 | **TFT SCK** | GPIO18 | GPIO12 | SPI SCK clock line. |
 | **TFT LED** | GPIO4 | GPIO9 | Backlight LED PWM control line. |
-| **Status LED** | GPIO2 | GPIO2 | Board status LED (strapping pin warning). |
+| **Status LED (Board)** | GPIO2 (simple ON/OFF) | GPIO48 (WS2812 RGB) | Classic: blue LED on GPIO2. S3: addressable RGB on GPIO48. |
 | **External Button** | GPIO14 | GPIO38 | Manual hardware control button. |
 | **External LED** | GPIO13 | GPIO39 | External panel indicator LED. |
 | **Boot/Flash Button**| GPIO0 | GPIO0 | Standard ESP Boot button. |
@@ -70,7 +70,9 @@ ESP32/S3 internal pull-ups (~45 kOhm) can fail to reject electromagnetic interfe
 
 ### 3. Strapping Pin Hazards
 - **GPIO0**: Acts as the boot-mode selection strapping pin. Avoid wiring pull-downs or components that pull this pin low on startup.
-- **GPIO2**: Strapping pin. Avoid external pull-ups.
+- **GPIO2**: Strapping pin on both boards. On Classic DevKit V1, GPIO2 drives the onboard blue LED.
+  On ESP32-S3 DevKitC-1, the onboard LED is GPIO48 (RGB) — GPIO2 has no LED and is not used by firmware.
+  Avoid external pull-ups on GPIO2 on either board.
 
 ### 4. Relay Polarity
 Relay modules vary (active-high vs. active-low). The firmware defaults to active-low but supports runtime software inversion. Always verify polarity configurations before connecting high-voltage pump or cooling compressor loads.

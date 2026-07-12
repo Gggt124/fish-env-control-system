@@ -778,7 +778,9 @@ static bool api_hardware_add_board_info(cJSON *root)
     if (!locked) return false;
     cJSON_AddNumberToObject(locked, "boot_btn", (double)APP_CONFIG_BOOT_BTN_GPIO);
     cJSON_AddNumberToObject(locked, "ext_btn",  (double)APP_CONFIG_EXT_BTN_GPIO);
+#ifndef CONFIG_IDF_TARGET_ESP32S3
     cJSON_AddNumberToObject(locked, "led",      (double)APP_CONFIG_LED_GPIO);
+#endif
     cJSON_AddNumberToObject(locked, "ext_led", (double)APP_CONFIG_EXT_LED_GPIO);
 #ifdef CONFIG_IDF_TARGET_ESP32S3
     cJSON_AddNumberToObject(locked, "rgb_led", (double)APP_CONFIG_RGB_LED_GPIO);

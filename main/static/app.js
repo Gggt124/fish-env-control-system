@@ -2175,12 +2175,27 @@ function renderLockedPins(board, lockedPins) {
         if (map[id] === undefined || map[id] === null) continue;
         setText(id, 'GPIO ' + map[id]);
     }
+    var ledRow = document.getElementById('locked-led-row');
     var rgbRow = document.getElementById('locked-rgb-led-row');
-    if (rgbRow) {
-        if (lockedPins.rgb_led === undefined || lockedPins.rgb_led === null) {
-            rgbRow.classList.add('hidden');
+    var hasRgb = lockedPins.rgb_led !== undefined && lockedPins.rgb_led !== null;
+    var hasLed = lockedPins.led !== undefined && lockedPins.led !== null;
+
+    if (ledRow) {
+        if (hasRgb) {
+            ledRow.classList.add('hidden');
+        } else if (hasLed) {
+            ledRow.classList.remove('hidden');
+            setText('locked-led', 'GPIO ' + lockedPins.led);
         } else {
+            ledRow.classList.add('hidden');
+        }
+    }
+    if (rgbRow) {
+        if (hasRgb) {
             rgbRow.classList.remove('hidden');
+            setText('locked-rgb-led', 'GPIO ' + lockedPins.rgb_led);
+        } else {
+            rgbRow.classList.add('hidden');
         }
     }
 }

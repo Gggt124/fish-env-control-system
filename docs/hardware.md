@@ -41,6 +41,7 @@ The firmware reserves certain pins for system UI (LEDs, buttons). These pins are
 | Status LED | GPIO2 (ON/OFF) | GPIO48 (RGB) | S3 uses WS2812. Classic uses simple ON/OFF. |
 | EXT BTN | GPIO14 | GPIO38 | External menu navigation button. |
 | EXT LED | GPIO13 | GPIO39 | External status indicator. |
+| Boot Button | GPIO0 | GPIO0 | Strapping pin. |
 
 ## DS18B20 Powered-Mode Wiring
 
