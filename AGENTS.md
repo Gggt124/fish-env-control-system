@@ -333,10 +333,14 @@ This is an ESP32 firmware project. Before responding to ANY message (including q
 **`esp32-firmware-engineer` — ALWAYS invoke for firmware-related tasks.**
 Whenever a task involves firmware code, C files, CMake, sdkconfig, GPIO, FreeRTOS, ESP-IDF APIs, build errors, flash, serial logs, or any embedded systems work in this project, you MUST invoke the `esp32-firmware-engineer` skill before proceeding. This skill governs HOW you approach all embedded work.
 
+**`systematic-debugging` + `esp32-debugging` — ALWAYS invoke BOTH for debugging tasks.**
+When encountering any bug, build failure, runtime panic, unexpected behavior, or test failure in this project, you MUST invoke BOTH skills together: `systematic-debugging` provides the investigation process (4-phase root cause analysis), while `esp32-debugging` provides ESP32-specific domain knowledge (Guru Meditation errors, stack overflow patterns, I2C/SPI issues, CMake fixes). Use `systematic-debugging` as the process framework and `esp32-debugging` as the reference lookup within that process. Never use one without the other for debugging tasks.
+
 **Skill invocation order for this project:**
 1. `using-superpowers` — at conversation start (every session)
 2. `esp32-firmware-engineer` — before any firmware/embedded task
-3. Other skills (e.g. `brainstorming`, `systematic-debugging`, `writing-plans`) as applicable per the superpowers skill-priority rules
+3. `systematic-debugging` + `esp32-debugging` — both together for any debugging task
+4. Other skills (e.g. `brainstorming`, `writing-plans`) as applicable per the superpowers skill-priority rules
 
 ## Serial Log & Commands (Python Bridge)
 
