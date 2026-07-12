@@ -290,6 +290,12 @@ Namespace `wifi_cfg`: `sta_ssid` (string), `sta_pass` (string)
 .\scripts\build.ps1 -Target esp32s3
 ```
 
+After both targets build successfully, **always run the package script**:
+
+```powershell
+.\scripts\package.ps1 -Target all -Zip
+```
+
 If build succeeds and `fish_pump_relay_timer_control.bin` is generated, the project is valid. Manual testing:
 1. Connect to Wi-Fi `FishPump-Setup`
 2. Open `http://192.168.4.1`

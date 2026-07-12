@@ -760,6 +760,39 @@ static bool api_hardware_map_add_options(cJSON *root)
     return true;
 }
 
+/* Report firmware-locked GPIO pins (TFT, buttons, LEDs) and board identity to
+ * the web UI so the hardware page is not hardcoded to one board. Pin values
+ * come from existing compile-time macros in app_config.h (not new assignments). */
+static bool api_hardware_add_board_info(cJSON *root)
+{
+    if (!root) return false;
+
+    cJSON *board = cJSON_AddObjectToObject(root, "board");
+    if (!board) return false;
+    cJSON_AddStringToObject(board, "target",   APP_TEMPLATE_BOARD_TARGET);
+    cJSON_AddStringToObject(board, "name",     APP_TEMPLATE_BOARD_NAME);
+    cJSON_AddNumberToObject(board, "flash_mb", (double)APP_TEMPLATE_BOARD_FLASH_MB);
+    cJSON_AddNumberToObject(board, "psram_mb", (double)APP_TEMPLATE_BOARD_PSRAM_MB);
+
+    cJSON *locked = cJSON_AddObjectToObject(root, "locked_pins");
+    if (!locked) return false;
+    cJSON_AddNumberToObject(locked, "boot_btn", (double)APP_CONFIG_BOOT_BTN_GPIO);
+    cJSON_AddNumberToObject(locked, "ext_btn",  (double)APP_CONFIG_EXT_BTN_GPIO);
+    cJSON_AddNumberToObject(locked, "led",      (double)APP_CONFIG_LED_GPIO);
+    cJSON_AddNumberToObject(locked, "ext_led", (double)APP_CONFIG_EXT_LED_GPIO);
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    cJSON_AddNumberToObject(locked, "rgb_led", (double)APP_CONFIG_RGB_LED_GPIO);
+#endif
+    cJSON_AddNumberToObject(locked, "tft_cs",   (double)APP_TEMPLATE_TFT_CS_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_rst",  (double)APP_TEMPLATE_TFT_RESET_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_dc",   (double)APP_TEMPLATE_TFT_DC_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_mosi", (double)APP_TEMPLATE_TFT_MOSI_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_sck",  (double)APP_TEMPLATE_TFT_SCK_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_led",  (double)APP_TEMPLATE_TFT_LED_GPIO);
+
+    return true;
+}
+
 static esp_err_t api_hardware_map_send(httpd_req_t *req)
 {
     hardware_map_t active = hardware_map_defaults();
@@ -799,6 +832,10 @@ static esp_err_t api_hardware_map_send(httpd_req_t *req)
         cJSON_AddNullToObject(root, "pending");
     }
     if (!api_hardware_map_add_options(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+    if (!api_hardware_add_board_info(root)) {
         cJSON_Delete(root);
         return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
@@ -3801,6 +3838,8 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     esp_chip_info_t chip;
     esp_chip_info(&chip);
     json_gen_add_string_safe(&gen, "chip_model", chip_model_to_string(chip.model));
+    json_gen_add_string(&gen, "board_name",   APP_TEMPLATE_BOARD_NAME);
+    json_gen_add_string(&gen, "board_target", APP_TEMPLATE_BOARD_TARGET);
     json_gen_add_number(&gen, "chip_revision", (double)(chip.revision));
     json_gen_add_number(&gen, "chip_cores", (double)(chip.cores));
     json_gen_add_number(&gen, "cpu_freq_mhz", (double)(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ));

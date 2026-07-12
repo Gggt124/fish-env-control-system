@@ -2073,6 +2073,8 @@ function applyHardwareMap(data) {
     renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending', data.active);
     populateHardwareSelects(data.options || {}, effective || data.active || {});
     renderHardwareWiring(data.active, data.pending_valid ? data.pending : null);
+    renderLockedPins(data.board, data.locked_pins);
+    applyBoardWiringFacts(data.board);
 
     setHardwareClean();
     setHardwareState(data.reboot_required ? 'บันทึกผังใหม่แล้ว - จำเป็นต้องรีบูตระบบ' : 'โหลดผังปัจจุบันเรียบร้อย');
@@ -2154,6 +2156,44 @@ function renderHardwareWiring(active, pending) {
     }
 }
 
+function renderLockedPins(board, lockedPins) {
+    if (!lockedPins) return;
+    var map = {
+        'locked-boot-btn': lockedPins.boot_btn,
+        'locked-ext-btn':  lockedPins.ext_btn,
+        'locked-led':      lockedPins.led,
+        'locked-ext-led':  lockedPins.ext_led,
+        'locked-rgb-led':  lockedPins.rgb_led,
+        'locked-tft-sck':  lockedPins.tft_sck,
+        'locked-tft-mosi': lockedPins.tft_mosi,
+        'locked-tft-cs':   lockedPins.tft_cs,
+        'locked-tft-dc':   lockedPins.tft_dc,
+        'locked-tft-rst':  lockedPins.tft_rst,
+        'locked-tft-led':  lockedPins.tft_led
+    };
+    for (var id in map) {
+        if (map[id] === undefined || map[id] === null) continue;
+        setText(id, 'GPIO ' + map[id]);
+    }
+    var rgbRow = document.getElementById('locked-rgb-led-row');
+    if (rgbRow) {
+        if (lockedPins.rgb_led === undefined || lockedPins.rgb_led === null) {
+            rgbRow.classList.add('hidden');
+        } else {
+            rgbRow.classList.remove('hidden');
+        }
+    }
+}
+
+function applyBoardWiringFacts(board) {
+    if (!board || !board.target) return;
+    var isS3 = board.target === 'esp32s3';
+    var frAlt = document.getElementById('wiring-fr-alt-sentence');
+    if (frAlt) frAlt.classList.toggle('hidden', isS3);
+    var inputOnly = document.getElementById('wiring-input-only-bullet');
+    if (inputOnly) inputOnly.classList.toggle('hidden', isS3);
+}
+
 function readHardwareMapForm() {
     var map = {};
     for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
@@ -2215,7 +2255,7 @@ function initStatus() {
 
 function clearStatusSkeletonsToOffline() {
     var ids = [
-        'st-chip-model', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
+        'st-chip-model', 'st-board-name', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
         'st-idf-version', 'st-project-version', 'st-reset-reason',
         'st-free-heap', 'st-min-free-heap', 'st-largest-free-block', 'st-total-heap',
         'st-uptime', 'st-sta-status', 'st-sta-ssid', 'st-sta-ip', 'st-sta-rssi',
@@ -2248,6 +2288,7 @@ function refreshFullStatus() {
 
         /* System */
         setText('st-chip-model', data.chip_model);
+        setText('st-board-name', data.board_name || '--');
         setText('st-chip-revision', '' + data.chip_revision);
         setText('st-chip-cores', '' + data.chip_cores);
         setText('st-cpu-freq', data.cpu_freq_mhz + ' MHz');

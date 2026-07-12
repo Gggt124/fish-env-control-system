@@ -1006,31 +1006,35 @@
                     <div class="status-kv-list">
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Chip</span>
-                            <div class="status-kv-value" id="st-chip-model"><span class="skeleton">ESP32-D0WDQ6</span></div>
+                            <div class="status-kv-value" id="st-chip-model"><span class="skeleton">…</span></div>
+                        </div>
+                        <div class="status-kv-item">
+                            <span class="status-kv-label" lang="en">Board</span>
+                            <div class="status-kv-value" id="st-board-name"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Revision</span>
-                            <div class="status-kv-value" id="st-chip-revision"><span class="skeleton">1</span></div>
+                            <div class="status-kv-value" id="st-chip-revision"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Cores</span>
-                            <div class="status-kv-value" id="st-chip-cores"><span class="skeleton">2</span></div>
+                            <div class="status-kv-value" id="st-chip-cores"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">CPU Speed</span>
-                            <div class="status-kv-value" id="st-cpu-freq"><span class="skeleton">240 MHz</span></div>
+                            <div class="status-kv-value" id="st-cpu-freq"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">IDF Version</span>
-                            <div class="status-kv-value" id="st-idf-version"><span class="skeleton">v6.0.1</span></div>
+                            <div class="status-kv-value" id="st-idf-version"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Firmware</span>
-                            <div class="status-kv-value" id="st-project-version"><span class="skeleton">...</span></div>
+                            <div class="status-kv-value" id="st-project-version"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item" style="grid-column: 1 / -1;">
                             <span class="status-kv-label" lang="en">Reset Reason</span>
-                            <div class="status-kv-value" id="st-reset-reason"><span class="skeleton">POWERON_RESET</span></div>
+                            <div class="status-kv-value" id="st-reset-reason"><span class="skeleton">…</span></div>
                         </div>
                     </div>
                 </div>
@@ -1050,19 +1054,19 @@
                     <div class="status-kv-list">
                         <div class="status-kv-item" style="grid-column: 1 / -1;">
                             <span class="status-kv-label" lang="en">Free</span>
-                            <div class="status-kv-value" id="st-free-heap"><span class="skeleton">200 KB</span></div>
+                            <div class="status-kv-value" id="st-free-heap"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Min Free</span>
-                            <div class="status-kv-value" id="st-min-free-heap"><span class="skeleton">180 KB</span></div>
+                            <div class="status-kv-value" id="st-min-free-heap"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Largest Block</span>
-                            <div class="status-kv-value" id="st-largest-free-block"><span class="skeleton">120 KB</span></div>
+                            <div class="status-kv-value" id="st-largest-free-block"><span class="skeleton">…</span></div>
                         </div>
                         <div class="status-kv-item">
                             <span class="status-kv-label" lang="en">Total DRAM</span>
-                            <div class="status-kv-value" id="st-total-heap"><span class="skeleton">320 KB</span></div>
+                            <div class="status-kv-value" id="st-total-heap"><span class="skeleton">…</span></div>
                         </div>
                     </div>
                 </div>
@@ -1447,7 +1451,7 @@
                         ปุ่ม Factory Reset ใช้ GPIO 0 ซึ่งเป็น strapping pin ของ ESP32
                         <strong>ห้ามกดค้างขณะเปิดเครื่อง</strong> เพราะจะทำให้บอร์ดเข้า Download Mode แทนที่จะ boot ปกติ
                         <strong>การกด Factory Reset จะลบข้อมูลทั้งหมด</strong> ได้แก่ Wi-Fi, รหัสผ่าน, การตั้งค่า Timer และ Hardware — เครื่องจะ Restart อัตโนมัติ
-                        หากต้องการความปลอดภัยมากขึ้น ให้ย้ายสาย Factory Reset ไปใช้ <span class="mono">GPIO 14</span> แทน
+                        <span id="wiring-fr-alt-sentence">หากต้องการความปลอดภัยมากขึ้น ให้ย้ายสาย Factory Reset ไปใช้ <span class="mono">GPIO 14</span> แทน</span>
                     </div>
                 </div>
 
@@ -1468,7 +1472,7 @@
                             <li class="mb-sm">
                                 <strong>สวิตช์ลูกลอยและปุ่มกด (Mechanical Switches):</strong>
                                 <ul>
-                                    <li class="mb-1"><strong>ขา Input-only (GPIO 34-39):</strong> ต้องต่อ Pull-up ภายนอกเสมอ เนื่องจากไม่มีวงจรภายใน</li>
+                                    <li class="mb-1" id="wiring-input-only-bullet"><strong>ขา Input-only (GPIO 34-39):</strong> ต้องต่อ Pull-up ภายนอกเสมอ เนื่องจากไม่มีวงจรภายใน</li>
                                     <li class="mb-1"><strong>ระยะสายสั้น (ไม่เกิน 2 เมตร):</strong> แนะนำต่อ Pull-up 4.7k&Omega; ภายนอกเพื่อสู้กับสัญญาณรบกวน</li>
                                     <li><strong>ระยะสายไกล (2 - 10 เมตร):</strong> 
                                         <ul>
@@ -1566,10 +1570,11 @@
                     </div>
                 </div>
                 <div class="tft-wiring-grid mt-md" lang="en">
-                    <div><span class="text-muted">BOOT</span> <strong class="mono">GPIO 0</strong></div>
-                    <div><span class="text-muted">EXT BTN</span> <strong class="mono">GPIO 14</strong></div>
-                    <div><span class="text-muted">LED</span> <strong class="mono">GPIO 2</strong></div>
-                    <div><span class="text-muted">EXT LED</span> <strong class="mono">GPIO 13</strong></div>
+                    <div><span class="text-muted">BOOT</span> <strong class="mono" id="locked-boot-btn">--</strong></div>
+                    <div><span class="text-muted">EXT BTN</span> <strong class="mono" id="locked-ext-btn">--</strong></div>
+                    <div><span class="text-muted">LED</span> <strong class="mono" id="locked-led">--</strong></div>
+                    <div><span class="text-muted">EXT LED</span> <strong class="mono" id="locked-ext-led">--</strong></div>
+                    <div id="locked-rgb-led-row" class="hidden"><span class="text-muted">RGB LED</span> <strong class="mono" id="locked-rgb-led">--</strong></div>
                 </div>
             </section>
 
@@ -1581,12 +1586,12 @@
                     </div>
                 </div>
                 <div class="tft-wiring-grid mt-md" lang="en">
-                    <div><span class="text-muted">SCK</span> <strong class="mono">GPIO 18</strong></div>
-                    <div><span class="text-muted">MOSI</span> <strong class="mono">GPIO 23</strong></div>
-                    <div><span class="text-muted">CS</span> <strong class="mono">GPIO 5</strong></div>
-                    <div><span class="text-muted">DC</span> <strong class="mono">GPIO 21</strong></div>
-                    <div><span class="text-muted">RST</span> <strong class="mono">GPIO 22</strong></div>
-                    <div><span class="text-muted">LED</span> <strong class="mono">GPIO 4</strong></div>
+                    <div><span class="text-muted">SCK</span> <strong class="mono" id="locked-tft-sck">--</strong></div>
+                    <div><span class="text-muted">MOSI</span> <strong class="mono" id="locked-tft-mosi">--</strong></div>
+                    <div><span class="text-muted">CS</span> <strong class="mono" id="locked-tft-cs">--</strong></div>
+                    <div><span class="text-muted">DC</span> <strong class="mono" id="locked-tft-dc">--</strong></div>
+                    <div><span class="text-muted">RST</span> <strong class="mono" id="locked-tft-rst">--</strong></div>
+                    <div><span class="text-muted">LED</span> <strong class="mono" id="locked-tft-led">--</strong></div>
                 </div>
             </section>
 
