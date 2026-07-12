@@ -3865,15 +3865,20 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     format_mac(mac, mac_str);
     json_gen_add_string(&gen, "mac_ap", mac_str);
 
-    /* ---------- Memory ---------- */
-    uint32_t free_heap = wifi_manager_get_free_heap();
-    uint32_t min_free_heap = esp_get_minimum_free_heap_size();
+    /* ---------- Memory (internal DRAM — same capability for all metrics) ---------- */
+    uint32_t free_heap = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    uint32_t min_free_heap = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);
     uint32_t total_heap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
     uint32_t largest_free_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
     json_gen_add_number(&gen, "free_heap", (double)(free_heap));
     json_gen_add_number(&gen, "min_free_heap", (double)(min_free_heap));
     json_gen_add_number(&gen, "total_heap", (double)(total_heap));
     json_gen_add_number(&gen, "largest_free_block", (double)(largest_free_block));
+
+    uint32_t psram_total = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+    uint32_t psram_free = psram_total > 0 ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM) : 0;
+    json_gen_add_number(&gen, "psram_total", (double)(psram_total));
+    json_gen_add_number(&gen, "psram_free", (double)(psram_free));
 
     /* ---------- Uptime ---------- */
     json_gen_add_number(&gen, "uptime_ms", (double)(wifi_manager_get_uptime_ms()));

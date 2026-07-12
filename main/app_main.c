@@ -1217,7 +1217,7 @@ void app_main(void)
             }
         }
 
-        uint32_t free_heap = esp_get_free_heap_size();
+        uint32_t free_heap = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
         uint32_t largest_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
         
         bool below_critical = (free_heap < APP_CONFIG_OOM_MIN_FREE_HEAP_BYTES || 

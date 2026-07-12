@@ -2273,6 +2273,7 @@ function clearStatusSkeletonsToOffline() {
         'st-chip-model', 'st-board-name', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
         'st-idf-version', 'st-project-version', 'st-reset-reason',
         'st-free-heap', 'st-min-free-heap', 'st-largest-free-block', 'st-total-heap',
+        'st-psram-free', 'st-psram-total',
         'st-uptime', 'st-sta-status', 'st-sta-ssid', 'st-sta-ip', 'st-sta-rssi',
         'st-sta-channel', 'st-sta-auth', 'st-mac-sta', 'st-ap-ssid', 'st-ap-ip',
         'st-ap-clients', 'st-ap-client-rssi', 'st-mac-ap', 'st-wifi-mode',
@@ -2315,7 +2316,7 @@ function refreshFullStatus() {
         }
         setText('st-reset-reason', resetText);
 
-        /* Memory */
+        /* Memory (internal DRAM) */
         var freeKb = (data.free_heap / 1024).toFixed(0);
         var minKb = (data.min_free_heap / 1024).toFixed(0);
         var largestKb = (data.largest_free_block / 1024).toFixed(0);
@@ -2332,6 +2333,24 @@ function refreshFullStatus() {
         if (bar) bar.style.width = Math.min(100, Math.max(5, pct)).toFixed(0) + '%';
         var pctEl = document.getElementById('st-heap-pct');
         if (pctEl) pctEl.textContent = 'Usage: ' + pct.toFixed(1) + '%';
+
+        /* PSRAM (shown only when the board reports SPIRAM) */
+        var psramTotal = data.psram_total || 0;
+        var psramFreeRow = document.getElementById('st-psram-free-row');
+        var psramTotalRow = document.getElementById('st-psram-total-row');
+        if (psramTotal > 0) {
+            if (psramFreeRow) psramFreeRow.style.display = '';
+            if (psramTotalRow) psramTotalRow.style.display = '';
+            var psramFree = data.psram_free || 0;
+            var psramFreeKb = (psramFree / 1024).toFixed(0);
+            var psramTotalKb = (psramTotal / 1024).toFixed(0);
+            var psramPct = ((psramTotal - psramFree) / psramTotal * 100);
+            setText('st-psram-free', psramFreeKb + ' KB (' + psramPct.toFixed(1) + '% used)');
+            setText('st-psram-total', psramTotalKb + ' KB');
+        } else {
+            if (psramFreeRow) psramFreeRow.style.display = 'none';
+            if (psramTotalRow) psramTotalRow.style.display = 'none';
+        }
 
         /* Uptime */
         var secs = Math.floor(data.uptime_ms / 1000);
