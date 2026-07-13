@@ -1196,6 +1196,7 @@ void app_main(void)
         }
 
         static uint8_t queue_full_count = 0;
+        static uint8_t health_fail_count = 0;
         bool queued = web_server_queue_health_check();
         if (!queued) {
             queue_full_count++;
@@ -1209,11 +1210,26 @@ void app_main(void)
             }
         } else {
             queue_full_count = 0;
-            if (!web_server_check_health(15000)) {
-                ESP_LOGE(TAG, "HTTP thread hung — triggering restart");
-                nvs_store_set_restart_detail("HTTP_HUNG");
-                vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
-                esp_restart();
+            uint32_t staleness_ms = 0;
+            if (!web_server_check_health(15000, &staleness_ms)) {
+                health_fail_count++;
+                if (health_fail_count >= APP_TEMPLATE_HTTP_HUNG_CONSECUTIVE_FAILURES) {
+                    ESP_LOGE(TAG, "HTTP thread hung for %d consecutive checks (staleness=%lu ms) — triggering restart",
+                             health_fail_count, (unsigned long)staleness_ms);
+                    nvs_store_set_restart_detail("HTTP_HUNG");
+                    vTaskDelay(pdMS_TO_TICKS(500)); // Allow logs to flush
+                    esp_restart();
+                } else {
+                    ESP_LOGW(TAG, "HTTP health check stale (staleness=%lu ms, count=%d/%d)",
+                             (unsigned long)staleness_ms, health_fail_count,
+                             APP_TEMPLATE_HTTP_HUNG_CONSECUTIVE_FAILURES);
+                }
+            } else {
+                if (health_fail_count > 0) {
+                    ESP_LOGI(TAG, "HTTP health check recovered after %d stale checks (staleness=%lu ms)",
+                             health_fail_count, (unsigned long)staleness_ms);
+                }
+                health_fail_count = 0;
             }
         }
 

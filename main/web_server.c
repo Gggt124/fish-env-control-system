@@ -4436,16 +4436,20 @@ bool web_server_queue_health_check(void)
     return true;
 }
 
-bool web_server_check_health(uint32_t timeout_ms)
+bool web_server_check_health(uint32_t timeout_ms, uint32_t *out_staleness_ms)
 {
     if (!s_server) {
+        if (out_staleness_ms) {
+            *out_staleness_ms = 0;
+        }
         return true; // Not started yet, ignore
     }
     uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000);
-    if ((now_ms - s_httpd_last_alive_ms) > timeout_ms) {
-        return false;
+    uint32_t staleness = now_ms - s_httpd_last_alive_ms;
+    if (out_staleness_ms) {
+        *out_staleness_ms = staleness;
     }
-    return true;
+    return staleness <= timeout_ms;
 }
 
 bool web_server_start(void)
