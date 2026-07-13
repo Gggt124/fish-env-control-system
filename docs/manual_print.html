@@ -896,31 +896,31 @@
                             <tr>
                                 <td>สวิตช์ลูกลอย (<span lang="en">Float Input</span>)</td>
                                 <td><code class="mono">GPIO32</code></td>
-                                <td><code class="mono">GPIO19</code></td>
+                                <td><code class="mono">GPIO16</code></td>
                                 <td>ขั้วต่อแบบสัมผัสแห้ง (<span lang="en">Active-Low</span>) ดึงขึ้นภายใน</td>
                             </tr>
                             <tr>
                                 <td>รีเลย์ปั๊มน้ำ 1 (<span lang="en">Pump Relay 1</span>)</td>
                                 <td><code class="mono">GPIO26</code></td>
-                                <td><code class="mono">GPIO20</code></td>
+                                <td><code class="mono">GPIO5</code></td>
                                 <td>ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">OFF</span></td>
                             </tr>
                             <tr>
                                 <td>รีเลย์ปั๊มน้ำ 2 (<span lang="en">Pump Relay 2</span>)</td>
                                 <td><code class="mono">GPIO27</code></td>
-                                <td><code class="mono">GPIO21</code></td>
+                                <td><code class="mono">GPIO6</code></td>
                                 <td>ควบคุมปั๊มเมื่อสวิตช์ลูกลอยเป็น <span lang="en">ON</span></td>
                             </tr>
                             <tr>
                                 <td>เซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></td>
                                 <td><code class="mono">GPIO33</code></td>
-                                <td><code class="mono">GPIO41</code></td>
+                                <td><code class="mono">GPIO7</code></td>
                                 <td>ใช้การสื่อสารแบบสายเส้นเดียว (<span lang="en">One-Wire</span>)</td>
                             </tr>
                             <tr>
                                 <td>รีเลย์ทำความเย็น (<span lang="en">Cooling Relay</span>)</td>
                                 <td><code class="mono">GPIO25</code></td>
-                                <td><code class="mono">GPIO42</code></td>
+                                <td><code class="mono">GPIO8</code></td>
                                 <td>ควบคุมพัดลมหรือคอมเพรสเซอร์ระบายความร้อน</td>
                             </tr>
                             <tr>
@@ -1006,7 +1006,7 @@
                     <span class="step-badge">1</span>
                     <h3>การต่อเซนเซอร์วัดอุณหภูมิ <span lang="en">DS18B20</span></h3>
                 </div>
-                <p>เชื่อมต่อขา <code class="mono">VDD</code> เข้ากับแหล่งจ่ายไฟ <code class="mono">3.3V</code>, ขา <code class="mono">GND</code> เข้ากับกราวด์ <code class="mono">GND</code>, และขาข้อมูล <code class="mono" lang="en">DQ</code> เข้ากับพินส่งสัญญาณที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO33</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO41</code> บน <span lang="en">ESP32-S3</span>) โดยต่อตัวต้านทาน <code class="mono">4.7 kOhm</code> ระหว่างขา <code class="mono" lang="en">DQ</code> และ <code class="mono">3.3V</code>:</p>
+                <p>เชื่อมต่อขา <code class="mono">VDD</code> เข้ากับแหล่งจ่ายไฟ <code class="mono">3.3V</code>, ขา <code class="mono">GND</code> เข้ากับกราวด์ <code class="mono">GND</code>, และขาข้อมูล <code class="mono" lang="en">DQ</code> เข้ากับพินส่งสัญญาณที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO33</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO7</code> บน <span lang="en">ESP32-S3</span>) โดยต่อตัวต้านทาน <code class="mono">4.7 kOhm</code> ระหว่างขา <code class="mono" lang="en">DQ</code> และ <code class="mono">3.3V</code>:</p>
                 <p>การเดินสายเซนเซอร์วัดอุณหภูมิ <code class="mono">DS18B20</code> ในระยะไกลมีความท้าทายเนื่องจากสายสัญญาณที่ยาวจะเพิ่มค่าความจุไฟฟ้าของสายเคเบิล (<span lang="en">cable capacitance</span>) ประมาณ <code class="mono">50-100 pF/m</code> ซึ่งทำให้สัญญาณดิจิตอลความเร็วสูงผิดเพี้ยนไป เพื่อประสิทธิภาพและความเสถียรสูงสุดในการทำงาน แนะนำแนวทางปฏิบัติส่งเสริมประสิทธิภาพดังนี้:</p>
                 <ul>
                     <li>แนะนำให้ใช้สายคู่ตีเกลียว (<span lang="en">twisted-pair cable</span>) คุณภาพสูงมาตรฐาน <span lang="en">Category 5e</span> (หรือดีกว่า) โดยต้องเดินสายสัญญาณข้อมูล <code class="mono">DQ</code> และกราวด์ <code class="mono">GND</code> คู่กันในสายตีเกลียวเดียวกันเพื่อหักล้างสัญญาณรบกวน</li>
@@ -1069,7 +1069,7 @@
                     <span class="step-badge">2</span>
                     <h3>การต่อสวิตช์ลูกลอย (<span lang="en">Float Switch</span>)</h3>
                 </div>
-                <p>เชื่อมต่อหน้าสัมผัสแห้ง (<span lang="en">Dry Contact</span>) ของสวิตช์ลูกลอยคร่อมระหว่างขากราวด์ <code class="mono">GND</code> และพินระดับน้ำที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO32</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO19</code> บน <span lang="en">ESP32-S3</span>) ระบบจะเปิดใช้ตัวต้านทานดึงขึ้นภายในตัวชิป (<span lang="en">Internal Pull-Up</span>) อัตโนมัติ</p>
+                <p>เชื่อมต่อหน้าสัมผัสแห้ง (<span lang="en">Dry Contact</span>) ของสวิตช์ลูกลอยคร่อมระหว่างขากราวด์ <code class="mono">GND</code> และพินระดับน้ำที่กำหนด (เริ่มต้นคือ <code class="mono">GPIO32</code> บน <span lang="en">ESP32</span> คลาสสิก หรือ <code class="mono">GPIO16</code> บน <span lang="en">ESP32-S3</span>) ระบบจะเปิดใช้ตัวต้านทานดึงขึ้นภายในตัวชิป (<span lang="en">Internal Pull-Up</span>) อัตโนมัติ</p>
                 <p>ในการใช้งานสวิตช์ลูกลอยระยะไกล (มากกว่า <code class="mono">5m</code>) สัญญาณรบกวนแม่เหล็กไฟฟ้า (<span lang="en">EMI</span>) จากขดลวดมอเตอร์ของปั๊มน้ำอาจเหนี่ยวนำให้เกิดสัญญาณลวงในระบบควบคุมได้ เพื่อแก้ไขปัญหานี้และเพิ่มเสถียรภาพในการตรวจจับสัญญาณ ขอแนะนำให้ใช้วิธีลดสัญญาณรบกวนดังต่อไปนี้:</p>
                 <ul>
                     <li><strong>การติดตั้งตัวต้านทานดึงขึ้นภายนอกค่าความต้านทานต่ำ (<span lang="en">Strong External Pull-Up</span>):</strong> ห้ามพึ่งพาเพียงตัวต้านทานดึงขึ้นภายในตัวชิป <code class="mono">ESP32</code> ที่มีค่าความต้านทานค่อนข้างสูงและอ่อนไหวต่อสัญญาณรบกวน (<code class="mono">30k&Omega;-50k&Omega;</code>) โดยแนะนำให้ต่อตัวต้านทานดึงขึ้นภายนอกขนาด <code class="mono">1 k&Omega;</code> ถึง <code class="mono">2.2 k&Omega;</code> คร่อมระหว่างพินอินพุตสัญญาณและไฟเลี้ยง <code class="mono">3.3V</code> เพื่อยึดเหนี่ยวแรงดันไฟฟ้าสัญญาณให้ทนทานต่อสัญญาณรบกวนภายนอก</li>
