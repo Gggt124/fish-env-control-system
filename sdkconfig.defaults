@@ -61,5 +61,5 @@ CONFIG_LOG_DEFAULT_LEVEL=2
 CONFIG_LOG_MAXIMUM_EQUALS_DEFAULT=n
 CONFIG_LOG_MAXIMUM_LEVEL_INFO=y
 CONFIG_LOG_MAXIMUM_LEVEL=3
-# Disable IRAM log path -- saves ~1.5KB IRAM, acceptable for production.
-CONFIG_LOG_IN_IRAM=n
+# ESP-IDF 6.0.1 keeps LOG_IN_IRAM enabled by default unless the
+# SPI-flash auto-suspend path is enabled; do not claim to override it here.
