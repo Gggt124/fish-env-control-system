@@ -16,7 +16,7 @@ extern "C" {
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
 #ifndef APP_TEMPLATE_FIRMWARE_VERSION
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.5"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.6"
 #endif
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
@@ -59,8 +59,8 @@ extern "C" {
  * to reject EMI from the pump's electromagnetic field.
  * Recommended: add a 4.7kOhm external pull-up resistor between FLOAT_GPIO and 3.3V. */
 #ifdef CONFIG_IDF_TARGET_ESP32S3
-#define APP_TEMPLATE_PUMP_FLOAT_GPIO        19
-#define APP_TEMPLATE_PUMP_RELAY_GPIO        20
+#define APP_TEMPLATE_PUMP_FLOAT_GPIO        16
+#define APP_TEMPLATE_PUMP_RELAY_GPIO        5
 #else
 #define APP_TEMPLATE_PUMP_FLOAT_GPIO        32
 #define APP_TEMPLATE_PUMP_RELAY_GPIO        26
@@ -69,12 +69,12 @@ extern "C" {
 #define APP_TEMPLATE_PUMP_RELAY_ACTIVE_LOW  true
 
 #ifdef CONFIG_IDF_TARGET_ESP32S3
-/* ESP32-S3 WROOM-1-N16R8: GPIO 27-32 = Octal Flash, GPIO 33-37 = Octal PSRAM (DO NOT USE) */
-#define APP_TEMPLATE_HW_DEFAULT_FLOAT_GPIO              19
-#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY1_GPIO        20
-#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY2_GPIO        21
-#define APP_TEMPLATE_HW_DEFAULT_DS18B20_GPIO            41
-#define APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_GPIO      42
+/* ESP32-S3 WROOM-1-N16R8: keep application roles off USB/UART/boot pins. */
+#define APP_TEMPLATE_HW_DEFAULT_FLOAT_GPIO              16
+#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY1_GPIO        5
+#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY2_GPIO        6
+#define APP_TEMPLATE_HW_DEFAULT_DS18B20_GPIO            7
+#define APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_GPIO      8
 #else
 /* ESP32 Classic DevKit V1 30-pin */
 #define APP_TEMPLATE_HW_DEFAULT_FLOAT_GPIO              32

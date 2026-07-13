@@ -40,11 +40,11 @@ The project natively supports two hardware profiles. The active profile is deter
 
 | Role | ESP32 Classic Default GPIO | ESP32-S3 Default GPIO | Notes |
 |:---|:---:|:---:|:---|
-| **Float Input** | GPIO32 | GPIO19 | Binary float switch input. Active-low with internal pull-up. |
-| **Pump Relay 1** | GPIO26 | GPIO20 | Relay control for Pump channel 1. |
-| **Pump Relay 2** | GPIO27 | GPIO21 | Relay control for Pump channel 2. |
-| **DS18B20 Data** | GPIO33 | GPIO41 | One-wire temperature sensor communication bus. |
-| **Cooling Relay** | GPIO25 | GPIO42 | Relay control for cooling compressor/fan. |
+| **Float Input** | GPIO32 | GPIO16 | Binary float switch input. Active-low with internal and external pull-up. |
+| **Pump Relay 1** | GPIO26 | GPIO5 | Relay control for Pump channel 1. |
+| **Pump Relay 2** | GPIO27 | GPIO6 | Relay control for Pump channel 2. |
+| **DS18B20 Data** | GPIO33 | GPIO7 | One-wire temperature sensor communication bus. |
+| **Cooling Relay** | GPIO25 | GPIO8 | Relay control for cooling compressor/fan. |
 | **TFT CS** | GPIO5 | GPIO10 | SPI chip select line. |
 | **TFT RESET** | GPIO22 | GPIO14 | LCD reset control line. |
 | **TFT DC** | GPIO21 | GPIO13 | Data/Command selector line. |
@@ -55,6 +55,12 @@ The project natively supports two hardware profiles. The active profile is deter
 | **External Button** | GPIO14 | GPIO38 | Manual hardware control button. |
 | **External LED** | GPIO13 | GPIO39 | External panel indicator LED. |
 | **Boot/Flash Button**| GPIO0 | GPIO0 | Standard ESP Boot button. |
+
+For the ESP32-S3 profile, the application GPIO allowlist is intentionally
+limited to GPIO1/2, GPIO5-8, and GPIO15-18. GPIO19/20 (Native USB),
+GPIO43/44 (UART console), GPIO27-37 (Octal Flash/PSRAM), strapping pins,
+USB-OTG boot-related pins, TFT pins, and system LED/button pins are not
+selectable through the Hardware/Install page or API.
 
 ---
 
@@ -139,16 +145,16 @@ All routes except `/api/login` and `/api/auth/nonce` require a valid HTTP Sessio
 | **POST** | `/api/wifi/disconnect` | Disconnect from active Station and forget credentials. | `{"ok":true}` |
 | **GET** | `/api/wifi/profiles` | List saved Wi-Fi profiles and auto-connect settings. | `{"ok":true,"profiles":[...],"auto_connect":true}` |
 | **GET** | `/api/pump/status` | Current pump running, float state, and countdown timer. | `{"running":true,"float_state":"OFF","countdown":12}` |
-| **GET** | `/api/pump/config` | Retrieve configurable pump relay and timer variables. | `{"timer1":{"on_sec":20,"off_sec":60},"auto_start":false}` |
-| **POST** | `/api/pump/config` | Update pump durations and active polarities. | `{"timer1":{"on_sec":10,"off_sec":30}}` |
+| **GET** | `/api/pump/config` | Retrieve configurable pump relay and timer variables. | `{"timer1_on_sec":20,"timer1_off_sec":60,"timer2_on_sec":10,"timer2_off_sec":180,"auto_start":false}` |
+| **POST** | `/api/pump/config` | Update pump durations, polarities, and start phases. | `{"timer1_on_sec":10,"timer1_off_sec":30,"timer2_on_sec":10,"timer2_off_sec":180,"auto_start":false,"relay1_polarity":"active_low","relay2_polarity":"active_low","timer1_start_phase":"on","timer2_start_phase":"on"}` |
 | **POST** | `/api/pump/start` | Start the pump execution cycle manually. | `{"ok":true}` |
 | **POST** | `/api/pump/stop` | Stop the pump execution cycle manually. | `{"ok":true}` |
 | **GET** | `/api/cooling/status` | Read DS18B20 temperature, relay status, and lockouts. | `{"temperature":28.5,"relay_active":false,"lockout":0}` |
 | **GET** | `/api/cooling/config` | Read cooling threshold, hysteresis, and protection limits. | `{"threshold_x10":300,"hysteresis_x10":10}` |
 | **POST** | `/api/cooling/config` | Save persistent cooling threshold, lockout, and modes. | `{"threshold_x10":280,"hysteresis_x10":15}` |
 | **POST** | `/api/cooling/mode` | Switch cooling between `auto`, `force_off`, or temporary `test_on`.| `{"mode":"auto"}` |
-| **GET** | `/api/hardware/map` | Read active/pending GPIO mappings and safe options. | `{"active":{"float":32,"r1":26},"pending_reboot":false}` |
-| **POST** | `/api/hardware/map` | Stage new GPIO pins (Requires reboot confirmation). | `{"float":19,"r1":20,"confirm_reboot_required":true}` |
+| **GET** | `/api/hardware/map` | Read active/pending GPIO mappings and safe options. | `{"active":{"float_input_gpio":16,"pump_relay1_gpio":5},"reboot_required":false}` |
+| **POST** | `/api/hardware/map` | Stage new GPIO pins (Requires reboot confirmation). | `{"map":{"float_input_gpio":16,"pump_relay1_gpio":5,"pump_relay2_gpio":6,"ds18b20_gpio":7,"cooling_relay_gpio":8},"confirm_reboot_required":true}` |
 | **GET** | `/api/display/config` | Retrieve LCD backlight percent and dim timing settings. | `{"brightness":100,"dim_percent":70,"dim_timeout":300}` |
 | **POST** | `/api/display/config` | Update default LCD backlight settings. | `{"dim_percent":50}` |
 | **POST** | `/api/display/wake` | Reset screen saver backlight sleep timer. | `{"ok":true}` |

@@ -15,8 +15,11 @@ This file contains constants for product names, Wi-Fi parameters, session limits
 | `APP_TEMPLATE_AP_SSID` | The SoftAP SSID for setup mode | `"FishPump-Setup"` |
 | `APP_TEMPLATE_DEFAULT_USERNAME` | Default login username | `"admin"` |
 | `APP_TEMPLATE_DEFAULT_PASSWORD` | Default login password | `"admin123"` |
-| `APP_TEMPLATE_PUMP_FLOAT_GPIO` | GPIO pin for the binary float switch | `32` |
-| `APP_TEMPLATE_PUMP_RELAY_GPIO` | GPIO pin for the pump relay | `26` |
+| `APP_TEMPLATE_PUMP_FLOAT_GPIO` | Legacy float GPIO default | `32` (ESP32) / `16` (ESP32-S3) |
+| `APP_TEMPLATE_PUMP_RELAY_GPIO` | Legacy Relay 1 GPIO default | `26` (ESP32) / `5` (ESP32-S3) |
+| `APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY2_GPIO` | Relay 2 GPIO default | `27` (ESP32) / `6` (ESP32-S3) |
+| `APP_TEMPLATE_HW_DEFAULT_DS18B20_GPIO` | DS18B20 data GPIO default | `33` (ESP32) / `7` (ESP32-S3) |
+| `APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_GPIO` | Cooling relay GPIO default | `25` (ESP32) / `8` (ESP32-S3) |
 | `APP_TEMPLATE_PUMP_TIMER1_ON_SEC` | Default Timer 1 ON phase duration | `20` |
 | `APP_TEMPLATE_PUMP_TIMER1_OFF_SEC` | Default Timer 1 OFF phase duration | `60` |
 
@@ -26,14 +29,18 @@ This file configures the underlying ESP-IDF framework options. It is used as a b
 
 | Variable | Description |
 |----------|-------------|
-| `CONFIG_IDF_TARGET` | The target MCU (`esp32`) |
+| `CONFIG_IDF_TARGET` | The target MCU (`esp32` or `esp32s3`) |
 | `CONFIG_PARTITION_TABLE_CUSTOM_FILENAME` | Points to `partitions.csv` for custom OTA layout |
 | `CONFIG_ESPTOOLPY_FLASHSIZE_4MB` | Defines the board's flash size |
 | `CONFIG_LWIP_MAX_SOCKETS` | Set to 16 to handle HTTP server and DNS needs |
 
 ## Required vs Optional Settings
 
-- **Hardware GPIO Pins**: Required. Ensure that `APP_TEMPLATE_PUMP_FLOAT_GPIO` and `APP_TEMPLATE_PUMP_RELAY_GPIO` match your physical wiring. An incorrect relay pin can unexpectedly energize the pump.
+- **Hardware GPIO Pins**: Required. Ensure that the physical wiring matches
+  the selected target defaults and the active map shown by `/api/hardware/map`.
+  The firmware exposes only role-specific safe GPIO options; do not add
+  freeform GPIO numbers. An incorrect relay pin or polarity can unexpectedly
+  energize the pump.
 - **Wi-Fi Credentials**: Optional at build time. The default `APP_TEMPLATE_AP_SSID` provides a SoftAP fallback for initial configuration.
 - **Auto-Start**: Governed by `APP_TEMPLATE_PUMP_AUTO_START_DEFAULT` (default `false`). Required for safety reasons so the pump doesn't automatically start upon power loss recovery unless explicitly configured by the user.
 

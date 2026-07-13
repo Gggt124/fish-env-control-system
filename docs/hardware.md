@@ -1,33 +1,44 @@
 # Hardware Contract
 
-Phase 6 defined the firmware-owned hardware contract for the ESP32 DevKit V1
-30-pin target. Runtime code now consumes the float input, pump Relay 1, pump
-Relay 2, DS18B20 data, and cooling relay roles. Phase 10 adds the protected
-Hardware/Install page at `/hardware` for owner-accessible wiring review and
-pending GPIO map edits.
+The firmware-owned hardware contract supports both the ESP32 DevKit V1 30-pin
+target and ESP32-S3-DevKitC-1 WROOM-1-N16R8. Runtime code consumes the float
+input, pump Relay 1, pump Relay 2, DS18B20 data, and cooling relay roles. The
+protected Hardware/Install page at `/hardware` exposes only the role-specific
+application GPIO allowlist.
 
 ## Board Assumptions
 
-- Target board: classic ESP32 / ESP32 DevKit V1 30-pin.
+- Target board profile is selected at build time: classic ESP32 / ESP32 DevKit
+  V1 30-pin or ESP32-S3-DevKitC-1 WROOM-1-N16R8.
 - Logic rail: 3.3 V ESP32 GPIO.
 - Relay modules vary; active-low is the conservative default, but polarity is
   modeled independently for pump Relay 1, pump Relay 2, and the cooling relay.
 - Avoid flash pins, programming UART pins, strapping pins, and input-only pins
   for output roles.
+- On the S3 profile, GPIO19/20 are reserved for Native USB D-/D+, GPIO43/44
+  are reserved for the UART console, and GPIO27-37 are reserved by Octal
+  Flash/PSRAM. GPIO0/3/45/46 are strapping pins; GPIO21, 38-42, and 47 are
+  reserved because they participate in USB OTG boot/download behavior.
+- S3 TFT/system pins are fixed at GPIO9-14, GPIO0, GPIO38, GPIO39, and GPIO48.
+  The application allowlist is intentionally limited to GPIO1/2, GPIO5-8, and
+  GPIO15-18.
 
 ## Firmware Roles
 
 The `hardware_map` component exposes `hardware_role_t` values for:
 
-| Role | Default GPIO | Notes |
-|------|--------------|-------|
-| Float input | GPIO32 | Existing validated switch input, active-low to GND with pull-up. |
-| Pump Relay 1 | GPIO26 | Existing validated pump relay output. |
-| Pump Relay 2 | GPIO27 | Conservative second pump relay output. |
-| DS18B20 data | GPIO33 | Bidirectional one-wire data GPIO. |
-| Cooling relay | GPIO25 | Dedicated cooling relay output. |
+| Role | ESP32 Classic | ESP32-S3 | Notes |
+|------|---------------|----------|-------|
+| Float input | GPIO32 | GPIO16 | Active-low to GND with internal pull-up plus external 4.7 kOhm pull-up. |
+| Pump Relay 1 | GPIO26 | GPIO5 | Dedicated relay output; polarity is configurable. |
+| Pump Relay 2 | GPIO27 | GPIO6 | Dedicated relay output; polarity is configurable. |
+| DS18B20 data | GPIO33 | GPIO7 | Bidirectional one-wire data with external 4.7 kOhm pull-up. |
+| Cooling relay | GPIO25 | GPIO8 | Dedicated relay output; polarity is configurable. |
 
 Safe GPIO choices are role-specific option lists, not freeform numeric input.
+The `hardware_map` component owns the typed pin descriptors, capabilities,
+reserved-pin policy, role allowlists, duplicate detection, and validation used
+by NVS, the API, and boot-time runtime configuration.
 Output roles exclude GPIO34-GPIO39 because those ESP32 pins are input-only.
 Normal output options also avoid GPIO0, GPIO2, GPIO5, GPIO6-GPIO12, GPIO15, and
 GPIO16-GPIO17 to avoid boot-strapping, flash, PSRAM, and common module hazards.
@@ -49,7 +60,8 @@ Phase 6 assumes powered mode for the DS18B20:
 
 - DS18B20 VDD to 3.3 V.
 - DS18B20 GND to ESP32 GND.
-- DS18B20 DQ to the configured data GPIO, default GPIO33.
+- DS18B20 DQ to the configured data GPIO (GPIO33 on classic ESP32, GPIO7 on
+  ESP32-S3).
 - Add an external 4.7 kOhm pull-up resistor from DQ to 3.3 V.
 - Label the connector pins as `3V3`, `DQ`, and `GND`.
 

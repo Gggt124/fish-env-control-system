@@ -11,6 +11,6 @@ if(DEFINED IDF_TARGET AND NOT DEFINED SDKCONFIG)
 endif()
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(fish_pump_relay_timer_control VERSION 0.2.5)
+project(fish_pump_relay_timer_control VERSION 0.2.6)
 
 add_compile_definitions(APP_TEMPLATE_FIRMWARE_VERSION="v${PROJECT_VERSION}")

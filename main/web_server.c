@@ -722,6 +722,7 @@ static bool api_hardware_options_add_role(cJSON *options_root, hardware_role_t r
         if (!item) {
             return false;
         }
+        cJSON_AddNumberToObject(item, "pin_id", (double)options[i].pin);
         cJSON_AddNumberToObject(item, "gpio", options[i].gpio);
         cJSON_AddStringToObject(item, "label", options[i].label);
         cJSON_AddStringToObject(item, "role", hardware_map_role_name(options[i].role));

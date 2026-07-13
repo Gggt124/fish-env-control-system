@@ -18,6 +18,69 @@ typedef enum {
 } hardware_role_t;
 
 typedef enum {
+    HARDWARE_PIN_INVALID = -1,
+    HARDWARE_PIN_GPIO0 = 0,
+    HARDWARE_PIN_GPIO1,
+    HARDWARE_PIN_GPIO2,
+    HARDWARE_PIN_GPIO3,
+    HARDWARE_PIN_GPIO4,
+    HARDWARE_PIN_GPIO5,
+    HARDWARE_PIN_GPIO6,
+    HARDWARE_PIN_GPIO7,
+    HARDWARE_PIN_GPIO8,
+    HARDWARE_PIN_GPIO9,
+    HARDWARE_PIN_GPIO10,
+    HARDWARE_PIN_GPIO11,
+    HARDWARE_PIN_GPIO12,
+    HARDWARE_PIN_GPIO13,
+    HARDWARE_PIN_GPIO14,
+    HARDWARE_PIN_GPIO15,
+    HARDWARE_PIN_GPIO16,
+    HARDWARE_PIN_GPIO17,
+    HARDWARE_PIN_GPIO18,
+    HARDWARE_PIN_GPIO19,
+    HARDWARE_PIN_GPIO20,
+    HARDWARE_PIN_GPIO21,
+    HARDWARE_PIN_GPIO22,
+    HARDWARE_PIN_GPIO23,
+    HARDWARE_PIN_GPIO24,
+    HARDWARE_PIN_GPIO25,
+    HARDWARE_PIN_GPIO26,
+    HARDWARE_PIN_GPIO27,
+    HARDWARE_PIN_GPIO28,
+    HARDWARE_PIN_GPIO29,
+    HARDWARE_PIN_GPIO30,
+    HARDWARE_PIN_GPIO31,
+    HARDWARE_PIN_GPIO32,
+    HARDWARE_PIN_GPIO33,
+    HARDWARE_PIN_GPIO34,
+    HARDWARE_PIN_GPIO35,
+    HARDWARE_PIN_GPIO36,
+    HARDWARE_PIN_GPIO37,
+    HARDWARE_PIN_GPIO38,
+    HARDWARE_PIN_GPIO39,
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    HARDWARE_PIN_GPIO40,
+    HARDWARE_PIN_GPIO41,
+    HARDWARE_PIN_GPIO42,
+    HARDWARE_PIN_GPIO43,
+    HARDWARE_PIN_GPIO44,
+    HARDWARE_PIN_GPIO45,
+    HARDWARE_PIN_GPIO46,
+    HARDWARE_PIN_GPIO47,
+    HARDWARE_PIN_GPIO48,
+#endif
+    HARDWARE_PIN_COUNT,
+} hardware_pin_t;
+
+typedef enum {
+    HARDWARE_PIN_CAP_NONE = 0,
+    HARDWARE_PIN_CAP_INPUT = 1u << 0,
+    HARDWARE_PIN_CAP_OUTPUT = 1u << 1,
+    HARDWARE_PIN_CAP_INTERNAL_PULL = 1u << 2,
+} hardware_pin_capability_t;
+
+typedef enum {
     HARDWARE_RELAY_ACTIVE_HIGH = 0,
     HARDWARE_RELAY_ACTIVE_LOW,
 } hardware_relay_polarity_t;
@@ -48,7 +111,15 @@ typedef struct {
 } hardware_relay_polarity_map_t;
 
 typedef struct {
+    hardware_pin_t pin;
+    gpio_num_t gpio;
+    hardware_pin_capability_t capabilities;
+    const char *label;
+} hardware_pin_descriptor_t;
+
+typedef struct {
     hardware_role_t role;
+    hardware_pin_t pin;
     gpio_num_t gpio;
     bool input_capable;
     bool output_capable;
@@ -59,6 +130,11 @@ typedef struct {
 
 hardware_map_t hardware_map_defaults(void);
 hardware_relay_polarity_map_t hardware_map_default_polarities(void);
+
+gpio_num_t hardware_map_pin_to_gpio(hardware_pin_t pin);
+bool hardware_map_pin_valid(hardware_pin_t pin);
+const hardware_pin_descriptor_t *hardware_map_pin_descriptor(hardware_pin_t pin);
+bool hardware_map_pin_is_reserved(hardware_pin_t pin);
 
 const char *hardware_map_role_name(hardware_role_t role);
 const char *hardware_map_polarity_name(hardware_relay_polarity_t polarity);

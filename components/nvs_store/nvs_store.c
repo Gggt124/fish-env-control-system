@@ -741,6 +741,11 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
 
     if (blob_err == ESP_OK) {
         if (blob_len > 0 && (blob[0] == NVS_PUMP_BLOB_VERSION || blob[0] == 1)) {
+            if (blob_len <= 1) {
+                ESP_LOGW(TAG, "Pump settings blob has no payload; suppressing pump start");
+                nvs_close(handle);
+                return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
+            }
             size_t copy_len = blob_len - 1;
             if (copy_len > sizeof(nvs_store_pump_settings_t)) {
                 copy_len = sizeof(nvs_store_pump_settings_t);
@@ -752,7 +757,9 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
             memcpy(&loaded, blob + 1, copy_len);
             ESP_LOGD(TAG, "Pump settings loaded from blob (v%d)", NVS_PUMP_BLOB_VERSION);
         } else {
-            ESP_LOGW(TAG, "Incompatible blob version or format");
+            ESP_LOGW(TAG, "Incompatible blob version or format; suppressing pump start");
+            nvs_close(handle);
+            return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
         }
         nvs_close(handle);
     } else if (blob_err == ESP_ERR_NVS_NOT_FOUND) {
@@ -796,7 +803,9 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
         }
 
         esp_err_t r2_ret = load_bool_key(handle, NVS_PUMP_KEY_RELAY2_LOW, &relay2_active_low);
-        if (r2_ret != ESP_OK && r2_ret != ESP_ERR_NVS_NOT_FOUND) {
+        if (r2_ret == ESP_ERR_NVS_NOT_FOUND) {
+            relay2_active_low = relay_active_low;
+        } else if (r2_ret != ESP_OK) {
             nvs_close(handle);
             return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
         }
@@ -821,6 +830,11 @@ nvs_store_pump_settings_load_status_t nvs_store_load_pump_settings(nvs_store_pum
             nvs_store_save_pump_settings(&loaded);  /* migrate on next boot */
             ESP_LOGI(TAG, "Migrated pump settings from legacy keys to blob");
         }
+    } else {
+        ESP_LOGW(TAG, "Pump blob read failed (%s); suppressing pump start",
+                 esp_err_to_name(blob_err));
+        nvs_close(handle);
+        return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
     }
     if (!pump_settings_valid(&loaded)) {
         return NVS_STORE_PUMP_SETTINGS_DEFAULTS_INVALID;
