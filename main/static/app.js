@@ -2073,6 +2073,8 @@ function applyHardwareMap(data) {
     renderHardwareSummary('hardware-pending-summary', data.pending_valid ? data.pending : null, 'pending', data.active);
     populateHardwareSelects(data.options || {}, effective || data.active || {});
     renderHardwareWiring(data.active, data.pending_valid ? data.pending : null);
+    renderLockedPins(data.board, data.locked_pins);
+    applyBoardWiringFacts(data.board);
 
     setHardwareClean();
     setHardwareState(data.reboot_required ? 'บันทึกผังใหม่แล้ว - จำเป็นต้องรีบูตระบบ' : 'โหลดผังปัจจุบันเรียบร้อย');
@@ -2154,6 +2156,59 @@ function renderHardwareWiring(active, pending) {
     }
 }
 
+function renderLockedPins(board, lockedPins) {
+    if (!lockedPins) return;
+    var map = {
+        'locked-boot-btn': lockedPins.boot_btn,
+        'locked-ext-btn':  lockedPins.ext_btn,
+        'locked-led':      lockedPins.led,
+        'locked-ext-led':  lockedPins.ext_led,
+        'locked-rgb-led':  lockedPins.rgb_led,
+        'locked-tft-sck':  lockedPins.tft_sck,
+        'locked-tft-mosi': lockedPins.tft_mosi,
+        'locked-tft-cs':   lockedPins.tft_cs,
+        'locked-tft-dc':   lockedPins.tft_dc,
+        'locked-tft-rst':  lockedPins.tft_rst,
+        'locked-tft-led':  lockedPins.tft_led
+    };
+    for (var id in map) {
+        if (map[id] === undefined || map[id] === null) continue;
+        setText(id, 'GPIO ' + map[id]);
+    }
+    var ledRow = document.getElementById('locked-led-row');
+    var rgbRow = document.getElementById('locked-rgb-led-row');
+    var hasRgb = lockedPins.rgb_led !== undefined && lockedPins.rgb_led !== null;
+    var hasLed = lockedPins.led !== undefined && lockedPins.led !== null;
+
+    if (ledRow) {
+        if (hasRgb) {
+            ledRow.classList.add('hidden');
+        } else if (hasLed) {
+            ledRow.classList.remove('hidden');
+            setText('locked-led', 'GPIO ' + lockedPins.led);
+        } else {
+            ledRow.classList.add('hidden');
+        }
+    }
+    if (rgbRow) {
+        if (hasRgb) {
+            rgbRow.classList.remove('hidden');
+            setText('locked-rgb-led', 'GPIO ' + lockedPins.rgb_led);
+        } else {
+            rgbRow.classList.add('hidden');
+        }
+    }
+}
+
+function applyBoardWiringFacts(board) {
+    if (!board || !board.target) return;
+    var isS3 = board.target === 'esp32s3';
+    var frAlt = document.getElementById('wiring-fr-alt-sentence');
+    if (frAlt) frAlt.classList.toggle('hidden', isS3);
+    var inputOnly = document.getElementById('wiring-input-only-bullet');
+    if (inputOnly) inputOnly.classList.toggle('hidden', isS3);
+}
+
 function readHardwareMapForm() {
     var map = {};
     for (var i = 0; i < HARDWARE_FIELDS.length; i++) {
@@ -2215,9 +2270,10 @@ function initStatus() {
 
 function clearStatusSkeletonsToOffline() {
     var ids = [
-        'st-chip-model', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
+        'st-chip-model', 'st-board-name', 'st-chip-revision', 'st-chip-cores', 'st-cpu-freq',
         'st-idf-version', 'st-project-version', 'st-reset-reason',
         'st-free-heap', 'st-min-free-heap', 'st-largest-free-block', 'st-total-heap',
+        'st-psram-free', 'st-psram-total',
         'st-uptime', 'st-sta-status', 'st-sta-ssid', 'st-sta-ip', 'st-sta-rssi',
         'st-sta-channel', 'st-sta-auth', 'st-mac-sta', 'st-ap-ssid', 'st-ap-ip',
         'st-ap-clients', 'st-ap-client-rssi', 'st-mac-ap', 'st-wifi-mode',
@@ -2248,6 +2304,7 @@ function refreshFullStatus() {
 
         /* System */
         setText('st-chip-model', data.chip_model);
+        setText('st-board-name', data.board_name || '--');
         setText('st-chip-revision', '' + data.chip_revision);
         setText('st-chip-cores', '' + data.chip_cores);
         setText('st-cpu-freq', data.cpu_freq_mhz + ' MHz');
@@ -2259,7 +2316,7 @@ function refreshFullStatus() {
         }
         setText('st-reset-reason', resetText);
 
-        /* Memory */
+        /* Memory (internal DRAM) */
         var freeKb = (data.free_heap / 1024).toFixed(0);
         var minKb = (data.min_free_heap / 1024).toFixed(0);
         var largestKb = (data.largest_free_block / 1024).toFixed(0);
@@ -2276,6 +2333,24 @@ function refreshFullStatus() {
         if (bar) bar.style.width = Math.min(100, Math.max(5, pct)).toFixed(0) + '%';
         var pctEl = document.getElementById('st-heap-pct');
         if (pctEl) pctEl.textContent = 'Usage: ' + pct.toFixed(1) + '%';
+
+        /* PSRAM (shown only when the board reports SPIRAM) */
+        var psramTotal = data.psram_total || 0;
+        var psramFreeRow = document.getElementById('st-psram-free-row');
+        var psramTotalRow = document.getElementById('st-psram-total-row');
+        if (psramTotal > 0) {
+            if (psramFreeRow) psramFreeRow.style.display = '';
+            if (psramTotalRow) psramTotalRow.style.display = '';
+            var psramFree = data.psram_free || 0;
+            var psramFreeKb = (psramFree / 1024).toFixed(0);
+            var psramTotalKb = (psramTotal / 1024).toFixed(0);
+            var psramPct = ((psramTotal - psramFree) / psramTotal * 100);
+            setText('st-psram-free', psramFreeKb + ' KB (' + psramPct.toFixed(1) + '% used)');
+            setText('st-psram-total', psramTotalKb + ' KB');
+        } else {
+            if (psramFreeRow) psramFreeRow.style.display = 'none';
+            if (psramTotalRow) psramTotalRow.style.display = 'none';
+        }
 
         /* Uptime */
         var secs = Math.floor(data.uptime_ms / 1000);

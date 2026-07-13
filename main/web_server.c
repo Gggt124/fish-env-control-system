@@ -722,6 +722,7 @@ static bool api_hardware_options_add_role(cJSON *options_root, hardware_role_t r
         if (!item) {
             return false;
         }
+        cJSON_AddNumberToObject(item, "pin_id", (double)options[i].pin);
         cJSON_AddNumberToObject(item, "gpio", options[i].gpio);
         cJSON_AddStringToObject(item, "label", options[i].label);
         cJSON_AddStringToObject(item, "role", hardware_map_role_name(options[i].role));
@@ -756,6 +757,41 @@ static bool api_hardware_map_add_options(cJSON *root)
             return false;
         }
     }
+
+    return true;
+}
+
+/* Report firmware-locked GPIO pins (TFT, buttons, LEDs) and board identity to
+ * the web UI so the hardware page is not hardcoded to one board. Pin values
+ * come from existing compile-time macros in app_config.h (not new assignments). */
+static bool api_hardware_add_board_info(cJSON *root)
+{
+    if (!root) return false;
+
+    cJSON *board = cJSON_AddObjectToObject(root, "board");
+    if (!board) return false;
+    cJSON_AddStringToObject(board, "target",   APP_TEMPLATE_BOARD_TARGET);
+    cJSON_AddStringToObject(board, "name",     APP_TEMPLATE_BOARD_NAME);
+    cJSON_AddNumberToObject(board, "flash_mb", (double)APP_TEMPLATE_BOARD_FLASH_MB);
+    cJSON_AddNumberToObject(board, "psram_mb", (double)APP_TEMPLATE_BOARD_PSRAM_MB);
+
+    cJSON *locked = cJSON_AddObjectToObject(root, "locked_pins");
+    if (!locked) return false;
+    cJSON_AddNumberToObject(locked, "boot_btn", (double)APP_CONFIG_BOOT_BTN_GPIO);
+    cJSON_AddNumberToObject(locked, "ext_btn",  (double)APP_CONFIG_EXT_BTN_GPIO);
+#ifndef CONFIG_IDF_TARGET_ESP32S3
+    cJSON_AddNumberToObject(locked, "led",      (double)APP_CONFIG_LED_GPIO);
+#endif
+    cJSON_AddNumberToObject(locked, "ext_led", (double)APP_CONFIG_EXT_LED_GPIO);
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+    cJSON_AddNumberToObject(locked, "rgb_led", (double)APP_CONFIG_RGB_LED_GPIO);
+#endif
+    cJSON_AddNumberToObject(locked, "tft_cs",   (double)APP_TEMPLATE_TFT_CS_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_rst",  (double)APP_TEMPLATE_TFT_RESET_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_dc",   (double)APP_TEMPLATE_TFT_DC_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_mosi", (double)APP_TEMPLATE_TFT_MOSI_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_sck",  (double)APP_TEMPLATE_TFT_SCK_GPIO);
+    cJSON_AddNumberToObject(locked, "tft_led",  (double)APP_TEMPLATE_TFT_LED_GPIO);
 
     return true;
 }
@@ -799,6 +835,10 @@ static esp_err_t api_hardware_map_send(httpd_req_t *req)
         cJSON_AddNullToObject(root, "pending");
     }
     if (!api_hardware_map_add_options(root)) {
+        cJSON_Delete(root);
+        return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
+    }
+    if (!api_hardware_add_board_info(root)) {
         cJSON_Delete(root);
         return send_api_error(req, "memory", "JSON allocation failed", "500 Internal Server Error");
     }
@@ -3801,6 +3841,8 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     esp_chip_info_t chip;
     esp_chip_info(&chip);
     json_gen_add_string_safe(&gen, "chip_model", chip_model_to_string(chip.model));
+    json_gen_add_string(&gen, "board_name",   APP_TEMPLATE_BOARD_NAME);
+    json_gen_add_string(&gen, "board_target", APP_TEMPLATE_BOARD_TARGET);
     json_gen_add_number(&gen, "chip_revision", (double)(chip.revision));
     json_gen_add_number(&gen, "chip_cores", (double)(chip.cores));
     json_gen_add_number(&gen, "cpu_freq_mhz", (double)(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ));
@@ -3824,15 +3866,20 @@ static esp_err_t handle_api_status(httpd_req_t *req)
     format_mac(mac, mac_str);
     json_gen_add_string(&gen, "mac_ap", mac_str);
 
-    /* ---------- Memory ---------- */
-    uint32_t free_heap = wifi_manager_get_free_heap();
-    uint32_t min_free_heap = esp_get_minimum_free_heap_size();
+    /* ---------- Memory (internal DRAM — same capability for all metrics) ---------- */
+    uint32_t free_heap = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    uint32_t min_free_heap = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);
     uint32_t total_heap = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
     uint32_t largest_free_block = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
     json_gen_add_number(&gen, "free_heap", (double)(free_heap));
     json_gen_add_number(&gen, "min_free_heap", (double)(min_free_heap));
     json_gen_add_number(&gen, "total_heap", (double)(total_heap));
     json_gen_add_number(&gen, "largest_free_block", (double)(largest_free_block));
+
+    uint32_t psram_total = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+    uint32_t psram_free = psram_total > 0 ? heap_caps_get_free_size(MALLOC_CAP_SPIRAM) : 0;
+    json_gen_add_number(&gen, "psram_total", (double)(psram_total));
+    json_gen_add_number(&gen, "psram_free", (double)(psram_free));
 
     /* ---------- Uptime ---------- */
     json_gen_add_number(&gen, "uptime_ms", (double)(wifi_manager_get_uptime_ms()));
@@ -4389,16 +4436,20 @@ bool web_server_queue_health_check(void)
     return true;
 }
 
-bool web_server_check_health(uint32_t timeout_ms)
+bool web_server_check_health(uint32_t timeout_ms, uint32_t *out_staleness_ms)
 {
     if (!s_server) {
+        if (out_staleness_ms) {
+            *out_staleness_ms = 0;
+        }
         return true; // Not started yet, ignore
     }
     uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000);
-    if ((now_ms - s_httpd_last_alive_ms) > timeout_ms) {
-        return false;
+    uint32_t staleness = now_ms - s_httpd_last_alive_ms;
+    if (out_staleness_ms) {
+        *out_staleness_ms = staleness;
     }
-    return true;
+    return staleness <= timeout_ms;
 }
 
 bool web_server_start(void)

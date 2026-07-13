@@ -44,6 +44,38 @@ void tft_display_request_resync(void) {
 // Helper to swap bytes for 16-bit RGB565 to match big-endian SPI transmission
 #define SWAP_BYTES(val) ((((val) & 0xff) << 8) | (((val) & 0xff00) >> 8))
 
+/* Fixed widget regions for partial (dirty) runtime updates — one SPI flush each. */
+#define TFT_WIFI_BOX_X      160
+#define TFT_WIFI_BOX_Y      5
+#define TFT_WIFI_BOX_W      152
+#define TFT_WIFI_BOX_H      16
+
+#define TFT_PUMP_BIG_X      11
+#define TFT_PUMP_BIG_Y      60
+#define TFT_PUMP_BIG_W      128
+#define TFT_PUMP_BIG_H      32
+
+#define TFT_PUMP_VAL_X      75
+#define TFT_PUMP_VAL_W      80
+#define TFT_PUMP_VAL_H      16
+#define TFT_PUMP_TIMER_Y    120
+#define TFT_PUMP_PHASE_Y    145
+#define TFT_PUMP_NEXT_Y     170
+
+#define TFT_COOL_TEMP_X     185
+#define TFT_COOL_TEMP_Y     60
+#define TFT_COOL_TEMP_W     112
+#define TFT_COOL_TEMP_H     32
+
+#define TFT_COOL_VAL_X      235
+#define TFT_COOL_VAL_W      80
+#define TFT_COOL_VAL_H      16
+#define TFT_COOL_MODE_Y     120
+#define TFT_COOL_RELAY_Y    145
+#define TFT_COOL_LOCK_Y     170
+
+#define TFT_BOX_BUF_MAX_PIXELS (128 * 32)
+
 static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
     BaseType_t high_task_awoken = pdFALSE;
     if (s_trans_done_sem) {
@@ -77,7 +109,7 @@ esp_err_t tft_display_init(void) {
         .speed_mode       = LEDC_LOW_SPEED_MODE,
         .timer_num        = LEDC_TIMER_0,
         .duty_resolution  = LEDC_TIMER_8_BIT,
-        .freq_hz          = 1000,
+        .freq_hz          = 20000,
         .clk_cfg          = LEDC_AUTO_CLK
     };
     ret = ledc_timer_config(&ledc_timer);
@@ -233,6 +265,105 @@ void tft_clear(uint16_t color) {
     tft_fill_rect(0, 0, TFT_WIDTH, TFT_HEIGHT, color);
 }
 
+/* Wait for DMA color transfer; on timeout drain a late Give to avoid overlap. */
+static bool tft_wait_trans_done_locked(void) {
+    if (xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500)) == pdTRUE) {
+        return true;
+    }
+    xSemaphoreTake(s_trans_done_sem, 0);
+    return false;
+}
+
+static void tft_put_char8_be(uint16_t *dst, int dst_w, int col, char c,
+                             uint16_t fg_be, uint16_t bg_be) {
+    const uint8_t *bitmap = font8x16[(uint8_t)c];
+    for (int row = 0; row < 16; row++) {
+        uint8_t bits = bitmap[row];
+        for (int ch_col = 0; ch_col < 8; ch_col++) {
+            bool pixel_on = (bits & (0x80 >> ch_col)) != 0;
+            dst[row * dst_w + col + ch_col] = pixel_on ? fg_be : bg_be;
+        }
+    }
+}
+
+static void tft_put_char_x2_be(uint16_t *dst, int dst_w, int col, char c,
+                               uint16_t fg_be, uint16_t bg_be) {
+    const uint8_t *bitmap = font8x16[(uint8_t)c];
+    for (int row = 0; row < 16; row++) {
+        uint8_t bits = bitmap[row];
+        for (int ch_col = 0; ch_col < 8; ch_col++) {
+            bool pixel_on = (bits & (0x80 >> ch_col)) != 0;
+            uint16_t p_color = pixel_on ? fg_be : bg_be;
+            int base_row1 = (row * 2) * dst_w;
+            int base_row2 = (row * 2 + 1) * dst_w;
+            int col2 = col + (ch_col * 2);
+            dst[base_row1 + col2] = p_color;
+            dst[base_row1 + col2 + 1] = p_color;
+            dst[base_row2 + col2] = p_color;
+            dst[base_row2 + col2 + 1] = p_color;
+        }
+    }
+}
+
+static bool tft_draw_text_box_locked(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                                     const char *str, uint16_t fg, uint16_t bg,
+                                     bool scale_x2) {
+    if (!str || w == 0 || h == 0 || x >= TFT_WIDTH || y >= TFT_HEIGHT) {
+        return false;
+    }
+    if (x + w > TFT_WIDTH || y + h > TFT_HEIGHT) {
+        return false;
+    }
+
+    size_t pixels = (size_t)w * (size_t)h;
+    if (pixels > TFT_BOX_BUF_MAX_PIXELS) {
+        ESP_LOGE(TAG, "text box too large: %ux%u", (unsigned)w, (unsigned)h);
+        return false;
+    }
+
+    static uint16_t box_buf[TFT_BOX_BUF_MAX_PIXELS];
+    uint16_t fg_be = SWAP_BYTES(fg);
+    uint16_t bg_be = SWAP_BYTES(bg);
+
+    for (size_t i = 0; i < pixels; i++) {
+        box_buf[i] = bg_be;
+    }
+
+    int char_w = scale_x2 ? 16 : 8;
+    int max_cols = (int)w / char_w;
+    int col_idx = 0;
+    for (const char *p = str; *p && col_idx < max_cols; p++, col_idx++) {
+        if (scale_x2) {
+            tft_put_char_x2_be(box_buf, (int)w, col_idx * 16, *p, fg_be, bg_be);
+        } else {
+            tft_put_char8_be(box_buf, (int)w, col_idx * 8, *p, fg_be, bg_be);
+        }
+    }
+
+    esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + w, y + h, box_buf);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "draw_bitmap box (%u,%u) %ux%u failed: %s",
+                 (unsigned)x, (unsigned)y, (unsigned)w, (unsigned)h, esp_err_to_name(err));
+        return false;
+    }
+    if (!tft_wait_trans_done_locked()) {
+        ESP_LOGW(TAG, "SPI timeout box (%u,%u) %ux%u", (unsigned)x, (unsigned)y, (unsigned)w, (unsigned)h);
+        return false;
+    }
+    return true;
+}
+
+static void tft_panel_resync_registers_locked(void) {
+    esp_err_t r_inv = esp_lcd_panel_invert_color(s_panel_handle, APP_TEMPLATE_TFT_INVERT_COLOR);
+    esp_err_t r_sxy = esp_lcd_panel_swap_xy(s_panel_handle, true);
+    esp_err_t r_mir = esp_lcd_panel_mirror(s_panel_handle, true, false);
+    if (r_inv != ESP_OK || r_sxy != ESP_OK || r_mir != ESP_OK) {
+        ESP_LOGE(TAG, "panel re-sync FAILED: invert=%s swap_xy=%s mirror=%s — re-arming",
+                 esp_err_to_name(r_inv), esp_err_to_name(r_sxy), esp_err_to_name(r_mir));
+        tft_display_request_resync();
+    }
+}
+
 static void tft_draw_char_locked(uint16_t x, uint16_t y, char c, uint16_t color, uint16_t bg_color) {
     uint16_t pixel_buf[128];
     uint16_t color_be = SWAP_BYTES(color);
@@ -247,7 +378,7 @@ static void tft_draw_char_locked(uint16_t x, uint16_t y, char c, uint16_t color,
     }
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + 8, y + 16, pixel_buf);
     if (err == ESP_OK) {
-        xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500));
+        tft_wait_trans_done_locked();
     }
 }
 
@@ -272,7 +403,7 @@ static void tft_draw_char_x2_locked(uint16_t x, uint16_t y, char c, uint16_t col
     }
     esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, y, x + 16, y + 32, pixel_buf);
     if (err == ESP_OK) {
-        xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500));
+        tft_wait_trans_done_locked();
     }
 }
 
@@ -320,6 +451,24 @@ void tft_draw_string_x2(uint16_t x, uint16_t y, const char *str, uint16_t color,
     }
 }
 
+void tft_draw_string_box(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                         const char *str, uint16_t color, uint16_t bg_color) {
+    if (!s_panel_handle || !s_tft_mutex || !str) return;
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+        tft_draw_text_box_locked(x, y, w, h, str, color, bg_color, false);
+        xSemaphoreGive(s_tft_mutex);
+    }
+}
+
+void tft_draw_string_x2_box(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                            const char *str, uint16_t color, uint16_t bg_color) {
+    if (!s_panel_handle || !s_tft_mutex || !str) return;
+    if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+        tft_draw_text_box_locked(x, y, w, h, str, color, bg_color, true);
+        xSemaphoreGive(s_tft_mutex);
+    }
+}
+
 void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
     if (!s_panel_handle || !s_tft_mutex || x >= TFT_WIDTH || y >= TFT_HEIGHT || w == 0 || h == 0) {
         return;
@@ -335,22 +484,38 @@ void tft_fill_rect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colo
         return;
     }
 
-    // Static (file-scope) buffer — safely protected by s_tft_mutex
-    static uint16_t chunk_buf[320];
+    /* Batch up to 8 rows per SPI transfer (matches max_transfer_sz headroom,
+     * fewer DC float gaps than 1-row fills → less EMI exposure). */
+    enum { TFT_FILL_ROWS = 8 };
+    static uint16_t chunk_buf[TFT_WIDTH * TFT_FILL_ROWS];
     uint16_t color_be = SWAP_BYTES(color);
-    for (int i = 0; i < w; i++) {
-        chunk_buf[i] = color_be;
-    }
+    const size_t pixels_per_row = w;
 
-    for (uint16_t cy = y; cy < y + h; cy++) {
-        esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, cy, x + w, cy + 1, chunk_buf);
-        if (err == ESP_OK) {
-            if (xSemaphoreTake(s_trans_done_sem, pdMS_TO_TICKS(500)) != pdTRUE) {
-                break;
+    for (uint16_t cy = y; cy < y + h; ) {
+        uint16_t rows = (uint16_t)(y + h - cy);
+        if (rows > TFT_FILL_ROWS) {
+            rows = TFT_FILL_ROWS;
+        }
+        for (uint16_t r = 0; r < rows; r++) {
+            uint16_t *row_ptr = &chunk_buf[r * pixels_per_row];
+            for (uint16_t i = 0; i < w; i++) {
+                row_ptr[i] = color_be;
             }
         }
+        esp_err_t err = esp_lcd_panel_draw_bitmap(s_panel_handle, x, cy, x + w, cy + rows, chunk_buf);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "fill_rect draw_bitmap (%u,%u) failed: %s",
+                     (unsigned)x, (unsigned)cy, esp_err_to_name(err));
+            break;
+        }
+        if (!tft_wait_trans_done_locked()) {
+            ESP_LOGW(TAG, "SPI timeout fill_rect (%u,%u) %ux%u",
+                     (unsigned)x, (unsigned)cy, (unsigned)w, (unsigned)rows);
+            break;
+        }
+        cy = (uint16_t)(cy + rows);
     }
-    
+
     xSemaphoreGive(s_tft_mutex);
 }
 
@@ -395,6 +560,7 @@ void tft_display_draw_dashboard_skeleton(void) {
 
 static atomic_uchar s_current_brightness = ATOMIC_VAR_INIT(100);
 static uint8_t s_idle_dim_percent = APP_TEMPLATE_TFT_DIM_PERCENT;
+static bool s_bl_in_gpio_mode = false;
 
 void tft_display_set_idle_dim_percent(uint8_t percent) {
     s_idle_dim_percent = (percent <= 100) ? percent : APP_TEMPLATE_TFT_DIM_PERCENT;
@@ -404,15 +570,50 @@ uint8_t tft_display_get_idle_dim_percent(void) {
     return s_idle_dim_percent;
 }
 
+/* Re-bind BL GPIO back to the LEDC peripheral after push-pull GPIO mode. */
+static esp_err_t tft_bl_rebind_to_ledc(void) {
+    ledc_channel_config_t ledc_channel = {
+        .speed_mode     = LEDC_LOW_SPEED_MODE,
+        .channel        = LEDC_CHANNEL_0,
+        .timer_sel      = LEDC_TIMER_0,
+        .intr_type      = LEDC_INTR_DISABLE,
+        .gpio_num       = APP_TEMPLATE_TFT_LED_GPIO,
+        .duty           = 0,
+        .hpoint         = 0
+    };
+    return ledc_channel_config(&ledc_channel);
+}
+
 void tft_display_set_brightness(uint8_t percent)
 {
     if (percent > 100) percent = 100;
     if (atomic_load(&s_current_brightness) == percent) return;
-    
     atomic_store(&s_current_brightness, percent);
-    uint32_t duty = (255 * percent) / 100;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+
+    if (percent == 0) {
+        /* dim=0: switch BL to push-pull LOW. LEDC's PWM-LOW state is
+         * high-impedance and vulnerable to noise from external DC-DC
+         * supplies (visible flash on noisy PSU). A driven GPIO LOW
+         * output sinks the noise instead of letting it light the panel. */
+        if (!s_bl_in_gpio_mode) {
+            ledc_stop(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0);
+            gpio_reset_pin(APP_TEMPLATE_TFT_LED_GPIO);
+            gpio_set_direction(APP_TEMPLATE_TFT_LED_GPIO, GPIO_MODE_OUTPUT);
+            gpio_set_level(APP_TEMPLATE_TFT_LED_GPIO, 0);
+            s_bl_in_gpio_mode = true;
+        }
+    } else {
+        if (s_bl_in_gpio_mode) {
+            gpio_reset_pin(APP_TEMPLATE_TFT_LED_GPIO);
+            if (tft_bl_rebind_to_ledc() != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to re-bind BL GPIO to LEDC");
+            }
+            s_bl_in_gpio_mode = false;
+        }
+        uint32_t duty = (255 * percent) / 100;
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    }
     ESP_LOGI(TAG, "Backlight set to %d%%", percent);
 }
 
@@ -424,37 +625,73 @@ void tft_display_reset_idle_timer(void)
 
 static void tft_display_task(void *pvParameters) {
     ESP_LOGI(TAG, "TFT display background update task started");
-    
+
     tft_display_draw_dashboard_skeleton();
-    
+
     static struct {
         char wifi[24];
         uint32_t uptime_sec;
-        
+
         bool pump_running;
         pump_control_active_timer_t pump_active_timer;
         pump_control_timer_phase_t pump_phase;
         uint32_t pump_countdown_sec;
         bool pump_relay_energized;
-        
+
         bool cooling_temp_valid;
         float cooling_temp;
+        uint16_t cooling_temp_color;
         bool cooling_relay_energized;
         cooling_control_mode_t cooling_mode;
         bool cooling_lockout_active;
     } s_tft_cache;
-    
+
     bool s_cache_valid = false;
-    
+    uint32_t resync_counter = 0;
+
     TickType_t last_wakeup_time = xTaskGetTickCount();
     while (1) {
+        bool screen_off = (atomic_load(&s_current_brightness) == 0);
+
+        if (screen_off) {
+            /* Skip SPI while BL is off. Panel keeps last frame; refresh dynamic
+             * widgets only when backlight returns (no full-screen redraw). */
+            s_cache_valid = false;
+            vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(200));
+            continue;
+        }
+
         pump_control_status_t pump = {0};
         pump_control_get_status(&pump);
-        
+
         cooling_control_status_t cooling = {0};
         cooling_control_get_status(&cooling);
-        
-        // 1. Wi-Fi status
+
+        bool pump_relay_now = pump.running && (pump.phase == PUMP_CONTROL_PHASE_ON);
+        bool cooling_relay_now = cooling.relay_energized;
+
+        bool pump_relay_edge = (s_cache_valid && s_tft_cache.pump_relay_energized != pump_relay_now);
+        bool cooling_relay_edge = (s_cache_valid && s_tft_cache.cooling_relay_energized != cooling_relay_now);
+        bool relay_changed = pump_relay_edge || cooling_relay_edge;
+        bool ext_request = atomic_exchange(&s_resync_requested, false);
+        bool periodic = (++resync_counter >= 150); /* 150 × 200ms = 30 s */
+
+        /* Register re-sync only (cheap, no visual blink). After relay EMI,
+         * invalidate cache so dynamic widgets redraw via single-flush boxes. */
+        if (relay_changed || ext_request || periodic) {
+            if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+                tft_panel_resync_registers_locked();
+                xSemaphoreGive(s_tft_mutex);
+                resync_counter = 0;
+            } else if (relay_changed || ext_request) {
+                tft_display_request_resync();
+            }
+            if (relay_changed) {
+                s_cache_valid = false;
+            }
+        }
+
+        /* Wi-Fi status */
         char wifi_str[32];
         if (wifi_manager_is_sta_connected()) {
             snprintf(wifi_str, sizeof(wifi_str), "STA: %s", wifi_manager_get_sta_ip());
@@ -463,62 +700,74 @@ static void tft_display_task(void *pvParameters) {
         } else {
             snprintf(wifi_str, sizeof(wifi_str), "DISCONNECT     ");
         }
-        
+
         char wifi_formatted[24];
         snprintf(wifi_formatted, sizeof(wifi_formatted), "%-19.19s", wifi_str);
-        
+
         if (!s_cache_valid || strcmp(s_tft_cache.wifi, wifi_formatted) != 0) {
             strcpy(s_tft_cache.wifi, wifi_formatted);
-            tft_draw_string(160, 5, wifi_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
+            tft_draw_string_box(TFT_WIFI_BOX_X, TFT_WIFI_BOX_Y, TFT_WIFI_BOX_W, TFT_WIFI_BOX_H,
+                                wifi_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_PANEL);
         }
-        
-        // 3. Pump Status
+
+        /* Pump status */
         bool pump_running = pump.running;
         pump_control_active_timer_t active_timer = pump.active_timer;
         pump_control_timer_phase_t phase = pump.phase;
-        
+
         bool pump_running_changed = (!s_cache_valid || s_tft_cache.pump_running != pump_running);
         bool pump_timer_changed = (!s_cache_valid || s_tft_cache.pump_active_timer != active_timer);
         bool pump_phase_changed = (!s_cache_valid || s_tft_cache.pump_phase != phase);
-        
+
         if (pump_running_changed || pump_timer_changed || pump_phase_changed) {
             s_tft_cache.pump_running = pump_running;
             s_tft_cache.pump_active_timer = active_timer;
             s_tft_cache.pump_phase = phase;
-            
+
             if (!pump_running) {
-                tft_draw_string_x2(11, 60, "STOPPED ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
-                tft_draw_string(75, 120, "NONE    ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
-                tft_draw_string(75, 145, "[IDLE] ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_x2_box(TFT_PUMP_BIG_X, TFT_PUMP_BIG_Y, TFT_PUMP_BIG_W, TFT_PUMP_BIG_H,
+                                       "STOPPED ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_box(TFT_PUMP_VAL_X, TFT_PUMP_TIMER_Y, TFT_PUMP_VAL_W, TFT_PUMP_VAL_H,
+                                    "NONE    ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_box(TFT_PUMP_VAL_X, TFT_PUMP_PHASE_Y, TFT_PUMP_VAL_W, TFT_PUMP_VAL_H,
+                                    "[IDLE] ", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             } else {
                 char big_str[10];
                 char t_chr = (active_timer == PUMP_CONTROL_TIMER_1) ? '1' : '2';
-                
+
                 if (phase == PUMP_CONTROL_PHASE_ON) {
                     snprintf(big_str, sizeof(big_str), "T%c RUN  ", t_chr);
-                    tft_draw_string_x2(11, 60, big_str, TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
-                    tft_draw_string(75, 145, "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
+                    tft_draw_string_x2_box(TFT_PUMP_BIG_X, TFT_PUMP_BIG_Y, TFT_PUMP_BIG_W, TFT_PUMP_BIG_H,
+                                           big_str, TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
+                    tft_draw_string_box(TFT_PUMP_VAL_X, TFT_PUMP_PHASE_Y, TFT_PUMP_VAL_W, TFT_PUMP_VAL_H,
+                                        "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
                 } else {
                     snprintf(big_str, sizeof(big_str), "T%c IDLE ", t_chr);
-                    tft_draw_string_x2(11, 60, big_str, TFT_COLOR_ORANGE, TFT_COLOR_DARK_NAVY);
-                    tft_draw_string(75, 145, "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                    tft_draw_string_x2_box(TFT_PUMP_BIG_X, TFT_PUMP_BIG_Y, TFT_PUMP_BIG_W, TFT_PUMP_BIG_H,
+                                           big_str, TFT_COLOR_ORANGE, TFT_COLOR_DARK_NAVY);
+                    tft_draw_string_box(TFT_PUMP_VAL_X, TFT_PUMP_PHASE_Y, TFT_PUMP_VAL_W, TFT_PUMP_VAL_H,
+                                        "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
                 }
-                
+
                 char active_timer_formatted[12];
                 snprintf(active_timer_formatted, sizeof(active_timer_formatted), "TIMER %c ", t_chr);
-                tft_draw_string(75, 120, active_timer_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_box(TFT_PUMP_VAL_X, TFT_PUMP_TIMER_Y, TFT_PUMP_VAL_W, TFT_PUMP_VAL_H,
+                                    active_timer_formatted, TFT_COLOR_WHITE, TFT_COLOR_DARK_NAVY);
             }
         }
-        
-        // 6. Pump Remaining
+
+        /* Pump remaining — fixed 10 chars, stays inside left card */
         uint32_t countdown_sec = pump.countdown_sec;
-        char countdown_formatted[16];
-        snprintf(countdown_formatted, sizeof(countdown_formatted), "%lu s     ", countdown_sec);
-        
+        char countdown_formatted[12];
+        snprintf(countdown_formatted, sizeof(countdown_formatted), "%5lu s   ",
+                 (unsigned long)countdown_sec);
+
         if (!s_cache_valid || s_tft_cache.pump_countdown_sec != countdown_sec || pump_running_changed) {
             s_tft_cache.pump_countdown_sec = countdown_sec;
-            tft_draw_string(75, 170, countdown_formatted, pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
-            
+            tft_draw_string_box(TFT_PUMP_VAL_X, TFT_PUMP_NEXT_Y, TFT_PUMP_VAL_W, TFT_PUMP_VAL_H,
+                                countdown_formatted,
+                                pump_running ? TFT_COLOR_WHITE : TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+
             if (pump_running && pump.total_duration_sec > 0) {
                 int32_t elapsed_sec = (int32_t)pump.total_duration_sec - (int32_t)countdown_sec;
                 float progress = (elapsed_sec <= 0) ? 0.0f
@@ -535,8 +784,8 @@ static void tft_display_task(void *pvParameters) {
                 tft_fill_rect(17, 202, 126, 11, TFT_COLOR_DARK_NAVY);
             }
         }
-        
-        // 7. Cooling Temp
+
+        /* Cooling temp */
         bool temp_valid = cooling.temperature_valid;
         float temp_val = cooling.temperature_c;
         float threshold = cooling.threshold_c_x10 / 10.0f;
@@ -547,24 +796,27 @@ static void tft_display_task(void *pvParameters) {
         } else {
             snprintf(temp_formatted, sizeof(temp_formatted), "%-7s", "  ERR  ");
         }
-        
+
         uint16_t temp_color = TFT_COLOR_RED;
         if (temp_valid) {
             if (temp_val < (threshold - hysteresis)) temp_color = TFT_COLOR_GREEN;
             else if (temp_val < threshold) temp_color = TFT_COLOR_ORANGE;
             else temp_color = TFT_COLOR_RED;
         }
-        
-        bool temp_changed = !s_cache_valid || s_tft_cache.cooling_temp_valid != temp_valid || 
-                             (temp_valid && (s_tft_cache.cooling_temp != temp_val));
-        
+
+        bool temp_changed = !s_cache_valid || s_tft_cache.cooling_temp_valid != temp_valid ||
+                            (temp_valid && (s_tft_cache.cooling_temp != temp_val)) ||
+                            s_tft_cache.cooling_temp_color != temp_color;
+
         if (temp_changed) {
             s_tft_cache.cooling_temp_valid = temp_valid;
             s_tft_cache.cooling_temp = temp_val;
-            tft_draw_string_x2(185, 60, temp_formatted, temp_color, TFT_COLOR_DARK_NAVY);
+            s_tft_cache.cooling_temp_color = temp_color;
+            tft_draw_string_x2_box(TFT_COOL_TEMP_X, TFT_COOL_TEMP_Y, TFT_COOL_TEMP_W, TFT_COOL_TEMP_H,
+                                   temp_formatted, temp_color, TFT_COLOR_DARK_NAVY);
         }
-        
-        // 8. Cooling Mode
+
+        /* Cooling mode */
         cooling_control_mode_t cooling_mode = cooling.mode;
         char cooling_mode_formatted[12];
         const char *mode_str = "FORCE_OFF";
@@ -577,89 +829,49 @@ static void tft_display_task(void *pvParameters) {
             mode_color = TFT_COLOR_YELLOW;
         }
         snprintf(cooling_mode_formatted, sizeof(cooling_mode_formatted), "%-10s", mode_str);
-        
+
         if (!s_cache_valid || s_tft_cache.cooling_mode != cooling_mode) {
             s_tft_cache.cooling_mode = cooling_mode;
-            tft_draw_string(235, 120, cooling_mode_formatted, mode_color, TFT_COLOR_DARK_NAVY);
+            tft_draw_string_box(TFT_COOL_VAL_X, TFT_COOL_MODE_Y, TFT_COOL_VAL_W, TFT_COOL_VAL_H,
+                                cooling_mode_formatted, mode_color, TFT_COLOR_DARK_NAVY);
         }
-        
-        // 9. Cooling Relay
-        bool cooling_relay = cooling.relay_energized;
-        bool cooling_relay_edge = (s_cache_valid && s_tft_cache.cooling_relay_energized != cooling_relay);
-        
-        if (!s_cache_valid || s_tft_cache.cooling_relay_energized != cooling_relay) {
-            s_tft_cache.cooling_relay_energized = cooling_relay;
-            if (cooling_relay) {
-                tft_draw_string(235, 145, "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
+
+        /* Cooling relay */
+        if (!s_cache_valid || s_tft_cache.cooling_relay_energized != cooling_relay_now) {
+            s_tft_cache.cooling_relay_energized = cooling_relay_now;
+            if (cooling_relay_now) {
+                tft_draw_string_box(TFT_COOL_VAL_X, TFT_COOL_RELAY_Y, TFT_PUMP_VAL_W, TFT_COOL_VAL_H,
+                                    "[ ON ] ", TFT_COLOR_GREEN, TFT_COLOR_DARK_NAVY);
             } else {
-                tft_draw_string(235, 145, "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
+                tft_draw_string_box(TFT_COOL_VAL_X, TFT_COOL_RELAY_Y, TFT_PUMP_VAL_W, TFT_COOL_VAL_H,
+                                    "[ OFF ]", TFT_COLOR_GRAY, TFT_COLOR_DARK_NAVY);
             }
         }
-        
-        // 10. Cooling Lockout
+
+        /* Cooling lockout */
         bool lockout_active = cooling.lockout_active;
         char lockout_formatted[12];
-        snprintf(lockout_formatted, sizeof(lockout_formatted), "%-10s", lockout_active ? "ACTIVE" : "INACTIVE");
+        snprintf(lockout_formatted, sizeof(lockout_formatted), "%-10s",
+                 lockout_active ? "ACTIVE" : "INACTIVE");
         uint16_t lockout_color = lockout_active ? TFT_COLOR_YELLOW : TFT_COLOR_GRAY;
-        
+
         if (!s_cache_valid || s_tft_cache.cooling_lockout_active != lockout_active) {
             s_tft_cache.cooling_lockout_active = lockout_active;
-            tft_draw_string(235, 170, lockout_formatted, lockout_color, TFT_COLOR_DARK_NAVY);
+            tft_draw_string_box(TFT_COOL_VAL_X, TFT_COOL_LOCK_Y, TFT_COOL_VAL_W, TFT_COOL_VAL_H,
+                                lockout_formatted, lockout_color, TFT_COLOR_DARK_NAVY);
         }
-        
-        /* A9 audit: auto-dim backlight after 5 min inactivity (burn-in prevention).
-         * No touch screen — activity is signaled via web API calls or buttons. */
+
+        /* Auto-dim after idle timeout */
         uint32_t now_sec = (uint32_t)(esp_timer_get_time() / 1000000ULL);
         uint32_t idle_ms = (now_sec - (uint32_t)atomic_load(&s_last_activity_sec)) * 1000;
-        if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS && atomic_load(&s_current_brightness) != s_idle_dim_percent) {
+        if (idle_ms > APP_TEMPLATE_TFT_DIM_TIMEOUT_MS &&
+            atomic_load(&s_current_brightness) != s_idle_dim_percent) {
             tft_display_set_brightness(s_idle_dim_percent);
         }
 
-        /* ── Panel register re-sync ──────────────────────────────
-         * Trigger: (1) relay state change detected (EMI source)
-         *          (2) external request via tft_display_request_resync()
-         *          (3) periodic safety net every ~30 s
-         * Sends 3 cheap SPI commands to force-correct inversion,
-         * orientation, and mirroring registers.  Self-heals any
-         * glitch-induced corruption within one task period (200ms). */
-        bool pump_relay_now = pump.running &&
-                              (pump.phase == PUMP_CONTROL_PHASE_ON);
-
-        bool pump_relay_edge = (s_cache_valid && s_tft_cache.pump_relay_energized != pump_relay_now);
-        bool relay_changed = pump_relay_edge || cooling_relay_edge;
-
-        bool ext_request = atomic_exchange(&s_resync_requested, false);
-
-        static uint32_t resync_counter = 0;
-        bool periodic = (++resync_counter >= 150);   /* 150 × 200ms = 30 s */
-
-        if (relay_changed || ext_request || periodic) {
-            if (xSemaphoreTake(s_tft_mutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-                resync_counter = 0;
-                esp_err_t r_inv = esp_lcd_panel_invert_color(s_panel_handle, APP_TEMPLATE_TFT_INVERT_COLOR);
-                esp_err_t r_sxy = esp_lcd_panel_swap_xy(s_panel_handle, true);
-                esp_err_t r_mir = esp_lcd_panel_mirror(s_panel_handle, true, false);
-                if (r_inv != ESP_OK || r_sxy != ESP_OK || r_mir != ESP_OK) {
-                    ESP_LOGE(TAG, "panel re-sync FAILED: invert=%s swap_xy=%s mirror=%s — re-arming",
-                             esp_err_to_name(r_inv), esp_err_to_name(r_sxy), esp_err_to_name(r_mir));
-                    tft_display_request_resync();   /* retry on next 200ms tick */
-                } else if (relay_changed || ext_request) {
-                    ESP_LOGD(TAG, "panel re-sync ok (trigger: relay=%d ext=%d periodic=%d)",
-                             (int)relay_changed, (int)ext_request, (int)periodic);
-                }
-                xSemaphoreGive(s_tft_mutex);
-            } else {
-                /* Mutex busy: preserve the trigger for the next tick. */
-                if (relay_changed || ext_request) {
-                    tft_display_request_resync();
-                }
-            }
-        }
-
         s_tft_cache.pump_relay_energized = pump_relay_now;
-
         s_cache_valid = true;
-        
+
         vTaskDelayUntil(&last_wakeup_time, pdMS_TO_TICKS(200));
     }
 }

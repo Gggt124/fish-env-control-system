@@ -22,7 +22,7 @@ extern "C" {
 #define TFT_COLOR_YELLOW  0xFFE2   /* was 0xFFE0: low byte 0xE0 == ST7789 GAMCTRP1, EMI gamma-corruption hazard */
 #define TFT_COLOR_CYAN    0x07FF
 #define TFT_COLOR_MAGENTA 0xF81F
-#define TFT_COLOR_ORANGE  0xFD20
+#define TFT_COLOR_ORANGE  0xFD23   /* was 0xFD20: low byte 0x20 == ST7789 INVOFF (wire 0x20,0xFD) */
 #define TFT_COLOR_GRAY    0x7BEF
 #define TFT_COLOR_DARK_NAVY 0x0823   /* was 0x0821: low byte 0x21 == ST7789 INVON, caused EMI-triggered color inversion */
 #define TFT_COLOR_DARK_PANEL 0x18E3
@@ -50,12 +50,22 @@ extern "C" {
     !TFT_BYTE_IS_PANEL_CMD(((c) >> 8) & 0xFF) && \
     !TFT_BYTE_IS_PANEL_CMD((c) & 0xFF) )
 
-_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_DARK_NAVY),
-    "TFT_COLOR_DARK_NAVY bytes collide with an ST7789 command (EMI inversion hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_BLACK), "TFT_COLOR_BLACK unsafe");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_WHITE), "TFT_COLOR_WHITE unsafe");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_RED), "TFT_COLOR_RED unsafe");
 _Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_GREEN),
     "TFT_COLOR_GREEN bytes collide with an ST7789 command (EMI gamma-corruption hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_BLUE), "TFT_COLOR_BLUE unsafe");
 _Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_YELLOW),
     "TFT_COLOR_YELLOW bytes collide with an ST7789 command (EMI gamma-corruption hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_CYAN), "TFT_COLOR_CYAN unsafe");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_MAGENTA), "TFT_COLOR_MAGENTA unsafe");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_ORANGE),
+    "TFT_COLOR_ORANGE bytes collide with an ST7789 command (EMI INVOFF hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_GRAY), "TFT_COLOR_GRAY unsafe");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_DARK_NAVY),
+    "TFT_COLOR_DARK_NAVY bytes collide with an ST7789 command (EMI inversion hazard)");
+_Static_assert(TFT_COLOR_IS_SAFE(TFT_COLOR_DARK_PANEL), "TFT_COLOR_DARK_PANEL unsafe");
 
 /**
  * @brief Initialize the SPI bus and ILI9341 TFT display using esp_lcd.
@@ -111,6 +121,20 @@ void tft_draw_string(uint16_t x, uint16_t y, const char *str, uint16_t color, ui
  * @param bg_color Background RGB565 color
  */
 void tft_draw_string_x2(uint16_t x, uint16_t y, const char *str, uint16_t color, uint16_t bg_color);
+
+/**
+ * @brief Draw a fixed-size text widget in one SPI flush (8x16 font).
+ *        Entire w×h region is filled with bg; str is left-aligned and clipped.
+ *        Prefer this for runtime dynamic fields to avoid per-char ghosting.
+ */
+void tft_draw_string_box(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                         const char *str, uint16_t color, uint16_t bg_color);
+
+/**
+ * @brief Draw a fixed-size text widget in one SPI flush (16x32 font).
+ */
+void tft_draw_string_x2_box(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                            const char *str, uint16_t color, uint16_t bg_color);
 
 /**
  * @brief Fill a rectangular area with a specified color.
@@ -169,9 +193,11 @@ uint8_t tft_display_get_idle_dim_percent(void);
 #define APP_TEMPLATE_TFT_DIM_TIMEOUT_MS  (5 * 60 * 1000)
 
 /**
- * @brief Request immediate panel register re-sync on the next display task cycle.
+ * @brief Request panel recovery on the next display task cycle.
  *        Safe to call from any task/ISR context (lock-free atomic flag).
  *        Use after events that may cause EMI (relay switching, external triggers).
+ *        Recovery re-syncs panel registers only; dynamic widgets refresh via
+ *        dirty partial updates (no full-screen blink).
  */
 void tft_display_request_resync(void);
 

@@ -31,6 +31,12 @@ CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
 # Main task stack: default 3584 too tight. Increase for safety margin.
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=4608
 
+# Event-loop (sys_evt) task stack: IDF default 2304 too tight for handlers that
+# do NVS I/O + logging with large local buffers (wifi_manager IP_EVENT_STA_GOT_IP
+# allocates wifi_ap_record_t + ssid[33] + pass[65] + NVS save frames). 4096 leaves
+# ~1.5KB headroom and matches the headroom policy of ESP_MAIN_TASK_STACK_SIZE above.
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+
 # Stack overflow detection: panics on overflow instead of silently corrupting memory.
 CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY=y
 
@@ -55,5 +61,5 @@ CONFIG_LOG_DEFAULT_LEVEL=2
 CONFIG_LOG_MAXIMUM_EQUALS_DEFAULT=n
 CONFIG_LOG_MAXIMUM_LEVEL_INFO=y
 CONFIG_LOG_MAXIMUM_LEVEL=3
-# Disable IRAM log path -- saves ~1.5KB IRAM, acceptable for production.
-CONFIG_LOG_IN_IRAM=n
+# ESP-IDF 6.0.1 keeps LOG_IN_IRAM enabled by default unless the
+# SPI-flash auto-suspend path is enabled; do not claim to override it here.

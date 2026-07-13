@@ -30,6 +30,8 @@ state = {
     "min_free_heap": 172900,
     "total_heap": 284000,
     "largest_free_block": 118000,
+    "psram_total": 0,
+    "psram_free": 0,
     "cpu_freq_mhz": 240,              # CPU frequency
     "stg_type": 0,                    # Staging type mock
     "router_offline": False,          # Simulate router/connection drops
@@ -260,6 +262,8 @@ class SimulatorHTTPHandler(http.server.SimpleHTTPRequestHandler):
                     "min_free_heap": state["min_free_heap"],
                     "total_heap": state["total_heap"],
                     "largest_free_block": state["largest_free_block"],
+                    "psram_total": state["psram_total"],
+                    "psram_free": state["psram_free"],
                     "uptime_ms": uptime,
                     "wifi_mode": state["wifi_mode"],
                     "ap_enabled": True,

@@ -16,7 +16,7 @@ extern "C" {
 
 #define APP_TEMPLATE_NAME                  "Fish Pump Relay Timer Control"
 #ifndef APP_TEMPLATE_FIRMWARE_VERSION
-#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.5"
+#define APP_TEMPLATE_FIRMWARE_VERSION      "v0.2.6"
 #endif
 #define APP_TEMPLATE_PHASE_LABEL           "Wi-Fi Setup and Control Dashboard"
 
@@ -53,14 +53,15 @@ extern "C" {
 #define APP_TEMPLATE_HTTP_KEEP_ALIVE_COUNT 3
 #define APP_TEMPLATE_HTTP_SLOW_REQUEST_MS  1000
 #define APP_TEMPLATE_MAIN_WDT_TIMEOUT_MS   15000
+#define APP_TEMPLATE_HTTP_HUNG_CONSECUTIVE_FAILURES 3
 #define APP_TEMPLATE_STATUS_LOG_INTERVALS  6
 
 /* FLOAT SWITCH PULL-UP NOTE: ESP32/S3 internal pull-up (~45kOhm) may be insufficient
  * to reject EMI from the pump's electromagnetic field.
  * Recommended: add a 4.7kOhm external pull-up resistor between FLOAT_GPIO and 3.3V. */
 #ifdef CONFIG_IDF_TARGET_ESP32S3
-#define APP_TEMPLATE_PUMP_FLOAT_GPIO        19
-#define APP_TEMPLATE_PUMP_RELAY_GPIO        20
+#define APP_TEMPLATE_PUMP_FLOAT_GPIO        16
+#define APP_TEMPLATE_PUMP_RELAY_GPIO        5
 #else
 #define APP_TEMPLATE_PUMP_FLOAT_GPIO        32
 #define APP_TEMPLATE_PUMP_RELAY_GPIO        26
@@ -69,12 +70,12 @@ extern "C" {
 #define APP_TEMPLATE_PUMP_RELAY_ACTIVE_LOW  true
 
 #ifdef CONFIG_IDF_TARGET_ESP32S3
-/* ESP32-S3 WROOM-1-N16R8: GPIO 27-32 = Octal Flash, GPIO 33-37 = Octal PSRAM (DO NOT USE) */
-#define APP_TEMPLATE_HW_DEFAULT_FLOAT_GPIO              19
-#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY1_GPIO        20
-#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY2_GPIO        21
-#define APP_TEMPLATE_HW_DEFAULT_DS18B20_GPIO            41
-#define APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_GPIO      42
+/* ESP32-S3 WROOM-1-N16R8: keep application roles off USB/UART/boot pins. */
+#define APP_TEMPLATE_HW_DEFAULT_FLOAT_GPIO              16
+#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY1_GPIO        5
+#define APP_TEMPLATE_HW_DEFAULT_PUMP_RELAY2_GPIO        6
+#define APP_TEMPLATE_HW_DEFAULT_DS18B20_GPIO            7
+#define APP_TEMPLATE_HW_DEFAULT_COOLING_RELAY_GPIO      8
 #else
 /* ESP32 Classic DevKit V1 30-pin */
 #define APP_TEMPLATE_HW_DEFAULT_FLOAT_GPIO              32
@@ -163,8 +164,8 @@ extern "C" {
 /* S3: GPIO 38/39 for EXT BTN/LED (safely away from PSRAM range GPIO 33-37) */
 #define APP_CONFIG_BOOT_BTN_GPIO                  0
 #define APP_CONFIG_EXT_BTN_GPIO                   38
-#define APP_CONFIG_LED_GPIO                       2   /* Strapping pin on S3 */
 #define APP_CONFIG_EXT_LED_GPIO                   39
+/* Board status LED: WS2812 RGB on GPIO 48 — no simple GPIO LED on S3 DevKitC-1 */
 #define APP_CONFIG_RGB_LED_GPIO                   48
 #else
 /* ESP32 Classic DevKit V1 30-pin */
@@ -172,6 +173,21 @@ extern "C" {
 #define APP_CONFIG_EXT_BTN_GPIO                   14
 #define APP_CONFIG_LED_GPIO                       2   /* Strapping pin, avoid ext pull-ups */
 #define APP_CONFIG_EXT_LED_GPIO                   13
+#endif
+
+/* Board identity reported to the web UI via /api/hardware/map and /api/status.
+ * Describes the board the firmware was BUILT for (matches sdkconfig.defaults
+ * per target) — NOT a new hardware assignment. */
+#ifdef CONFIG_IDF_TARGET_ESP32S3
+#define APP_TEMPLATE_BOARD_TARGET         "esp32s3"
+#define APP_TEMPLATE_BOARD_NAME           "ESP32-S3-DevKitC-1 WROOM-1-N16R8"
+#define APP_TEMPLATE_BOARD_FLASH_MB       16
+#define APP_TEMPLATE_BOARD_PSRAM_MB       8
+#else
+#define APP_TEMPLATE_BOARD_TARGET         "esp32"
+#define APP_TEMPLATE_BOARD_NAME           "ESP32 DevKit V1 30-pin"
+#define APP_TEMPLATE_BOARD_FLASH_MB       4
+#define APP_TEMPLATE_BOARD_PSRAM_MB       0
 #endif
 
 // 32-byte (256-bit) AES key in hex format for Pre-Encrypted OTA.
